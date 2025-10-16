@@ -127,7 +127,7 @@ def extract_metadata(response: Dict) -> Dict:
 
 class PersistentMemoryPipeline:
     def __init__(self, csv_file_path: str, memory_file: str = "classification_memory.json",
-                 api_key: Optional[str] = None):
+                 api_key: Optional[str] = None, user_rules: Optional[List[str]] = None):
         """
         Initialize pipeline with persistent memory
 
@@ -135,6 +135,7 @@ class PersistentMemoryPipeline:
             csv_file_path: Path to the CSV file
             memory_file: Path to memory file for storing classifications
             api_key: Gemini API key (optional, will try env var)
+            user_rules: List of strict user-defined categorization rules
         """
         self.csv_file_path = csv_file_path
         self.memory_file = memory_file
@@ -150,9 +151,15 @@ class PersistentMemoryPipeline:
             "regali", "vita sociale", "carburante", "auto"
         ]
 
+        # User-defined strict rules
+        self.user_rules = user_rules or []
+
         # Load existing memory
         self.classification_memory = self.load_memory()
         print(f"💾 Loaded {len(self.classification_memory)} classifications from memory")
+
+        if self.user_rules:
+            print(f"📋 Loaded {len(self.user_rules)} user-defined strict rules")
 
     def load_memory(self) -> Dict[str, Dict[str, Any]]:
         """Load previous classifications from file"""
@@ -266,7 +273,7 @@ class PersistentMemoryPipeline:
         return batches
 
     def build_batch_prompt_with_memory(self, batch: List[Dict], batch_num: int) -> str:
-        """Build prompt that includes memory of previous classifications"""
+        """Build prompt that includes strict user rules (memory excluded from prompt)"""
 
         transactions_text = ""
         for i, tx in enumerate(batch, 1):
@@ -277,42 +284,39 @@ class PersistentMemoryPipeline:
                 transactions_text += f"   {column}: {display_value}\n"
             transactions_text += "\n"
 
-        # Add memory section if we have classifications
-        memory_section = ""
-        if self.classification_memory:
-            # Show most recent/frequent classifications
-            sorted_memory = sorted(
-                self.classification_memory.items(),
-                key=lambda x: x[1].get("count", 1),
-                reverse=True
-            )
+        # Build strict user rules section
+        user_rules_section = ""
+        if self.user_rules:
+            user_rules_section = f"""
+⚠️ ⚠️ ⚠️ REGOLE UTENTE OBBLIGATORIE - PRIORITÀ ASSOLUTA ⚠️ ⚠️ ⚠️
 
-            memory_examples = []
-            for merchant, data in sorted_memory[:15]:  # Show top 15
-                count_info = f" ({data.get('count', 1)}x)" if data.get('count', 1) > 1 else ""
-                memory_examples.append(f"- {merchant}: {data['category']}{count_info}")
+QUESTE REGOLE DEVONO ESSERE RISPETTATE IN MODO ASSOLUTO E HANNO PRIORITÀ SU QUALSIASI ALTRA LOGICA.
+NON PUOI MAI VIOLARE QUESTE REGOLE, NEMMENO SE SEMBRANO CONTRADDIRE LA LOGICA NORMALE.
 
-            memory_section = f"""
-CLASSIFICAZIONI PRECEDENTI (usa per consistenza):
-{chr(10).join(memory_examples)}
+"""
+            for i, rule in enumerate(self.user_rules, 1):
+                user_rules_section += f"{i}. {rule}\n"
 
-IMPORTANTE: Mantieni consistenza con queste classificazioni quando vedi merchant simili o identici.
+            user_rules_section += """
+⚠️ IMPORTANTE: Se una transazione corrisponde a qualsiasi regola utente sopra, DEVI applicare quella regola.
+Le regole utente hanno PRIORITÀ ASSOLUTA su qualsiasi altra considerazione.
+
 """
 
         return f"""Sei un assistente per categorizzare spese bancarie italiane.
 
-{memory_section}
+{user_rules_section}
 
 CATEGORIE DISPONIBILI:
 {chr(10).join('- ' + cat for cat in self.available_categories)}
 
-ISTRUZIONI:
-1. Analizza ogni transazione e determina se è una SPESA (uscita)
-2. Se è spesa: estrai merchant e categorizza
-3. Se NON è spesa: usa "not_expense"
-4. Mantieni consistenza con le classificazioni precedenti mostrate sopra
+ISTRUZIONI (IN ORDINE DI PRIORITÀ):
+1. VERIFICA PRIMA LE REGOLE UTENTE - Se una transazione corrisponde, applica quella categoria OBBLIGATORIAMENTE
+2. Analizza ogni transazione e determina se è una SPESA (uscita)
+3. Se è spesa: estrai merchant e categorizza
+4. Se NON è spesa: usa "not_expense"
 
-ESEMPI:
+ESEMPI (MA REGOLE UTENTE HANNO PRIORITÀ):
 - AMAZON, shopping → "shopping"
 - Benzina → "carburante" 
 - Ristoranti → "vita sociale"
@@ -328,7 +332,8 @@ RISPOSTA RICHIESTA - SOLO JSON VALIDO:
       "merchant": "SUPERMERCATO XYZ",
       "amount": 45.50,
       "original_amount": "-45,50",
-      "description": "Descrizione completa dal CSV"
+      "description": "Descrizione completa dal CSV",
+      "applied_user_rule": "Regola 1: descrizione della regola applicata" (SOLO se applicata una regola utente)
     }}
   ],
   "new_categories_created": [],
@@ -338,6 +343,8 @@ RISPOSTA RICHIESTA - SOLO JSON VALIDO:
 
 TRANSAZIONI:
 {transactions_text}
+
+RICORDA: Le regole utente sono OBBLIGATORIE e hanno PRIORITÀ ASSOLUTA su tutto.
 
 RISPONDI SOLO JSON:"""
 
@@ -355,12 +362,16 @@ RISPONDI SOLO JSON:"""
             if potential_merchant:
                 memory_match = self.fuzzy_match_memory(potential_merchant)
                 if memory_match:
+                    # Extract amount and description from raw data
+                    amount, original_amount = self.extract_amount_from_raw(tx)
+                    description = self.extract_description_from_raw(tx)
+
                     memory_resolved[tx['id']] = {
                         "category": memory_match["category"],
                         "merchant": potential_merchant,
-                        "amount": 0,  # We'll let LLM extract this
-                        "original_amount": "unknown",
-                        "description": "Resolved from memory",
+                        "amount": amount,
+                        "original_amount": original_amount,
+                        "description": description,
                         "memory_match": True,
                         "similarity": memory_match["similarity"],
                         "matched_merchant": memory_match["matched_merchant"]
@@ -398,6 +409,7 @@ RISPONDI SOLO JSON:"""
                         "original_amount": item.get("original_amount", ""),
                         "description": description,
                         "reason": item.get("reason", ""),
+                        "applied_user_rule": item.get("applied_user_rule", ""),
                         "memory_match": False
                     }
 
@@ -409,10 +421,13 @@ RISPONDI SOLO JSON:"""
                         expense_categorizations[tx_id] = category
 
             # Merge memory-resolved items with LLM results
-            all_categorizations.update(memory_resolved)
-            for tx_id, data in memory_resolved.items():
-                if data["category"] != "not_expense":
-                    expense_categorizations[tx_id] = data["category"]
+            # BUT: LLM results override memory if user rules were applied
+            for tx_id, memory_data in memory_resolved.items():
+                # Only use memory if LLM didn't process this transaction
+                if tx_id not in all_categorizations:
+                    all_categorizations[tx_id] = memory_data
+                    if memory_data["category"] != "not_expense":
+                        expense_categorizations[tx_id] = memory_data["category"]
 
             metadata = extract_metadata(raw_response)
 
@@ -494,6 +509,40 @@ RISPONDI SOLO JSON:"""
 
         return None
 
+    def extract_amount_from_raw(self, transaction: Dict) -> tuple[float, str]:
+        """Extract amount from raw transaction data"""
+        raw_data = transaction.get('raw_data', {})
+
+        # Look for amount in common column names
+        for key, value in raw_data.items():
+            key_lower = key.lower()
+            if any(keyword in key_lower for keyword in ['importo', 'amount', 'dare', 'uscite']):
+                try:
+                    value_str = str(value).strip()
+                    # Handle Italian number format (e.g., "-45,50" or "45,50")
+                    cleaned = value_str.replace('.', '').replace(',', '.').replace('€', '').strip()
+                    amount = abs(float(cleaned))
+                    return amount, value_str
+                except (ValueError, AttributeError):
+                    continue
+
+        return 0, "unknown"
+
+    def extract_description_from_raw(self, transaction: Dict) -> str:
+        """Extract description from raw transaction data"""
+        raw_data = transaction.get('raw_data', {})
+
+        # Concatenate all raw data for description
+        description_parts = []
+        for key, value in raw_data.items():
+            value_str = str(value).strip()
+            if value_str and len(value_str) > 0:
+                description_parts.append(f"{key}: {value_str}")
+
+        full_description = " | ".join(description_parts)
+        # Limit length
+        return full_description[:200] if len(full_description) > 200 else full_description
+
     def run_pipeline(self) -> Dict[str, Any]:
         """Run the complete categorization pipeline with persistent memory"""
         print("🚀 Starting Persistent Memory Pipeline...")
@@ -515,6 +564,7 @@ RISPONDI SOLO JSON:"""
         all_new_categories = set()
         failed_batches = []
         total_memory_hits = 0
+        user_rules_applied = 0
 
         for i, batch in enumerate(batches, 1):
             result = self.process_batch_with_memory(batch, i)
@@ -524,6 +574,11 @@ RISPONDI SOLO JSON:"""
                 all_categorizations.update(result['categorizations'])
                 all_detailed_results.update(result['all_results'])
                 total_memory_hits += result.get('memory_hits', 0)
+
+                # Count user rules applied
+                for tx_result in result['all_results'].values():
+                    if tx_result.get('applied_user_rule'):
+                        user_rules_applied += 1
 
                 new_cats = result['parsed_json'].get('new_categories_created', [])
                 all_new_categories.update(new_cats)
@@ -552,6 +607,7 @@ RISPONDI SOLO JSON:"""
             'new_categories_created': list(all_new_categories),
             'batch_results': all_results,
             'total_memory_hits': total_memory_hits,
+            'user_rules_applied': user_rules_applied,
             'memory_size': len(self.classification_memory),
             'coverage': len(all_categorizations) / len(transactions) * 100 if transactions else 0
         }
@@ -578,6 +634,10 @@ RISPONDI SOLO JSON:"""
         print(f"Spese Identificate: {expenses_found}")
         print(f"Non-Spese: {non_expenses}")
         print(f"Copertura: {results['coverage']:.1f}%")
+
+        # User rules statistics
+        if results.get('user_rules_applied', 0) > 0:
+            print(f"\n📋 REGOLE UTENTE APPLICATE: {results['user_rules_applied']}")
 
         # Memory statistics
         print(f"\n💾 STATISTICHE MEMORIA:")
@@ -609,6 +669,18 @@ RISPONDI SOLO JSON:"""
             memory_count = memory_counts.get(category, 0)
             memory_info = f" ({memory_count} da memoria)" if memory_count > 0 else ""
             print(f"  {category}: {count} ({percentage:.1f}%){memory_info}")
+
+        # Show examples of user rules applied
+        if results.get('user_rules_applied', 0) > 0:
+            print(f"\n🎯 ESEMPI REGOLE UTENTE APPLICATE:")
+            rule_examples = []
+            for tx_id, details in results['detailed_results'].items():
+                if details.get('applied_user_rule') and len(rule_examples) < 3:
+                    rule_examples.append(
+                        f"  {tx_id} - {details['merchant']} → {details['category']} (Regola: {details['applied_user_rule']})")
+
+            for example in rule_examples:
+                print(example)
 
         # Show some examples of memory matches
         if results['total_memory_hits'] > 0:
@@ -673,7 +745,13 @@ def main():
             print(f"❌ File CSV non trovato: {csv_file}")
             return
 
-        pipeline = PersistentMemoryPipeline(csv_file)
+        # Define strict user rules
+        user_rules = [
+            "Every PayPal transaction with amounts 2.2, 69.0, or 10.0 MUST be categorized as 'trasporti' (transports). This rule is ABSOLUTE.",
+            "RETITALIA is a fuel distributor and MUST ALWAYS be categorized as 'carburante' (fuel). This rule is ABSOLUTE."
+        ]
+
+        pipeline = PersistentMemoryPipeline(csv_file, user_rules=user_rules)
 
         # Show current memory state
         pipeline.print_memory_info()
@@ -681,7 +759,7 @@ def main():
         results = pipeline.run_pipeline()
         pipeline.print_final_results(results)
 
-        output_file = "memory_results.json"
+        output_file = "output.json"
         with open(output_file, 'w', encoding='utf-8') as f:
             json.dump(results, f, indent=2, ensure_ascii=False)
 

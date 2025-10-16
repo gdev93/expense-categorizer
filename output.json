@@ -1,0 +1,1505 @@
+{
+  "total_transactions": 49,
+  "total_batches": 4,
+  "successful_batches": 4,
+  "failed_batches": [],
+  "successful_categorizations": 41,
+  "categorizations": {
+    "tx_002": "vita sociale",
+    "tx_003": "vita sociale",
+    "tx_004": "shopping",
+    "tx_005": "spesa",
+    "tx_006": "shopping",
+    "tx_007": "abbonamenti",
+    "tx_008": "abbonamenti",
+    "tx_010": "vita sociale",
+    "tx_011": "bollette",
+    "tx_012": "spesa",
+    "tx_013": "vita sociale",
+    "tx_014": "shopping",
+    "tx_015": "affitto",
+    "tx_017": "abbonamenti",
+    "tx_018": "spese mediche",
+    "tx_019": "partita iva",
+    "tx_020": "bollette",
+    "tx_021": "abbonamenti",
+    "tx_022": "vita sociale",
+    "tx_024": "vita sociale",
+    "tx_025": "trasporti",
+    "tx_026": "abbonamenti",
+    "tx_027": "shopping",
+    "tx_028": "spesa",
+    "tx_030": "spesa",
+    "tx_032": "vita sociale",
+    "tx_033": "auto",
+    "tx_034": "vita sociale",
+    "tx_035": "auto",
+    "tx_036": "spesa",
+    "tx_037": "trasporti",
+    "tx_038": "spesa",
+    "tx_039": "abbonamenti",
+    "tx_040": "spesa",
+    "tx_041": "abbonamenti",
+    "tx_042": "carburante",
+    "tx_043": "bollette",
+    "tx_044": "bollette",
+    "tx_045": "abbonamenti",
+    "tx_046": "abbonamenti",
+    "tx_047": "abbonamenti"
+  },
+  "detailed_results": {
+    "tx_000": {
+      "category": "not_expense",
+      "merchant": "Saldo iniziale",
+      "amount": 35.88,
+      "original_amount": "-35,88",
+      "description": "Saldo iniziale",
+      "reason": "",
+      "memory_match": false
+    },
+    "tx_001": {
+      "category": "not_expense",
+      "merchant": "GIACOMO ZANOTTI",
+      "amount": 300.0,
+      "original_amount": "+300,00",
+      "description": "Bonifico istantaneo N. 202510010646472661412 BIC Ordinante BBVAITMM Codifica Ordinante IT64N0357601601010003904105 Anagrafica Ordinante GIACOMO ZANOTTI Note: Spese mese",
+      "reason": "",
+      "memory_match": false
+    },
+    "tx_002": {
+      "category": "vita sociale",
+      "merchant": "Giacomo Zanotti",
+      "amount": 20.0,
+      "original_amount": "-20,00",
+      "description": "BONIFICO DA VOI DISPOSTO CRO 16953943601 A FAVORE DI Giacomo Zanotti C. BENEF. IT64N0357601601010003904105 NOTE: Barbiere",
+      "reason": "",
+      "memory_match": false
+    },
+    "tx_003": {
+      "category": "vita sociale",
+      "merchant": "Giacomo Zanotti",
+      "amount": 3.4,
+      "original_amount": "-3,40",
+      "description": "BONIFICO DA VOI DISPOSTO CRO 16953946504 A FAVORE DI Giacomo Zanotti C. BENEF. IT64N0357601601010003904105 NOTE: Colazione",
+      "reason": "",
+      "memory_match": false
+    },
+    "tx_004": {
+      "category": "shopping",
+      "merchant": "Retitalia Brescia",
+      "amount": 23.35,
+      "original_amount": "-23,35",
+      "description": "DATA CONTABILE: 01/10/2025 | DATA VALUTA: 29/09/2025 | USCITE: -23,35 | CAUSALE: Pagamento Carta | DESCRIZIONE OPERAZIONE: Operazione Mastercard del 29/09/2025 alle ore 08:35 con Carta xxxxxxxxxxxx732",
+      "memory_match": true,
+      "similarity": 1.0,
+      "matched_merchant": "RETITALIA BRESCIA"
+    },
+    "tx_005": {
+      "category": "spesa",
+      "merchant": "ITALMARK",
+      "amount": 6.21,
+      "original_amount": "-6,21",
+      "description": "DATA CONTABILE: 01/10/2025 | DATA VALUTA: 29/09/2025 | USCITE: -6,21 | CAUSALE: Pagamento Carta | DESCRIZIONE OPERAZIONE: Operazione Mastercard del 29/09/2025 alle ore 14:44 con Carta xxxxxxxxxxxx3352",
+      "memory_match": true,
+      "similarity": 1.0,
+      "matched_merchant": "ITALMARK"
+    },
+    "tx_006": {
+      "category": "shopping",
+      "merchant": "BILU & BILEI STORE",
+      "amount": 10.8,
+      "original_amount": "-10,80",
+      "description": "DATA CONTABILE: 01/10/2025 | DATA VALUTA: 29/09/2025 | USCITE: -10,80 | CAUSALE: Pagamento Carta | DESCRIZIONE OPERAZIONE: Operazione Mastercard del 29/09/2025 alle ore 14:55 con Carta xxxxxxxxxxxx335",
+      "memory_match": true,
+      "similarity": 1.0,
+      "matched_merchant": "BILU & BILEI STORE"
+    },
+    "tx_007": {
+      "category": "abbonamenti",
+      "merchant": "PAYPAL EUROPE S.A.R.L. ET CIE S.C.A",
+      "amount": 2.2,
+      "original_amount": "-2,20",
+      "description": "Addebito SDD CORE Scad. 01/10/2025 Imp. 2.2 Creditor id. LU96ZZZ0000000000000000058 PayPal Europe S.a.r.l. et Cie S.C.A Id Mandato 54V22258E3N8U Debitore Giacomo Zanotti Rif. 1045176870074/PAYPAL",
+      "reason": "",
+      "memory_match": false
+    },
+    "tx_008": {
+      "category": "abbonamenti",
+      "merchant": "PAYPAL EUROPE S.A.R.L. ET CIE S.C.A",
+      "amount": 2.2,
+      "original_amount": "-2,20",
+      "description": "Addebito SDD CORE Scad. 01/10/2025 Imp. 2.2 Creditor id. LU96ZZZ0000000000000000058 PayPal Europe S.a.r.l. et Cie S.C.A Id Mandato 54V22258E3N8U Debitore Giacomo Zanotti Rif. 1045176763531/PAYPAL",
+      "reason": "",
+      "memory_match": false
+    },
+    "tx_009": {
+      "category": "not_expense",
+      "merchant": "GIACOMO ZANOTTI",
+      "amount": 3297.1,
+      "original_amount": "+3.297,10",
+      "description": "Bonifico N. 0061370183213921 BIC Ordinante BBVAITMMXXX Data Ordine  Codifica Ordinante IT64N0357601601010003904105 Anagrafica Ordinante GIACOMO ZANOTTI Note: SPESE DEL MESE",
+      "reason": "",
+      "memory_match": false
+    },
+    "tx_010": {
+      "category": "vita sociale",
+      "merchant": "125",
+      "amount": 9.0,
+      "original_amount": "-9,00",
+      "description": "Operazione Mastercard del 01/10/2025 alle ore 12:41 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in divisa=9 / Importo in Euro=9 presso 125 - Transazione C-less",
+      "reason": "",
+      "memory_match": false
+    },
+    "tx_011": {
+      "category": "bollette",
+      "merchant": "WWW.A2ACICLOIDRICO.EU",
+      "amount": 104.62,
+      "original_amount": "-104,62",
+      "description": "DATA CONTABILE: 04/10/2025 | DATA VALUTA: 01/10/2025 | USCITE: -104,62 | CAUSALE: Pagamento Carta | DESCRIZIONE OPERAZIONE: Operazione Mastercard del 01/10/2025 alle ore 08:19 con Carta xxxxxxxxxxxx73",
+      "memory_match": true,
+      "similarity": 1.0,
+      "matched_merchant": "WWW.A2ACICLOIDRICO.EU"
+    },
+    "tx_012": {
+      "category": "spesa",
+      "merchant": "METELLI FRUTTA SAS",
+      "amount": 55.06,
+      "original_amount": "-55,06",
+      "description": "DATA CONTABILE: 04/10/2025 | DATA VALUTA: 02/10/2025 | USCITE: -55,06 | CAUSALE: Pagamento Carta | DESCRIZIONE OPERAZIONE: Operazione Mastercard del 02/10/2025 alle ore 08:30 con Carta xxxxxxxxxxxx732",
+      "memory_match": true,
+      "similarity": 1.0,
+      "matched_merchant": "METELLI FRUTTA SAS"
+    },
+    "tx_013": {
+      "category": "vita sociale",
+      "merchant": "SALE E PEPE 2",
+      "amount": 2.9,
+      "original_amount": "-2,90",
+      "description": "DATA CONTABILE: 04/10/2025 | DATA VALUTA: 02/10/2025 | USCITE: -2,90 | CAUSALE: Pagamento Carta | DESCRIZIONE OPERAZIONE: Operazione Mastercard del 02/10/2025 alle ore 08:34 con Carta xxxxxxxxxxxx7329",
+      "memory_match": true,
+      "similarity": 1.0,
+      "matched_merchant": "SALE E PEPE 2"
+    },
+    "tx_014": {
+      "category": "shopping",
+      "merchant": "G.FOGAZZI NEGOZIO DI A",
+      "amount": 12.9,
+      "original_amount": "-12,90",
+      "description": "DATA CONTABILE: 04/10/2025 | DATA VALUTA: 02/10/2025 | USCITE: -12,90 | CAUSALE: Pagamento Carta | DESCRIZIONE OPERAZIONE: Operazione Mastercard del 02/10/2025 alle ore 08:42 con Carta xxxxxxxxxxxx732",
+      "memory_match": true,
+      "similarity": 1.0,
+      "matched_merchant": "G.FOGAZZI NEGOZIO DI A"
+    },
+    "tx_015": {
+      "category": "affitto",
+      "merchant": "Aida Pedretti",
+      "amount": 765.0,
+      "original_amount": "-765,00",
+      "description": "BONIFICO DA VOI DISPOSTO CRO 16836793407 A FAVORE DI Aida Pedretti C. BENEF. IT22O0503411200000000019733 NOTE: Saldo affitto fornaci Zanotti musicco",
+      "reason": "",
+      "memory_match": false
+    },
+    "tx_016": {
+      "category": "not_expense",
+      "merchant": "Giovanna Musicco",
+      "amount": 225.0,
+      "original_amount": "-225,00",
+      "description": "BONIFICO DA VOI DISPOSTO CRO 16973409612 A FAVORE DI Giovanna Musicco C. BENEF. IT51U0338501601100000203544 NOTE: Brez",
+      "reason": "",
+      "memory_match": false
+    },
+    "tx_017": {
+      "category": "abbonamenti",
+      "merchant": "PAYPAL EUROPE S.A.R.L. ET CIE S.C.A",
+      "amount": 4.99,
+      "original_amount": "-4,99",
+      "description": "Addebito SDD CORE Scad. 06/10/2025 Imp. 4.99 Creditor id. LU96ZZZ0000000000000000058 PayPal Europe S.a.r.l. et Cie S.C.A Id Mandato 54V22258E3N8U Debitore Giacomo Zanotti Rif. 1045242185822/PAYPAL",
+      "reason": "",
+      "memory_match": false
+    },
+    "tx_018": {
+      "category": "spese mediche",
+      "merchant": "FARMACIA FORNACI SRL",
+      "amount": 2.05,
+      "original_amount": "-2,05",
+      "description": "DATA CONTABILE: 08/10/2025 | DATA VALUTA: 06/10/2025 | USCITE: -2,05 | CAUSALE: Pagamento Carta | DESCRIZIONE OPERAZIONE: Operazione Mastercard del 06/10/2025 alle ore 08:39 con Carta xxxxxxxxxxxx7329",
+      "memory_match": true,
+      "similarity": 1.0,
+      "matched_merchant": "FARMACIA FORNACI SRL"
+    },
+    "tx_019": {
+      "category": "partita iva",
+      "merchant": "ZNTGCM93T25Z130Z",
+      "amount": 88.0,
+      "original_amount": "-88,00",
+      "description": "Dt.conf: 08/10/2025 Dt.pag: 08/10/2025 Cont.: ZNTGCM93T25Z130Z Nom.:   c.Atto:- AuthID:2025100700003500001",
+      "reason": "",
+      "memory_match": false
+    },
+    "tx_020": {
+      "category": "bollette",
+      "merchant": "TELECOM ITALIA SPA O TIM S P A",
+      "amount": 34.8,
+      "original_amount": "-34,80",
+      "description": "Addebito SDD CORE Scad. 08/10/2025 Imp. 34.8 Creditor id. IT390030000000488410010 TELECOM ITALIA SPA O TIM S P A Id Mandato 003007999345202408061 Debitore ZANOTTI GIACOMO Rif.",
+      "reason": "",
+      "memory_match": false
+    },
+    "tx_021": {
+      "category": "abbonamenti",
+      "merchant": "PAYPAL EUROPE S.A.R.L. ET CIE S.C.A",
+      "amount": 2.2,
+      "original_amount": "-2,20",
+      "description": "Addebito SDD CORE Scad. 08/10/2025 Imp. 2.2 Creditor id. LU96ZZZ0000000000000000058 PayPal Europe S.a.r.l. et Cie S.C.A Id Mandato 54V22258E3N8U Debitore Giacomo Zanotti Rif. 1045351166009/PAYPAL",
+      "reason": "",
+      "memory_match": false
+    },
+    "tx_022": {
+      "category": "vita sociale",
+      "merchant": "Alessia castelli",
+      "amount": 15.0,
+      "original_amount": "-15,00",
+      "description": "BONIFICO DA VOI DISPOSTO CRO 16993028707 A FAVORE DI Alessia castelli C. BENEF. IT08G0200811222000103486506 NOTE: Team Building viaggio",
+      "reason": "",
+      "memory_match": false
+    },
+    "tx_023": {
+      "category": "not_expense",
+      "merchant": "Gemma musicco",
+      "amount": 4.0,
+      "original_amount": "-4,00",
+      "description": "BONIFICO DA VOI DISPOSTO CRO 16994541301 A FAVORE DI Gemma musicco C. BENEF. IT03E0347501605CC0012553485 NOTE: Pannello",
+      "reason": "",
+      "memory_match": false
+    },
+    "tx_024": {
+      "category": "vita sociale",
+      "merchant": "125",
+      "amount": 7.5,
+      "original_amount": "-7,50",
+      "description": "Operazione Mastercard del 07/10/2025 alle ore 12:56 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in divisa=7.5 / Importo in Euro=7.5 presso 125 - Transazione C-less",
+      "reason": "",
+      "memory_match": false
+    },
+    "tx_025": {
+      "category": "trasporti",
+      "merchant": "CLESS TICKET ATM MILAN",
+      "amount": 2.2,
+      "original_amount": "-2,20",
+      "description": "DATA CONTABILE: 10/10/2025 | DATA VALUTA: 07/10/2025 | USCITE: -2,20 | CAUSALE: Pagamento Carta | DESCRIZIONE OPERAZIONE: Pagamenti trasporti modalita' contactless. Operazione Mastercard del 07/10/202",
+      "memory_match": true,
+      "similarity": 0.926829268292683,
+      "matched_merchant": "CLESS TICKET ATM MI"
+    },
+    "tx_026": {
+      "category": "abbonamenti",
+      "merchant": "AMAZON PAYMENTS EUROPE S.C.A.",
+      "amount": 24.96,
+      "original_amount": "-24,96",
+      "description": "Addebito SDD CORE Scad. 10/10/2025 Imp. 24.96 Creditor id. DE94ZZZ00000561653 AMAZON PAYMENTS EUROPE S.C.A. AMAZON PAYMENTS EUROPE SCA Id Mandato JXNUY,CTCX.FNTBEOWV)CWZ7UA2SEP Debitore GIACOMO ZANOTT...",
+      "reason": "",
+      "memory_match": false
+    },
+    "tx_027": {
+      "category": "shopping",
+      "merchant": "AMAZON EU S.A R.L.",
+      "amount": 8.95,
+      "original_amount": "-8,95",
+      "description": "Addebito SDD CORE Scad. 10/10/2025 Imp. 8.95 Creditor id. DE24ZZZ00000561652 AMAZON EU S.A R.L. AMAZON EU S.A R.L. Id Mandato JXNUY,CTCX.FNTBEOWV)CWZ7UA2SEP Debitore GIACOMO ZANOTTI Rif. 402-8728729-5...",
+      "reason": "",
+      "memory_match": false
+    },
+    "tx_028": {
+      "category": "spesa",
+      "merchant": "METELLI FRUTTA SAS",
+      "amount": 6.37,
+      "original_amount": "-6,37",
+      "description": "DATA CONTABILE: 11/10/2025 | DATA VALUTA: 09/10/2025 | USCITE: -6,37 | CAUSALE: Pagamento Carta | DESCRIZIONE OPERAZIONE: Operazione Mastercard del 09/10/2025 alle ore 07:59 con Carta xxxxxxxxxxxx7329",
+      "memory_match": true,
+      "similarity": 1.0,
+      "matched_merchant": "METELLI FRUTTA SAS"
+    },
+    "tx_029": {
+      "category": "not_expense",
+      "merchant": "SAYED ABU ABU SAYED",
+      "amount": 8.0,
+      "original_amount": "-8,00",
+      "description": "Operazione Mastercard del 09/10/2025 alle ore 08:11 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in divisa=8 / Importo in Euro=8 presso SAYED ABU ABU SAYED - Transazione C-less",
+      "reason": "",
+      "memory_match": false
+    },
+    "tx_030": {
+      "category": "spesa",
+      "merchant": "ITALMARK",
+      "amount": 2.68,
+      "original_amount": "-2,68",
+      "description": "DATA CONTABILE: 11/10/2025 | DATA VALUTA: 09/10/2025 | USCITE: -2,68 | CAUSALE: Pagamento Carta | DESCRIZIONE OPERAZIONE: Operazione Mastercard del 09/10/2025 alle ore 13:57 con Carta xxxxxxxxxxxx7329",
+      "memory_match": true,
+      "similarity": 1.0,
+      "matched_merchant": "ITALMARK"
+    },
+    "tx_031": {
+      "category": "not_expense",
+      "merchant": "PAGOPA-NEXI",
+      "amount": 6.78,
+      "original_amount": "-6,78",
+      "description": "Operazione Mastercard del 09/10/2025 alle ore 21:25 con Carta xxxxxxxxxxxx3352 Div=EUR Importo in divisa=6.78 / Importo in Euro=6.78 presso PAGOPA-NEXI",
+      "reason": "",
+      "memory_match": false
+    },
+    "tx_032": {
+      "category": "vita sociale",
+      "merchant": "LA RONDINE - SOCIETA'",
+      "amount": 8.2,
+      "original_amount": "-8,20",
+      "description": "Operazione Mastercard del 10/10/2025 alle ore 08:33 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in divisa=8.2 / Importo in Euro=8.2 presso LA RONDINE - SOCIETA' - Transazione C-less",
+      "reason": "",
+      "memory_match": false
+    },
+    "tx_033": {
+      "category": "auto",
+      "merchant": "DOCTOR CAR WASH",
+      "amount": 9.5,
+      "original_amount": "-9,50",
+      "description": "DATA CONTABILE: 13/10/2025 | DATA VALUTA: 11/10/2025 | USCITE: -9,50 | CAUSALE: Pagamento Carta | DESCRIZIONE OPERAZIONE: Operazione Mastercard del 11/10/2025 alle ore 12:05 con Carta xxxxxxxxxxxx7329",
+      "memory_match": true,
+      "similarity": 1.0,
+      "matched_merchant": "DOCTOR CAR WASH"
+    },
+    "tx_034": {
+      "category": "vita sociale",
+      "merchant": "GELATERIA SOTTOZERO",
+      "amount": 14.0,
+      "original_amount": "-14,00",
+      "description": "DATA CONTABILE: 13/10/2025 | DATA VALUTA: 11/10/2025 | USCITE: -14,00 | CAUSALE: Pagamento Carta | DESCRIZIONE OPERAZIONE: Operazione Mastercard del 11/10/2025 alle ore 18:20 con Carta xxxxxxxxxxxx732",
+      "memory_match": true,
+      "similarity": 1.0,
+      "matched_merchant": "GELATERIA SOTTOZERO"
+    },
+    "tx_035": {
+      "category": "auto",
+      "merchant": "PARK PIAZZA VITTORIA",
+      "amount": 3.0,
+      "original_amount": "-3,00",
+      "description": "DATA CONTABILE: 13/10/2025 | DATA VALUTA: 11/10/2025 | USCITE: -3,00 | CAUSALE: Pagamento Carta | DESCRIZIONE OPERAZIONE: Operazione Mastercard del 11/10/2025 alle ore 21:17 con Carta xxxxxxxxxxxx3352",
+      "memory_match": true,
+      "similarity": 0.9523809523809523,
+      "matched_merchant": "PARK PIAZZA VITTORIA -"
+    },
+    "tx_036": {
+      "category": "spesa",
+      "merchant": "FRAGESA SRL",
+      "amount": 46.5,
+      "original_amount": "-46,50",
+      "description": "DATA CONTABILE: 14/10/2025 | DATA VALUTA: 11/10/2025 | USCITE: -46,50 | CAUSALE: Pagamento Carta | DESCRIZIONE OPERAZIONE: Operazione Mastercard del 11/10/2025 alle ore 20:53 con Carta xxxxxxxxxxxx732",
+      "memory_match": true,
+      "similarity": 1.0,
+      "matched_merchant": "FRAGESA SRL"
+    },
+    "tx_037": {
+      "category": "trasporti",
+      "merchant": "CLESS TICKET ATM MILAN",
+      "amount": 1.3,
+      "original_amount": "-1,30",
+      "description": "DATA CONTABILE: 14/10/2025 | DATA VALUTA: 12/10/2025 | USCITE: -1,30 | CAUSALE: Pagamento Carta | DESCRIZIONE OPERAZIONE: Pagamenti trasporti modalita' contactless. Operazione Mastercard del 12/10/202",
+      "memory_match": true,
+      "similarity": 0.926829268292683,
+      "matched_merchant": "CLESS TICKET ATM MI"
+    },
+    "tx_038": {
+      "category": "spesa",
+      "merchant": "ITALMARK ALBERTANO",
+      "amount": 4.42,
+      "original_amount": "-4,42",
+      "description": "DATA CONTABILE: 14/10/2025 | DATA VALUTA: 12/10/2025 | USCITE: -4,42 | CAUSALE: Pagamento Carta | DESCRIZIONE OPERAZIONE: Operazione Mastercard del 12/10/2025 alle ore 17:20 con Carta xxxxxxxxxxxx7329",
+      "memory_match": true,
+      "similarity": 1.0,
+      "matched_merchant": "ITALMARK ALBERTANO"
+    },
+    "tx_039": {
+      "category": "abbonamenti",
+      "merchant": "PayPal Europe S.a.r.l. et Cie S.C.A",
+      "amount": 69.0,
+      "original_amount": "-69,00",
+      "description": "Addebito SDD CORE Scad. 14/10/2025 Imp. 69 Creditor id. LU96ZZZ0000000000000000058 PayPal Europe S.a.r.l. et Cie S.C.A Id Mandato 54V22258E3N8U Debitore Giacomo Zanotti Rif. 1045440258442/PAYPAL",
+      "reason": "",
+      "memory_match": false
+    },
+    "tx_040": {
+      "category": "spesa",
+      "merchant": "Esselunga S.p.A.",
+      "amount": 161.32,
+      "original_amount": "-161,32",
+      "description": "Addebito SDD CORE Scad. 15/10/2025 Imp. 161.32 Creditor id. IT170010000011903970157 Esselunga S.p.A. Id Mandato I65084A000000000199053 Debitore GIACOMO ZANOTTI Rif. ADDEB.FIDATY ORO 20835429-2025-09 S...",
+      "reason": "",
+      "memory_match": false
+    },
+    "tx_041": {
+      "category": "abbonamenti",
+      "merchant": "PayPal Europe S.a.r.l. et Cie S.C.A",
+      "amount": 10.0,
+      "original_amount": "-10,00",
+      "description": "Addebito SDD CORE Scad. 15/10/2025 Imp. 10 Creditor id. LU96ZZZ0000000000000000058 PayPal Europe S.a.r.l. et Cie S.C.A Id Mandato 54V22258E3N8U Debitore Giacomo Zanotti Rif. 1045501702327/PAYPAL",
+      "reason": "",
+      "memory_match": false
+    },
+    "tx_042": {
+      "category": "carburante",
+      "merchant": "ACQU.DISTRIB.AUTOMATI",
+      "amount": 2.5,
+      "original_amount": "-2,50",
+      "description": "DATA CONTABILE: 16/10/2025 | DATA VALUTA: 14/10/2025 | USCITE: -2,50 | CAUSALE: Pagamento Carta | DESCRIZIONE OPERAZIONE: Operazione Mastercard del 14/10/2025 alle ore 17:31 con Carta xxxxxxxxxxxx7329",
+      "memory_match": true,
+      "similarity": 1.0,
+      "matched_merchant": "ACQU.DISTRIB.AUTOMATI"
+    },
+    "tx_043": {
+      "category": "bollette",
+      "merchant": "Yada Energia Srl",
+      "amount": 47.18,
+      "original_amount": "-47,18",
+      "description": "Addebito SDD CORE Scad. 16/10/2025 Imp. 47.18 Creditor id. IT95XXX0000010879560968 Yada Energia Srl Id Mandato CJML412024001000218138 Debitore Zanotti Giacomo Rif. F252851342.2025-CT2024.218138",
+      "reason": "",
+      "memory_match": false
+    },
+    "tx_044": {
+      "category": "bollette",
+      "merchant": "Yada Energia Srl",
+      "amount": 54.69,
+      "original_amount": "-54,69",
+      "description": "Addebito SDD CORE Scad. 16/10/2025 Imp. 54.69 Creditor id. IT95XXX0000010879560968 Yada Energia Srl Id Mandato CJML412024001000218139 Debitore Zanotti Giacomo Rif. F251668763.2025-CT2024.218139",
+      "reason": "",
+      "memory_match": false
+    },
+    "tx_045": {
+      "category": "abbonamenti",
+      "merchant": "PAYPAL EUROPE S.A.R.L. ET CIE S.C.A",
+      "amount": 4.4,
+      "original_amount": "-4,40",
+      "description": "Addebito SDD CORE Scad. 16/10/2025 Imp. 4.4 Creditor id. LU96ZZZ0000000000000000058 PayPal Europe S.a.r.l. et Cie S.C.A Id Mandato 54V22258E3N8U Debitore Giacomo Zanotti Rif. 1045508932933/PAYPAL",
+      "reason": "",
+      "memory_match": false
+    },
+    "tx_046": {
+      "category": "abbonamenti",
+      "merchant": "PAYPAL EUROPE S.A.R.L. ET CIE S.C.A",
+      "amount": 335.5,
+      "original_amount": "-335,50",
+      "description": "Addebito SDD CORE Scad. 16/10/2025 Imp. 335.5 Creditor id. LU96ZZZ0000000000000000058 PayPal Europe S.a.r.l. et Cie S.C.A Id Mandato 54V22258E3N8U Debitore Giacomo Zanotti Rif. 1045523943074/PAYPAL",
+      "reason": "",
+      "memory_match": false
+    },
+    "tx_047": {
+      "category": "abbonamenti",
+      "merchant": "PAYPAL EUROPE S.A.R.L. ET CIE S.C.A",
+      "amount": 10.0,
+      "original_amount": "-10,00",
+      "description": "Addebito SDD CORE Scad. 16/10/2025 Imp. 10 Creditor id. LU96ZZZ0000000000000000058 PayPal Europe S.a.r.l. et Cie S.C.A Id Mandato 54V22258E3N8U Debitore Giacomo Zanotti Rif. 1045522930880/PAYPAL",
+      "reason": "",
+      "memory_match": false
+    },
+    "tx_048": {
+      "category": "not_expense",
+      "merchant": "",
+      "amount": null,
+      "original_amount": null,
+      "description": "Saldo finale",
+      "reason": "",
+      "memory_match": false
+    }
+  },
+  "new_categories_created": [],
+  "batch_results": [
+    {
+      "categorizations": {
+        "tx_002": "vita sociale",
+        "tx_003": "vita sociale",
+        "tx_004": "shopping",
+        "tx_005": "spesa",
+        "tx_006": "shopping",
+        "tx_007": "abbonamenti",
+        "tx_008": "abbonamenti",
+        "tx_010": "vita sociale",
+        "tx_011": "bollette",
+        "tx_012": "spesa",
+        "tx_013": "vita sociale",
+        "tx_014": "shopping"
+      },
+      "all_results": {
+        "tx_000": {
+          "category": "not_expense",
+          "merchant": "Saldo iniziale",
+          "amount": 35.88,
+          "original_amount": "-35,88",
+          "description": "Saldo iniziale",
+          "reason": "",
+          "memory_match": false
+        },
+        "tx_001": {
+          "category": "not_expense",
+          "merchant": "GIACOMO ZANOTTI",
+          "amount": 300.0,
+          "original_amount": "+300,00",
+          "description": "Bonifico istantaneo N. 202510010646472661412 BIC Ordinante BBVAITMM Codifica Ordinante IT64N0357601601010003904105 Anagrafica Ordinante GIACOMO ZANOTTI Note: Spese mese",
+          "reason": "",
+          "memory_match": false
+        },
+        "tx_002": {
+          "category": "vita sociale",
+          "merchant": "Giacomo Zanotti",
+          "amount": 20.0,
+          "original_amount": "-20,00",
+          "description": "BONIFICO DA VOI DISPOSTO CRO 16953943601 A FAVORE DI Giacomo Zanotti C. BENEF. IT64N0357601601010003904105 NOTE: Barbiere",
+          "reason": "",
+          "memory_match": false
+        },
+        "tx_003": {
+          "category": "vita sociale",
+          "merchant": "Giacomo Zanotti",
+          "amount": 3.4,
+          "original_amount": "-3,40",
+          "description": "BONIFICO DA VOI DISPOSTO CRO 16953946504 A FAVORE DI Giacomo Zanotti C. BENEF. IT64N0357601601010003904105 NOTE: Colazione",
+          "reason": "",
+          "memory_match": false
+        },
+        "tx_004": {
+          "category": "shopping",
+          "merchant": "Retitalia Brescia",
+          "amount": 23.35,
+          "original_amount": "-23,35",
+          "description": "DATA CONTABILE: 01/10/2025 | DATA VALUTA: 29/09/2025 | USCITE: -23,35 | CAUSALE: Pagamento Carta | DESCRIZIONE OPERAZIONE: Operazione Mastercard del 29/09/2025 alle ore 08:35 con Carta xxxxxxxxxxxx732",
+          "memory_match": true,
+          "similarity": 1.0,
+          "matched_merchant": "RETITALIA BRESCIA"
+        },
+        "tx_005": {
+          "category": "spesa",
+          "merchant": "ITALMARK",
+          "amount": 6.21,
+          "original_amount": "-6,21",
+          "description": "DATA CONTABILE: 01/10/2025 | DATA VALUTA: 29/09/2025 | USCITE: -6,21 | CAUSALE: Pagamento Carta | DESCRIZIONE OPERAZIONE: Operazione Mastercard del 29/09/2025 alle ore 14:44 con Carta xxxxxxxxxxxx3352",
+          "memory_match": true,
+          "similarity": 1.0,
+          "matched_merchant": "ITALMARK"
+        },
+        "tx_006": {
+          "category": "shopping",
+          "merchant": "BILU & BILEI STORE",
+          "amount": 10.8,
+          "original_amount": "-10,80",
+          "description": "DATA CONTABILE: 01/10/2025 | DATA VALUTA: 29/09/2025 | USCITE: -10,80 | CAUSALE: Pagamento Carta | DESCRIZIONE OPERAZIONE: Operazione Mastercard del 29/09/2025 alle ore 14:55 con Carta xxxxxxxxxxxx335",
+          "memory_match": true,
+          "similarity": 1.0,
+          "matched_merchant": "BILU & BILEI STORE"
+        },
+        "tx_007": {
+          "category": "abbonamenti",
+          "merchant": "PAYPAL EUROPE S.A.R.L. ET CIE S.C.A",
+          "amount": 2.2,
+          "original_amount": "-2,20",
+          "description": "Addebito SDD CORE Scad. 01/10/2025 Imp. 2.2 Creditor id. LU96ZZZ0000000000000000058 PayPal Europe S.a.r.l. et Cie S.C.A Id Mandato 54V22258E3N8U Debitore Giacomo Zanotti Rif. 1045176870074/PAYPAL",
+          "reason": "",
+          "memory_match": false
+        },
+        "tx_008": {
+          "category": "abbonamenti",
+          "merchant": "PAYPAL EUROPE S.A.R.L. ET CIE S.C.A",
+          "amount": 2.2,
+          "original_amount": "-2,20",
+          "description": "Addebito SDD CORE Scad. 01/10/2025 Imp. 2.2 Creditor id. LU96ZZZ0000000000000000058 PayPal Europe S.a.r.l. et Cie S.C.A Id Mandato 54V22258E3N8U Debitore Giacomo Zanotti Rif. 1045176763531/PAYPAL",
+          "reason": "",
+          "memory_match": false
+        },
+        "tx_009": {
+          "category": "not_expense",
+          "merchant": "GIACOMO ZANOTTI",
+          "amount": 3297.1,
+          "original_amount": "+3.297,10",
+          "description": "Bonifico N. 0061370183213921 BIC Ordinante BBVAITMMXXX Data Ordine  Codifica Ordinante IT64N0357601601010003904105 Anagrafica Ordinante GIACOMO ZANOTTI Note: SPESE DEL MESE",
+          "reason": "",
+          "memory_match": false
+        },
+        "tx_010": {
+          "category": "vita sociale",
+          "merchant": "125",
+          "amount": 9.0,
+          "original_amount": "-9,00",
+          "description": "Operazione Mastercard del 01/10/2025 alle ore 12:41 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in divisa=9 / Importo in Euro=9 presso 125 - Transazione C-less",
+          "reason": "",
+          "memory_match": false
+        },
+        "tx_011": {
+          "category": "bollette",
+          "merchant": "WWW.A2ACICLOIDRICO.EU",
+          "amount": 104.62,
+          "original_amount": "-104,62",
+          "description": "DATA CONTABILE: 04/10/2025 | DATA VALUTA: 01/10/2025 | USCITE: -104,62 | CAUSALE: Pagamento Carta | DESCRIZIONE OPERAZIONE: Operazione Mastercard del 01/10/2025 alle ore 08:19 con Carta xxxxxxxxxxxx73",
+          "memory_match": true,
+          "similarity": 1.0,
+          "matched_merchant": "WWW.A2ACICLOIDRICO.EU"
+        },
+        "tx_012": {
+          "category": "spesa",
+          "merchant": "METELLI FRUTTA SAS",
+          "amount": 55.06,
+          "original_amount": "-55,06",
+          "description": "DATA CONTABILE: 04/10/2025 | DATA VALUTA: 02/10/2025 | USCITE: -55,06 | CAUSALE: Pagamento Carta | DESCRIZIONE OPERAZIONE: Operazione Mastercard del 02/10/2025 alle ore 08:30 con Carta xxxxxxxxxxxx732",
+          "memory_match": true,
+          "similarity": 1.0,
+          "matched_merchant": "METELLI FRUTTA SAS"
+        },
+        "tx_013": {
+          "category": "vita sociale",
+          "merchant": "SALE E PEPE 2",
+          "amount": 2.9,
+          "original_amount": "-2,90",
+          "description": "DATA CONTABILE: 04/10/2025 | DATA VALUTA: 02/10/2025 | USCITE: -2,90 | CAUSALE: Pagamento Carta | DESCRIZIONE OPERAZIONE: Operazione Mastercard del 02/10/2025 alle ore 08:34 con Carta xxxxxxxxxxxx7329",
+          "memory_match": true,
+          "similarity": 1.0,
+          "matched_merchant": "SALE E PEPE 2"
+        },
+        "tx_014": {
+          "category": "shopping",
+          "merchant": "G.FOGAZZI NEGOZIO DI A",
+          "amount": 12.9,
+          "original_amount": "-12,90",
+          "description": "DATA CONTABILE: 04/10/2025 | DATA VALUTA: 02/10/2025 | USCITE: -12,90 | CAUSALE: Pagamento Carta | DESCRIZIONE OPERAZIONE: Operazione Mastercard del 02/10/2025 alle ore 08:42 con Carta xxxxxxxxxxxx732",
+          "memory_match": true,
+          "similarity": 1.0,
+          "matched_merchant": "G.FOGAZZI NEGOZIO DI A"
+        }
+      },
+      "parsed_json": {
+        "categorizations": [
+          {
+            "transaction_id": "tx_000",
+            "category": "not_expense",
+            "merchant": "Saldo iniziale",
+            "amount": 35.88,
+            "original_amount": "-35,88",
+            "description": "Saldo iniziale"
+          },
+          {
+            "transaction_id": "tx_001",
+            "category": "not_expense",
+            "merchant": "GIACOMO ZANOTTI",
+            "amount": 300.0,
+            "original_amount": "+300,00",
+            "description": "Bonifico istantaneo N. 202510010646472661412 BIC Ordinante BBVAITMM Codifica Ordinante IT64N0357601601010003904105 Anagrafica Ordinante GIACOMO ZANOTTI Note: Spese mese"
+          },
+          {
+            "transaction_id": "tx_002",
+            "category": "vita sociale",
+            "merchant": "Giacomo Zanotti",
+            "amount": 20.0,
+            "original_amount": "-20,00",
+            "description": "BONIFICO DA VOI DISPOSTO CRO 16953943601 A FAVORE DI Giacomo Zanotti C. BENEF. IT64N0357601601010003904105 NOTE: Barbiere"
+          },
+          {
+            "transaction_id": "tx_003",
+            "category": "vita sociale",
+            "merchant": "Giacomo Zanotti",
+            "amount": 3.4,
+            "original_amount": "-3,40",
+            "description": "BONIFICO DA VOI DISPOSTO CRO 16953946504 A FAVORE DI Giacomo Zanotti C. BENEF. IT64N0357601601010003904105 NOTE: Colazione"
+          },
+          {
+            "transaction_id": "tx_004",
+            "category": "shopping",
+            "merchant": "Retitalia Brescia",
+            "amount": 23.35,
+            "original_amount": "-23,35",
+            "description": "Operazione Mastercard del 29/09/2025 alle ore 08:35 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in divisa=23.35 / Importo in Euro=23.35 presso Retitalia Brescia - Transazione C-less"
+          },
+          {
+            "transaction_id": "tx_005",
+            "category": "spesa",
+            "merchant": "ITALMARK",
+            "amount": 6.21,
+            "original_amount": "-6,21",
+            "description": "Operazione Mastercard del 29/09/2025 alle ore 14:44 con Carta xxxxxxxxxxxx3352 Div=EUR Importo in divisa=6.21 / Importo in Euro=6.21 presso ITALMARK - Transazione C-less"
+          },
+          {
+            "transaction_id": "tx_006",
+            "category": "shopping",
+            "merchant": "BILU & BILEI STORE",
+            "amount": 10.8,
+            "original_amount": "-10,80",
+            "description": "Operazione Mastercard del 29/09/2025 alle ore 14:55 con Carta xxxxxxxxxxxx3352 Div=EUR Importo in divisa=10.8 / Importo in Euro=10.8 presso BILU & BILEI STORE - Transazione C-less"
+          },
+          {
+            "transaction_id": "tx_007",
+            "category": "abbonamenti",
+            "merchant": "PAYPAL EUROPE S.A.R.L. ET CIE S.C.A",
+            "amount": 2.2,
+            "original_amount": "-2,20",
+            "description": "Addebito SDD CORE Scad. 01/10/2025 Imp. 2.2 Creditor id. LU96ZZZ0000000000000000058 PayPal Europe S.a.r.l. et Cie S.C.A Id Mandato 54V22258E3N8U Debitore Giacomo Zanotti Rif. 1045176870074/PAYPAL"
+          },
+          {
+            "transaction_id": "tx_008",
+            "category": "abbonamenti",
+            "merchant": "PAYPAL EUROPE S.A.R.L. ET CIE S.C.A",
+            "amount": 2.2,
+            "original_amount": "-2,20",
+            "description": "Addebito SDD CORE Scad. 01/10/2025 Imp. 2.2 Creditor id. LU96ZZZ0000000000000000058 PayPal Europe S.a.r.l. et Cie S.C.A Id Mandato 54V22258E3N8U Debitore Giacomo Zanotti Rif. 1045176763531/PAYPAL"
+          },
+          {
+            "transaction_id": "tx_009",
+            "category": "not_expense",
+            "merchant": "GIACOMO ZANOTTI",
+            "amount": 3297.1,
+            "original_amount": "+3.297,10",
+            "description": "Bonifico N. 0061370183213921 BIC Ordinante BBVAITMMXXX Data Ordine  Codifica Ordinante IT64N0357601601010003904105 Anagrafica Ordinante GIACOMO ZANOTTI Note: SPESE DEL MESE"
+          },
+          {
+            "transaction_id": "tx_010",
+            "category": "vita sociale",
+            "merchant": "125",
+            "amount": 9.0,
+            "original_amount": "-9,00",
+            "description": "Operazione Mastercard del 01/10/2025 alle ore 12:41 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in divisa=9 / Importo in Euro=9 presso 125 - Transazione C-less"
+          },
+          {
+            "transaction_id": "tx_011",
+            "category": "bollette",
+            "merchant": "WWW.A2ACICLOIDRICO.EU",
+            "amount": 104.62,
+            "original_amount": "-104,62",
+            "description": "Operazione Mastercard del 01/10/2025 alle ore 08:19 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in divisa=104.62 / Importo in Euro=104.62 presso WWW.A2ACICLOIDRICO.EU"
+          },
+          {
+            "transaction_id": "tx_012",
+            "category": "spesa",
+            "merchant": "METELLI FRUTTA SAS",
+            "amount": 55.06,
+            "original_amount": "-55,06",
+            "description": "Operazione Mastercard del 02/10/2025 alle ore 08:30 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in divisa=55.06 / Importo in Euro=55.06 presso METELLI FRUTTA SAS - Transazione C-less"
+          },
+          {
+            "transaction_id": "tx_013",
+            "category": "vita sociale",
+            "merchant": "SALE E PEPE 2",
+            "amount": 2.9,
+            "original_amount": "-2,90",
+            "description": "Operazione Mastercard del 02/10/2025 alle ore 08:34 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in divisa=2.9 / Importo in Euro=2.9 presso SALE E PEPE 2 - Transazione C-less"
+          },
+          {
+            "transaction_id": "tx_014",
+            "category": "shopping",
+            "merchant": "G.FOGAZZI NEGOZIO DI A",
+            "amount": 12.9,
+            "original_amount": "-12,90",
+            "description": "Operazione Mastercard del 02/10/2025 alle ore 08:42 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in divisa=12.9 / Importo in Euro=12.9 presso G.FOGAZZI NEGOZIO DI A - Transazione C-less"
+          }
+        ],
+        "new_categories_created": [],
+        "reasoning_summary": "Categorizzazione delle transazioni in base al merchant e alla descrizione, mantenendo la coerenza con le categorizzazioni precedenti.",
+        "batch_info": "Batch 1"
+      },
+      "metadata": {
+        "model_version": "gemini-2.0-flash",
+        "total_tokens": 4995,
+        "prompt_tokens": 2726,
+        "response_tokens": 2269,
+        "finish_reason": "STOP"
+      },
+      "batch_num": 1,
+      "batch_size": 15,
+      "memory_hits": 7,
+      "success": true
+    },
+    {
+      "categorizations": {
+        "tx_015": "affitto",
+        "tx_017": "abbonamenti",
+        "tx_018": "spese mediche",
+        "tx_019": "partita iva",
+        "tx_020": "bollette",
+        "tx_021": "abbonamenti",
+        "tx_022": "vita sociale",
+        "tx_024": "vita sociale",
+        "tx_025": "trasporti",
+        "tx_026": "abbonamenti",
+        "tx_027": "shopping",
+        "tx_028": "spesa"
+      },
+      "all_results": {
+        "tx_015": {
+          "category": "affitto",
+          "merchant": "Aida Pedretti",
+          "amount": 765.0,
+          "original_amount": "-765,00",
+          "description": "BONIFICO DA VOI DISPOSTO CRO 16836793407 A FAVORE DI Aida Pedretti C. BENEF. IT22O0503411200000000019733 NOTE: Saldo affitto fornaci Zanotti musicco",
+          "reason": "",
+          "memory_match": false
+        },
+        "tx_016": {
+          "category": "not_expense",
+          "merchant": "Giovanna Musicco",
+          "amount": 225.0,
+          "original_amount": "-225,00",
+          "description": "BONIFICO DA VOI DISPOSTO CRO 16973409612 A FAVORE DI Giovanna Musicco C. BENEF. IT51U0338501601100000203544 NOTE: Brez",
+          "reason": "",
+          "memory_match": false
+        },
+        "tx_017": {
+          "category": "abbonamenti",
+          "merchant": "PAYPAL EUROPE S.A.R.L. ET CIE S.C.A",
+          "amount": 4.99,
+          "original_amount": "-4,99",
+          "description": "Addebito SDD CORE Scad. 06/10/2025 Imp. 4.99 Creditor id. LU96ZZZ0000000000000000058 PayPal Europe S.a.r.l. et Cie S.C.A Id Mandato 54V22258E3N8U Debitore Giacomo Zanotti Rif. 1045242185822/PAYPAL",
+          "reason": "",
+          "memory_match": false
+        },
+        "tx_018": {
+          "category": "spese mediche",
+          "merchant": "FARMACIA FORNACI SRL",
+          "amount": 2.05,
+          "original_amount": "-2,05",
+          "description": "DATA CONTABILE: 08/10/2025 | DATA VALUTA: 06/10/2025 | USCITE: -2,05 | CAUSALE: Pagamento Carta | DESCRIZIONE OPERAZIONE: Operazione Mastercard del 06/10/2025 alle ore 08:39 con Carta xxxxxxxxxxxx7329",
+          "memory_match": true,
+          "similarity": 1.0,
+          "matched_merchant": "FARMACIA FORNACI SRL"
+        },
+        "tx_019": {
+          "category": "partita iva",
+          "merchant": "ZNTGCM93T25Z130Z",
+          "amount": 88.0,
+          "original_amount": "-88,00",
+          "description": "Dt.conf: 08/10/2025 Dt.pag: 08/10/2025 Cont.: ZNTGCM93T25Z130Z Nom.:   c.Atto:- AuthID:2025100700003500001",
+          "reason": "",
+          "memory_match": false
+        },
+        "tx_020": {
+          "category": "bollette",
+          "merchant": "TELECOM ITALIA SPA O TIM S P A",
+          "amount": 34.8,
+          "original_amount": "-34,80",
+          "description": "Addebito SDD CORE Scad. 08/10/2025 Imp. 34.8 Creditor id. IT390030000000488410010 TELECOM ITALIA SPA O TIM S P A Id Mandato 003007999345202408061 Debitore ZANOTTI GIACOMO Rif.",
+          "reason": "",
+          "memory_match": false
+        },
+        "tx_021": {
+          "category": "abbonamenti",
+          "merchant": "PAYPAL EUROPE S.A.R.L. ET CIE S.C.A",
+          "amount": 2.2,
+          "original_amount": "-2,20",
+          "description": "Addebito SDD CORE Scad. 08/10/2025 Imp. 2.2 Creditor id. LU96ZZZ0000000000000000058 PayPal Europe S.a.r.l. et Cie S.C.A Id Mandato 54V22258E3N8U Debitore Giacomo Zanotti Rif. 1045351166009/PAYPAL",
+          "reason": "",
+          "memory_match": false
+        },
+        "tx_022": {
+          "category": "vita sociale",
+          "merchant": "Alessia castelli",
+          "amount": 15.0,
+          "original_amount": "-15,00",
+          "description": "BONIFICO DA VOI DISPOSTO CRO 16993028707 A FAVORE DI Alessia castelli C. BENEF. IT08G0200811222000103486506 NOTE: Team Building viaggio",
+          "reason": "",
+          "memory_match": false
+        },
+        "tx_023": {
+          "category": "not_expense",
+          "merchant": "Gemma musicco",
+          "amount": 4.0,
+          "original_amount": "-4,00",
+          "description": "BONIFICO DA VOI DISPOSTO CRO 16994541301 A FAVORE DI Gemma musicco C. BENEF. IT03E0347501605CC0012553485 NOTE: Pannello",
+          "reason": "",
+          "memory_match": false
+        },
+        "tx_024": {
+          "category": "vita sociale",
+          "merchant": "125",
+          "amount": 7.5,
+          "original_amount": "-7,50",
+          "description": "Operazione Mastercard del 07/10/2025 alle ore 12:56 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in divisa=7.5 / Importo in Euro=7.5 presso 125 - Transazione C-less",
+          "reason": "",
+          "memory_match": false
+        },
+        "tx_025": {
+          "category": "trasporti",
+          "merchant": "CLESS TICKET ATM MILAN",
+          "amount": 2.2,
+          "original_amount": "-2,20",
+          "description": "DATA CONTABILE: 10/10/2025 | DATA VALUTA: 07/10/2025 | USCITE: -2,20 | CAUSALE: Pagamento Carta | DESCRIZIONE OPERAZIONE: Pagamenti trasporti modalita' contactless. Operazione Mastercard del 07/10/202",
+          "memory_match": true,
+          "similarity": 0.926829268292683,
+          "matched_merchant": "CLESS TICKET ATM MI"
+        },
+        "tx_026": {
+          "category": "abbonamenti",
+          "merchant": "AMAZON PAYMENTS EUROPE S.C.A.",
+          "amount": 24.96,
+          "original_amount": "-24,96",
+          "description": "Addebito SDD CORE Scad. 10/10/2025 Imp. 24.96 Creditor id. DE94ZZZ00000561653 AMAZON PAYMENTS EUROPE S.C.A. AMAZON PAYMENTS EUROPE SCA Id Mandato JXNUY,CTCX.FNTBEOWV)CWZ7UA2SEP Debitore GIACOMO ZANOTT...",
+          "reason": "",
+          "memory_match": false
+        },
+        "tx_027": {
+          "category": "shopping",
+          "merchant": "AMAZON EU S.A R.L.",
+          "amount": 8.95,
+          "original_amount": "-8,95",
+          "description": "Addebito SDD CORE Scad. 10/10/2025 Imp. 8.95 Creditor id. DE24ZZZ00000561652 AMAZON EU S.A R.L. AMAZON EU S.A R.L. Id Mandato JXNUY,CTCX.FNTBEOWV)CWZ7UA2SEP Debitore GIACOMO ZANOTTI Rif. 402-8728729-5...",
+          "reason": "",
+          "memory_match": false
+        },
+        "tx_028": {
+          "category": "spesa",
+          "merchant": "METELLI FRUTTA SAS",
+          "amount": 6.37,
+          "original_amount": "-6,37",
+          "description": "DATA CONTABILE: 11/10/2025 | DATA VALUTA: 09/10/2025 | USCITE: -6,37 | CAUSALE: Pagamento Carta | DESCRIZIONE OPERAZIONE: Operazione Mastercard del 09/10/2025 alle ore 07:59 con Carta xxxxxxxxxxxx7329",
+          "memory_match": true,
+          "similarity": 1.0,
+          "matched_merchant": "METELLI FRUTTA SAS"
+        },
+        "tx_029": {
+          "category": "not_expense",
+          "merchant": "SAYED ABU ABU SAYED",
+          "amount": 8.0,
+          "original_amount": "-8,00",
+          "description": "Operazione Mastercard del 09/10/2025 alle ore 08:11 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in divisa=8 / Importo in Euro=8 presso SAYED ABU ABU SAYED - Transazione C-less",
+          "reason": "",
+          "memory_match": false
+        }
+      },
+      "parsed_json": {
+        "categorizations": [
+          {
+            "transaction_id": "tx_015",
+            "category": "affitto",
+            "merchant": "Aida Pedretti",
+            "amount": 765.0,
+            "original_amount": "-765,00",
+            "description": "BONIFICO DA VOI DISPOSTO CRO 16836793407 A FAVORE DI Aida Pedretti C. BENEF. IT22O0503411200000000019733 NOTE: Saldo affitto fornaci Zanotti musicco"
+          },
+          {
+            "transaction_id": "tx_016",
+            "category": "not_expense",
+            "merchant": "Giovanna Musicco",
+            "amount": 225.0,
+            "original_amount": "-225,00",
+            "description": "BONIFICO DA VOI DISPOSTO CRO 16973409612 A FAVORE DI Giovanna Musicco C. BENEF. IT51U0338501601100000203544 NOTE: Brez"
+          },
+          {
+            "transaction_id": "tx_017",
+            "category": "abbonamenti",
+            "merchant": "PAYPAL EUROPE S.A.R.L. ET CIE S.C.A",
+            "amount": 4.99,
+            "original_amount": "-4,99",
+            "description": "Addebito SDD CORE Scad. 06/10/2025 Imp. 4.99 Creditor id. LU96ZZZ0000000000000000058 PayPal Europe S.a.r.l. et Cie S.C.A Id Mandato 54V22258E3N8U Debitore Giacomo Zanotti Rif. 1045242185822/PAYPAL"
+          },
+          {
+            "transaction_id": "tx_018",
+            "category": "spese mediche",
+            "merchant": "FARMACIA FORNACI SRL",
+            "amount": 2.05,
+            "original_amount": "-2,05",
+            "description": "Operazione Mastercard del 06/10/2025 alle ore 08:39 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in divisa=2.05 / Importo in Euro=2.05 presso FARMACIA FORNACI SRL - Transazione C-less"
+          },
+          {
+            "transaction_id": "tx_019",
+            "category": "partita iva",
+            "merchant": "ZNTGCM93T25Z130Z",
+            "amount": 88.0,
+            "original_amount": "-88,00",
+            "description": "Dt.conf: 08/10/2025 Dt.pag: 08/10/2025 Cont.: ZNTGCM93T25Z130Z Nom.:   c.Atto:- AuthID:2025100700003500001"
+          },
+          {
+            "transaction_id": "tx_020",
+            "category": "bollette",
+            "merchant": "TELECOM ITALIA SPA O TIM S P A",
+            "amount": 34.8,
+            "original_amount": "-34,80",
+            "description": "Addebito SDD CORE Scad. 08/10/2025 Imp. 34.8 Creditor id. IT390030000000488410010 TELECOM ITALIA SPA O TIM S P A Id Mandato 003007999345202408061 Debitore ZANOTTI GIACOMO Rif."
+          },
+          {
+            "transaction_id": "tx_021",
+            "category": "abbonamenti",
+            "merchant": "PAYPAL EUROPE S.A.R.L. ET CIE S.C.A",
+            "amount": 2.2,
+            "original_amount": "-2,20",
+            "description": "Addebito SDD CORE Scad. 08/10/2025 Imp. 2.2 Creditor id. LU96ZZZ0000000000000000058 PayPal Europe S.a.r.l. et Cie S.C.A Id Mandato 54V22258E3N8U Debitore Giacomo Zanotti Rif. 1045351166009/PAYPAL"
+          },
+          {
+            "transaction_id": "tx_022",
+            "category": "vita sociale",
+            "merchant": "Alessia castelli",
+            "amount": 15.0,
+            "original_amount": "-15,00",
+            "description": "BONIFICO DA VOI DISPOSTO CRO 16993028707 A FAVORE DI Alessia castelli C. BENEF. IT08G0200811222000103486506 NOTE: Team Building viaggio"
+          },
+          {
+            "transaction_id": "tx_023",
+            "category": "not_expense",
+            "merchant": "Gemma musicco",
+            "amount": 4.0,
+            "original_amount": "-4,00",
+            "description": "BONIFICO DA VOI DISPOSTO CRO 16994541301 A FAVORE DI Gemma musicco C. BENEF. IT03E0347501605CC0012553485 NOTE: Pannello"
+          },
+          {
+            "transaction_id": "tx_024",
+            "category": "vita sociale",
+            "merchant": "125",
+            "amount": 7.5,
+            "original_amount": "-7,50",
+            "description": "Operazione Mastercard del 07/10/2025 alle ore 12:56 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in divisa=7.5 / Importo in Euro=7.5 presso 125 - Transazione C-less"
+          },
+          {
+            "transaction_id": "tx_025",
+            "category": "trasporti",
+            "merchant": "CLESS TICKET ATM MI...",
+            "amount": 2.2,
+            "original_amount": "-2,20",
+            "description": "Pagamenti trasporti modalita' contactless. Operazione Mastercard del 07/10/2025 alle ore 18:06 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in divisa=2.2 / Importo in Euro=2.2 presso CLESS TICKET ATM MI..."
+          },
+          {
+            "transaction_id": "tx_026",
+            "category": "abbonamenti",
+            "merchant": "AMAZON PAYMENTS EUROPE S.C.A.",
+            "amount": 24.96,
+            "original_amount": "-24,96",
+            "description": "Addebito SDD CORE Scad. 10/10/2025 Imp. 24.96 Creditor id. DE94ZZZ00000561653 AMAZON PAYMENTS EUROPE S.C.A. AMAZON PAYMENTS EUROPE SCA Id Mandato JXNUY,CTCX.FNTBEOWV)CWZ7UA2SEP Debitore GIACOMO ZANOTT..."
+          },
+          {
+            "transaction_id": "tx_027",
+            "category": "shopping",
+            "merchant": "AMAZON EU S.A R.L.",
+            "amount": 8.95,
+            "original_amount": "-8,95",
+            "description": "Addebito SDD CORE Scad. 10/10/2025 Imp. 8.95 Creditor id. DE24ZZZ00000561652 AMAZON EU S.A R.L. AMAZON EU S.A R.L. Id Mandato JXNUY,CTCX.FNTBEOWV)CWZ7UA2SEP Debitore GIACOMO ZANOTTI Rif. 402-8728729-5..."
+          },
+          {
+            "transaction_id": "tx_028",
+            "category": "spesa",
+            "merchant": "METELLI FRUTTA SAS",
+            "amount": 6.37,
+            "original_amount": "-6,37",
+            "description": "Operazione Mastercard del 09/10/2025 alle ore 07:59 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in divisa=6.37 / Importo in Euro=6.37 presso METELLI FRUTTA SAS - Transazione C-less"
+          },
+          {
+            "transaction_id": "tx_029",
+            "category": "not_expense",
+            "merchant": "SAYED ABU ABU SAYED",
+            "amount": 8.0,
+            "original_amount": "-8,00",
+            "description": "Operazione Mastercard del 09/10/2025 alle ore 08:11 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in divisa=8 / Importo in Euro=8 presso SAYED ABU ABU SAYED - Transazione C-less"
+          }
+        ],
+        "new_categories_created": [],
+        "reasoning_summary": "Categorizzazione delle transazioni in base al merchant e alla descrizione, mantenendo coerenza con le categorizzazioni precedenti. I bonifici a persone fisiche sono stati classificati come 'not_expense' a meno che non ci sia una nota che indichi il contrario (es. affitto).",
+        "batch_info": "Batch 2"
+      },
+      "metadata": {
+        "model_version": "gemini-2.0-flash",
+        "total_tokens": 5372,
+        "prompt_tokens": 2918,
+        "response_tokens": 2454,
+        "finish_reason": "STOP"
+      },
+      "batch_num": 2,
+      "batch_size": 15,
+      "memory_hits": 3,
+      "success": true
+    },
+    {
+      "categorizations": {
+        "tx_030": "spesa",
+        "tx_032": "vita sociale",
+        "tx_033": "auto",
+        "tx_034": "vita sociale",
+        "tx_035": "auto",
+        "tx_036": "spesa",
+        "tx_037": "trasporti",
+        "tx_038": "spesa",
+        "tx_039": "abbonamenti",
+        "tx_040": "spesa",
+        "tx_041": "abbonamenti",
+        "tx_042": "carburante",
+        "tx_043": "bollette",
+        "tx_044": "bollette"
+      },
+      "all_results": {
+        "tx_030": {
+          "category": "spesa",
+          "merchant": "ITALMARK",
+          "amount": 2.68,
+          "original_amount": "-2,68",
+          "description": "DATA CONTABILE: 11/10/2025 | DATA VALUTA: 09/10/2025 | USCITE: -2,68 | CAUSALE: Pagamento Carta | DESCRIZIONE OPERAZIONE: Operazione Mastercard del 09/10/2025 alle ore 13:57 con Carta xxxxxxxxxxxx7329",
+          "memory_match": true,
+          "similarity": 1.0,
+          "matched_merchant": "ITALMARK"
+        },
+        "tx_031": {
+          "category": "not_expense",
+          "merchant": "PAGOPA-NEXI",
+          "amount": 6.78,
+          "original_amount": "-6,78",
+          "description": "Operazione Mastercard del 09/10/2025 alle ore 21:25 con Carta xxxxxxxxxxxx3352 Div=EUR Importo in divisa=6.78 / Importo in Euro=6.78 presso PAGOPA-NEXI",
+          "reason": "",
+          "memory_match": false
+        },
+        "tx_032": {
+          "category": "vita sociale",
+          "merchant": "LA RONDINE - SOCIETA'",
+          "amount": 8.2,
+          "original_amount": "-8,20",
+          "description": "Operazione Mastercard del 10/10/2025 alle ore 08:33 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in divisa=8.2 / Importo in Euro=8.2 presso LA RONDINE - SOCIETA' - Transazione C-less",
+          "reason": "",
+          "memory_match": false
+        },
+        "tx_033": {
+          "category": "auto",
+          "merchant": "DOCTOR CAR WASH",
+          "amount": 9.5,
+          "original_amount": "-9,50",
+          "description": "DATA CONTABILE: 13/10/2025 | DATA VALUTA: 11/10/2025 | USCITE: -9,50 | CAUSALE: Pagamento Carta | DESCRIZIONE OPERAZIONE: Operazione Mastercard del 11/10/2025 alle ore 12:05 con Carta xxxxxxxxxxxx7329",
+          "memory_match": true,
+          "similarity": 1.0,
+          "matched_merchant": "DOCTOR CAR WASH"
+        },
+        "tx_034": {
+          "category": "vita sociale",
+          "merchant": "GELATERIA SOTTOZERO",
+          "amount": 14.0,
+          "original_amount": "-14,00",
+          "description": "DATA CONTABILE: 13/10/2025 | DATA VALUTA: 11/10/2025 | USCITE: -14,00 | CAUSALE: Pagamento Carta | DESCRIZIONE OPERAZIONE: Operazione Mastercard del 11/10/2025 alle ore 18:20 con Carta xxxxxxxxxxxx732",
+          "memory_match": true,
+          "similarity": 1.0,
+          "matched_merchant": "GELATERIA SOTTOZERO"
+        },
+        "tx_035": {
+          "category": "auto",
+          "merchant": "PARK PIAZZA VITTORIA",
+          "amount": 3.0,
+          "original_amount": "-3,00",
+          "description": "DATA CONTABILE: 13/10/2025 | DATA VALUTA: 11/10/2025 | USCITE: -3,00 | CAUSALE: Pagamento Carta | DESCRIZIONE OPERAZIONE: Operazione Mastercard del 11/10/2025 alle ore 21:17 con Carta xxxxxxxxxxxx3352",
+          "memory_match": true,
+          "similarity": 0.9523809523809523,
+          "matched_merchant": "PARK PIAZZA VITTORIA -"
+        },
+        "tx_036": {
+          "category": "spesa",
+          "merchant": "FRAGESA SRL",
+          "amount": 46.5,
+          "original_amount": "-46,50",
+          "description": "DATA CONTABILE: 14/10/2025 | DATA VALUTA: 11/10/2025 | USCITE: -46,50 | CAUSALE: Pagamento Carta | DESCRIZIONE OPERAZIONE: Operazione Mastercard del 11/10/2025 alle ore 20:53 con Carta xxxxxxxxxxxx732",
+          "memory_match": true,
+          "similarity": 1.0,
+          "matched_merchant": "FRAGESA SRL"
+        },
+        "tx_037": {
+          "category": "trasporti",
+          "merchant": "CLESS TICKET ATM MILAN",
+          "amount": 1.3,
+          "original_amount": "-1,30",
+          "description": "DATA CONTABILE: 14/10/2025 | DATA VALUTA: 12/10/2025 | USCITE: -1,30 | CAUSALE: Pagamento Carta | DESCRIZIONE OPERAZIONE: Pagamenti trasporti modalita' contactless. Operazione Mastercard del 12/10/202",
+          "memory_match": true,
+          "similarity": 0.926829268292683,
+          "matched_merchant": "CLESS TICKET ATM MI"
+        },
+        "tx_038": {
+          "category": "spesa",
+          "merchant": "ITALMARK ALBERTANO",
+          "amount": 4.42,
+          "original_amount": "-4,42",
+          "description": "DATA CONTABILE: 14/10/2025 | DATA VALUTA: 12/10/2025 | USCITE: -4,42 | CAUSALE: Pagamento Carta | DESCRIZIONE OPERAZIONE: Operazione Mastercard del 12/10/2025 alle ore 17:20 con Carta xxxxxxxxxxxx7329",
+          "memory_match": true,
+          "similarity": 1.0,
+          "matched_merchant": "ITALMARK ALBERTANO"
+        },
+        "tx_039": {
+          "category": "abbonamenti",
+          "merchant": "PayPal Europe S.a.r.l. et Cie S.C.A",
+          "amount": 69.0,
+          "original_amount": "-69,00",
+          "description": "Addebito SDD CORE Scad. 14/10/2025 Imp. 69 Creditor id. LU96ZZZ0000000000000000058 PayPal Europe S.a.r.l. et Cie S.C.A Id Mandato 54V22258E3N8U Debitore Giacomo Zanotti Rif. 1045440258442/PAYPAL",
+          "reason": "",
+          "memory_match": false
+        },
+        "tx_040": {
+          "category": "spesa",
+          "merchant": "Esselunga S.p.A.",
+          "amount": 161.32,
+          "original_amount": "-161,32",
+          "description": "Addebito SDD CORE Scad. 15/10/2025 Imp. 161.32 Creditor id. IT170010000011903970157 Esselunga S.p.A. Id Mandato I65084A000000000199053 Debitore GIACOMO ZANOTTI Rif. ADDEB.FIDATY ORO 20835429-2025-09 S...",
+          "reason": "",
+          "memory_match": false
+        },
+        "tx_041": {
+          "category": "abbonamenti",
+          "merchant": "PayPal Europe S.a.r.l. et Cie S.C.A",
+          "amount": 10.0,
+          "original_amount": "-10,00",
+          "description": "Addebito SDD CORE Scad. 15/10/2025 Imp. 10 Creditor id. LU96ZZZ0000000000000000058 PayPal Europe S.a.r.l. et Cie S.C.A Id Mandato 54V22258E3N8U Debitore Giacomo Zanotti Rif. 1045501702327/PAYPAL",
+          "reason": "",
+          "memory_match": false
+        },
+        "tx_042": {
+          "category": "carburante",
+          "merchant": "ACQU.DISTRIB.AUTOMATI",
+          "amount": 2.5,
+          "original_amount": "-2,50",
+          "description": "DATA CONTABILE: 16/10/2025 | DATA VALUTA: 14/10/2025 | USCITE: -2,50 | CAUSALE: Pagamento Carta | DESCRIZIONE OPERAZIONE: Operazione Mastercard del 14/10/2025 alle ore 17:31 con Carta xxxxxxxxxxxx7329",
+          "memory_match": true,
+          "similarity": 1.0,
+          "matched_merchant": "ACQU.DISTRIB.AUTOMATI"
+        },
+        "tx_043": {
+          "category": "bollette",
+          "merchant": "Yada Energia Srl",
+          "amount": 47.18,
+          "original_amount": "-47,18",
+          "description": "Addebito SDD CORE Scad. 16/10/2025 Imp. 47.18 Creditor id. IT95XXX0000010879560968 Yada Energia Srl Id Mandato CJML412024001000218138 Debitore Zanotti Giacomo Rif. F252851342.2025-CT2024.218138",
+          "reason": "",
+          "memory_match": false
+        },
+        "tx_044": {
+          "category": "bollette",
+          "merchant": "Yada Energia Srl",
+          "amount": 54.69,
+          "original_amount": "-54,69",
+          "description": "Addebito SDD CORE Scad. 16/10/2025 Imp. 54.69 Creditor id. IT95XXX0000010879560968 Yada Energia Srl Id Mandato CJML412024001000218139 Debitore Zanotti Giacomo Rif. F251668763.2025-CT2024.218139",
+          "reason": "",
+          "memory_match": false
+        }
+      },
+      "parsed_json": {
+        "categorizations": [
+          {
+            "transaction_id": "tx_030",
+            "category": "spesa",
+            "merchant": "ITALMARK",
+            "amount": 2.68,
+            "original_amount": "-2,68",
+            "description": "Operazione Mastercard del 09/10/2025 alle ore 13:57 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in divisa=2.68 / Importo in Euro=2.68 presso ITALMARK - Transazione C-less"
+          },
+          {
+            "transaction_id": "tx_031",
+            "category": "not_expense",
+            "merchant": "PAGOPA-NEXI",
+            "amount": 6.78,
+            "original_amount": "-6,78",
+            "description": "Operazione Mastercard del 09/10/2025 alle ore 21:25 con Carta xxxxxxxxxxxx3352 Div=EUR Importo in divisa=6.78 / Importo in Euro=6.78 presso PAGOPA-NEXI"
+          },
+          {
+            "transaction_id": "tx_032",
+            "category": "vita sociale",
+            "merchant": "LA RONDINE - SOCIETA'",
+            "amount": 8.2,
+            "original_amount": "-8,20",
+            "description": "Operazione Mastercard del 10/10/2025 alle ore 08:33 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in divisa=8.2 / Importo in Euro=8.2 presso LA RONDINE - SOCIETA' - Transazione C-less"
+          },
+          {
+            "transaction_id": "tx_033",
+            "category": "auto",
+            "merchant": "DOCTOR CAR WASH",
+            "amount": 9.5,
+            "original_amount": "-9,50",
+            "description": "Operazione Mastercard del 11/10/2025 alle ore 12:05 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in divisa=9.5 / Importo in Euro=9.5 presso DOCTOR CAR WASH - Transazione C-less"
+          },
+          {
+            "transaction_id": "tx_034",
+            "category": "vita sociale",
+            "merchant": "GELATERIA SOTTOZERO",
+            "amount": 14.0,
+            "original_amount": "-14,00",
+            "description": "Operazione Mastercard del 11/10/2025 alle ore 18:20 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in divisa=14 / Importo in Euro=14 presso GELATERIA SOTTOZERO - Transazione C-less"
+          },
+          {
+            "transaction_id": "tx_035",
+            "category": "auto",
+            "merchant": "PARK PIAZZA VITTORIA",
+            "amount": 3.0,
+            "original_amount": "-3,00",
+            "description": "Operazione Mastercard del 11/10/2025 alle ore 21:17 con Carta xxxxxxxxxxxx3352 Div=EUR Importo in divisa=3 / Importo in Euro=3 presso PARK PIAZZA VITTORIA - - Transazione C-less"
+          },
+          {
+            "transaction_id": "tx_036",
+            "category": "shopping",
+            "merchant": "FRAGESA SRL",
+            "amount": 46.5,
+            "original_amount": "-46,50",
+            "description": "Operazione Mastercard del 11/10/2025 alle ore 20:53 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in divisa=46.5 / Importo in Euro=46.5 presso FRAGESA SRL - Transazione C-less"
+          },
+          {
+            "transaction_id": "tx_037",
+            "category": "trasporti",
+            "merchant": "CLESS TICKET ATM MI...",
+            "amount": 1.3,
+            "original_amount": "-1,30",
+            "description": "Pagamenti trasporti modalita' contactless. Operazione Mastercard del 12/10/2025 alle ore 11:35 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in divisa=1.3 / Importo in Euro=1.3 presso CLESS TICKET ATM MI..."
+          },
+          {
+            "transaction_id": "tx_038",
+            "category": "spesa",
+            "merchant": "ITALMARK ALBERTANO",
+            "amount": 4.42,
+            "original_amount": "-4,42",
+            "description": "Operazione Mastercard del 12/10/2025 alle ore 17:20 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in divisa=4.42 / Importo in Euro=4.42 presso ITALMARK ALBERTANO - Transazione C-less"
+          },
+          {
+            "transaction_id": "tx_039",
+            "category": "abbonamenti",
+            "merchant": "PayPal Europe S.a.r.l. et Cie S.C.A",
+            "amount": 69.0,
+            "original_amount": "-69,00",
+            "description": "Addebito SDD CORE Scad. 14/10/2025 Imp. 69 Creditor id. LU96ZZZ0000000000000000058 PayPal Europe S.a.r.l. et Cie S.C.A Id Mandato 54V22258E3N8U Debitore Giacomo Zanotti Rif. 1045440258442/PAYPAL"
+          },
+          {
+            "transaction_id": "tx_040",
+            "category": "spesa",
+            "merchant": "Esselunga S.p.A.",
+            "amount": 161.32,
+            "original_amount": "-161,32",
+            "description": "Addebito SDD CORE Scad. 15/10/2025 Imp. 161.32 Creditor id. IT170010000011903970157 Esselunga S.p.A. Id Mandato I65084A000000000199053 Debitore GIACOMO ZANOTTI Rif. ADDEB.FIDATY ORO 20835429-2025-09 S..."
+          },
+          {
+            "transaction_id": "tx_041",
+            "category": "abbonamenti",
+            "merchant": "PayPal Europe S.a.r.l. et Cie S.C.A",
+            "amount": 10.0,
+            "original_amount": "-10,00",
+            "description": "Addebito SDD CORE Scad. 15/10/2025 Imp. 10 Creditor id. LU96ZZZ0000000000000000058 PayPal Europe S.a.r.l. et Cie S.C.A Id Mandato 54V22258E3N8U Debitore Giacomo Zanotti Rif. 1045501702327/PAYPAL"
+          },
+          {
+            "transaction_id": "tx_042",
+            "category": "carburante",
+            "merchant": "ACQU.DISTRIB.AUTOMATI",
+            "amount": 2.5,
+            "original_amount": "-2,50",
+            "description": "Operazione Mastercard del 14/10/2025 alle ore 17:31 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in divisa=2.5 / Importo in Euro=2.5 presso ACQU.DISTRIB.AUTOMATI - Transazione C-less"
+          },
+          {
+            "transaction_id": "tx_043",
+            "category": "bollette",
+            "merchant": "Yada Energia Srl",
+            "amount": 47.18,
+            "original_amount": "-47,18",
+            "description": "Addebito SDD CORE Scad. 16/10/2025 Imp. 47.18 Creditor id. IT95XXX0000010879560968 Yada Energia Srl Id Mandato CJML412024001000218138 Debitore Zanotti Giacomo Rif. F252851342.2025-CT2024.218138"
+          },
+          {
+            "transaction_id": "tx_044",
+            "category": "bollette",
+            "merchant": "Yada Energia Srl",
+            "amount": 54.69,
+            "original_amount": "-54,69",
+            "description": "Addebito SDD CORE Scad. 16/10/2025 Imp. 54.69 Creditor id. IT95XXX0000010879560968 Yada Energia Srl Id Mandato CJML412024001000218139 Debitore Zanotti Giacomo Rif. F251668763.2025-CT2024.218139"
+          }
+        ],
+        "new_categories_created": [],
+        "reasoning_summary": "Categorizzazione delle transazioni in base al merchant e alla descrizione. Pagamenti a PayPal classificati come abbonamenti, supermercati come spesa, gelaterie e ristoranti come vita sociale, autolavaggio e parcheggio come auto, distributori automatici come carburante, aziende di energia come bollette e ATM come trasporti. Pagopa è stato classificato come not_expense.",
+        "batch_info": "Batch 3"
+      },
+      "metadata": {
+        "model_version": "gemini-2.0-flash",
+        "total_tokens": 5406,
+        "prompt_tokens": 2942,
+        "response_tokens": 2464,
+        "finish_reason": "STOP"
+      },
+      "batch_num": 3,
+      "batch_size": 15,
+      "memory_hits": 8,
+      "success": true
+    },
+    {
+      "categorizations": {
+        "tx_045": "abbonamenti",
+        "tx_046": "abbonamenti",
+        "tx_047": "abbonamenti"
+      },
+      "all_results": {
+        "tx_045": {
+          "category": "abbonamenti",
+          "merchant": "PAYPAL EUROPE S.A.R.L. ET CIE S.C.A",
+          "amount": 4.4,
+          "original_amount": "-4,40",
+          "description": "Addebito SDD CORE Scad. 16/10/2025 Imp. 4.4 Creditor id. LU96ZZZ0000000000000000058 PayPal Europe S.a.r.l. et Cie S.C.A Id Mandato 54V22258E3N8U Debitore Giacomo Zanotti Rif. 1045508932933/PAYPAL",
+          "reason": "",
+          "memory_match": false
+        },
+        "tx_046": {
+          "category": "abbonamenti",
+          "merchant": "PAYPAL EUROPE S.A.R.L. ET CIE S.C.A",
+          "amount": 335.5,
+          "original_amount": "-335,50",
+          "description": "Addebito SDD CORE Scad. 16/10/2025 Imp. 335.5 Creditor id. LU96ZZZ0000000000000000058 PayPal Europe S.a.r.l. et Cie S.C.A Id Mandato 54V22258E3N8U Debitore Giacomo Zanotti Rif. 1045523943074/PAYPAL",
+          "reason": "",
+          "memory_match": false
+        },
+        "tx_047": {
+          "category": "abbonamenti",
+          "merchant": "PAYPAL EUROPE S.A.R.L. ET CIE S.C.A",
+          "amount": 10.0,
+          "original_amount": "-10,00",
+          "description": "Addebito SDD CORE Scad. 16/10/2025 Imp. 10 Creditor id. LU96ZZZ0000000000000000058 PayPal Europe S.a.r.l. et Cie S.C.A Id Mandato 54V22258E3N8U Debitore Giacomo Zanotti Rif. 1045522930880/PAYPAL",
+          "reason": "",
+          "memory_match": false
+        },
+        "tx_048": {
+          "category": "not_expense",
+          "merchant": "",
+          "amount": null,
+          "original_amount": null,
+          "description": "Saldo finale",
+          "reason": "",
+          "memory_match": false
+        }
+      },
+      "parsed_json": {
+        "categorizations": [
+          {
+            "transaction_id": "tx_045",
+            "category": "abbonamenti",
+            "merchant": "PAYPAL EUROPE S.A.R.L. ET CIE S.C.A",
+            "amount": 4.4,
+            "original_amount": "-4,40",
+            "description": "Addebito SDD CORE Scad. 16/10/2025 Imp. 4.4 Creditor id. LU96ZZZ0000000000000000058 PayPal Europe S.a.r.l. et Cie S.C.A Id Mandato 54V22258E3N8U Debitore Giacomo Zanotti Rif. 1045508932933/PAYPAL"
+          },
+          {
+            "transaction_id": "tx_046",
+            "category": "abbonamenti",
+            "merchant": "PAYPAL EUROPE S.A.R.L. ET CIE S.C.A",
+            "amount": 335.5,
+            "original_amount": "-335,50",
+            "description": "Addebito SDD CORE Scad. 16/10/2025 Imp. 335.5 Creditor id. LU96ZZZ0000000000000000058 PayPal Europe S.a.r.l. et Cie S.C.A Id Mandato 54V22258E3N8U Debitore Giacomo Zanotti Rif. 1045523943074/PAYPAL"
+          },
+          {
+            "transaction_id": "tx_047",
+            "category": "abbonamenti",
+            "merchant": "PAYPAL EUROPE S.A.R.L. ET CIE S.C.A",
+            "amount": 10.0,
+            "original_amount": "-10,00",
+            "description": "Addebito SDD CORE Scad. 16/10/2025 Imp. 10 Creditor id. LU96ZZZ0000000000000000058 PayPal Europe S.a.r.l. et Cie S.C.A Id Mandato 54V22258E3N8U Debitore Giacomo Zanotti Rif. 1045522930880/PAYPAL"
+          },
+          {
+            "transaction_id": "tx_048",
+            "category": "not_expense",
+            "merchant": null,
+            "amount": null,
+            "original_amount": null,
+            "description": "Saldo finale"
+          }
+        ],
+        "new_categories_created": [],
+        "reasoning_summary": "Identificate tre transazioni come spese relative a PayPal Europe S.a.r.l. et Cie S.C.A, classificate come abbonamenti in base alle categorizzazioni precedenti. La quarta transazione è un saldo finale e non è classificata come spesa.",
+        "batch_info": "Batch 4"
+      },
+      "metadata": {
+        "model_version": "gemini-2.0-flash",
+        "total_tokens": 2006,
+        "prompt_tokens": 1241,
+        "response_tokens": 765,
+        "finish_reason": "STOP"
+      },
+      "batch_num": 4,
+      "batch_size": 4,
+      "memory_hits": 0,
+      "success": true
+    }
+  ],
+  "total_memory_hits": 18,
+  "memory_size": 29,
+  "coverage": 83.6734693877551
+}

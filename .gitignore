@@ -163,11 +163,6 @@ ehthumbs_vista.db
 # Linux
 *~
 
-# Project-specific
-# CSV uploads
-uploads/
-*.csv
-
 # Database files
 *.db
 *.sqlite
@@ -177,10 +172,6 @@ uploads/
 config/secrets.yaml
 config/local.yaml
 .secrets
-
-# Logs
-logs/
-*.log
 
 # Temporary files
 tmp/

@@ -1,247 +1,142 @@
 {
-  "ASPIT TRENTO SUD": {
-    "category": "trasporti",
-    "count": 1,
-    "description": "Operazione Mastercard del 30/08/2025 alle ore 11:05 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in di"
+  "GIACOMO ZANOTTI": {
+    "category": "vita sociale",
+    "count": 2,
+    "description": "BONIFICO DA VOI DISPOSTO CRO 16953943601 A FAVORE DI Giacomo Zanotti C. BENEF. IT64N0357601601010003"
   },
-  "DOCTOR CAR WASH": {
-    "category": "auto",
-    "count": 1,
-    "description": "Operazione Mastercard del 30/08/2025 alle ore 16:45 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in di"
-  },
-  "DISTRIBUTORE Q8 COVI": {
+  "RETITALIA BRESCIA": {
     "category": "carburante",
     "count": 1,
-    "description": "Operazione Mastercard del 30/08/2025 alle ore 08:23 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in di"
-  },
-  "RISTORANTE 3CIME DI SI": {
-    "category": "vita sociale",
-    "count": 1,
-    "description": "Operazione Mastercard del 30/08/2025 alle ore 08:45 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in di"
+    "description": "Operazione Mastercard del 29/09/2025 alle ore 08:35 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in di"
   },
   "ITALMARK": {
     "category": "spesa",
-    "count": 3,
-    "description": "Operazione Mastercard del 31/08/2025 alle ore 19:18 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in di"
+    "count": 2,
+    "description": "Operazione Mastercard del 29/09/2025 alle ore 14:44 con Carta xxxxxxxxxxxx3352 Div=EUR Importo in di"
   },
-  "ARICI FIORI GARDEN STO": {
-    "category": "casa",
-    "count": 1,
-    "description": "Operazione Mastercard del 31/08/2025 alle ore 11:55 con Carta xxxxxxxxxxxx3352 Div=EUR Importo in di"
-  },
-  "AMAZON EU S.A R.L.": {
+  "BILU & BILEI STORE": {
     "category": "shopping",
-    "count": 3,
-    "description": "Addebito SDD CORE Scad. 02/09/2025 Imp. 38.64 Creditor id. DE24ZZZ00000561652 AMAZON EU S.A R.L. AMA"
+    "count": 1,
+    "description": "Operazione Mastercard del 29/09/2025 alle ore 14:55 con Carta xxxxxxxxxxxx3352 Div=EUR Importo in di"
+  },
+  "PAYPAL EUROPE S.A.R.L. ET CIE S.C.A": {
+    "category": "trasporti",
+    "count": 6,
+    "description": "Addebito SDD CORE Scad. 01/10/2025 Imp. 2.2 Creditor id. LU96ZZZ0000000000000000058 PayPal Europe S."
+  },
+  "125": {
+    "category": "vita sociale",
+    "count": 1,
+    "description": "Operazione Mastercard del 01/10/2025 alle ore 12:41 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in di"
+  },
+  "WWW.A2ACICLOIDRICO.EU": {
+    "category": "bollette",
+    "count": 1,
+    "description": "Operazione Mastercard del 01/10/2025 alle ore 08:19 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in di"
+  },
+  "METELLI FRUTTA SAS": {
+    "category": "spesa",
+    "count": 2,
+    "description": "Operazione Mastercard del 02/10/2025 alle ore 08:30 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in di"
+  },
+  "SALE E PEPE 2": {
+    "category": "vita sociale",
+    "count": 1,
+    "description": "Operazione Mastercard del 02/10/2025 alle ore 08:34 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in di"
+  },
+  "G.FOGAZZI NEGOZIO DI A": {
+    "category": "shopping",
+    "count": 1,
+    "description": "Operazione Mastercard del 02/10/2025 alle ore 08:42 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in di"
   },
   "AIDA PEDRETTI": {
     "category": "affitto",
     "count": 1,
-    "description": "BONIFICO DA VOI DISPOSTO CRO 16714118604 A FAVORE DI Aida Pedretti C. BENEF. IT22O050341120000000001"
+    "description": "BONIFICO DA VOI DISPOSTO CRO 16836793407 A FAVORE DI Aida Pedretti C. BENEF. IT22O050341120000000001"
   },
-  "CONAD 7870": {
-    "category": "spesa",
+  "FARMACIA FORNACI SRL": {
+    "category": "spese mediche",
     "count": 1,
-    "description": "Operazione Mastercard del 02/09/2025 alle ore 18:24 con Carta xxxxxxxxxxxx3352 Div=EUR Importo in di"
-  },
-  "PAYPAL EUROPE S.A.R.L. ET CIE S.C.A": {
-    "category": "abbonamenti",
-    "count": 9,
-    "description": "Addebito SDD CORE Scad. 04/09/2025 Imp. 17.5 Creditor id. LU96ZZZ0000000000000000058 PayPal Europe S"
-  },
-  "PIZZART DI CIUFFO MAR": {
-    "category": "vita sociale",
-    "count": 1,
-    "description": "Operazione Mastercard del 06/09/2025 alle ore 21:20 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in di"
+    "description": "Operazione Mastercard del 06/10/2025 alle ore 08:39 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in di"
   },
   "TELECOM ITALIA SPA O TIM S P A": {
     "category": "bollette",
     "count": 1,
-    "description": "Addebito SDD CORE Scad. 08/09/2025 Imp. 34.8 Creditor id. IT390030000000488410010 TELECOM ITALIA SPA"
+    "description": "Addebito SDD CORE Scad. 08/10/2025 Imp. 34.8 Creditor id. IT390030000000488410010 TELECOM ITALIA SPA"
   },
-  "IOVIS SOCIETA' A RESPONSABILITA' LIMITATA": {
-    "category": "vacanze",
-    "count": 2,
-    "description": "BONIFICO DA VOI DISPOSTO CRO 16855925608 A FAVORE DI Iovis Societa' A Responsabilita' Limitata C. BE"
-  },
-  "RETITALIA BRESCIA": {
-    "category": "carburante",
-    "count": 3,
-    "description": "Operazione Mastercard del 08/09/2025 alle ore 08:26 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in di"
-  },
-  "FERRARINI SAS IDEA VER": {
-    "category": "casa",
-    "count": 2,
-    "description": "Operazione Mastercard del 08/09/2025 alle ore 08:29 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in di"
-  },
-  "CHRISTIAN MANFREDI": {
-    "category": "regali",
+  "ALESSIA CASTELLI": {
+    "category": "vita sociale",
     "count": 1,
-    "description": "BONIFICO DA VOI DISPOSTO CRO 16863109307 A FAVORE DI Christian Manfredi C. BENEF. IT52D0338501601100"
+    "description": "BONIFICO DA VOI DISPOSTO CRO 16993028707 A FAVORE DI Alessia castelli C. BENEF. IT08G020081122200010"
+  },
+  "CLESS TICKET ATM MI...": {
+    "category": "trasporti",
+    "count": 2,
+    "description": "Pagamenti trasporti modalita' contactless. Operazione Mastercard del 07/10/2025 alle ore 18:06 con C"
   },
   "AMAZON PAYMENTS EUROPE S.C.A. AMAZON PAYMENTS EUROPE SCA": {
     "category": "shopping",
     "count": 1,
-    "description": "Addebito SDD CORE Scad. 10/09/2025 Imp. 15.59 Creditor id. DE94ZZZ00000561653 AMAZON PAYMENTS EUROPE"
+    "description": "Addebito SDD CORE Scad. 10/10/2025 Imp. 24.96 Creditor id. DE94ZZZ00000561653 AMAZON PAYMENTS EUROPE"
   },
-  "MI SCIOLGO SRL": {
+  "AMAZON EU S.A R.L.": {
+    "category": "shopping",
+    "count": 1,
+    "description": "Addebito SDD CORE Scad. 10/10/2025 Imp. 8.95 Creditor id. DE24ZZZ00000561652 AMAZON EU S.A R.L. AMAZ"
+  },
+  "PAGOPA-NEXI": {
+    "category": "bollette",
+    "count": 1,
+    "description": "Operazione Mastercard del 09/10/2025 alle ore 21:25 con Carta xxxxxxxxxxxx3352 Div=EUR Importo in di"
+  },
+  "LA RONDINE - SOCIETA'": {
     "category": "vita sociale",
     "count": 1,
-    "description": "Operazione Mastercard del 09/09/2025 alle ore 13:44 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in di"
+    "description": "Operazione Mastercard del 10/10/2025 alle ore 08:33 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in di"
   },
-  "MNE*95022544MONEYNET_S": {
-    "category": "shopping",
+  "DOCTOR CAR WASH": {
+    "category": "auto",
     "count": 1,
-    "description": "Operazione Mastercard del 09/09/2025 alle ore 16:14 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in di"
+    "description": "Operazione Mastercard del 11/10/2025 alle ore 12:05 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in di"
   },
-  "G.FOGAZZI NEGOZIO DI A": {
-    "category": "shopping",
-    "count": 2,
-    "description": "Operazione Mastercard del 10/09/2025 alle ore 08:26 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in di"
-  },
-  "METELLI FRUTTA SAS": {
-    "category": "spesa",
-    "count": 3,
-    "description": "Operazione Mastercard del 11/09/2025 alle ore 08:30 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in di"
-  },
-  "PHOTOBOX SAS": {
-    "category": "shopping",
+  "GELATERIA SOTTOZERO": {
+    "category": "vita sociale",
     "count": 1,
-    "description": "Operazione Mastercard del 11/09/2025 alle ore 21:39 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in di"
+    "description": "Operazione Mastercard del 11/10/2025 alle ore 18:20 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in di"
   },
-  "FARMACIA FORNACI SRL": {
-    "category": "spese mediche",
-    "count": 2,
-    "description": "Operazione Mastercard del 12/09/2025 alle ore 08:26 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in di"
-  },
-  "ESSELUNGA BRESCIA MI M": {
-    "category": "spesa",
+  "PARK PIAZZA VITTORIA -": {
+    "category": "auto",
     "count": 1,
-    "description": "Operazione Mastercard del 12/09/2025 alle ore 14:53 con Carta xxxxxxxxxxxx3352 Div=EUR Importo in di"
+    "description": "Operazione Mastercard del 11/10/2025 alle ore 21:17 con Carta xxxxxxxxxxxx3352 Div=EUR Importo in di"
   },
-  "GEMMA MUSICCO": {
-    "category": "regali",
+  "FRAGESA SRL": {
+    "category": "carburante",
     "count": 1,
-    "description": "BONIFICO DA VOI DISPOSTO CRO 16880125512 A FAVORE DI Gemma musicco C. BENEF. IT03E0347501605CC001255"
+    "description": "Operazione Mastercard del 11/10/2025 alle ore 20:53 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in di"
   },
   "ITALMARK ALBERTANO": {
     "category": "spesa",
-    "count": 2,
-    "description": "Operazione Mastercard del 13/09/2025 alle ore 13:55 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in di"
+    "count": 1,
+    "description": "Operazione Mastercard del 12/10/2025 alle ore 17:20 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in di"
   },
   "ESSELUNGA S.P.A.": {
     "category": "spesa",
     "count": 1,
-    "description": "Addebito SDD CORE Scad. 15/09/2025 Imp. 58.32 Creditor id. IT170010000011903970157 Esselunga S.p.A. "
+    "description": "Addebito SDD CORE Scad. 15/10/2025 Imp. 161.32 Creditor id. IT170010000011903970157 Esselunga S.p.A."
   },
-  "ASPIT PALAZZOLO": {
-    "category": "trasporti",
+  "ACQU.DISTRIB.AUTOMATI": {
+    "category": "auto",
     "count": 1,
-    "description": "Operazione Mastercard del 14/09/2025 alle ore 14:52 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in di"
+    "description": "Operazione Mastercard del 14/10/2025 alle ore 17:31 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in di"
   },
   "YADA ENERGIA SRL": {
     "category": "bollette",
-    "count": 1,
-    "description": "Addebito SDD CORE Scad. 16/09/2025 Imp. 54.69 Creditor id. IT95XXX0000010879560968 Yada Energia Srl "
-  },
-  "TO.MARKET": {
-    "category": "spesa",
     "count": 2,
-    "description": "Operazione Mastercard del 15/09/2025 alle ore 07:21 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in di"
+    "description": "Addebito SDD CORE Scad. 16/10/2025 Imp. 47.18 Creditor id. IT95XXX0000010879560968 Yada Energia Srl "
   },
-  "TODO MODO": {
-    "category": "shopping",
-    "count": 2,
-    "description": "Operazione Mastercard del 15/09/2025 alle ore 13:42 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in di"
-  },
-  "SMOONKEY SRL": {
-    "category": "shopping",
-    "count": 1,
-    "description": "Operazione Mastercard del 18/09/2025 alle ore 07:42 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in di"
-  },
-  "TAXI": {
+  "PAYPAL EUROPE S.A.R.L.": {
     "category": "trasporti",
     "count": 1,
-    "description": "Operazione Mastercard del 18/09/2025 alle ore 19:14 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in di"
-  },
-  "BUONRISTORO": {
-    "category": "vita sociale",
-    "count": 1,
-    "description": "Operazione Mastercard del 19/09/2025 alle ore 09:29 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in di"
-  },
-  "GIANGUSTO RETAIL SRL .": {
-    "category": "vita sociale",
-    "count": 1,
-    "description": "Operazione Mastercard del 20/09/2025 alle ore 20:13 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in di"
-  },
-  "CLESS TICKET ATM MI": {
-    "category": "trasporti",
-    "count": 1,
-    "description": "Pagamenti trasporti modalita' contactless. Operazione Mastercard del 19/09/2025 alle ore 18:28 con C"
-  },
-  "AMAZON PAYMENTS EUROPE S.C.A.": {
-    "category": "abbonamenti",
-    "count": 1,
-    "description": "Addebito SDD CORE Scad. 23/09/2025 Imp. 26.61 Creditor id. DE94ZZZ00000561653 AMAZON PAYMENTS EUROPE"
-  },
-  "LA RONDINE - SOCIETA'": {
-    "category": "vita sociale",
-    "count": 2,
-    "description": "Operazione Mastercard del 22/09/2025 alle ore 08:35 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in di"
-  },
-  "ALCOTT A032": {
-    "category": "shopping",
-    "count": 1,
-    "description": "Operazione Mastercard del 23/09/2025 alle ore 17:59 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in di"
-  },
-  "CAMICISSIMA": {
-    "category": "shopping",
-    "count": 1,
-    "description": "Operazione Mastercard del 23/09/2025 alle ore 18:41 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in di"
-  },
-  "BRICCOCAFE'": {
-    "category": "vita sociale",
-    "count": 1,
-    "description": "Operazione Mastercard del 25/09/2025 alle ore 07:37 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in di"
-  },
-  "FNM*TRENORD TVM 201": {
-    "category": "trasporti",
-    "count": 1,
-    "description": "Pagamenti trasporti modalita' contactless. Operazione Mastercard del 25/09/2025 alle ore 08:56 con C"
-  },
-  "MERCATO CENTR.MILANO .": {
-    "category": "spesa",
-    "count": 2,
-    "description": "Operazione Mastercard del 25/09/2025 alle ore 20:46 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in di"
-  },
-  "STAZ.SERV. ESSO BEVANO": {
-    "category": "carburante",
-    "count": 1,
-    "description": "Operazione Mastercard del 27/09/2025 alle ore 12:13 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in di"
-  },
-  "ASPIT BRESCIA OVEST": {
-    "category": "trasporti",
-    "count": 1,
-    "description": "Operazione Mastercard del 27/09/2025 alle ore 12:42 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in di"
-  },
-  "CHIOSCO DELL'ANGOLO DI": {
-    "category": "vita sociale",
-    "count": 3,
-    "description": "Operazione Mastercard del 27/09/2025 alle ore 12:52 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in di"
-  },
-  "HERMES 2004ADS CAMPOG": {
-    "category": "shopping",
-    "count": 1,
-    "description": "Operazione Mastercard del 28/09/2025 alle ore 16:59 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in di"
-  },
-  "A21AP - AUTOVIA PADAN": {
-    "category": "trasporti",
-    "count": 1,
-    "description": "Operazione Mastercard del 28/09/2025 alle ore 19:06 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in di"
-  },
-  "REGIONE LOMBARDIA": {
-    "category": "bollette",
-    "count": 1,
-    "description": "Addebito SDD CORE Scad. 30/09/2025 Imp. 145.74 Creditor id. IT16TAD0000080050050154 REGIONE LOMBARDI"
+    "description": "Addebito SDD CORE Scad. 16/10/2025 Imp. 10 Creditor id. LU96ZZZ0000000000000000058 PayPal Europe S.a"
   }
 }
