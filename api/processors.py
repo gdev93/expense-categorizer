@@ -1,8 +1,9 @@
 # processors.py
-from django.db import transaction as db_transaction
 from datetime import datetime, date
 from decimal import Decimal, InvalidOperation
 from typing import List, Dict
+
+from django.db import transaction
 
 from agent.agent import ExpenseCategorizerAgent
 from .models import Transaction, Category, Merchant
@@ -119,24 +120,25 @@ class ExpenseUploadProcessor:
         print(f"{'=' * 60}\n")
 
         # Process each batch
-        for batch_num in range(total_batches):
-            start_idx = batch_num * self.batch_size
-            end_idx = start_idx + self.batch_size
-            batch = transactions[start_idx:end_idx]
+        with transaction.atomic():
+            for batch_num in range(total_batches):
+                start_idx = batch_num * self.batch_size
+                end_idx = start_idx + self.batch_size
+                batch = transactions[start_idx:end_idx]
 
-            # Process batch through agent
-            batch_result = self.agent.process_batch(batch, batch_num + 1)
+                # Process batch through agent
+                batch_result = self.agent.process_batch(batch, batch_num + 1)
 
-            # Persist results immediately after batch processing
-            if batch_result.get('success'):
-                persisted_count = self._persist_batch_results(batch, batch_result)
-                batch_result['persisted_count'] = persisted_count
-                print(f"💾 Batch {batch_num + 1} persisted: {persisted_count} transactions saved")
-            else:
-                batch_result['persisted_count'] = 0
-                print(f"⚠️  Batch {batch_num + 1} not persisted due to processing error")
+                # Persist results immediately after batch processing
+                if batch_result.get('success'):
+                    persisted_count = self._persist_batch_results(batch, batch_result)
+                    batch_result['persisted_count'] = persisted_count
+                    print(f"💾 Batch {batch_num + 1} persisted: {persisted_count} transactions saved")
+                else:
+                    batch_result['persisted_count'] = 0
+                    print(f"⚠️  Batch {batch_num + 1} not persisted due to processing error")
 
-            results.append(batch_result)
+                results.append(batch_result)
 
         # Calculate final statistics
         stats = _calculate_statistics(transactions, results)
@@ -168,63 +170,62 @@ class ExpenseUploadProcessor:
         all_results = batch_result.get('all_results', {})
         persisted_count = 0
 
-        with db_transaction.atomic():
-            for tx_data in batch:
-                tx_id = tx_data.get('id')
-                result = all_results.get(tx_id)
+        for tx_data in batch:
+            tx_id = tx_data.get('id')
+            result = all_results.get(tx_id)
 
-                if not result:
+            if not result:
+                continue
+
+            try:
+                # Extract and parse transaction data
+                transaction_date = _parse_date(tx_data)
+                amount = _parse_amount(result.get('amount', 0))
+                original_amount = result.get('original_amount', '')
+                description = result.get('description', '')
+                merchant_name = result.get('merchant', '')
+                category_name = result.get('category', '')
+
+                # Skip if not an expense
+                if category_name == 'not_expense':
                     continue
 
-                try:
-                    # Extract and parse transaction data
-                    transaction_date = _parse_date(tx_data)
-                    amount = _parse_amount(result.get('amount', 0))
-                    original_amount = result.get('original_amount', '')
-                    description = result.get('description', '')
-                    merchant_name = result.get('merchant', '')
-                    category_name = result.get('category', '')
-
-                    # Skip if not an expense
-                    if category_name == 'not_expense':
-                        continue
-
-                    # Get or create category
-                    category = None
-                    if category_name:
-                        category, _ = Category.objects.get_or_create(
-                            name=category_name,
-                            user=self.user,
-                            defaults={'is_default': False}
-                        )
-
-                    # Get or create merchant
-                    merchant = None
-                    if merchant_name:
-                        merchant, _ = Merchant.objects.get_or_create(
-                            name=merchant_name
-                        )
-
-                    # Create transaction
-                    Transaction.objects.create(
+                # Get or create category
+                category = None
+                if category_name:
+                    category, _ = Category.objects.get_or_create(
+                        name=category_name,
                         user=self.user,
-                        transaction_date=transaction_date,
-                        amount=amount,
-                        original_amount=original_amount,
-                        description=description,
-                        merchant=merchant,
-                        merchant_raw_name=merchant_name,
-                        category=category,
-                        status='categorized',
-                        confidence_score=None,
-                        modified_by_user=False
+                        defaults={'is_default': False}
                     )
 
-                    persisted_count += 1
+                # Get or create merchant
+                merchant = None
+                if merchant_name:
+                    merchant, _ = Merchant.objects.get_or_create(
+                        name=merchant_name
+                    )
 
-                except Exception as e:
-                    print(f"⚠️  Failed to persist transaction {tx_id}: {str(e)}")
-                    continue
+                # Create transaction
+                Transaction.objects.create(
+                    user=self.user,
+                    transaction_date=transaction_date,
+                    amount=amount,
+                    original_amount=original_amount,
+                    description=description,
+                    merchant=merchant,
+                    merchant_raw_name=merchant_name,
+                    category=category,
+                    status='categorized',
+                    confidence_score=None,
+                    modified_by_user=False
+                )
+
+                persisted_count += 1
+
+            except Exception as e:
+                print(f"⚠️  Failed to persist transaction {tx_id}: {str(e)}")
+                continue
 
         return persisted_count
 
