@@ -97,7 +97,7 @@ def parse_json_categorization(response_text: str) -> Dict:
 class ExpenseCategorizerAgent:
     """Agent for categorizing expense transactions using LLM"""
 
-    def __init__(self, api_key: Optional[str] = None, user_rules: Optional[List[str]] = None):
+    def __init__(self, api_key: str | None = None, user_rules: List[str] | None = None, available_categories: List[str]|None = None):
         """
         Args:
             api_key: Gemini API key (optional, will try env var)
@@ -105,12 +105,7 @@ class ExpenseCategorizerAgent:
         """
         self.api_key = api_key or get_api_key()
 
-        # Italian expense categories
-        self.available_categories = [
-            "casa", "spesa", "sport", "partita iva", "spese mediche",
-            "trasporti", "affitto", "abbonamenti", "shopping", "scuola",
-            "bollette", "vacanze", "regali", "vita sociale", "carburante", "auto"
-        ]
+        self.available_categories = available_categories or []
 
         # User-defined strict rules
         self.user_rules = user_rules or []

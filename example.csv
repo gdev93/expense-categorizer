@@ -47,3 +47,35 @@ DATA CONTABILE,DATA VALUTA,USCITE,ENTRATE,CAUSALE,DESCRIZIONE OPERAZIONE
 23/11/2025,22/11/2025,"-2,20",,Pagamento Carta,Pagamenti trasporti modalita contactless presso TRENITALIA
 24/11/2025,23/11/2025,"-72,00",,Pagamento Carta,Operazione Mastercard del 23/11/2025 alle ore 12:00 con Carta xxxxxxxxxxxx4521 presso OFFICINA AUTO ROSSI
 24/11/2025,23/11/2025,"-19,90",,Pagamento Carta,Operazione Mastercard del 23/11/2025 alle ore 15:45 con Carta xxxxxxxxxxxx4521 presso CARTOLERIA MODERNA
+25/11/2025,24/11/2025,"-56,30",,Pagamento Carta,Operazione Mastercard del 24/11/2025 alle ore 09:30 con Carta xxxxxxxxxxxx4521 presso MERCATO RIONALE FRUTTA VERDURA
+25/11/2025,24/11/2025,"-4,50",,Pagamento Carta,Operazione Mastercard del 24/11/2025 alle ore 13:00 con Carta xxxxxxxxxxxx4521 presso CAFFE LETTERARIO - Transazione C-less
+26/11/2025,25/11/2025,"-82,00",,Bonifico In Uscita,BONIFICO DA VOI DISPOSTO A FAVORE DI CONDOMINIO VIALE ROMA NOTE: Spese condominiali novembre
+26/11/2025,25/11/2025,"-15,20",,Pagamento Carta,Operazione Mastercard del 25/11/2025 alle ore 17:00 con Carta xxxxxxxxxxxx4521 presso VETERINARIO DR. GATTI
+27/11/2025,26/11/2025,"-33,80",,Pagamento Carta,Operazione Mastercard del 26/11/2025 alle ore 11:15 con Carta xxxxxxxxxxxx4521 presso BENNET SUPERMERCATO
+27/11/2025,26/11/2025,"-24,99",,Addebito Diretto,Addebito SDD CORE Scad. 27/11/2025 DISNEY PLUS Note: Abbonamento mensile
+28/11/2025,27/11/2025,"-45,00",,Pagamento Carta,Operazione Mastercard del 27/11/2025 alle ore 19:30 con Carta xxxxxxxxxxxx4521 presso ENOTECA VINO E SAPORI
+28/11/2025,27/11/2025,"-2,20",,Pagamento Carta,Pagamenti trasporti modalita contactless presso ATM MILANO
+29/11/2025,28/11/2025,"-67,50",,Pagamento Carta,Operazione Mastercard del 28/11/2025 alle ore 10:00 con Carta xxxxxxxxxxxx4521 presso TOYS CENTER GIOCATTOLI
+29/11/2025,28/11/2025,"-11,80",,Pagamento Carta,Operazione Mastercard del 28/11/2025 alle ore 14:45 con Carta xxxxxxxxxxxx4521 presso EDICOLA PIAZZA GARIBALDI
+30/11/2025,29/11/2025,"-38,00",,Pagamento Carta,Operazione Mastercard del 29/11/2025 alle ore 20:15 con Carta xxxxxxxxxxxx4521 presso TAMOIL STAZIONE SERVIZIO
+30/11/2025,29/11/2025,"-92,00",,Bonifico In Uscita,BONIFICO DA VOI DISPOSTO A FAVORE DI CENTRO STUDI ITALIA NOTE: Corso inglese dicembre
+01/12/2025,30/11/2025,"-14,90",,Pagamento Carta,Operazione Mastercard del 30/11/2025 alle ore 12:00 con Carta xxxxxxxxxxxx4521 presso MCDONALD'S MILANO - Transazione C-less
+01/12/2025,30/11/2025,"-6,50",,Pagamento Carta,Operazione Mastercard del 30/11/2025 alle ore 16:20 con Carta xxxxxxxxxxxx4521 presso LAVAGGIO AUTO EXPRESS
+02/12/2025,01/12/2025,"-58,70",,Pagamento Carta,Operazione Mastercard del 01/12/2025 alle ore 09:45 con Carta xxxxxxxxxxxx4521 presso PAM PANORAMA SUPERMERCATO
+02/12/2025,01/12/2025,"-180,00",,Bonifico In Uscita,BONIFICO DA VOI DISPOSTO A FAVORE DI STUDIO LEGALE ROSSI NOTE: Consulenza legale
+03/12/2025,02/12/2025,"-22,50",,Pagamento Carta,Operazione Mastercard del 02/12/2025 alle ore 18:00 con Carta xxxxxxxxxxxx4521 presso OSTERIA DEL CORSO
+03/12/2025,02/12/2025,"-49,00",,Pagamento Carta,Operazione Mastercard del 02/12/2025 alle ore 15:30 con Carta xxxxxxxxxxxx4521 presso OVS ABBIGLIAMENTO
+04/12/2025,03/12/2025,"-7,90",,Addebito Diretto,Addebito SDD CORE Scad. 04/12/2025 PayPal Europe S.a.r.l. Rif. DAZN SPORT
+04/12/2025,03/12/2025,"-36,20",,Pagamento Carta,Operazione Mastercard del 03/12/2025 alle ore 11:00 con Carta xxxxxxxxxxxx4521 presso FERRAMENTA MODERNA
+05/12/2025,04/12/2025,"-85,00",,Bonifico In Uscita,BONIFICO DA VOI DISPOSTO A FAVORE DI MARIA BIANCHI NOTE: Regalo matrimonio
+05/12/2025,04/12/2025,"-2,20",,Pagamento Carta,Pagamenti trasporti modalita contactless presso TRENORD
+06/12/2025,05/12/2025,"-44,80",,Pagamento Carta,Operazione Mastercard del 05/12/2025 alle ore 13:30 con Carta xxxxxxxxxxxx4521 presso ACQUA & SAPONE DROGHERIA
+06/12/2025,05/12/2025,"-16,50",,Pagamento Carta,Operazione Mastercard del 05/12/2025 alle ore 20:00 con Carta xxxxxxxxxxxx4521 presso PUB IRISH CORNER
+07/12/2025,06/12/2025,"-73,00",,Pagamento Carta,Operazione Mastercard del 06/12/2025 alle ore 10:30 con Carta xxxxxxxxxxxx4521 presso KASANOVA CASA
+07/12/2025,06/12/2025,"-12,00",,Pagamento Carta,Operazione Mastercard del 06/12/2025 alle ore 16:45 con Carta xxxxxxxxxxxx4521 presso PANIFICIO ARTIGIANALE
+08/12/2025,07/12/2025,"-39,90",,Pagamento Carta,Operazione Mastercard del 07/12/2025 alle ore 14:00 con Carta xxxxxxxxxxxx4521 presso TIGOTA PRODOTTI BELLEZZA
+08/12/2025,07/12/2025,"-5,80",,Pagamento Carta,Operazione Mastercard del 07/12/2025 alle ore 08:15 con Carta xxxxxxxxxxxx4521 presso BAR STAZIONE - Transazione C-less
+09/12/2025,08/12/2025,"-110,00",,Bonifico In Uscita,BONIFICO DA VOI DISPOSTO A FAVORE DI ASL MILANO NOTE: Ticket sanitari
+09/12/2025,08/12/2025,"-28,40",,Pagamento Carta,Operazione Mastercard del 08/12/2025 alle ore 19:00 con Carta xxxxxxxxxxxx4521 presso KEBAB HOUSE
+10/12/2025,09/12/2025,"-62,80",,Pagamento Carta,Operazione Mastercard del 09/12/2025 alle ore 11:30 con Carta xxxxxxxxxxxx4521 presso UNIEURO ELETTRONICA
+10/12/2025,09/12/2025,"-18,00",,Pagamento Carta,Operazione Mastercard del 09/12/2025 alle ore 15:00 con Carta xxxxxxxxxxxx4521 presso OTTICO VISTA CHIARA

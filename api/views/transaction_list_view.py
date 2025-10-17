@@ -55,7 +55,6 @@ class TransactionListView(LoginRequiredMixin, ListView):
 
         # Calculate summary statistics
         user_transactions = Transaction.objects.filter(user=self.request.user)
-
         context['total_count'] = user_transactions.count()
         context['total_amount'] = user_transactions.aggregate(
             total=Sum('amount')

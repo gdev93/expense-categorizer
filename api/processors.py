@@ -4,6 +4,7 @@ from decimal import Decimal, InvalidOperation
 from typing import List, Dict
 
 from django.db import transaction
+from django.db.models import Count
 
 from agent.agent import ExpenseCategorizerAgent
 from .models import Transaction, Category, Merchant
@@ -90,7 +91,8 @@ class ExpenseUploadProcessor:
     - Progress tracking and logging
     """
 
-    def __init__(self, user, batch_size: int = 15, user_rules: List[str] = None):
+    def __init__(self, user, batch_size: int = 15, user_rules: List[str] = None,
+                 available_categories: List[str] | None = None):
         """
         Args:
             user: Django user object
@@ -99,8 +101,7 @@ class ExpenseUploadProcessor:
         """
         self.user = user
         self.batch_size = batch_size
-        self.user_rules = user_rules or []
-        self.agent = ExpenseCategorizerAgent(user_rules=self.user_rules)
+        self.agent = ExpenseCategorizerAgent(user_rules=user_rules, available_categories=available_categories)
 
     def process_transactions(self, transactions: List[Dict[str, str]]) -> Dict:
         """
@@ -169,11 +170,15 @@ class ExpenseUploadProcessor:
         """
         all_results = batch_result.get('all_results', {})
         persisted_count = 0
-
+        existing_transactions = (Transaction.objects
+                                 .values('amount', 'merchant_raw_name', 'transaction_date')  # Group by these fields
+                                 .annotate(count=Count('id'))  # Count the number of transactions in each group
+                                 .filter(count__gte=1)  # Keep only the groups (combinations) with a count > 1
+                                 .values_list('amount', 'merchant_raw_name','transaction_date', flat=False)
+                                 )
         for tx_data in batch:
             tx_id = tx_data.get('id')
             result = all_results.get(tx_id)
-
             if not result:
                 continue
 
@@ -189,7 +194,8 @@ class ExpenseUploadProcessor:
                 # Skip if not an expense
                 if category_name == 'not_expense':
                     continue
-
+                if (amount, merchant_name, transaction_date) in existing_transactions:
+                    continue
                 # Get or create category
                 category = None
                 if category_name:
@@ -228,4 +234,3 @@ class ExpenseUploadProcessor:
                 continue
 
         return persisted_count
-

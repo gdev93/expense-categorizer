@@ -8,6 +8,7 @@ import csv
 import io
 from typing import List, Dict
 
+from api.models import Category, Rule
 from api.processors import ExpenseUploadProcessor
 
 
@@ -88,17 +89,14 @@ class CSVUploadView(LoginRequiredMixin, FormView):
             transactions = _prepare_transactions(csv_data)
 
             # Get user rules
-            # TODO: Fetch user rules from database
-            user_rules = [
-                "Every PayPal transaction with amounts 2.2, 69.0, or 10.0 MUST be categorized as 'trasporti' (transports).",
-                "RETITALIA is a fuel distributor and MUST ALWAYS be categorized as 'carburante' (fuel)."
-            ]
+            user_rules = list(Rule.objects.filter(user=self.request.user, is_active=True).order_by('priority').values_list('text_content', flat=True))
 
             # Process transactions using processor
             processor = ExpenseUploadProcessor(
                 user=self.request.user,
                 batch_size=self.get_batch_size(),
-                user_rules=user_rules
+                user_rules=user_rules,
+                available_categories=list(Category.objects.filter(user=self.request.user).values_list('name', flat=True))
             )
 
             result = processor.process_transactions(transactions)

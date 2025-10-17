@@ -112,26 +112,15 @@ class Transaction(models.Model):
 
 
 class Rule(models.Model):
-    """Keyword-based categorization rules"""
-    RULE_TYPES = [
-        ('keyword', 'Keyword Match'),
-        ('merchant', 'Merchant Match'),
-        ('amount', 'Amount Match'),
-    ]
-
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='rules'
     )
-    rule_type = models.CharField(max_length=20, choices=RULE_TYPES, default='keyword')
-    keyword = models.CharField(max_length=255)  # What to match
-    category = models.ForeignKey(
-        Category,
-        on_delete=models.CASCADE,
-        related_name='rules'
+    text_content = models.TextField(
+        verbose_name='Rule Text'  # Uses TextField for more flexible content
     )
-    priority = models.IntegerField(default=0)  # Higher = applied first
+    priority = models.IntegerField(default=0)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -141,6 +130,3 @@ class Rule(models.Model):
         indexes = [
             models.Index(fields=['user', 'is_active']),
         ]
-
-    def __str__(self):
-        return f"{self.keyword} → {self.category.name}"
