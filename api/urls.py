@@ -15,13 +15,18 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.urls import path
+from django.views.generic import RedirectView
 
-from api.views import login_form, index, authenticate_user, register_form, create_user
+from api.entry_point_views import login_form, index, authenticate_user, register_form, create_user
+from api.views.data_upload_view import CSVUploadView
+from api.views.transaction_list_view import TransactionListView
 
 urlpatterns = [
     path("accounts/", login_form, name="login_form"),
     path("accounts/authenticate/", authenticate_user, name="authenticate_user"),
     path('accounts/register/', register_form, name='register_form'),
     path('accounts/create/', create_user, name='create_user'),
-    path("", index, name="entry_point")
+    path('transactions/upload/', CSVUploadView.as_view(), name='transactions_upload'),
+    path('transactions/', TransactionListView.as_view(), name='transaction_list'),
+    path("", RedirectView.as_view(url="transactions/upload/"), name="entry_point")
 ]
