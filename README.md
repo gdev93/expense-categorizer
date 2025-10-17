@@ -85,6 +85,6 @@ pip install pandas scikit-learn numpy requests
 python agent.py
 ```
 ## How to see the results.
-Check the `output.json` file. Its content should be copied in the data field in the [index.html](index.html).
+Check the `output.json` file. Its content should be copied in the data field in the [index.html](templates/main/index.html).
 The transaction data is real data.
 

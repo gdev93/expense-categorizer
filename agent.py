@@ -125,20 +125,23 @@ def extract_metadata(response: Dict) -> Dict:
     }
 
 
-class PersistentMemoryPipeline:
-    def __init__(self, csv_file_path: str, memory_file: str = "classification_memory.json",
+def normalize_merchant(merchant: str) -> str:
+    """Normalize merchant name for consistent matching"""
+    if not merchant:
+        return ""
+    return merchant.upper().strip().replace("  ", " ")
+
+
+class CategorizationAgent:
+    def __init__(self, csv_file_path: str,
                  api_key: Optional[str] = None, user_rules: Optional[List[str]] = None):
         """
-        Initialize pipeline with persistent memory
-
         Args:
             csv_file_path: Path to the CSV file
-            memory_file: Path to memory file for storing classifications
             api_key: Gemini API key (optional, will try env var)
             user_rules: List of strict user-defined categorization rules
         """
         self.csv_file_path = csv_file_path
-        self.memory_file = memory_file
         self.api_key = api_key or get_api_key()
         self.batch_size = 15
         self.similarity_threshold = 0.8
@@ -154,84 +157,8 @@ class PersistentMemoryPipeline:
         # User-defined strict rules
         self.user_rules = user_rules or []
 
-        # Load existing memory
-        self.classification_memory = self.load_memory()
-        print(f"💾 Loaded {len(self.classification_memory)} classifications from memory")
-
         if self.user_rules:
             print(f"📋 Loaded {len(self.user_rules)} user-defined strict rules")
-
-    def load_memory(self) -> Dict[str, Dict[str, Any]]:
-        """Load previous classifications from file"""
-        try:
-            if os.path.exists(self.memory_file):
-                with open(self.memory_file, 'r', encoding='utf-8') as f:
-                    data = json.load(f)
-                    # Convert old format if needed
-                    if data and isinstance(list(data.values())[0], str):
-                        # Old format: {"merchant": "category"} -> new format
-                        return {k: {"category": v, "count": 1} for k, v in data.items()}
-                    return data
-            return {}
-        except (FileNotFoundError, json.JSONDecodeError, IndexError):
-            return {}
-
-    def save_memory(self):
-        """Save classifications to file"""
-        with open(self.memory_file, 'w', encoding='utf-8') as f:
-            json.dump(self.classification_memory, f, indent=2, ensure_ascii=False)
-        print(f"💾 Saved {len(self.classification_memory)} classifications to memory")
-
-    def normalize_merchant(self, merchant: str) -> str:
-        """Normalize merchant name for consistent matching"""
-        if not merchant:
-            return ""
-        return merchant.upper().strip().replace("  ", " ")
-
-    def fuzzy_match_memory(self, merchant: str) -> Optional[Dict[str, Any]]:
-        """Find similar merchants in memory using fuzzy matching"""
-        if not merchant:
-            return None
-
-        normalized_merchant = self.normalize_merchant(merchant)
-        if not normalized_merchant:
-            return None
-
-        best_match = None
-        best_score = 0.0
-
-        for stored_merchant, classification_data in self.classification_memory.items():
-            similarity = SequenceMatcher(None, normalized_merchant, stored_merchant.upper()).ratio()
-            if similarity > best_score and similarity >= self.similarity_threshold:
-                best_score = similarity
-                best_match = {
-                    "category": classification_data["category"],
-                    "similarity": similarity,
-                    "matched_merchant": stored_merchant,
-                    "count": classification_data.get("count", 1)
-                }
-
-        return best_match
-
-    def add_to_memory(self, merchant: str, category: str, description: str = ""):
-        """Add or update merchant classification in memory"""
-        if not merchant:
-            return
-
-        normalized_merchant = self.normalize_merchant(merchant)
-        if not normalized_merchant:
-            return
-
-        if normalized_merchant in self.classification_memory:
-            # Update count for existing merchant
-            self.classification_memory[normalized_merchant]["count"] += 1
-        else:
-            # Add new merchant
-            self.classification_memory[normalized_merchant] = {
-                "category": category,
-                "count": 1,
-                "description": description[:100] if description else ""  # Store short description
-            }
 
     def load_and_parse_csv(self) -> List[Dict[str, Any]]:
         """Load CSV and pass raw data to LLM for interpretation"""
@@ -272,8 +199,8 @@ class PersistentMemoryPipeline:
 
         return batches
 
-    def build_batch_prompt_with_memory(self, batch: List[Dict], batch_num: int) -> str:
-        """Build prompt that includes strict user rules (memory excluded from prompt)"""
+    def build_batch_prompt(self, batch: List[Dict], batch_num: int) -> str:
+        """Build prompt that includes strict user rules """
 
         transactions_text = ""
         for i, tx in enumerate(batch, 1):
@@ -348,41 +275,12 @@ RICORDA: Le regole utente sono OBBLIGATORIE e hanno PRIORITÀ ASSOLUTA su tutto.
 
 RISPONDI SOLO JSON:"""
 
-    def process_batch_with_memory(self, batch: List[Dict], batch_num: int) -> Dict[str, Any]:
-        """Process a single batch through LLM with memory enhancement"""
+    def process_batch(self, batch: List[Dict], batch_num: int) -> Dict[str, Any]:
+        """Process a single batch through LLM"""
         print(f"🤖 Processing batch {batch_num} ({len(batch)} transactions)...")
 
-        # First check: see if we can resolve any from memory
-        memory_hits = 0
-        memory_resolved = {}
-
-        for tx in batch:
-            # Try to extract likely merchant from raw data for memory lookup
-            potential_merchant = self.extract_potential_merchant(tx)
-            if potential_merchant:
-                memory_match = self.fuzzy_match_memory(potential_merchant)
-                if memory_match:
-                    # Extract amount and description from raw data
-                    amount, original_amount = self.extract_amount_from_raw(tx)
-                    description = self.extract_description_from_raw(tx)
-
-                    memory_resolved[tx['id']] = {
-                        "category": memory_match["category"],
-                        "merchant": potential_merchant,
-                        "amount": amount,
-                        "original_amount": original_amount,
-                        "description": description,
-                        "memory_match": True,
-                        "similarity": memory_match["similarity"],
-                        "matched_merchant": memory_match["matched_merchant"]
-                    }
-                    memory_hits += 1
-
-        if memory_hits > 0:
-            print(f"💾 Found {memory_hits} potential memory matches")
-
         try:
-            prompt = self.build_batch_prompt_with_memory(batch, batch_num)
+            prompt = self.build_batch_prompt(batch, batch_num)
             raw_response = call_gemini_api(prompt, self.api_key)
             response_text = parse_gemini_response(raw_response)
             parsed_json = parse_json_categorization(response_text)
@@ -409,25 +307,11 @@ RISPONDI SOLO JSON:"""
                         "original_amount": item.get("original_amount", ""),
                         "description": description,
                         "reason": item.get("reason", ""),
-                        "applied_user_rule": item.get("applied_user_rule", ""),
-                        "memory_match": False
+                        "applied_user_rule": item.get("applied_user_rule", "")
                     }
-
-                    # Add to memory for future use
-                    if category != "not_expense" and merchant:
-                        self.add_to_memory(merchant, category, description)
 
                     if category != "not_expense":
                         expense_categorizations[tx_id] = category
-
-            # Merge memory-resolved items with LLM results
-            # BUT: LLM results override memory if user rules were applied
-            for tx_id, memory_data in memory_resolved.items():
-                # Only use memory if LLM didn't process this transaction
-                if tx_id not in all_categorizations:
-                    all_categorizations[tx_id] = memory_data
-                    if memory_data["category"] != "not_expense":
-                        expense_categorizations[tx_id] = memory_data["category"]
 
             metadata = extract_metadata(raw_response)
 
@@ -438,7 +322,6 @@ RISPONDI SOLO JSON:"""
                 'metadata': metadata,
                 'batch_num': batch_num,
                 'batch_size': len(batch),
-                'memory_hits': memory_hits,
                 'success': True
             }
 
@@ -449,7 +332,7 @@ RISPONDI SOLO JSON:"""
             print(f"Error Type: {type(e).__name__}")
 
             try:
-                prompt = self.build_batch_prompt_with_memory(batch, batch_num)
+                prompt = self.build_batch_prompt(batch, batch_num)
                 raw_response = call_gemini_api(prompt, self.api_key)
                 response_text = parse_gemini_response(raw_response)
 
@@ -472,13 +355,12 @@ RISPONDI SOLO JSON:"""
                 'metadata': {},
                 'batch_num': batch_num,
                 'batch_size': len(batch),
-                'memory_hits': 0,
                 'success': False,
                 'error': str(e)
             }
 
     def extract_potential_merchant(self, transaction: Dict) -> Optional[str]:
-        """Try to extract merchant name from raw transaction data for memory lookup"""
+        """Try to extract merchant name from raw transaction data """
         raw_data = transaction.get('raw_data', {})
 
         # Look for common patterns in Italian bank data
@@ -544,8 +426,8 @@ RISPONDI SOLO JSON:"""
         return full_description[:200] if len(full_description) > 200 else full_description
 
     def run_pipeline(self) -> Dict[str, Any]:
-        """Run the complete categorization pipeline with persistent memory"""
-        print("🚀 Starting Persistent Memory Pipeline...")
+        """Run the complete categorization"""
+        print("🚀 Starting Categorization Pipeline...")
         print("=" * 60)
 
         transactions = self.load_and_parse_csv()
@@ -557,23 +439,21 @@ RISPONDI SOLO JSON:"""
         batches = self.create_simple_batches(transactions)
         print(f"✅ Created {len(batches)} simple batches")
 
-        print(f"\n🤖 Processing {len(batches)} batches with memory enhancement...")
+        print(f"\n🤖 Processing {len(batches)} batches ...")
         all_results = []
         all_categorizations = {}
         all_detailed_results = {}
         all_new_categories = set()
         failed_batches = []
-        total_memory_hits = 0
         user_rules_applied = 0
 
         for i, batch in enumerate(batches, 1):
-            result = self.process_batch_with_memory(batch, i)
+            result = self.process_batch(batch, i)
             all_results.append(result)
 
             if result['success']:
                 all_categorizations.update(result['categorizations'])
                 all_detailed_results.update(result['all_results'])
-                total_memory_hits += result.get('memory_hits', 0)
 
                 # Count user rules applied
                 for tx_result in result['all_results'].values():
@@ -585,16 +465,12 @@ RISPONDI SOLO JSON:"""
 
                 expenses_found = len(result['categorizations'])
                 total_processed = len(result['all_results'])
-                memory_info = f" ({result.get('memory_hits', 0)} from memory)" if result.get('memory_hits',
-                                                                                             0) > 0 else ""
+
                 print(
-                    f"✅ Batch {i} completed: {expenses_found} expenses, {total_processed - expenses_found} non-expenses{memory_info}")
+                    f"✅ Batch {i} completed: {expenses_found} expenses, {total_processed - expenses_found}")
             else:
                 failed_batches.append(i)
                 print(f"❌ Batch {i} failed: {result.get('error', 'Unknown error')}")
-
-        # Save updated memory
-        self.save_memory()
 
         final_results = {
             'total_transactions': len(transactions),
@@ -606,16 +482,14 @@ RISPONDI SOLO JSON:"""
             'detailed_results': all_detailed_results,
             'new_categories_created': list(all_new_categories),
             'batch_results': all_results,
-            'total_memory_hits': total_memory_hits,
             'user_rules_applied': user_rules_applied,
-            'memory_size': len(self.classification_memory),
             'coverage': len(all_categorizations) / len(transactions) * 100 if transactions else 0
         }
 
         return final_results
 
     def print_final_results(self, results: Dict[str, Any]):
-        """Print comprehensive final results with memory statistics"""
+        """Print comprehensive final results with statistics"""
         print("\n" + "=" * 60)
         print("📊 RISULTATI FINALI CATEGORIZZAZIONE CON MEMORIA")
         print("=" * 60)
@@ -639,14 +513,6 @@ RISPONDI SOLO JSON:"""
         if results.get('user_rules_applied', 0) > 0:
             print(f"\n📋 REGOLE UTENTE APPLICATE: {results['user_rules_applied']}")
 
-        # Memory statistics
-        print(f"\n💾 STATISTICHE MEMORIA:")
-        print(f"Classificazioni in Memoria: {results['memory_size']}")
-        print(f"Match da Memoria: {results['total_memory_hits']}")
-        if results['total_memory_hits'] > 0 and expenses_found > 0:
-            memory_percentage = (results['total_memory_hits'] / expenses_found) * 100
-            print(f"Efficienza Memoria: {memory_percentage:.1f}% delle spese risolte da memoria")
-
         if results['new_categories_created']:
             print(f"\n🆕 NUOVE CATEGORIE:")
             for category in results['new_categories_created']:
@@ -654,21 +520,9 @@ RISPONDI SOLO JSON:"""
 
         print(f"\n📋 SUDDIVISIONE SPESE:")
         category_counts = {}
-        memory_counts = {}
 
         for tx_id, category in results['categorizations'].items():
             category_counts[category] = category_counts.get(category, 0) + 1
-
-            # Count memory vs LLM
-            if tx_id in results['detailed_results']:
-                if results['detailed_results'][tx_id].get('memory_match', False):
-                    memory_counts[category] = memory_counts.get(category, 0) + 1
-
-        for category, count in sorted(category_counts.items(), key=lambda x: x[1], reverse=True):
-            percentage = (count / expenses_found) * 100 if expenses_found > 0 else 0
-            memory_count = memory_counts.get(category, 0)
-            memory_info = f" ({memory_count} da memoria)" if memory_count > 0 else ""
-            print(f"  {category}: {count} ({percentage:.1f}%){memory_info}")
 
         # Show examples of user rules applied
         if results.get('user_rules_applied', 0) > 0:
@@ -682,58 +536,12 @@ RISPONDI SOLO JSON:"""
             for example in rule_examples:
                 print(example)
 
-        # Show some examples of memory matches
-        if results['total_memory_hits'] > 0:
-            print(f"\n🎯 ESEMPI MATCH DA MEMORIA:")
-            memory_examples = []
-            for tx_id, details in results['detailed_results'].items():
-                if details.get('memory_match', False) and len(memory_examples) < 3:
-                    similarity = details.get('similarity', 0)
-                    matched_merchant = details.get('matched_merchant', 'N/A')
-                    memory_examples.append(
-                        f"  {details['merchant']} → {details['category']} (simile a: {matched_merchant}, {similarity:.2f})")
-
-            for example in memory_examples:
-                print(example)
-
         successful_batches = [b for b in results['batch_results'] if b['success']]
         if successful_batches:
             total_tokens = sum(batch['metadata']['total_tokens'] for batch in successful_batches)
             print(f"\n💰 Token utilizzati: {total_tokens}")
 
-        print(f"\n💾 Memoria salvata in: {self.memory_file}")
         print("✅ Pipeline completata!")
-
-    def print_memory_info(self):
-        """Print current memory statistics"""
-        if not self.classification_memory:
-            print("📝 Memoria vuota")
-            return
-
-        print(f"\n📝 STATO MEMORIA CORRENTE:")
-        print("=" * 40)
-        print(f"Totale Merchant Memorizzati: {len(self.classification_memory)}")
-
-        # Group by category
-        category_breakdown = {}
-        for merchant_data in self.classification_memory.values():
-            category = merchant_data['category']
-            category_breakdown[category] = category_breakdown.get(category, 0) + 1
-
-        print("Distribuzione per categoria:")
-        for category, count in sorted(category_breakdown.items(), key=lambda x: x[1], reverse=True):
-            print(f"  {category}: {count} merchant")
-
-        # Show most frequent
-        frequent_merchants = sorted(
-            self.classification_memory.items(),
-            key=lambda x: x[1].get('count', 1),
-            reverse=True
-        )
-
-        print(f"\nMerchant più frequenti:")
-        for merchant, data in frequent_merchants[:5]:
-            print(f"  {merchant}: {data['category']} ({data.get('count', 1)}x)")
 
 
 def main():
@@ -751,10 +559,7 @@ def main():
             "RETITALIA is a fuel distributor and MUST ALWAYS be categorized as 'carburante' (fuel). This rule is ABSOLUTE."
         ]
 
-        pipeline = PersistentMemoryPipeline(csv_file, user_rules=user_rules)
-
-        # Show current memory state
-        pipeline.print_memory_info()
+        pipeline = CategorizationAgent(csv_file, user_rules=user_rules)
 
         results = pipeline.run_pipeline()
         pipeline.print_final_results(results)

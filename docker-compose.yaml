@@ -1,0 +1,30 @@
+name: expenses-dev-db
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: expenses_db_dev
+    environment:
+      POSTGRES_DB: expensesdb
+      POSTGRES_USER: expenses
+      POSTGRES_PASSWORD: expenses
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U expenses -d expensesdb"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    volumes:
+      - expense_categorizer_dev_data:/var/lib/postgresql/data
+volumes:
+  expense_categorizer_dev_data:
