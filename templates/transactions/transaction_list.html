@@ -74,13 +74,37 @@
         <!-- Transaction List -->
         {% if categories %}
             <div class="categories">
-            {% for category in categories %}
-                <div class="category-tag">
-                    {{ category.name }}
-                </div>
-            {% endfor %}
+                {% for category in categories %}
+                    <div class="category-tag">
+                        {{ category.name }}
+                    </div>
+                {% endfor %}
             </div>
         {% endif %}
+
+        <div class="rule-card card mb-4">
+            <div class="card-header">
+                <h2>✍️ Define a Categorization Rule</h2>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{% url 'define_rule' %}">
+                    {% csrf_token %} <label for="user_rule_input" class="form-label">
+                        Enter your rule (e.g., "All expenses for Netflix in Svago from 2024-01-01"):
+                    </label>
+                    <textarea id="user_rule_input" name="user_rule_text" class="form-control" rows="3">{{ user_rule|default:"" }}</textarea>
+
+                    <small class="form-text">
+                        Use free text to specify the **Merchant(s)**, the **Category**, and an optional **Date Range**.
+                    </small>
+
+                    <div class="rule-form-actions">
+                        <button type="submit" class="btn btn-primary">
+                            ✅ Confirm Rule
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
         {% if transactions %}
             <div class="transaction-list">
                 {% for transaction in transactions %}
@@ -128,6 +152,7 @@
                         <a href="?page=
 
 
+
                                 {{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}">‹
                             Previous</a>
                     {% else %}
@@ -143,9 +168,11 @@
                         <a href="?page=
 
 
+
                                 {{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}">Next
                             ›</a>
                         <a href="?page=
+
 
 
                                 {{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}">Last

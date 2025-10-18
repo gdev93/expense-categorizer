@@ -1,8 +1,6 @@
 # processors.py
 from datetime import datetime, date
 from decimal import Decimal, InvalidOperation
-from typing import List, Dict
-
 from django.db import transaction
 from django.db.models import Count
 
@@ -10,7 +8,7 @@ from agent.agent import ExpenseCategorizerAgent
 from .models import Transaction, Category, Merchant
 
 
-def _parse_date(tx_data: Dict) -> date:
+def _parse_date(tx_data: dict) -> date:
     """
     Parse transaction date from CSV data.
 
@@ -55,7 +53,7 @@ def _parse_amount(amount_value) -> Decimal:
     return Decimal('0.00')
 
 
-def _calculate_statistics(transactions: List[Dict], results: List[Dict]) -> Dict:
+def _calculate_statistics(transactions: list[dict], results: list[dict]) -> dict:
     """
     Calculate processing statistics.
 
@@ -64,7 +62,7 @@ def _calculate_statistics(transactions: List[Dict], results: List[Dict]) -> Dict
         results: Batch processing results
 
     Returns:
-        Dictionary with statistics
+        dictionary with statistics
     """
     total = len(transactions)
     successful_batches = sum(1 for r in results if r.get('success', False))
@@ -91,8 +89,8 @@ class ExpenseUploadProcessor:
     - Progress tracking and logging
     """
 
-    def __init__(self, user, batch_size: int = 15, user_rules: List[str] = None,
-                 available_categories: List[str] | None = None):
+    def __init__(self, user, batch_size: int = 15, user_rules: list[str] = None,
+                 available_categories: list[str] | None = None):
         """
         Args:
             user: Django user object
@@ -103,7 +101,7 @@ class ExpenseUploadProcessor:
         self.batch_size = batch_size
         self.agent = ExpenseCategorizerAgent(user_rules=user_rules, available_categories=available_categories)
 
-    def process_transactions(self, transactions: List[Dict[str, str]]) -> Dict:
+    def process_transactions(self, transactions: list[dict[str, str]]) -> dict:
         """
         Process all transactions in batches.
 
@@ -111,7 +109,7 @@ class ExpenseUploadProcessor:
             transactions: List of transactions with IDs and raw CSV data
 
         Returns:
-            Dictionary with processing results and statistics
+            dictionary with processing results and statistics
         """
         results = []
         total_batches = (len(transactions) + self.batch_size - 1) // self.batch_size
@@ -157,7 +155,7 @@ class ExpenseUploadProcessor:
             'statistics': stats
         }
 
-    def _persist_batch_results(self, batch: List[Dict], batch_result: Dict) -> int:
+    def _persist_batch_results(self, batch: list[dict], batch_result: dict) -> int:
         """
         Persist batch results to database.
 

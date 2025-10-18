@@ -3,7 +3,7 @@ from django.views.generic import ListView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q, Sum
 
-from api.models import Transaction, Category
+from api.models import Transaction, Category, Rule
 
 
 class TransactionListView(LoginRequiredMixin, ListView):
@@ -60,5 +60,6 @@ class TransactionListView(LoginRequiredMixin, ListView):
             total=Sum('amount')
         )['total'] or 0
         context['category_count'] = user_transactions.values('category').distinct().count()
+        context['user_rule']=Rule.objects.filter(user=self.request.user,is_active=True).order_by('priority').values_list('text_content', flat=True).first()
 
         return context

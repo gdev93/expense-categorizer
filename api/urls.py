@@ -19,6 +19,7 @@ from django.views.generic import RedirectView
 
 from api.entry_point_views import login_form, index, authenticate_user, register_form, create_user
 from api.views.data_upload_view import CSVUploadView
+from api.views.rule_view import RuleDefineView
 from api.views.transaction_list_view import TransactionListView
 
 urlpatterns = [
@@ -28,5 +29,6 @@ urlpatterns = [
     path('accounts/create/', create_user, name='create_user'),
     path('transactions/upload/', CSVUploadView.as_view(), name='transactions_upload'),
     path('transactions/', TransactionListView.as_view(), name='transaction_list'),
-    path("", RedirectView.as_view(url="transactions/upload/"), name="entry_point")
+    path('transactions/rules/', RuleDefineView.as_view(), name='define_rule'),
+    path("", RedirectView.as_view(url="transactions/"), name="entry_point")
 ]

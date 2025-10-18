@@ -1,211 +1,276 @@
- .transaction-list {
-        max-height: 70vh;
-        overflow-y: auto;
-        border: 1px solid #ddd;
-        border-radius: 5px;
-    }
+.transaction-list {
+    max-height: 70vh;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
 
-    .transaction-item {
-        padding: 15px;
-        border-bottom: 1px solid #eee;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
+/* Additional CSS for the Rule Definition Card */
 
-    .transaction-item:hover {
-        background: #f9f9f9;
-    }
+.mb-4 {
+    /* Margin Bottom 4 (or whatever spacing suits your design) */
+    margin-bottom: 20px;
+}
 
-    .transaction-item:last-child {
-        border-bottom: none;
-    }
+.rule-card .card-header {
+    /* Ensure the header text is a little smaller and fits well */
+    padding: 15px 20px;
+}
 
-    .transaction-main {
-        flex: 1;
-    }
+.rule-card .card-header h2 {
+    font-size: 18px;
+    color: #333;
+}
 
-    .transaction-date {
-        font-weight: bold;
-        color: #666;
-        font-size: 13px;
-        margin-bottom: 5px;
-    }
+.form-control {
+    /* General style for form inputs/textareas */
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    box-sizing: border-box; /* Important for width: 100% */
+    font-size: 14px;
+    resize: vertical; /* Allows user to resize vertically */
+}
 
-    .transaction-merchant {
-        font-size: 16px;
-        font-weight: bold;
-        color: #333;
-        margin-bottom: 5px;
-    }
+/* Ensure textarea specifically inherits form control styles */
+#user_rule_input {
+    min-height: 80px; /* Minimum height for the textarea */
+}
+/* CSS for Rule Form Button Alignment */
+.rule-form-actions {
+    margin-top: 15px;
+    text-align: right; /* Pushes the button to the right */
+}
 
-    .transaction-description {
-        font-size: 13px;
-        color: #666;
-        margin-top: 5px;
-        max-width: 600px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
+/* Ensure the submit button looks good */
+.btn-primary {
+    background: #2196f3;
+    color: white;
+    border: 1px solid #2196f3;
+    padding: 10px 15px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-weight: bold;
+    text-decoration: none;
+    display: inline-block;
+    transition: background 0.3s ease;
+}
 
-    .transaction-meta {
-        display: flex;
-        align-items: center;
-        gap: 15px;
-    }
+.btn-primary:hover {
+    background: #1976d2;
+    border-color: #1976d2;
+}
+.form-text {
+    /* Style for the small instructional text */
+    font-size: 13px;
+    color: #888;
+    margin-top: 5px;
+    display: block; /* Make sure it takes its own line */
+}
 
-    .transaction-amount {
-        font-weight: bold;
-        color: #d32f2f;
-        font-size: 18px;
-        text-align: right;
-        min-width: 100px;
-    }
+.transaction-item {
+    padding: 15px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
 
-    .transaction-category {
-        display: inline-block;
-        padding: 5px 12px;
-        background: #2196f3;
-        color: white;
-        border-radius: 3px;
-        font-size: 12px;
-        font-weight: bold;
-    }
+.transaction-item:hover {
+    background: #f9f9f9;
+}
 
-    .transaction-status {
-        display: inline-block;
-        padding: 3px 8px;
-        border-radius: 3px;
-        font-size: 11px;
-        font-weight: bold;
-    }
+.transaction-item:last-child {
+    border-bottom: none;
+}
 
-    .status-pending {
-        background: #fff3e0;
-        color: #e65100;
-    }
+.transaction-main {
+    flex: 1;
+}
 
-    .status-categorized {
-        background: #e8f5e9;
-        color: #2e7d32;
-    }
+.transaction-date {
+    font-weight: bold;
+    color: #666;
+    font-size: 13px;
+    margin-bottom: 5px;
+}
 
-    .status-reviewed {
-        background: #e3f2fd;
-        color: #1565c0;
-    }
+.transaction-merchant {
+    font-size: 16px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 5px;
+}
 
-    /* Filters section */
-    .filters {
-        display: flex;
-        gap: 15px;
-        margin-bottom: 20px;
-        padding: 15px;
-        background: #f9f9f9;
-        border-radius: 5px;
-        flex-wrap: wrap;
-        align-items: center;
-    }
+.transaction-description {
+    font-size: 13px;
+    color: #666;
+    margin-top: 5px;
+    max-width: 600px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
 
-    .filter-group {
-        display: flex;
-        flex-direction: column;
-        gap: 5px;
-    }
+.transaction-meta {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
 
-    .filter-group label {
-        font-size: 12px;
-        font-weight: bold;
-        color: #666;
-    }
+.transaction-amount {
+    font-weight: bold;
+    color: #d32f2f;
+    font-size: 18px;
+    text-align: right;
+    min-width: 100px;
+}
 
-    .filter-group select,
-    .filter-group input {
-        padding: 8px 12px;
-        border: 1px solid #ddd;
-        border-radius: 3px;
-        font-size: 14px;
-    }
+.transaction-category {
+    display: inline-block;
+    padding: 5px 12px;
+    background: #2196f3;
+    color: white;
+    border-radius: 3px;
+    font-size: 12px;
+    font-weight: bold;
+}
 
-    /* Summary section */
-    .summary {
-        display: flex;
-        gap: 20px;
-        margin-bottom: 20px;
-        flex-wrap: wrap;
-    }
+.transaction-status {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: bold;
+}
 
-    .summary-card {
-        flex: 1;
-        min-width: 200px;
-        padding: 15px;
-        background: #f9f9f9;
-        border-radius: 5px;
-        border-left: 4px solid #2196f3;
-    }
+.status-pending {
+    background: #fff3e0;
+    color: #e65100;
+}
 
-    .summary-label {
-        font-size: 12px;
-        color: #666;
-        text-transform: uppercase;
-        margin-bottom: 5px;
-    }
+.status-categorized {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
 
-    .summary-value {
-        font-size: 24px;
-        font-weight: bold;
-        color: #333;
-    }
+.status-reviewed {
+    background: #e3f2fd;
+    color: #1565c0;
+}
 
-    /* Empty state */
-    .empty-state {
-        text-align: center;
-        padding: 60px 20px;
-        color: #666;
-    }
+/* Filters section */
+.filters {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #f9f9f9;
+    border-radius: 5px;
+    flex-wrap: wrap;
+    align-items: center;
+}
 
-    .empty-state-icon {
-        font-size: 48px;
-        margin-bottom: 20px;
-    }
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
 
-    .empty-state h3 {
-        margin-bottom: 10px;
-        color: #333;
-    }
+.filter-group label {
+    font-size: 12px;
+    font-weight: bold;
+    color: #666;
+}
 
-    /* Pagination */
-    .pagination {
-        display: flex;
-        justify-content: center;
-        gap: 5px;
-        margin-top: 20px;
-        padding-top: 20px;
-        border-top: 2px solid #ddd;
-    }
+.filter-group select,
+.filter-group input {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    font-size: 14px;
+}
 
-    .pagination a,
-    .pagination span {
-        padding: 8px 12px;
-        border: 1px solid #ddd;
-        border-radius: 3px;
-        text-decoration: none;
-        color: #333;
-        font-size: 14px;
-    }
+/* Summary section */
+.summary {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
 
-    .pagination a:hover {
-        background: #f0f0f0;
-    }
+.summary-card {
+    flex: 1;
+    min-width: 200px;
+    padding: 15px;
+    background: #f9f9f9;
+    border-radius: 5px;
+    border-left: 4px solid #2196f3;
+}
 
-    .pagination .current {
-        background: #2196f3;
-        color: white;
-        border-color: #2196f3;
-    }
+.summary-label {
+    font-size: 12px;
+    color: #666;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+}
 
-    .pagination .disabled {
-        color: #ccc;
-        cursor: not-allowed;
-    }
+.summary-value {
+    font-size: 24px;
+    font-weight: bold;
+    color: #333;
+}
+
+/* Empty state */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #666;
+}
+
+.empty-state-icon {
+    font-size: 48px;
+    margin-bottom: 20px;
+}
+
+.empty-state h3 {
+    margin-bottom: 10px;
+    color: #333;
+}
+
+/* Pagination */
+.pagination {
+    display: flex;
+    justify-content: center;
+    gap: 5px;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 2px solid #ddd;
+}
+
+.pagination a,
+.pagination span {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    text-decoration: none;
+    color: #333;
+    font-size: 14px;
+}
+
+.pagination a:hover {
+    background: #f0f0f0;
+}
+
+.pagination .current {
+    background: #2196f3;
+    color: white;
+    border-color: #2196f3;
+}
+
+.pagination .disabled {
+    color: #ccc;
+    cursor: not-allowed;
+}
+

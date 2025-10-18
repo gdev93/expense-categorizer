@@ -124,6 +124,9 @@ class Rule(models.Model):
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    validity_start_date = models.DateField(null=True, blank=True)
+    validity_end_date = models.DateField(null=True, blank=True)
+
 
     class Meta:
         ordering = ['-priority', '-created_at']
