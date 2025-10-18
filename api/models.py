@@ -64,9 +64,9 @@ class Transaction(models.Model):
 
     # Core transaction data
     transaction_date = models.DateField()
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
-    original_amount = models.CharField(max_length=50, blank=True)  # Raw from CSV
-    description = models.TextField()  # Raw description from bank
+    amount = models.DecimalField(max_digits=10, decimal_places=2, null=True)
+    original_amount = models.CharField(max_length=50, blank=True, null=True)  # Raw from CSV
+    description = models.TextField(null=True)  # Raw description from bank
 
     # Relationships
     user = models.ForeignKey(
@@ -93,11 +93,12 @@ class Transaction(models.Model):
     merchant_raw_name = models.CharField(max_length=255, blank=True)  # Original from CSV
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     confidence_score = models.FloatField(null=True, blank=True)  # LLM/matching confidence
-
+    failure_code = models.CharField(max_length=20, null=True, blank=True)
     # Tracking
     modified_by_user = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    raw_data = models.JSONField(default=dict)
 
     class Meta:
         ordering = ['-transaction_date', '-created_at']

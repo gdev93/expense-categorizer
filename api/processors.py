@@ -8,28 +8,14 @@ from agent.agent import ExpenseCategorizerAgent
 from .models import Transaction, Category, Merchant
 
 
-def _parse_date(tx_data: dict) -> date:
-    """
-    Parse transaction date from CSV data.
+def _parse_date(date_str: str) -> date:
 
-    Tries common date field names and formats.
-    Returns a date object (not datetime).
-    """
-    # Common date field names
-    date_fields = ['Data', 'Date', 'Transaction Date', 'data', 'date']
-
-    for field in date_fields:
-        if field in tx_data and tx_data[field]:
-            date_str = tx_data[field]
-
-            # Try common date formats
-            for fmt in ['%d/%m/%Y', '%Y-%m-%d', '%d-%m-%Y', '%m/%d/%Y']:
-                try:
-                    return datetime.strptime(date_str, fmt).date()
-                except ValueError:
-                    continue
-
-    # Default to today if parsing fails
+    # Try common date formats
+    for fmt in ['%d/%m/%Y', '%Y-%m-%d', '%d-%m-%Y', '%m/%d/%Y']:
+        try:
+            return datetime.strptime(date_str, fmt).date()
+        except ValueError:
+            continue
     return datetime.now().date()
 
 
@@ -178,11 +164,16 @@ class ExpenseUploadProcessor:
             tx_id = tx_data.get('id')
             result = all_results.get(tx_id)
             if not result:
+                Transaction.objects.create(
+                    user=self.user,
+                    status='uncategorized',
+                    raw_data=tx_data
+                )
                 continue
-
             try:
+                failure_code = result.get('failure_code', '')
                 # Extract and parse transaction data
-                transaction_date = _parse_date(tx_data)
+                transaction_date = _parse_date(result.get('date', ''))
                 amount = _parse_amount(result.get('amount', 0))
                 original_amount = result.get('original_amount', '')
                 description = result.get('description', '')
@@ -210,6 +201,7 @@ class ExpenseUploadProcessor:
                         name=merchant_name
                     )
 
+
                 # Create transaction
                 Transaction.objects.create(
                     user=self.user,
@@ -220,9 +212,11 @@ class ExpenseUploadProcessor:
                     merchant=merchant,
                     merchant_raw_name=merchant_name,
                     category=category,
-                    status='categorized',
+                    status='categorized' if not failure_code else 'uncategorized',
                     confidence_score=None,
-                    modified_by_user=False
+                    modified_by_user=False,
+                    failure_code=failure_code,
+                    raw_data=tx_data
                 )
 
                 persisted_count += 1

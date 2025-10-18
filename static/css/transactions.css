@@ -273,4 +273,71 @@
     color: #ccc;
     cursor: not-allowed;
 }
+/* --- Styles for the Click-to-Edit Tags --- */
+.categories {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
 
+.category-tag-editable {
+    /* Clickable Tag Appearance */
+    display: inline-block;
+    padding: 5px 12px;
+    background: #e3f2fd;
+    color: #1565c0;
+    border-radius: 3px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer; /* Key: makes it look clickable */
+    transition: background 0.2s, color 0.2s;
+    border: 1px solid #90caf9;
+}
+
+.category-tag-editable:hover {
+    background: #c5e1ff;
+    color: #0d47a1;
+}
+.categories {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #ddd;
+}
+
+.category-tag {
+    padding: 5px 10px;
+    background: #e0e0e0;
+    border-radius: 3px;
+    font-size: 14px;
+}
+/* Style for the temporary input field */
+.category-temp-input {
+    /* Inherit form control styles but make it minimal */
+    padding: 2px 5px !important;
+    margin: -3px 0 !important;
+    border: 1px solid #2196f3 !important;
+    background: white !important;
+    font-size: 14px !important;
+    height: auto !important;
+    width: auto;
+    min-width: 80px;
+    box-sizing: content-box;
+}
+@media (hover: hover) and (pointer: fine) {
+    .category-tag:hover {
+        /* 1. Brighter Background: Indicates activity/selection */
+        background-color: #d1d1d1;
+
+        /* 2. Subtle Shadow: Lifts the element visually off the page */
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+
+        /* 3. Slight Scale (Micro-Interaction): Provides depth and responsiveness */
+        transform: translateY(-2px);
+
+        /* 4. Cursor Change: Clearly signals clickability/interaction */
+        cursor: pointer;
+    }
+}

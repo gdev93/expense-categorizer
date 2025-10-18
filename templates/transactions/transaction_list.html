@@ -75,11 +75,20 @@
         {% if categories %}
             <div class="categories">
                 {% for category in categories %}
-                    <div class="category-tag">
+                    <div class="category-tag"
+                         data-category-id="{{ category.id }}"
+                         data-category-name="{{ category.name }}"
+                         onclick="makeEditable(this)">
                         {{ category.name }}
                     </div>
                 {% endfor %}
             </div>
+
+            <script>
+                const BASE_CATEGORY_URL = "{% url 'update_category' %}";
+                const CSRF_TOKEN = "{{ csrf_token }}";
+            </script>
+            <script src="{% static 'js/clickable-form-input.js' %}"></script>
         {% endif %}
 
         <div class="rule-card card mb-4">
@@ -89,9 +98,10 @@
             <div class="card-body">
                 <form method="post" action="{% url 'define_rule' %}">
                     {% csrf_token %} <label for="user_rule_input" class="form-label">
-                        Enter your rule (e.g., "All expenses for Netflix in Svago from 2024-01-01"):
-                    </label>
-                    <textarea id="user_rule_input" name="user_rule_text" class="form-control" rows="3">{{ user_rule|default:"" }}</textarea>
+                    Enter your rule (e.g., "All expenses for Netflix in Svago from 2024-01-01"):
+                </label>
+                    <textarea id="user_rule_input" name="user_rule_text" class="form-control"
+                              rows="3">{{ user_rule|default:"" }}</textarea>
 
                     <small class="form-text">
                         Use free text to specify the **Merchant(s)**, the **Category**, and an optional **Date Range**.
@@ -153,6 +163,12 @@
 
 
 
+
+
+
+
+
+
                                 {{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}">‹
                             Previous</a>
                     {% else %}
@@ -169,9 +185,21 @@
 
 
 
+
+
+
+
+
+
                                 {{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}">Next
                             ›</a>
                         <a href="?page=
+
+
+
+
+
+
 
 
 

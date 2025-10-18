@@ -288,7 +288,7 @@ ISTRUZIONI (IN ORDINE DI PRIORITÀ):
 1. VERIFICA PRIMA LE REGOLE UTENTE - Se una transazione corrisponde, applica quella categoria OBBLIGATORIAMENTE
 2. Analizza ogni transazione e determina se è una SPESA (uscita)
 3. Se è spesa: estrai merchant e categorizza
-4. Se NON è spesa: usa "not_expense"
+4. Se non è una spesa categorizza come 'not_expense'.
 
 ESEMPI (MA REGOLE UTENTE HANNO PRIORITÀ):
 - AMAZON, shopping → "shopping"
@@ -297,17 +297,25 @@ ESEMPI (MA REGOLE UTENTE HANNO PRIORITÀ):
 - Supermercati → "spesa"
 - Farmacie → "spese mediche"
 
+IN CASO DI FALLIMENTO (IMPOSSIBILE CAPIRE LA TRANSAZIONE)
+aggiungere un campo failure_code con i seguenti codice:
+0->Incomprensibile
+1->Non ho trovato la categoria
+IL FALLIMENTO SI APPLICA SE E SOLO SE TROVARE UNA CATEGORIA NUOVA RISULTA INEFFICACE OPPURE SI TRATTA DI UN'ENTRATA.
+
 RISPOSTA RICHIESTA - SOLO JSON VALIDO:
 {{
   "categorizations": [
     {{
       "transaction_id": "tx_001",
+      "date": "2023-01-01",
       "category": "spesa",
       "merchant": "SUPERMERCATO XYZ",
       "amount": 45.50,
       "original_amount": "-45,50",
       "description": "Descrizione completa",
       "applied_user_rule": "Regola 1: descrizione della regola applicata" (SOLO se applicata una regola utente)
+      "failure_code": "<the-failure-code>" 
     }}
   ],
   "new_categories_created": [],
@@ -322,7 +330,7 @@ RICORDA: Le regole utente sono OBBLIGATORIE e hanno PRIORITÀ ASSOLUTA su tutto.
 
 RISPONDI SOLO JSON:"""
 
-    def process_batch(self, batch: List[Dict], batch_num: int) -> Dict[str, Any]:
+    def process_batch(self, batch: List[Dict], batch_num: int) -> dict[str, Any]:
         """
         Process a single batch through LLM.
 
@@ -365,6 +373,7 @@ RISPONDI SOLO JSON:"""
                         "amount": item.get("amount", 0),
                         "original_amount": item.get("original_amount", ""),
                         "description": description,
+                        "date": item.get("date", ""),
                         "reason": item.get("reason", ""),
                         "applied_user_rule": item.get("applied_user_rule", "")
                     }
