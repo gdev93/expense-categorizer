@@ -138,7 +138,12 @@
 
                         <div class="transaction-meta">
                             {% if transaction.category %}
-                                <span class="transaction-category">{{ transaction.category.name }}</span>
+                                <span class="transaction-category"
+                                      data-transaction-id="{{ transaction.id }}"
+                                      data-current-category-id="{{ transaction.category.id }}"
+                                      onclick="makeSelectable(this)">
+                    {{ transaction.category.name }}
+                </span>
                             {% endif %}
 
                             <span class="transaction-status status-{{ transaction.status }}">
@@ -160,15 +165,6 @@
                         <a href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}">«
                             First</a>
                         <a href="?page=
-
-
-
-
-
-
-
-
-
                                 {{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}">‹
                             Previous</a>
                     {% else %}
@@ -182,27 +178,9 @@
 
                     {% if page_obj.has_next %}
                         <a href="?page=
-
-
-
-
-
-
-
-
-
                                 {{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}">Next
                             ›</a>
                         <a href="?page=
-
-
-
-
-
-
-
-
-
                                 {{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}">Last
                             »</a>
                     {% else %}
@@ -210,6 +188,15 @@
                         <span class="disabled">Last »</span>
                     {% endif %}
                 </div>
+                {{ categories|json_script:"category-data" }}
+                <script>
+                    // URL is now set correctly for the transaction update endpoint
+                    const BASE_EDIT_TRANSACTION_URL = '{% url 'update_transaction_category' %}';
+                    const EDIT_TRANSACTION_CATEGORY_CSRF_TOKEN = "{{ csrf_token }}";
+                    console.log(document.getElementById('category-data').textContent)
+                    const CATEGORY_OPTIONS = JSON.parse(document.getElementById('category-data').textContent)
+                </script>
+                <script src="{% static 'js/clickable-transaction-form-input.js' %}"></script>
             {% endif %}
 
         {% else %}

@@ -63,7 +63,7 @@ class Transaction(models.Model):
     ]
 
     # Core transaction data
-    transaction_date = models.DateField()
+    transaction_date = models.DateField(null=True)
     amount = models.DecimalField(max_digits=10, decimal_places=2, null=True)
     original_amount = models.CharField(max_length=50, blank=True, null=True)  # Raw from CSV
     description = models.TextField(null=True)  # Raw description from bank

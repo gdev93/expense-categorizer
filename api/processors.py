@@ -4,7 +4,7 @@ from decimal import Decimal, InvalidOperation
 from django.db import transaction
 from django.db.models import Count
 
-from agent.agent import ExpenseCategorizerAgent
+from agent.agent import ExpenseCategorizerAgent, AgentTransactionUpload, TransactionCategorization
 from .models import Transaction, Category, Merchant
 
 
@@ -75,7 +75,7 @@ class ExpenseUploadProcessor:
     - Progress tracking and logging
     """
 
-    def __init__(self, user, batch_size: int = 15, user_rules: list[str] = None,
+    def __init__(self, user, batch_size: int = 5, user_rules: list[str] = None,
                  available_categories: list[str] | None = None):
         """
         Args:
@@ -88,16 +88,7 @@ class ExpenseUploadProcessor:
         self.agent = ExpenseCategorizerAgent(user_rules=user_rules, available_categories=available_categories)
 
     def process_transactions(self, transactions: list[dict[str, str]]) -> dict:
-        """
-        Process all transactions in batches.
 
-        Args:
-            transactions: List of transactions with IDs and raw CSV data
-
-        Returns:
-            dictionary with processing results and statistics
-        """
-        results = []
         total_batches = (len(transactions) + self.batch_size - 1) // self.batch_size
 
         print(f"\n{'=' * 60}")
@@ -110,50 +101,17 @@ class ExpenseUploadProcessor:
                 start_idx = batch_num * self.batch_size
                 end_idx = start_idx + self.batch_size
                 batch = transactions[start_idx:end_idx]
-
+                all_pending_transactions = [Transaction(user=self.user,raw_data=tx) for tx in batch]
+                Transaction.objects.bulk_create(all_pending_transactions)
+                agent_upload_transaction = [AgentTransactionUpload(transaction_id=tx.id, raw_text=tx.raw_data) for tx in all_pending_transactions]
                 # Process batch through agent
-                batch_result = self.agent.process_batch(batch, batch_num + 1)
+                batch_result = self.agent.process_batch(agent_upload_transaction)
 
-                # Persist results immediately after batch processing
-                if batch_result.get('success'):
-                    persisted_count = self._persist_batch_results(batch, batch_result)
-                    batch_result['persisted_count'] = persisted_count
-                    print(f"💾 Batch {batch_num + 1} persisted: {persisted_count} transactions saved")
-                else:
-                    batch_result['persisted_count'] = 0
-                    print(f"⚠️  Batch {batch_num + 1} not persisted due to processing error")
+                self._persist_batch_results(batch_result)
 
-                results.append(batch_result)
 
-        # Calculate final statistics
-        stats = _calculate_statistics(transactions, results)
+    def _persist_batch_results(self, batch: list[TransactionCategorization]):
 
-        print(f"\n{'=' * 60}")
-        print(f"✅ Processing Complete!")
-        print(f"   Total transactions: {stats['total']}")
-        print(f"   Successful batches: {stats['successful_batches']}/{stats['total_batches']}")
-        print(f"   Expenses categorized: {stats['total_categorized']}")
-        print(f"   Transactions persisted: {stats['total_persisted']}")
-        print(f"{'=' * 60}\n")
-
-        return {
-            'results': results,
-            'statistics': stats
-        }
-
-    def _persist_batch_results(self, batch: list[dict], batch_result: dict) -> int:
-        """
-        Persist batch results to database.
-
-        Args:
-            batch: Original batch data with raw CSV rows
-            batch_result: Agent processing results
-
-        Returns:
-            Number of transactions successfully persisted
-        """
-        all_results = batch_result.get('all_results', {})
-        persisted_count = 0
         existing_transactions = (Transaction.objects
                                  .values('amount', 'merchant_raw_name', 'transaction_date')  # Group by these fields
                                  .annotate(count=Count('id'))  # Count the number of transactions in each group
@@ -161,24 +119,16 @@ class ExpenseUploadProcessor:
                                  .values_list('amount', 'merchant_raw_name','transaction_date', flat=False)
                                  )
         for tx_data in batch:
-            tx_id = tx_data.get('id')
-            result = all_results.get(tx_id)
-            if not result:
-                Transaction.objects.create(
-                    user=self.user,
-                    status='uncategorized',
-                    raw_data=tx_data
-                )
-                continue
+            tx_id = tx_data.transaction_id
             try:
-                failure_code = result.get('failure_code', '')
+                failure_code = tx_data.failure_code
                 # Extract and parse transaction data
-                transaction_date = _parse_date(result.get('date', ''))
-                amount = _parse_amount(result.get('amount', 0))
-                original_amount = result.get('original_amount', '')
-                description = result.get('description', '')
-                merchant_name = result.get('merchant', '')
-                category_name = result.get('category', '')
+                transaction_date = _parse_date(tx_data.date)
+                amount = _parse_amount(tx_data.amount)
+                original_amount = tx_data.original_amount
+                description = tx_data.description
+                merchant_name = tx_data.merchant
+                category_name = tx_data.category
 
                 # Skip if not an expense
                 if category_name == 'not_expense':
@@ -193,6 +143,8 @@ class ExpenseUploadProcessor:
                         user=self.user,
                         defaults={'is_default': False}
                     )
+                else:
+                    Category.objects.create(name='altro', user=self.user, defaults={'is_default': False})
 
                 # Get or create merchant
                 merchant = None
@@ -200,11 +152,8 @@ class ExpenseUploadProcessor:
                     merchant, _ = Merchant.objects.get_or_create(
                         name=merchant_name
                     )
-
-
                 # Create transaction
-                Transaction.objects.create(
-                    user=self.user,
+                updated_count = Transaction.objects.filter(id=tx_id, user=self.user).update(
                     transaction_date=transaction_date,
                     amount=amount,
                     original_amount=original_amount,
@@ -215,14 +164,13 @@ class ExpenseUploadProcessor:
                     status='categorized' if not failure_code else 'uncategorized',
                     confidence_score=None,
                     modified_by_user=False,
-                    failure_code=failure_code,
-                    raw_data=tx_data
+                    failure_code=failure_code
                 )
 
-                persisted_count += 1
+                if updated_count == 0:
+                    print(f"⚠️ Transaction {tx_id} not found or doesn't belong to user")
+
 
             except Exception as e:
                 print(f"⚠️  Failed to persist transaction {tx_id}: {str(e)}")
                 continue
-
-        return persisted_count

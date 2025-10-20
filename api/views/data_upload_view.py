@@ -99,13 +99,12 @@ class CSVUploadView(LoginRequiredMixin, FormView):
                 available_categories=list(Category.objects.filter(user=self.request.user).values_list('name', flat=True))
             )
 
-            result = processor.process_transactions(transactions)
-            stats = result['statistics']
+            processor.process_transactions(transactions)
 
             # Show success message
             messages.success(
                 self.request,
-                f'Successfully processed and saved {stats["total_persisted"]} transactions!'
+                f'Successfully processed!-'
             )
 
             return super().form_valid(form)
