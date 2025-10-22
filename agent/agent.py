@@ -1,11 +1,11 @@
 # agent.py
-import os
 import json
+import os
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
-import requests
+from google import genai
 
 
 def get_api_key() -> str:
@@ -20,34 +20,22 @@ def get_api_key() -> str:
     return api_key
 
 
-def call_gemini_api(prompt: str, api_key: str) -> dict:
-    """Make request to Gemini API"""
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}"
-
-    headers = {"Content-Type": "application/json"}
-
-    payload = {
-        "contents": [{"parts": [{"text": prompt}]}],
-        "generationConfig": {
-            "temperature": 0.1,
-            "maxOutputTokens": 4000
-        }
-    }
-
+def call_gemini_api(prompt: str, client: genai.Client) -> str:
+    """Make request to Gemini API using the new SDK"""
     try:
-        response = requests.post(url, headers=headers, json=payload, timeout=60)
-        response.raise_for_status()
-        return response.json()
-    except requests.exceptions.RequestException as e:
+        config = genai.types.GenerateContentConfig(
+            temperature=0.0,
+        )
+        response = client.models.generate_content(
+            model='gemini-2.5-flash-lite',
+            contents=prompt,
+            config=config
+        )
+
+        return response.text
+
+    except Exception as e:
         raise Exception(f"API request failed: {e}")
-
-
-def parse_gemini_response(response: dict) -> str:
-    """Extract text content from Gemini response"""
-    try:
-        return response["candidates"][0]["content"]["parts"][0]["text"]
-    except (KeyError, IndexError) as e:
-        raise ValueError(f"Invalid response structure: {e}")
 
 
 def parse_json_array(response_text: str) -> list[dict]:
@@ -97,53 +85,6 @@ def parse_json_array(response_text: str) -> list[dict]:
         raise ValueError(f"Invalid JSON response: {e}")
 
 
-def parse_json_categorization(response_text: str) -> dict:
-    """Parse JSON response from LLM categorization"""
-    try:
-        cleaned_text = response_text.strip()
-
-        # Remove markdown formatting
-        if cleaned_text.startswith("```json"):
-            cleaned_text = cleaned_text[7:]
-        if cleaned_text.startswith("```"):
-            cleaned_text = cleaned_text[3:]
-        if cleaned_text.endswith("```"):
-            cleaned_text = cleaned_text[:-3]
-
-        cleaned_text = cleaned_text.strip()
-
-        # Find JSON boundaries
-        start_brace = cleaned_text.find("{")
-        if start_brace == -1:
-            raise ValueError("No opening brace found")
-
-        brace_count = 0
-        last_valid_pos = -1
-
-        for i in range(start_brace, len(cleaned_text)):
-            if cleaned_text[i] == '{':
-                brace_count += 1
-            elif cleaned_text[i] == '}':
-                brace_count -= 1
-                if brace_count == 0:
-                    last_valid_pos = i + 1
-                    break
-
-        if last_valid_pos == -1:
-            raise ValueError("No matching closing brace found - JSON appears truncated")
-
-        json_text = cleaned_text[start_brace:last_valid_pos]
-        result = json.loads(json_text)
-
-        if "categorizations" not in result:
-            raise ValueError("Missing 'categorizations' field in response")
-
-        return result
-
-    except json.JSONDecodeError as e:
-        raise ValueError(f"Invalid JSON response: {e}")
-
-
 def parse_llm_response_json(llm_response_text: str) -> dict[str, Any]:
     """
     Safely extracts and parses a JSON string embedded within a markdown code block
@@ -157,9 +98,7 @@ def parse_llm_response_json(llm_response_text: str) -> dict[str, Any]:
         if parsing fails.
     """
 
-    # 1. Use a regular expression to find the JSON content inside the markdown block.
-    # The pattern looks for ```json followed by any characters (non-greedy, including newlines)
-    # and ends at ```. The content is captured in group 1.
+    # Use a regular expression to find the JSON content inside the markdown block
     json_match = re.search(r"```json\s*(.*?)\s*```", llm_response_text, re.DOTALL)
 
     if not json_match:
@@ -169,13 +108,11 @@ def parse_llm_response_json(llm_response_text: str) -> dict[str, Any]:
     # Extract the raw JSON string
     raw_json_string = json_match.group(1)
 
-    # 2. Clean the string: remove common LLM artifacts like backticks or extra whitespace
+    # Clean the string: remove common LLM artifacts like backticks or extra whitespace
     raw_json_string = raw_json_string.strip()
 
-    # 3. Handle a common issue where LLMs might use non-standard quotes or formatting
-    # Although your example uses standard formatting, this is good practice for LLM output.
     try:
-        # 4. Parse the JSON string into a Python dictionary
+        # Parse the JSON string into a Python dictionary
         parsed_data = json.loads(raw_json_string)
         return parsed_data
 
@@ -197,7 +134,7 @@ class TransactionCategorization:
     original_amount: str
     description: str
     applied_user_rule: str | None = None
-    failure_code: str | None = None
+    failure: str | None = None
 
     @classmethod
     def from_dict(cls, data: dict) -> 'TransactionCategorization':
@@ -211,28 +148,30 @@ class TransactionCategorization:
             original_amount=data.get("original_amount", ""),
             description=data.get("description", ""),
             applied_user_rule=data.get("applied_user_rule"),
-            failure_code=data.get("failure_code")
+            failure=data.get("failure")
         )
+
 
 @dataclass
 class AgentTransactionUpload:
-    transaction_id: id
+    transaction_id: int
     raw_text: dict[str, Any]
+
 
 class ExpenseCategorizerAgent:
     """Agent for categorizing expense transactions using LLM"""
 
-    def __init__(self, api_key: str | None = None, user_rules: list[str] | None = None, available_categories: list[str] | None = None):
+    def __init__(self, api_key: str | None = None, user_rules: list[str] | None = None,
+                 available_categories: list[str] | None = None):
         """
         Args:
             api_key: Gemini API key (optional, will try env var)
             user_rules: list of strict user-defined categorization rules
+            available_categories: list of available categories
         """
         self.api_key = api_key or get_api_key()
-
+        self.client = genai.Client(api_key=self.api_key)
         self.available_categories = available_categories or []
-
-        # User-defined strict rules
         self.user_rules = user_rules or []
 
     def get_transaction_rule_prompt(self, user_input_text: str) -> str:
@@ -319,108 +258,251 @@ class ExpenseCategorizerAgent:
     def process_user_rule(self, user_input_text: str) -> dict[str, Any]:
         try:
             prompt = self.get_transaction_rule_prompt(user_input_text)
-            raw_response = call_gemini_api(prompt, self.api_key)
-            response_text = parse_gemini_response(raw_response)
+            response_text = call_gemini_api(prompt, self.client)
             parsed_json = parse_llm_response_json(response_text)
             return parsed_json
         except Exception as e:
             return {"valid": False, "reason": str(e)}
 
     def build_batch_prompt(self, batch: list[AgentTransactionUpload]) -> str:
-        """Build prompt for a batch of transactions"""
+        """Costruisce il prompt per un batch di transazioni"""
 
-        # Format transactions
+        # Formatta le transazioni
         transactions_text = ""
         for i, tx in enumerate(batch, 1):
-            transactions_text += f"{i}. ID: {tx.transaction_id}\n"
+            transactions_text += f"{i}. TRANSACTION_ID: {tx.transaction_id}\n"
+            transactions_text += "   RAW DATA:\n"
             for column, value in tx.raw_text.items():
                 if column != 'id':
-                    # Truncate very long values
+                    # Tronca i valori molto lunghi
                     display_value = str(value)[:200] + "..." if len(str(value)) > 200 else value
-                    transactions_text += f"   {column}: {display_value}\n"
+                    transactions_text += f"   - {column}: {column}: {display_value}\n"
             transactions_text += "\n"
 
-        # Build user rules section
+        # Costruisce la sezione delle regole utente
         user_rules_section = ""
-        if self.user_rules:
+
+        # ------------------- REGOLA CRITICA: IGNORARE I SALDI -------------------
+        critical_rules = [
+            "IGNORA transazioni la cui descrizione contiene 'Saldo iniziale' o 'Saldo finale'. Non devono essere categorizzate e non devono apparire nell'output JSON.",
+            # NUOVA REGOLA CRITICA: IGNORA ANCHE LE ENTRATE/RICAVI
+            "IGNORA transazioni che sono Accrediti (denaro IN) o con importo positivo. Non devono essere categorizzate e non devono apparire nell'output JSON. Il tuo compito è solo categorizzare le SPESE (USCITE).",
+        ]
+
+        # Aggiunge le regole utente dinamiche
+        dynamic_user_rules = [f"{i}. {rule}" for i, rule in enumerate(self.user_rules, 1)]
+
+        all_user_rules = critical_rules + dynamic_user_rules
+
+        if all_user_rules:
             user_rules_section = """
-⚠️ ⚠️ ⚠️ REGOLE UTENTE OBBLIGATORIE - PRIORITÀ ASSOLUTA ⚠️ ⚠️ ⚠️
+    ═══════════════════════════════════════════════════════
+    ⚠️  REGOLE UTENTE - PRIORITÀ ASSOLUTA - DEVONO ESSERE APPLICATE  ⚠️
+    ═══════════════════════════════════════════════════════
 
-QUESTE REGOLE DEVONO ESSERE RISPETTATE IN MODO ASSOLUTO E HANNO PRIORITÀ SU QUALSIASI ALTRA LOGICA.
+    QUESTE REGOLE SONO OBBLIGATORIE E SOVRASCRIVONO OGNI ALTRA LOGICA.
 
-"""
-            for i, rule in enumerate(self.user_rules, 1):
-                user_rules_section += f"{i}. {rule}\n"
+    """
+            # Formatta le regole critiche e le regole utente
+            user_rules_section += "\n".join(all_user_rules)
 
             user_rules_section += """
-⚠️ IMPORTANTE: Se una transazione corrisponde a qualsiasi regola utente sopra, DEVI applicare quella regola.
-Le regole utente hanno PRIORITÀ ASSOLUTA su qualsiasi altra considerazione.
+    ⚠️ CRITICO: Se UNA QUALSIASI transazione corrisponde a una regola utente (incluse le regole IGNORA), DEVI applicarla.
+    Le regole utente hanno PRIORITÀ ASSOLUTA su tutto il resto.
 
-"""
+    """
 
-        return f"""Sei un assistente per categorizzare spese bancarie italiane.
+        # Formatta le categorie disponibili con struttura chiara
+        categories_formatted = "\n".join([f"  • {cat}" for cat in self.available_categories if cat != 'not_expense'])
 
-{user_rules_section}
+        return f"""Sei un assistente IA specializzato nella categorizzazione delle **spese** bancarie italiane.
 
-CATEGORIE DISPONIBILI:
-{chr(10).join('- ' + cat for cat in self.available_categories)}
+    {user_rules_section}
 
-ISTRUZIONI (IN ORDINE DI PRIORITÀ):
-1. VERIFICA PRIMA LE REGOLE UTENTE - Se una transazione corrisponde, applica quella categoria OBBLIGATORIAMENTE
-2. Analizza ogni transazione e determina se è una SPESA (uscita)
-3. Se è spesa: estrai merchant e categorizza
-4. Se non è una spesa categorizza come 'not_expense'.
+    ═══════════════════════════════════════════════════════
+    ⚠️⚠️⚠️ REQUISITO CATEGORIA STRETTO ⚠️⚠️⚠️
+    ═══════════════════════════════════════════════════════
 
-ESEMPI (MA REGOLE UTENTE HANNO PRIORITÀ):
-- AMAZON, shopping → "shopping"
-- Benzina → "carburante" 
-- Ristoranti → "vita sociale"
-- Supermercati → "spesa"
-- Farmacie → "spese mediche"
+    DEVI usare SOLO categorie da questa ESATTA lista qui sotto.
+    DEVI ASSOLUTAMENTE trovare una corrispondenza con la categoria più probabile.
+    NON creare nuove categorie.
+    NON usare variazioni o nomi simili.
+    **TUTTE le categorie devono essere in ITALIANO.**
 
-IN CASO DI FALLIMENTO (IMPOSSIBILE CAPIRE LA TRANSAZIONE):
-Aggiungere un campo "failure_code" con i seguenti codici:
-0 -> Incomprensibile
-1 -> Non ho trovato la categoria
-IL FALLIMENTO SI APPLICA SE E SOLO SE TROVARE UNA CATEGORIA NUOVA RISULTA INEFFICACE OPPURE SI TRATTA DI UN'ENTRATA.
+    CATEGORIE CONSENTITE (SOLO NOMI ESATTI - IN ITALIANO):
+    {categories_formatted}
 
-⚠️ FORMATO OUTPUT RICHIESTO ⚠️
-Devi restituire SOLO un array JSON contenente gli oggetti di categorizzazione.
-NON includere wrapper o oggetti esterni.
-Restituisci DIRETTAMENTE l'array JSON.
+    REGOLE DI CORRISPONDENZA CATEGORIA:
+    • Usa il nome ESATTO della categoria come mostrato sopra (sensibile alle maiuscole)
 
-FORMATO:
-[
-  {{
-    "transaction_id": "tx_001",
-    "date": "2023-01-01",
-    "category": "spesa",
-    "merchant": "SUPERMERCATO XYZ",
-    "amount": 45.50,
-    "original_amount": "-45,50",
-    "description": "Descrizione completa",
-    "applied_user_rule": "Regola 1: descrizione" (SOLO se applicata),
-    "failure_code": 0 (SOLO se fallimento)
-  }},
-  {{
-    "transaction_id": "tx_002",
-    "date": "2023-01-02",
-    "category": "carburante",
-    "merchant": "STAZIONE SERVIZIO",
-    "amount": 60.00,
-    "original_amount": "-60,00",
-    "description": "Benzina"
-  }}
-]
+    ESEMPI DI CATEGORIZZAZIONE CORRETTA:
+    • Supermercato (ESSELUNGA, CONAD) → "Alimentari"
+    • Ristorante/Bar/Caffè → "Ristoranti e Bar"
+    • Bonifico a favore di persona con nota generica (es. "Regalo", "Brez") → "bonifico"
+    • Bonifico per canone mensile (es. "Saldo affitto", "Rata mutuo") → "Affitto o Mutuo"
+    • Prelievo bancomat/ATM withdrawal → "Prelievi"
 
-TRANSAZIONI:
-{transactions_text}
+    ⚠️ CRITICO: **NON DEVI USARE "Uncategorized".** DEVI assegnare la categoria più probabile basandoti sulla descrizione.
+    NON inventare MAI un nuovo nome di categoria non presente nella lista sopra.
 
-RICORDA: 
-- Le regole utente sono OBBLIGATORIE e hanno PRIORITÀ ASSOLUTA
-- Restituisci SOLO l'array JSON, senza wrapper o oggetti esterni
+    ═══════════════════════════════════════════════════════
+    ISTRUZIONI PRINCIPALI (ORDINE DI PRIORITÀ):
+    ═══════════════════════════════════════════════════════
 
-RISPONDI SOLO CON L'ARRAY JSON:"""
+    1. CHECK USER RULES FIRST - **APPLICA LA REGOLA "IGNORA" PER I SALDI E GLI ACCREDITI.**
+    2. Analizza ogni transazione rimanente (che saranno solo SPESE).
+    3. Categorizza ogni transazione SPESA usando SOLO le categorie consentite sopra, trovando sempre la corrispondenza più probabile.
+    4. Estrai il nome del commerciante e tutti i campi obbligatori.
+
+    ═══════════════════════════════════════════════════════
+    ⚠️⚠️⚠️ CAMPI OBBLIGATORI - DEVONO ESSERE ESTRATTI PER OGNI TRANSAZIONE ⚠️⚠️⚠️
+    ═══════════════════════════════════════════════════════
+
+    DEVI estrarre questi 5 campi per OGNI transazione di SPESA, indipendentemente dal formato CSV o dai nomi delle colonne:
+
+    ┌─────────────────────────────────────────────────────┐
+    │ 1. DATE (DATA) (OBBLIGATORIO)                       │
+    └─────────────────────────────────────────────────────┘
+
+       DOVE TROVARLO:
+       • Cerca in QUALSIASI campo contenente: "data", "date", "valuta", "contabile", "operazione"
+       • Intestazioni Italiane comuni: "Data", "Data valuta", "Data contabile", "DATA VALUTA", "DATA CONTABILE"
+
+       FORMATO: "YYYY-MM-DD"
+
+       STRATEGIA DI ESTRAZIONE:
+       • Se esistono più date, preferisci "Data valuta" rispetto a "Data contabile".
+       • Il formato italiano è di solito GG/MM/AAAA - converti in YYYY-MM-DD
+
+       FALLBACK: Se non viene trovata alcuna data, usa la data corrente.
+
+    ┌─────────────────────────────────────────────────────┐
+    │ 2. AMOUNT (IMPORTO) (OBBLIGATORIO)                  │
+    └─────────────────────────────────────────────────────┘
+
+       DOVE TROVARLO:
+       • Cerca in QUALSIASI campo contenente: "importo", "amount", "movimento", "uscite", "entrate", "dare", "avere"
+
+       FORMATO: Numero decimale positivo (es. 45.50)
+
+       STRATEGIA DI ESTRAZIONE:
+       • **AMOUNT FINALE ESTRATTO:** Il valore numerico nel campo "amount" del JSON DEVE SEMPRE essere POSITIVO (valore assoluto).
+       • Il formato italiano usa la virgola per i decimali: "45,50" → converti in 45.50
+
+       FALLBACK: Se non viene trovato alcun importo, usa 0.00.
+
+    ┌─────────────────────────────────────────────────────┐
+    │ 3. ORIGINAL_AMOUNT (IMPORTO ORIGINALE) (OBBLIGATORIO)│
+    └─────────────────────────────────────────────────────┘
+
+       La rappresentazione ESATTA della stringa così come appare nei dati, mantenendo il segno originale (che dovrebbe essere negativo o senza segno ma associato a USCITE).
+
+       NON modificare o riformattare - preserva esattamente la stringa originale.
+
+    ┌─────────────────────────────────────────────────────┐
+    │ 4. MERCHANT (COMMERCIANTE) (OBBLIGATORIO) - CAMPO CRITICO  │
+    └─────────────────────────────────────────────────────┘
+
+       DOVE TROVARLO:
+       • Cerca in TUTTI i campi: "Causale", "Descrizione", "Concetto", "Descrizione operazione", "Osservazioni"
+
+       STRATEGIA DI ESTRAZIONE:
+       • Per pagamenti con carta, estrai il nome del commerciante (es. "ESSELUNGA").
+       • Per Bonifici/SDD, estrai il nome del Beneficiario/Creditore/Ordinante.
+       • Rimuovi: "S.p.A.", "SRL", "presso", numeri di carta, codici.
+
+       VALORI DI FALLBACK:
+       • Bonifico bancario senza beneficiario → "Bonifico"
+       • Prelievo bancomat → "Prelievo"
+
+    ┌─────────────────────────────────────────────────────┐
+    │ 5. DESCRIPTION (DESCRIZIONE) (OBBLIGATORIO)         │
+    └─────────────────────────────────────────────────────┘
+
+       Una descrizione completa che combini TUTTI i campi rilevanti (causale, descrizione, concetto, ecc.).
+
+       STRATEGIA:
+       • Concatenare tutti i campi descrittivi disponibili.
+       • Separare con " | " se combini più campi.
+
+       ⚠️ NON lasciare MAI la descrizione vuota.
+
+    ═══════════════════════════════════════════════════════
+    GESTIONE DEI FALLIMENTI
+    ═══════════════════════════════════════════════════════
+
+    Se la categorizzazione è *estremamente* incerta:
+    • **NON USARE** "Uncategorized", "Unkwown" eccetera.
+    • **USA IL CAMPO FAILURE** .
+    Se il commerciante non è possibile da individuare:
+    • **NON USARE** "Unkwown" o simili.
+    • **USA IL CAMPO FAILURE** .
+    
+    IMPORTANTE: DEVI comunque estrarre date, amount, original_amount, e description.
+    
+    Il seguente è un esempio di fallimento:
+    {{
+        "transaction_id": "1201",
+        "date": "2025-10-14",
+        "category": "null",
+        "merchant": "Negozio di Gianna",
+        "amount": 12.50,
+        "original_amount": "-12,50",
+        "description": "Operazione Mastercard presso Negozio di Gianna"
+        "failure": true
+      }}
+
+    ═══════════════════════════════════════════════════════
+    OUTPUT FORMAT
+    ═══════════════════════════════════════════════════════
+
+    Restituisci SOLO un array JSON con oggetti di categorizzazione.
+    **DEVI ESCLUDERE DALL'OUTPUT JSON LE TRANSAZIONI CHE CORRISPONDONO ALLA REGOLA "IGNORA SALDI E ACCREDITI".**
+    NON includere oggetti wrapper o testo esplicativo.
+    Restituisci l'array JSON direttamente.
+
+    FORMATO (Le categorie devono essere in ITALIANO):
+    [
+      {{
+        "transaction_id": "1200",
+        "date": "2025-10-15",
+        "category": "Alimentari",
+        "merchant": "ESSELUNGA",
+        "amount": 161.32,
+        "original_amount": "-161,32",
+        "description": "Addebito SDD CORE Esselunga S.p.A. ADDEB.FIDATY ORO",
+        "applied_user_rule": null,
+        "failure": False
+      }},
+      {{
+        "transaction_id": "1201",
+        "date": "2025-10-14",
+        "category": "Ristoranti e Bar",
+        "merchant": "FRAGESA",
+        "amount": 46.50,
+        "original_amount": "-46,50",
+        "description": "Operazione Mastercard presso FRAGESA SRL"
+      }}
+    ]
+
+    ═══════════════════════════════════════════════════════
+    TRANSAZIONI DA ANALIZZARE:
+    ═══════════════════════════════════════════════════════
+
+    {transactions_text}
+
+    ═══════════════════════════════════════════════════════
+    CHECKLIST FINALE PRIMA DI RISPONDERE:
+    ═══════════════════════════════════════════════════════
+
+    ✓ Ho controllato prima le regole utente, **inclusa la regola IGNORA SALDI e ACCREDITI**?
+    ✓ Ho **escluso Saldi e Accrediti** dal JSON finale?
+    ✓ OGNI transazione restante (solo spese) ha i 5 campi obbligatori estratti?
+    ✓ Ho ASSOLUTAMENTE EVITATO "Uncategorized"?
+    ✓ La categoria è della lista ESATTA consentita (e in ITALIANO)?
+    ✓ La mia risposta è SOLO l'array JSON (senza markdown, senza testo)?
+
+    RISPONDI SOLO CON L'ARRAY JSON:"""
 
     def process_batch(self, batch: list[AgentTransactionUpload]) -> list[TransactionCategorization]:
         """
@@ -428,7 +510,6 @@ RISPONDI SOLO CON L'ARRAY JSON:"""
 
         Args:
             batch: list of transactions with 'id' and raw data
-            batch_num: Batch number for tracking
 
         Returns:
             list[TransactionCategorization]: Array of categorization objects
@@ -437,11 +518,10 @@ RISPONDI SOLO CON L'ARRAY JSON:"""
             # Build prompt
             prompt = self.build_batch_prompt(batch)
 
-            print(f"📤 Sending batch to API...")
+            print(f"📤 Sending batch to API... with prompt {prompt}")
 
-            # Send to API
-            raw_response = call_gemini_api(prompt, self.api_key)
-            response_text = parse_gemini_response(raw_response)
+            # Send to API using new SDK
+            response_text = call_gemini_api(prompt, self.client)
 
             # Parse JSON array response
             categorizations_data = parse_json_array(response_text)
@@ -454,7 +534,8 @@ RISPONDI SOLO CON L'ARRAY JSON:"""
 
             # Log completion
             expense_count = len([c for c in categorizations if c.category != "not_expense"])
-            print(f"✅ Batch completed: {expense_count}")
+            print(f"✅ Batch completed: {expense_count}/{len(categorizations)} expenses categorized")
+
             return categorizations
 
         except Exception as e:

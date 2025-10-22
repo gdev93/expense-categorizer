@@ -109,7 +109,6 @@
     margin-top: 5px;
     max-width: 600px;
     overflow: hidden;
-    text-overflow: ellipsis;
     white-space: nowrap;
 }
 

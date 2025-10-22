@@ -1,6 +1,7 @@
 # processors.py
 from datetime import datetime, date
 from decimal import Decimal, InvalidOperation
+
 from django.db import transaction
 from django.db.models import Count
 
@@ -109,7 +110,6 @@ class ExpenseUploadProcessor:
 
                 self._persist_batch_results(batch_result)
 
-
     def _persist_batch_results(self, batch: list[TransactionCategorization]):
 
         existing_transactions = (Transaction.objects
@@ -121,7 +121,7 @@ class ExpenseUploadProcessor:
         for tx_data in batch:
             tx_id = tx_data.transaction_id
             try:
-                failure_code = tx_data.failure_code
+                failure = tx_data.failure
                 # Extract and parse transaction data
                 transaction_date = _parse_date(tx_data.date)
                 amount = _parse_amount(tx_data.amount)
@@ -129,10 +129,18 @@ class ExpenseUploadProcessor:
                 description = tx_data.description
                 merchant_name = tx_data.merchant
                 category_name = tx_data.category
-
-                # Skip if not an expense
-                if category_name == 'not_expense':
+                if failure == 'true':
+                    print(f"Transaction from agent {tx_data} has failed")
                     continue
+                # Get or create merchant
+                if merchant_name:
+                    merchant, _ = Merchant.objects.get_or_create(
+                        name=merchant_name
+                    )
+                else:
+                    print(f"Merchant name in {tx_data} is not known")
+                    continue
+
                 if (amount, merchant_name, transaction_date) in existing_transactions:
                     continue
                 # Get or create category
@@ -140,18 +148,10 @@ class ExpenseUploadProcessor:
                 if category_name:
                     category, _ = Category.objects.get_or_create(
                         name=category_name,
-                        user=self.user,
-                        defaults={'is_default': False}
+                        user=self.user
                     )
                 else:
-                    Category.objects.create(name='altro', user=self.user, defaults={'is_default': False})
-
-                # Get or create merchant
-                merchant = None
-                if merchant_name:
-                    merchant, _ = Merchant.objects.get_or_create(
-                        name=merchant_name
-                    )
+                    Category.objects.create(name='altro', user=self.user, defaults={'is_default': False}).save()
                 # Create transaction
                 updated_count = Transaction.objects.filter(id=tx_id, user=self.user).update(
                     transaction_date=transaction_date,
@@ -161,10 +161,10 @@ class ExpenseUploadProcessor:
                     merchant=merchant,
                     merchant_raw_name=merchant_name,
                     category=category,
-                    status='categorized' if not failure_code else 'uncategorized',
+                    status='categorized' if not failure else 'uncategorized',
                     confidence_score=None,
                     modified_by_user=False,
-                    failure_code=failure_code
+                    failure_code=0 if not failure else 1
                 )
 
                 if updated_count == 0:

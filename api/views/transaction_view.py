@@ -19,9 +19,9 @@ class TransactionListView(LoginRequiredMixin, ListView):
     def get_queryset(self):
         """Filter transactions based on user and query parameters"""
         queryset = Transaction.objects.filter(
-            user=self.request.user
+            user=self.request.user,
+            merchant_id__isnull=False  # Filtra per escludere i valori NULL
         ).select_related('category', 'merchant').order_by('-transaction_date', '-created_at')
-
         # Filter by category
         category_id = self.request.GET.get('category')
         if category_id:
