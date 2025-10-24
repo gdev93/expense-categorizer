@@ -419,11 +419,11 @@ class ExpenseCategorizerAgent:
     │ 5. DESCRIPTION (DESCRIZIONE) (OBBLIGATORIO)         │
     └─────────────────────────────────────────────────────┘
 
-       Una descrizione completa che combini TUTTI i campi rilevanti (causale, descrizione, concetto, ecc.).
+       La descrizione è solitamente un campo contente una string che spiega la transazione.
 
        STRATEGIA:
-       • Concatenare tutti i campi descrittivi disponibili.
-       • Separare con " | " se combini più campi.
+       • Usare direttamente la stringa
+       • NON aggiungere dettagli
 
        ⚠️ NON lasciare MAI la descrizione vuota.
 
@@ -517,8 +517,6 @@ class ExpenseCategorizerAgent:
         try:
             # Build prompt
             prompt = self.build_batch_prompt(batch)
-
-            print(f"📤 Sending batch to API... with prompt {prompt}")
 
             # Send to API using new SDK
             response_text = call_gemini_api(prompt, self.client)

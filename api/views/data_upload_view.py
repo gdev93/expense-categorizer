@@ -1,15 +1,16 @@
-from django.views.generic import FormView
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.urls import reverse_lazy
-from django.contrib import messages
-from django.conf import settings
-from django import forms
 import csv
 import io
-from typing import List,Dict
+from typing import List, Dict
 
-from api.models import Category,Rule
-from api.processors import ExpenseUploadProcessor
+from django import forms
+from django.conf import settings
+from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.urls import reverse_lazy
+from django.views.generic import FormView
+
+from api.models import Rule, Category
+from processors.expense_upload_processor import ExpenseUploadProcessor
 
 
 class CSVUploadForm(forms.Form):
@@ -43,18 +44,6 @@ def _parse_csv(csv_file) -> List[Dict[str,str]]:
     return list(reader)
 
 
-def _prepare_transactions(csv_data: List[Dict[str,str]]) -> List[Dict[str,str]]:
-    """Add transaction IDs to each row for agent processing."""
-    transactions = []
-    for idx,row in enumerate(csv_data):
-        transaction = {
-            'id': f'tx_{idx:03d}',
-            **row
-        }
-        transactions.append(transaction)
-    return transactions
-
-
 class CSVUploadView(LoginRequiredMixin,FormView):
     """
     View for handling CSV file uploads for transaction processing.
@@ -86,21 +75,26 @@ class CSVUploadView(LoginRequiredMixin,FormView):
                 messages.error(self.request,'The CSV file is empty.')
                 return self.form_invalid(form)
 
-            # Prepare transactions with IDs
-            transactions = _prepare_transactions(csv_data)
 
             # Get user rules
             user_rules = list(Rule.objects.filter(user=self.request.user,is_active=True).order_by('priority').values_list('text_content',flat=True))
-
-            # Process transactions using processor
+            user_categories = list(Category.objects.filter(user=self.request.user).values_list('name', flat=True))
+            if not user_categories:
+                Category.objects.bulk_create([
+                    Category(name=default_category, user=self.request.user)
+                    for default_category in self.default_categories
+                ])
+                available_categories = self.default_categories
+            else:
+                available_categories = user_categories
             processor = ExpenseUploadProcessor(
                 user=self.request.user,
                 batch_size=self.get_batch_size(),
                 user_rules=user_rules,
-                available_categories=self.default_categories
+                available_categories=available_categories
             )
 
-            processor.process_transactions(transactions)
+            processor.process_transactions(csv_data)
 
             # Show success message
             messages.success(
