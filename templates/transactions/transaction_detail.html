@@ -1,0 +1,99 @@
+{% extends "main/index.html" %}
+{% load static %}
+
+{% block title %}Transaction Detail{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/transactions.css' %}">
+{% endblock %}
+
+{% block content %}
+    <div class="container mt-5">
+        <div class="header">
+            <a href="{% url 'transaction_list' %}" class="btn btn-secondary">
+                < Back to Transactions
+            </a>
+            <h1>📝 Transaction Detail</h1>
+        </div>
+
+        <div class="rule-card card mb-4">
+            <div class="card-header">
+                <h2>Transaction ID: {{ transaction.id }}</h2>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{% url 'transaction_detail' transaction.id %}">
+                    {% csrf_token %}
+
+                    <div class="form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+
+                        <div class="filter-group">
+                            <label for="id_merchant_raw_name">Merchant Name (Raw)</label>
+                            <input type="text" name="merchant_raw_name" id="id_merchant_raw_name"
+                                   class="form-control" value="{{ transaction.merchant_raw_name|default:"" }}" required />
+                        </div>
+
+                        <div class="filter-group">
+                            <label for="id_amount">Amount (€)</label>
+                            <input type="number" name="amount" id="id_amount" step="0.01"
+                                   class="form-control" value="{{ transaction.amount|floatformat:2 }}" required />
+                        </div>
+
+                        <div class="filter-group">
+                            <label for="id_transaction_date">Date</label>
+                            <input type="date" name="transaction_date" id="id_transaction_date"
+                                   class="form-control" value="{{ transaction.transaction_date|date:'Y-m-d' }}" required />
+                        </div>
+
+                        <div class="filter-group">
+                            <label>Status</label>
+                            <span class="transaction-status status-{{ transaction.status }}" style="align-self: flex-start; margin-top: 10px;">
+                                {{ transaction.get_status_display }}
+                            </span>
+                            <small class="form-text">Status is set by system rules/review.</small>
+                        </div>
+                    </div>
+
+                    <div class="filter-group mb-3">
+                        <label for="id_description">Description (Raw from Bank)</label>
+                        <textarea id="id_description" name="description" class="form-control" rows="3">{{ transaction.description|default:"" }}</textarea>
+                    </div>
+
+                    <div class="filter-group mb-3">
+                        <label for="id_category">Category</label>
+                        <select name="category" id="id_category" class="form-control" required>
+                            <option value="">Select Category</option>
+                            {% for cat in categories %}
+                                <option value="{{ cat.id }}"
+                                        {% if transaction.category.id == cat.id %}selected{% endif %}>
+                                    {{ cat.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <small class="form-text">
+                            Select an existing category or use the field below to define a new one.
+                        </small>
+                    </div>
+
+                    <div class="filter-group mb-4" style="border-top: 1px solid #eee; padding-top: 15px;">
+                        <label for="id_new_category_name">Create New Category</label>
+                        <input type="text" name="new_category_name" id="id_new_category_name"
+                               class="form-control" placeholder="Enter new category name (e.g., 'Groceries')" />
+                        <small class="form-text">
+                            If you enter a new name, it will be created and assigned to this transaction.
+                        </small>
+                    </div>
+
+                    <div class="rule-form-actions" style="border-top: 2px solid #ddd; padding-top: 15px;">
+                        <button type="submit" class="btn btn-primary">
+                            💾 Save Changes
+                        </button>
+{#                        <a href="{% url 'delete_transaction' transaction.id %}" class="btn btn-secondary"#}
+{#                           onclick="return confirm('Are you sure you want to delete this transaction?');">#}
+{#                            🗑️ Delete Transaction#}
+{#                        </a>#}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}

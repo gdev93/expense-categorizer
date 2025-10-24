@@ -118,13 +118,10 @@
         {% if transactions %}
             <div class="transaction-list">
                 {% for transaction in transactions %}
-                    <div class="transaction-item">
+                    <div class="transaction-item" onclick="window.location.href='{% url 'transaction_detail' transaction.id %}'">
                         <div class="transaction-main">
                             <div class="transaction-date">
                                 📅 {{ transaction.transaction_date|date:"d/m/Y" }}
-                                {% if transaction.modified_by_user %}
-                                    <span style="color: #2196f3; font-size: 11px;">✏️ Edited</span>
-                                {% endif %}
                             </div>
                             <div class="transaction-merchant">
                                 {{ transaction.merchant_raw_name|default:"Unknown Merchant" }}

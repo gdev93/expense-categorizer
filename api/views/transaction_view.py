@@ -1,12 +1,68 @@
 # views.py (add to your existing views file)
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db import transaction as db_transaction
+from django.db.models import Q  # Import Q for complex lookups
+from django.db.models import Sum
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.views import View
 from django.views.generic import ListView
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Q, Sum
+from django.views.generic import UpdateView
 
 from api.models import Transaction, Category, Rule
+
+
+# views.py
+
+class TransactionDetailUpdateView(LoginRequiredMixin, UpdateView):
+    """
+    A view to display and handle updates for a single Transaction instance.
+    The view will re-render the detail template upon successful update,
+    staying on the current page.
+    """
+    model = Transaction
+    template_name = 'transactions/transaction_detail.html'
+    fields = [
+        'transaction_date',
+        'amount',
+        'merchant_raw_name',
+        'description',
+        'category'
+    ]
+
+    def get_queryset(self):
+        return self.model.objects.filter(user=self.request.user)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['categories'] = Category.objects.filter(
+            Q(user=self.request.user) | Q(is_default=True)
+        ).distinct()
+        return context
+
+    def form_valid(self, form):
+        """
+        Customizes form validation to handle new category creation,
+        set the modified_by_user flag, and most importantly,
+        **return the rendered template instead of a redirect.**
+        """
+        new_category_name = self.request.POST.get('new_category_name', '').strip()
+
+        with db_transaction.atomic():
+            if new_category_name:
+                new_category, created = Category.objects.get_or_create(
+                    name=new_category_name,
+                    user=self.request.user,  # Assigns the new category to the current user
+                    defaults={'is_default': False}
+                )
+                form.instance.category = new_category
+
+            form.instance.modified_by_user = True
+
+            self.object = form.save()
+
+        return self.render_to_response(self.get_context_data(form=form))
+
 
 
 class TransactionListView(LoginRequiredMixin, ListView):

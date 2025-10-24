@@ -21,7 +21,7 @@ from api.entry_point_views import login_form, index, authenticate_user, register
 from api.views.category_view import CategoryUpdateView
 from api.views.data_upload_view import CSVUploadView
 from api.views.rule_view import RuleDefineView
-from api.views.transaction_view import TransactionListView, EditTransactionCategory
+from api.views.transaction_view import TransactionListView, EditTransactionCategory, TransactionDetailUpdateView
 
 urlpatterns = [
     path("accounts/", login_form, name="login_form"),
@@ -30,6 +30,7 @@ urlpatterns = [
     path('accounts/create/', create_user, name='create_user'),
     path('transactions/upload/', CSVUploadView.as_view(), name='transactions_upload'),
     path('transactions/', TransactionListView.as_view(), name='transaction_list'),
+    path('transactions/<int:pk>/', TransactionDetailUpdateView.as_view(), name='transaction_detail'),
     path('transactions/rules/', RuleDefineView.as_view(), name='define_rule'),
     path('transactions/category/', CategoryUpdateView.as_view(), name='update_category'),
     path('transactions/category/edit', EditTransactionCategory.as_view(), name='update_transaction_category'),
