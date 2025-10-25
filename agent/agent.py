@@ -338,7 +338,7 @@ class ExpenseCategorizerAgent:
     ESEMPI DI CATEGORIZZAZIONE CORRETTA:
     • Supermercato (ESSELUNGA, CONAD) → "Alimentari"
     • Ristorante/Bar/Caffè → "Ristoranti e Bar"
-    • Bonifico a favore di persona con nota generica (es. "Regalo", "Brez") → "bonifico"
+    • Bonifico a favore di persona con nota generica (es. "Regalo", "Brez") → "Bonifico"
     • Bonifico per canone mensile (es. "Saldo affitto", "Rata mutuo") → "Affitto o Mutuo"
     • Prelievo bancomat/ATM withdrawal → "Prelievi"
 
@@ -515,6 +515,7 @@ class ExpenseCategorizerAgent:
             list[TransactionCategorization]: Array of categorization objects
         """
         try:
+            print(f"👀 Analyzing batch with length {len(batch)}...")
             # Build prompt
             prompt = self.build_batch_prompt(batch)
 
@@ -532,11 +533,10 @@ class ExpenseCategorizerAgent:
 
             # Log completion
             expense_count = len([c for c in categorizations if c.category != "not_expense"])
-            print(f"✅ Batch completed: {expense_count}/{len(categorizations)} expenses categorized")
+            print(f"✅ Analysis completed: {expense_count}/{len(categorizations)} expenses categorized! 🔥🔥")
 
             return categorizations
 
         except Exception as e:
-            print(f"❌ Batch failed: {str(e)}")
-            # Return empty list on error
+            print(f"❌ Analysis failed: {str(e)}")
             return []

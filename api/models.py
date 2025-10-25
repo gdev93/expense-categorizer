@@ -33,6 +33,7 @@ class Merchant(models.Model):
     normalized_name = models.CharField(max_length=255, db_index=True)  # For fuzzy matching
     description = models.TextField(blank=True)
     address = models.TextField(blank=True)
+
     default_categories = models.ManyToManyField(
         Category,
         blank=True,

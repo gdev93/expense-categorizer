@@ -1,11 +1,11 @@
 import os
 
+from django.contrib.auth.models import User
 from django.db import transaction
-from django.db.models import Q
 
 from agent.agent import ExpenseCategorizerAgent, AgentTransactionUpload, TransactionCategorization
 from api.models import Transaction, Category, Merchant
-from processors.data_prechecks import parse_raw_transaction
+from processors.data_prechecks import parse_raw_transaction, RawTransactionParseResult
 from processors.parser_utils import _parse_date, normalize_amount
 
 
@@ -35,6 +35,22 @@ def _calculate_statistics(transactions: list[dict], results: list[dict]) -> dict
     }
 
 
+class BatchingHelper:
+    batch_size = os.environ.get('AGENT_BATCH_SIZE', 15)
+    batch_max_size = os.environ.get('AGENT_BATCH_MAX_SIZE', 25)
+    batch_min_size = os.environ.get('AGENT_BATCH_MIN_SIZE', 10)
+    def __init__(self, batch_size:int = batch_size, batch_max_size:int=batch_max_size, batch_min_size:int=batch_min_size):
+        self.batch_size = batch_size
+        self.batch_max_size = batch_max_size
+        self.batch_min_size = batch_min_size
+
+    def compute_batch_size(self, data_count:int) -> int:
+        if data_count < self.batch_min_size:
+            return self.batch_min_size
+        if self.batch_size < data_count < self.batch_max_size:
+            return self.batch_max_size
+        return self.batch_size
+
 class ExpenseUploadProcessor:
     """
     Handles the processing and persistence of uploaded expense transactions.
@@ -46,25 +62,19 @@ class ExpenseUploadProcessor:
     """
     pre_check_confidence_threshold = os.environ.get('PRE_CHECK_CONFIDENCE_THRESHOLD', 0.8)
 
-    def __init__(self, user, batch_size: int = 5, user_rules: list[str] = None,
-                 available_categories: list[str] | None = None):
-        """
-        Args:
-            user: Django user object
-            batch_size: Number of transactions per batch
-            user_rules: List of user-defined categorization rules
-        """
+
+    def __init__(self, user: User, user_rules: list[str] = None, available_categories: list[str] | None = None, batch_helper:BatchingHelper | None = None):
         self.user = user
-        self.batch_size = batch_size
+        self.batch_helper = batch_helper or BatchingHelper()
         self.agent = ExpenseCategorizerAgent(user_rules=user_rules, available_categories=available_categories)
 
-    def process_transactions(self, raw_transaction: list[dict[str, str]]):
-        transactions_parsed = parse_raw_transaction(raw_transaction)
-        all_transactions_to_upload: list[dict[str, str]] = []
+    def _process_prechecks(self, batch: list[RawTransactionParseResult]) -> list[Transaction]:
+        all_transactions_to_upload: list[Transaction] = []
         all_transactions_categorized: list[Transaction] = []
-        for transaction_parse_result in transactions_parsed:
+        for transaction_parse_result in batch:
             if not transaction_parse_result.is_valid():
-                all_transactions_to_upload.append(transaction_parse_result.raw_data)
+                all_transactions_to_upload.append(
+                    Transaction(user=self.user, raw_data=transaction_parse_result.raw_data))
                 continue
             if transaction_parse_result.amount > 0:
                 print(f"Only expenses are allowed, skipping transaction {transaction_parse_result.raw_data}")
@@ -79,6 +89,7 @@ class ExpenseUploadProcessor:
                     continue
 
             # find transaction that has a merchant_raw_name that has great word similarity
+            # raw sql because word similarity does not work if the first item is not the merchant name, and django builtins do not allow to change the order of parameters
             sql = """
                   SELECT t.*,
                          WORD_SIMILARITY(m.name, %s) AS similarity
@@ -88,7 +99,7 @@ class ExpenseUploadProcessor:
                     AND t.merchant_id IS NOT NULL
                     AND t.user_id = %s
                     AND WORD_SIMILARITY(m.name, %s) >= %s
-                  ORDER BY similarity DESC LIMIT 1
+                  ORDER BY similarity DESC LIMIT 1 \
                   """
 
             # Execute with parameters
@@ -109,40 +120,33 @@ class ExpenseUploadProcessor:
                         merchant_raw_name=similar_transaction.merchant_raw_name,
                         category=similar_transaction.category,
                         transaction_date=transaction_parse_result.date,
-                        amount=transaction_parse_result.amount,
+                        amount=abs(transaction_parse_result.amount),
                         original_amount=transaction_parse_result.original_amount,
                         description=transaction_parse_result.description,
                         status='categorized'
                     )
                     all_transactions_categorized.append(new_categorized_transaction)
                 else:
-                    all_transactions_to_upload.append(transaction_parse_result.raw_data)
+                    all_transactions_to_upload.append(
+                        Transaction(user=self.user, raw_data=transaction_parse_result.raw_data))
             except IndexError:
-                all_transactions_to_upload.append(transaction_parse_result.raw_data)
+                all_transactions_to_upload.append(
+                    Transaction(user=self.user, raw_data=transaction_parse_result.raw_data))
 
-        Transaction.objects.bulk_create(all_transactions_categorized)
+        Transaction.objects.bulk_create(all_transactions_categorized + all_transactions_to_upload)
         print(
             f"Found {len(all_transactions_categorized)} transactions that have similar merchant names with confidence >= {self.pre_check_confidence_threshold} 👌"
         )
+        return all_transactions_to_upload
 
-        total_batches = (len(all_transactions_to_upload) + self.batch_size - 1) // self.batch_size
+    def _process_batch(self, batch: list[RawTransactionParseResult]):
+        transaction_to_upload = self._process_prechecks(batch)
 
-        print(f"\n{'=' * 60}")
-        print(f"🚀 Starting CSV Processing: {len(all_transactions_to_upload)} transactions")
-        print(f"{'=' * 60}\n")
-
-        with transaction.atomic():
-            for batch_num in range(total_batches):
-                start_idx = batch_num * self.batch_size
-                end_idx = start_idx + self.batch_size
-                batch = all_transactions_to_upload[start_idx:end_idx]
-                all_pending_transactions = [Transaction(user=self.user, raw_data=tx) for tx in batch]
-                Transaction.objects.bulk_create(all_pending_transactions)
-                agent_upload_transaction = [AgentTransactionUpload(transaction_id=tx.id, raw_text=tx.raw_data) for tx in
-                                            all_pending_transactions]
-                batch_result = self.agent.process_batch(agent_upload_transaction)
-
-                self._persist_batch_results(batch_result)
+        agent_upload_transaction = [AgentTransactionUpload(transaction_id=tx.id, raw_text=tx.raw_data) for tx in
+                                    transaction_to_upload]
+        if agent_upload_transaction:
+            batch_result = self.agent.process_batch(agent_upload_transaction)
+            self._persist_batch_results(batch_result)
 
     def _persist_batch_results(self, batch: list[TransactionCategorization]):
         for tx_data in batch:
@@ -179,7 +183,7 @@ class ExpenseUploadProcessor:
                 # Create transaction
                 updated_count = Transaction.objects.filter(id=tx_id, user=self.user).update(
                     transaction_date=transaction_date,
-                    amount=amount,
+                    amount=abs(amount),
                     original_amount=original_amount,
                     description=description,
                     merchant=merchant,
@@ -198,3 +202,21 @@ class ExpenseUploadProcessor:
             except Exception as e:
                 print(f"⚠️  Failed to persist transaction {tx_id}: {str(e)}")
                 continue
+
+    def process_transactions(self, raw_transaction: list[dict[str, str]]):
+        transactions_parsed = parse_raw_transaction(raw_transaction)
+        data_count = len(transactions_parsed)
+        batch_size = self.batch_helper.compute_batch_size(data_count)
+
+        total_batches = (data_count + batch_size - 1) // batch_size
+
+        print(f"\n{'=' * 60}")
+        print(f"🚀 Starting CSV Processing: {data_count} transactions")
+        print(f"{'=' * 60}\n")
+
+        for batch_num in range(total_batches):
+            start_idx = batch_num * batch_size
+            end_idx = start_idx + batch_size
+            batch = transactions_parsed[start_idx:end_idx]
+            with transaction.atomic():
+                self._process_batch(batch)

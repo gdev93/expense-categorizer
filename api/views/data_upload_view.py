@@ -59,10 +59,6 @@ class CSVUploadView(LoginRequiredMixin,FormView):
     success_url = reverse_lazy('transaction_list')
     default_categories:list[str] = "Casa,Spesa,Auto,Carburante,Vita sociale,Pizza,Regali,Vacanze,Bollette,Scuola,Bambini,Shopping,Abbonamenti,Affitto,Baby-sitter,Trasporti,Spese mediche,Partita Iva, Bonifico".split(',')
 
-    def get_batch_size(self):
-        """Get batch size from settings"""
-        return getattr(settings,'CSV_BATCH_SIZE',15)
-
     def form_valid(self,form):
         """Process valid form submission"""
         csv_file = form.cleaned_data['csv_file']
@@ -89,7 +85,6 @@ class CSVUploadView(LoginRequiredMixin,FormView):
                 available_categories = user_categories
             processor = ExpenseUploadProcessor(
                 user=self.request.user,
-                batch_size=self.get_batch_size(),
                 user_rules=user_rules,
                 available_categories=available_categories
             )
