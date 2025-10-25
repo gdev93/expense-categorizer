@@ -95,7 +95,7 @@ def normalize_amount(amount_value: str | float) -> Decimal:
         Parse amount to Decimal, handling various formats.
         """
     if isinstance(amount_value, float):
-        return Decimal(round(abs(amount_value)))
+        return Decimal(round(amount_value))
 
     if isinstance(amount_value, str):
         try:
@@ -103,7 +103,7 @@ def normalize_amount(amount_value: str | float) -> Decimal:
             cleaned = amount_value.replace('€', '').replace(' ', '').strip()
             # Handle Italian format (comma as decimal separator)
             cleaned = cleaned.replace('.', '').replace(',', '.')
-            return Decimal(round(abs(float(cleaned)), 2))
+            return Decimal(round(float(cleaned), 2))
         except (ValueError, InvalidOperation):
             return Decimal('0.00')
 

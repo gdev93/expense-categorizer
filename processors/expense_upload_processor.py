@@ -1,7 +1,7 @@
 import os
 
 from django.db import transaction
-from django.db.models import Count
+from django.db.models import Q
 
 from agent.agent import ExpenseCategorizerAgent, AgentTransactionUpload, TransactionCategorization
 from api.models import Transaction, Category, Merchant
@@ -66,6 +66,18 @@ class ExpenseUploadProcessor:
             if not transaction_parse_result.is_valid():
                 all_transactions_to_upload.append(transaction_parse_result.raw_data)
                 continue
+            if transaction_parse_result.amount > 0:
+                print(f"Only expenses are allowed, skipping transaction {transaction_parse_result.raw_data}")
+                continue
+            if transaction_parse_result.description:
+                transaction_from_description = Transaction.objects.filter(
+                    user=self.user,
+                    description=transaction_parse_result.description,
+                ).exists()
+                if transaction_from_description:
+                    print(f"Transaction from description {transaction_parse_result.description} already categorized")
+                    continue
+
             # find transaction that has a merchant_raw_name that has great word similarity
             sql = """
                   SELECT t.*,
@@ -116,14 +128,14 @@ class ExpenseUploadProcessor:
         total_batches = (len(all_transactions_to_upload) + self.batch_size - 1) // self.batch_size
 
         print(f"\n{'=' * 60}")
-        print(f"🚀 Starting CSV Processing: {len(raw_transaction)} transactions")
+        print(f"🚀 Starting CSV Processing: {len(all_transactions_to_upload)} transactions")
         print(f"{'=' * 60}\n")
 
         with transaction.atomic():
             for batch_num in range(total_batches):
                 start_idx = batch_num * self.batch_size
                 end_idx = start_idx + self.batch_size
-                batch = raw_transaction[start_idx:end_idx]
+                batch = all_transactions_to_upload[start_idx:end_idx]
                 all_pending_transactions = [Transaction(user=self.user, raw_data=tx) for tx in batch]
                 Transaction.objects.bulk_create(all_pending_transactions)
                 agent_upload_transaction = [AgentTransactionUpload(transaction_id=tx.id, raw_text=tx.raw_data) for tx in
@@ -133,13 +145,6 @@ class ExpenseUploadProcessor:
                 self._persist_batch_results(batch_result)
 
     def _persist_batch_results(self, batch: list[TransactionCategorization]):
-
-        existing_transactions = (Transaction.objects
-                                 .values('amount', 'merchant_raw_name', 'transaction_date')  # Group by these fields
-                                 .annotate(count=Count('id'))  # Count the number of transactions in each group
-                                 .filter(count__gte=1)  # Keep only the groups (combinations) with a count > 1
-                                 .values_list('amount', 'merchant_raw_name','transaction_date', flat=False)
-                                 )
         for tx_data in batch:
             tx_id = tx_data.transaction_id
             try:
@@ -161,9 +166,6 @@ class ExpenseUploadProcessor:
                     )
                 else:
                     print(f"Merchant name in {tx_data} is not known")
-                    continue
-
-                if (amount, merchant_name, transaction_date) in existing_transactions:
                     continue
                 # Get or create category
                 category = None
