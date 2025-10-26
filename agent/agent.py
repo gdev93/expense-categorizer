@@ -174,96 +174,6 @@ class ExpenseCategorizerAgent:
         self.available_categories = available_categories or []
         self.user_rules = user_rules or []
 
-    def get_transaction_rule_prompt(self, user_input_text: str) -> str:
-        """
-        Generates the string representation of the internal instruction prompt
-        for the LLM agent, including validation for slurs, category existence,
-        and detailed failure reason codes.
-
-        Args:
-            user_input_text: The free-text rule provided by the user (in Italian).
-
-        Returns:
-            The detailed prompt string for the LLM.
-        """
-
-        # Format the list of valid categories for insertion into the prompt
-        categories_list_str = ", ".join([f"'{c}'" for c in self.available_categories])
-
-        prompt = f"""
-        # Istruzioni per l'Analisi e la Validazione Avanzata della Regola di Categorizzazione
-
-        **TASK:** Analizza il seguente testo libero fornito dall'utente per estrarre una regola di categorizzazione delle transazioni. Il tuo output deve essere **esclusivamente** un oggetto JSON conforme allo schema specificato e deve eseguire le seguenti convalide:
-
-        1. **Controllo Contenuto:** Verifica la presenza di linguaggio inappropriato o ingiurioso (slurs). Se presente, la regola non è valida.
-        2. **Controllo Categoria:** La categoria identificata nel testo utente **deve** corrispondere esattamente a uno dei seguenti valori validi: [{categories_list_str}].
-        3. **Estrazione Dati:** Estrai l'intervallo di date e la lista di commercianti.
-
-        **TESTO UTENTE DA ANALIZZARE:**
-        ---
-        {user_input_text}
-        ---
-
-        ---
-
-        ## SCHEMA JSON RICHIESTO PER L'OUTPUT
-
-        **ATTENZIONE:** L'output deve essere un **singolo** oggetto JSON valido, **senza** alcun testo esplicativo, note o markdown aggiuntivo.
-
-        ```json
-        {{
-          "dateFrom": "YYYY-MM-DD",
-          "dateTo": "YYYY-MM-DD",
-          "merchants": ["nome_commerciante_1", "nome_commerciante_2"],
-          "valid": "true|false",
-          "category": "nome_categoria",
-          "reason": ""
-        }}
-        ```
-
-        ---
-
-        ## REGOLE DI ESTRAZIONE E VALIDAZIONE
-
-        1.  **Category (Categoria):** * Estrai la singola parola o frase che definisce la categoria desiderata.
-            * Se la categoria estratta non corrisponde esattamente a **uno** dei valori in [{categories_list_str}], il campo `category` viene mantenuto come estratto, ma `valid` deve essere **"false"**.
-
-        2.  **Merchants (Commercianti):** * Identifica tutti i nomi di commercianti (aziende, negozi, servizi) specificati.
-            * Inserisci come un **array di stringhe**. Inserire un array vuoto (`[]`) se non sono stati trovati commercianti.
-
-        3.  **Date Range (Intervallo di Date):** * Convalida e formatta le date rigorosamente in **YYYY-MM-DD**.
-            * Se non specificato, lascia `dateFrom` e `dateTo` **vuoti** (`""`). Se le date sono malformate o incoerenti (es. 'dateFrom' dopo 'dateTo'), `valid` deve essere **"false"**.
-
-        4.  **Valid (Validità) e Reason (Codice Motivo):**
-            * **"true"**: Solo se sono stati identificati: 
-                a) Una `category` **valida** che corrisponda a una della lista.
-                b) Almeno un `merchant`.
-                c) Nessun contenuto inappropriato o ingiurioso.
-                d) L'intervallo di date è valido o vuoto.
-
-            * **"false"**: Se la regola non è valida, imposta il campo `valid` su `"false"` e riempi il campo `reason` con il codice appropriato:
-                * **Motivo 0 (Contenuto Inappropriato/Ingiurioso):** Se il testo utente contiene slurs o linguaggio inappropriato. **(Priorità massima)**
-                * **Motivo 1 (Categoria non valida/mancante):** Se non è stata trovata una categoria o la categoria non è presente in [{categories_list_str}].
-                * **Motivo 2 (Intervallo di date non valido):** Se le date sono malformate o l'intervallo è logicamente impossibile (es. data di inizio successiva alla data di fine).
-                * **Motivo 3 (Impossibile da comprendere/Commerciante mancante):** Se la richiesta è vaga, manca un commerciante, o è impossibile estrarre elementi chiave diversi dalla categoria.
-
-            * Se `valid` è `"true"`, il campo `reason` deve essere **vuoto** (`""`).
-
-        ---
-
-        **RESTITUISCI SOLO L'OGGETTO JSON COME STRINGA.** NON AGGIUNGERE ALTRO TESTO.
-        """
-        return prompt
-
-    def process_user_rule(self, user_input_text: str) -> dict[str, Any]:
-        try:
-            prompt = self.get_transaction_rule_prompt(user_input_text)
-            response_text = call_gemini_api(prompt, self.client)
-            parsed_json = parse_llm_response_json(response_text)
-            return parsed_json
-        except Exception as e:
-            return {"valid": False, "reason": str(e)}
-
     def build_batch_prompt(self, batch: list[AgentTransactionUpload]) -> str:
         """Costruisce il prompt per un batch di transazioni"""
 
@@ -296,9 +206,9 @@ class ExpenseCategorizerAgent:
 
         if all_user_rules:
             user_rules_section = """
-    ═══════════════════════════════════════════════════════
+    ═══════════════════════════════════════════════════════════════════
     ⚠️  REGOLE UTENTE - PRIORITÀ ASSOLUTA - DEVONO ESSERE APPLICATE  ⚠️
-    ═══════════════════════════════════════════════════════
+    ═══════════════════════════════════════════════════════════════════
 
     QUESTE REGOLE SONO OBBLIGATORIE E SOVRASCRIVONO OGNI ALTRA LOGICA.
 
@@ -333,15 +243,8 @@ class ExpenseCategorizerAgent:
     {categories_formatted}
 
     REGOLE DI CORRISPONDENZA CATEGORIA:
-    • Usa il nome ESATTO della categoria come mostrato sopra (sensibile alle maiuscole)
-
-    ESEMPI DI CATEGORIZZAZIONE CORRETTA:
-    • Supermercato (ESSELUNGA, CONAD) → "Alimentari"
-    • Ristorante/Bar/Caffè → "Ristoranti e Bar"
-    • Bonifico a favore di persona con nota generica (es. "Regalo", "Brez") → "Bonifico"
-    • Bonifico per canone mensile (es. "Saldo affitto", "Rata mutuo") → "Affitto o Mutuo"
-    • Prelievo bancomat/ATM withdrawal → "Prelievi"
-
+    • Usa il nome ESATTO della categoria come mostrato sopra
+    
     ⚠️ CRITICO: **NON DEVI USARE "Uncategorized".** DEVI assegnare la categoria più probabile basandoti sulla descrizione.
     NON inventare MAI un nuovo nome di categoria non presente nella lista sopra.
 

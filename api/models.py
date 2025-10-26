@@ -128,6 +128,18 @@ class Rule(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     validity_start_date = models.DateField(null=True, blank=True)
     validity_end_date = models.DateField(null=True, blank=True)
+    category = models.ForeignKey(
+        Category,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='rules'
+    )
+    merchant = models.ForeignKey(
+        Merchant,
+        on_delete=models.SET_NULL,
+        null=True,
+    )
 
 
     class Meta:

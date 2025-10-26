@@ -71,6 +71,7 @@ class TransactionListView(LoginRequiredMixin, ListView):
     template_name = 'transactions/transaction_list.html'
     context_object_name = 'transactions'
     paginate_by = 50
+    default_categories: list[str] = "Casa,Spesa,Auto,Carburante,Vita sociale,Pizza,Regali,Vacanze,Sport,Bollette,Scuola,Bambini,Shopping,Abbonamenti,Affitto,Baby-sitter,Trasporti,Spese mediche,Partita Iva, Bonifico".split(',')
 
     def get_queryset(self):
         """Filter transactions based on user and query parameters"""
@@ -103,9 +104,18 @@ class TransactionListView(LoginRequiredMixin, ListView):
         context = super().get_context_data(**kwargs)
 
         # Get all categories for filter dropdown
-        context['categories'] = list(Category.objects.filter(
+        categories = list(Category.objects.filter(
             Q(user=self.request.user) | Q(user__isnull=True)
         ).order_by('name').values('id','name'))
+        if not categories:
+            Category.objects.bulk_create([
+                Category(name=default_category, user=self.request.user)
+                for default_category in self.default_categories
+            ])
+            available_categories = self.default_categories
+        else:
+            available_categories = categories
+        context['categories'] = available_categories
 
         # Get filter values
         context['selected_category'] = self.request.GET.get('category', '')
@@ -119,7 +129,7 @@ class TransactionListView(LoginRequiredMixin, ListView):
             total=Sum('amount')
         )['total'] or 0
         context['category_count'] = user_transactions.values('category').distinct().count()
-        context['user_rule']=Rule.objects.filter(user=self.request.user,is_active=True).order_by('priority').values_list('text_content', flat=True).first()
+        context['rules']=Rule.objects.filter(user=self.request.user,is_active=True)
 
         return context
 

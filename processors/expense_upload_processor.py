@@ -92,21 +92,19 @@ class ExpenseUploadProcessor:
             # raw sql because word similarity does not work if the first item is not the merchant name, and django builtins do not allow to change the order of parameters
             sql = """
                   SELECT t.*,
-                         WORD_SIMILARITY(m.name, %s) AS similarity,
-                         SIMILARITY(t.description, %s) AS description_similarity
+                         WORD_SIMILARITY(t.description, %s) AS description_similarity
                   FROM api_transaction t
                            INNER JOIN api_merchant m ON t.merchant_id = m.id
                   WHERE t.status = 'categorized'
                     AND t.merchant_id IS NOT NULL
                     AND t.user_id = %s
-                    AND WORD_SIMILARITY(m.name, %s) >= %s
-                  ORDER BY similarity DESC, description_similarity DESC, t.updated_at DESC
+                    AND WORD_SIMILARITY(t.description, %s) >= %s
+                  ORDER BY description_similarity DESC, t.updated_at DESC
                   LIMIT 1
                   """
 
             # Execute with parameters
             params = [
-                transaction_parse_result.description,
                 transaction_parse_result.description, # For first WORD_SIMILARITY
                 self.user.id,  # For user_id
                 transaction_parse_result.description,  # For second WORD_SIMILARITY
@@ -173,6 +171,11 @@ class ExpenseUploadProcessor:
                     )
                 else:
                     print(f"Merchant name in {tx_data} is not known")
+                    Transaction.objects.filter(id=tx_id, user=self.user).update(
+                        merchant=None,
+                        merchant_raw_name=None,
+                        status='uncategorized'
+                    )
                     continue
                 # Get or create category
                 category = None

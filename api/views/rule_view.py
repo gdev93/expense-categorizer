@@ -1,12 +1,11 @@
-from django.views import View
-from django.shortcuts import redirect
-from django.urls import reverse
-from django.http import HttpRequest, HttpResponse
-import json
 import logging
 
-from agent.agent import ExpenseCategorizerAgent
-from api.models import Category, Rule
+from django.http import HttpRequest, HttpResponse
+from django.shortcuts import redirect
+from django.urls import reverse
+from django.views import View
+
+from api.models import Rule, Category, Merchant
 
 logger = logging.getLogger(__name__)
 
@@ -14,28 +13,24 @@ logger = logging.getLogger(__name__)
 class RuleDefineView(View):
 
     def post(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
+        merchant_name = request.POST.get('merchant_name', '')
+        category_name = request.POST.get('category_name', '')
 
-        user_rule_text = request.POST.get('user_rule_text', '').strip()
+        # Get or create the merchant - unpack the tuple
+        merchant, created = Merchant.objects.get_or_create(name=merchant_name)
 
-        if not user_rule_text:
-            request.session['rule_validation_result'] = {
-                'status': 'warning',
-                'message': 'Il campo della regola non può essere vuoto.'
-            }
-            request.session['last_user_rule'] = ''
-            return redirect(reverse('transaction_list'))
+        # Get or create the category with user
+        category, _ = Category.objects.get_or_create(name=category_name, user=request.user)
 
-        try:
-            agent = ExpenseCategorizerAgent(available_categories=list(Category.objects.filter(user=request.user).values_list('name', flat=True)))
-            rule_result = agent.process_user_rule(user_rule_text)
-            if rule_result['valid'] == 'true':
-                Rule.objects.create(user=request.user, text_content=user_rule_text).save()
+        # Create the rule text
+        rule_text = f"Tutte le operazioni che riguardano {merchant_name}, o che compare in qualunque forma il {merchant_name}, verranno categorizzate in {category_name}"
 
-        except Exception as e:
-            logger.error(f"Unexpected error during rule processing: {e}", exc_info=True)
-            validation_result = {
-                'status': 'error',
-                'message': f'Errore imprevisto durante l\'elaborazione della regola.'
-            }
+        # Create the rule
+        Rule.objects.create(
+            user=request.user,
+            text_content=rule_text,
+            category=category,
+            merchant=merchant
+        )
 
         return redirect(reverse('transaction_list'))
