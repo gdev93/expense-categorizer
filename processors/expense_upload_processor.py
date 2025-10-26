@@ -92,19 +92,22 @@ class ExpenseUploadProcessor:
             # raw sql because word similarity does not work if the first item is not the merchant name, and django builtins do not allow to change the order of parameters
             sql = """
                   SELECT t.*,
-                         WORD_SIMILARITY(m.name, %s) AS similarity
+                         WORD_SIMILARITY(m.name, %s) AS similarity,
+                         SIMILARITY(t.description, %s) AS description_similarity
                   FROM api_transaction t
                            INNER JOIN api_merchant m ON t.merchant_id = m.id
                   WHERE t.status = 'categorized'
                     AND t.merchant_id IS NOT NULL
                     AND t.user_id = %s
                     AND WORD_SIMILARITY(m.name, %s) >= %s
-                  ORDER BY similarity DESC LIMIT 1 \
+                  ORDER BY similarity DESC, description_similarity DESC, t.updated_at DESC
+                  LIMIT 1
                   """
 
             # Execute with parameters
             params = [
-                transaction_parse_result.description,  # For first WORD_SIMILARITY
+                transaction_parse_result.description,
+                transaction_parse_result.description, # For first WORD_SIMILARITY
                 self.user.id,  # For user_id
                 transaction_parse_result.description,  # For second WORD_SIMILARITY
                 self.pre_check_confidence_threshold  # For threshold
@@ -112,17 +115,6 @@ class ExpenseUploadProcessor:
 
             try:
                 similar_transaction = Transaction.objects.raw(sql, params)[0]
-                # TODO: if word similarity returns multiple results with same score, use this query instead with similarity as a filter:
-                # SELECT t.id,
-                #        m.name,
-                #      SIMILARITY(t.description,'Addebito SDD CORE Scad. 16/10/2025 Imp. 4.4 Creditor id. LU96ZZZ0000000000000000058 PayPal Europe S.a.r.l. et Cie S.C.A Id Mandato 54V22258E3N8U Debitore Giacomo Zanotti Rif. 1045508932933/PAYPAL') AS similarity
-                # FROM api_transaction t
-                #        INNER JOIN api_merchant m ON t.merchant_id = m.id
-                # WHERE t.status = 'categorized'
-                # AND t.merchant_id IS NOT NULL
-                # AND t.user_id = 1
-                # AND SIMILARITY(t.description,'Addebito SDD CORE Scad. 16/10/2025 Imp. 4.4 Creditor id. LU96ZZZ0000000000000000058 PayPal Europe S.a.r.l. et Cie S.C.A Id Mandato 54V22258E3N8U Debitore Giacomo Zanotti Rif. 1045508932933/PAYPAL') >= 0
-                # ORDER BY similarity DESC;
                 if similar_transaction:
                     new_categorized_transaction = Transaction(
                         user=self.user,
