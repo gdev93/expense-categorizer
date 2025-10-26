@@ -57,7 +57,7 @@ class CSVUploadView(LoginRequiredMixin,FormView):
     template_name = 'transactions/transactions_upload.html'
     form_class = CSVUploadForm
     success_url = reverse_lazy('transaction_list')
-    default_categories:list[str] = "Casa,Spesa,Auto,Carburante,Vita sociale,Pizza,Regali,Vacanze,Bollette,Scuola,Bambini,Shopping,Abbonamenti,Affitto,Baby-sitter,Trasporti,Spese mediche,Partita Iva, Bonifico".split(',')
+    default_categories:list[str] = "Casa,Spesa,Auto,Carburante,Vita sociale,Pizza,Regali,Vacanze,Sport,Bollette,Scuola,Bambini,Shopping,Abbonamenti,Affitto,Baby-sitter,Trasporti,Spese mediche,Partita Iva, Bonifico".split(',')
 
     def form_valid(self,form):
         """Process valid form submission"""

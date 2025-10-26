@@ -24,7 +24,7 @@ def call_gemini_api(prompt: str, client: genai.Client) -> str:
     """Make request to Gemini API using the new SDK"""
     try:
         config = genai.types.GenerateContentConfig(
-            temperature=0.0,
+            temperature=0.1,
         )
         response = client.models.generate_content(
             model='gemini-2.5-flash-lite',
@@ -391,24 +391,24 @@ class ExpenseCategorizerAgent:
 
        FALLBACK: Se non viene trovato alcun importo, usa 0.00.
 
-    ┌─────────────────────────────────────────────────────┐
+    ┌──────────────────────────────────────────────────────┐
     │ 3. ORIGINAL_AMOUNT (IMPORTO ORIGINALE) (OBBLIGATORIO)│
-    └─────────────────────────────────────────────────────┘
+    └──────────────────────────────────────────────────────┘
 
        La rappresentazione ESATTA della stringa così come appare nei dati, mantenendo il segno originale (che dovrebbe essere negativo o senza segno ma associato a USCITE).
 
        NON modificare o riformattare - preserva esattamente la stringa originale.
 
-    ┌─────────────────────────────────────────────────────┐
+    ┌────────────────────────────────────────────────────────────┐
     │ 4. MERCHANT (COMMERCIANTE) (OBBLIGATORIO) - CAMPO CRITICO  │
-    └─────────────────────────────────────────────────────┘
+    └────────────────────────────────────────────────────────────┘
 
        DOVE TROVARLO:
-       • Cerca in TUTTI i campi: "Causale", "Descrizione", "Concetto", "Descrizione operazione", "Osservazioni"
+       • Cerca in TUTTI i campi: "Causale", "Descrizione", "Concetto", "Descrizione operazione", "Osservazioni", "Note" e simili.
 
        STRATEGIA DI ESTRAZIONE:
        • Per pagamenti con carta, estrai il nome del commerciante (es. "ESSELUNGA").
-       • Per Bonifici/SDD, estrai il nome del Beneficiario/Creditore/Ordinante.
+       • IMPORTANTE: Se nella descrizione ci sono Addebiti o SDD, estrai il nome dell' ordinante/creditore, evita assolutamente il debitore. 
        • Rimuovi: "S.p.A.", "SRL", "presso", numeri di carta, codici.
 
        VALORI DI FALLBACK:
