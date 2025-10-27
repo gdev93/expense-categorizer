@@ -74,7 +74,8 @@ class ExpenseUploadProcessor:
         for transaction_parse_result in batch:
             if not transaction_parse_result.is_valid():
                 all_transactions_to_upload.append(
-                    Transaction(user=self.user, raw_data=transaction_parse_result.raw_data))
+                    Transaction(user=self.user, raw_data=transaction_parse_result.raw_data)
+                )
                 continue
             if transaction_parse_result.amount > 0:
                 print(f"Only expenses are allowed, skipping transaction {transaction_parse_result.raw_data}")
@@ -132,11 +133,16 @@ class ExpenseUploadProcessor:
                         Transaction(user=self.user, raw_data=transaction_parse_result.raw_data))
             except IndexError:
                 all_transactions_to_upload.append(
-                    Transaction(user=self.user, raw_data=transaction_parse_result.raw_data))
+                    Transaction(
+                        user=self.user, raw_data=transaction_parse_result.raw_data,
+                        amount=abs(transaction_parse_result.amount), transaction_date=transaction_parse_result.date,
+                        description=transaction_parse_result.description
+                    )
+                )
 
         Transaction.objects.bulk_create(all_transactions_categorized + all_transactions_to_upload)
         print(
-            f"Found {len(all_transactions_categorized)} transactions that have similar merchant names with confidence >= {self.pre_check_confidence_threshold} 👌"
+            f"Found {len(all_transactions_categorized)} {"👌" if len(all_transactions_categorized) > 0 else "😩"} transactions that have similar merchant names with confidence >= {self.pre_check_confidence_threshold}"
         )
         return all_transactions_to_upload
 
@@ -163,6 +169,7 @@ class ExpenseUploadProcessor:
                 category_name = tx_data.category
                 if failure == 'true':
                     print(f"Transaction from agent {tx_data} has failed")
+                    Transaction.objects.filter(id=tx_id, user=self.user, status='uncategorized').update()
                     continue
                 # Get or create merchant
                 if merchant_name:
@@ -195,7 +202,7 @@ class ExpenseUploadProcessor:
                     merchant=merchant,
                     merchant_raw_name=merchant_name,
                     category=category,
-                    status='categorized' if not failure else 'uncategorized',
+                    status='categorized',
                     confidence_score=None,
                     modified_by_user=False,
                     failure_code=0 if not failure else 1

@@ -2,6 +2,8 @@ import os
 import re
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
+from babel import numbers
+from babel.numbers import NumberFormatError
 
 default_date_formats = [
     '%d/%m/%Y',  # DD/MM/YYYY
@@ -98,14 +100,13 @@ def normalize_amount(amount_value: str | float) -> Decimal:
         return Decimal(amount_value)
 
     if isinstance(amount_value, str):
+        # italian
         try:
             # Remove currency symbols and spaces
             cleaned = amount_value.replace('€', '').replace(' ', '').strip()
-            # Handle Italian format (comma as decimal separator)
-            cleaned = cleaned.replace('.', '').replace(',', '.')
-            return Decimal(float(cleaned))
-        except (ValueError, InvalidOperation):
-            return Decimal('0.00')
+            return numbers.parse_decimal(cleaned, locale='it_IT')
+        except (ValueError, NumberFormatError):
+                return Decimal('0.00')
 
     return Decimal('0.00')
 

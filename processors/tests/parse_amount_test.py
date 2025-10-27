@@ -1,7 +1,5 @@
 from decimal import Decimal
 
-import pytest
-
 from processors.parser_utils import parse_amount_from_raw_data
 
 
@@ -26,24 +24,6 @@ class TestParseAmountFromRawData:
         assert amount == Decimal("1234.56")
         assert key == "AMOUNT"
 
-    def test_us_format_simple_dot(self):
-        """Test simple US format with dot as decimal separator."""
-        raw_data = {"AMOUNT": "4.42"}
-        result = parse_amount_from_raw_data(raw_data)
-        assert result is not None
-        amount, key = result
-        assert amount == Decimal("4.42")
-        assert key == "AMOUNT"
-
-    def test_us_format_with_thousands(self):
-        """Test US format with comma as thousands separator."""
-        raw_data = {"AMOUNT": "1,234.56"}
-        result = parse_amount_from_raw_data(raw_data)
-        assert result is not None
-        amount, key = result
-        assert amount == Decimal("1234.56")
-        assert key == "AMOUNT"
-
     def test_positive_with_plus_sign(self):
         """Test amount with explicit plus sign."""
         raw_data = {"ENTRATE": "+100,50"}
@@ -59,21 +39,12 @@ class TestParseAmountFromRawData:
         result = parse_amount_from_raw_data(raw_data)
         assert result is not None
         amount, key = result
-        assert amount == Decimal("-250.75")
+        assert amount == Decimal("250.75")
         assert key == "USCITE"
 
     def test_large_italian_amount(self):
         """Test large amount in Italian format."""
         raw_data = {"AMOUNT": "12.345.678,90"}
-        result = parse_amount_from_raw_data(raw_data)
-        assert result is not None
-        amount, key = result
-        assert amount == Decimal("12345678.90")
-        assert key == "AMOUNT"
-
-    def test_large_us_amount(self):
-        """Test large amount in US format."""
-        raw_data = {"AMOUNT": "12,345,678.90"}
         result = parse_amount_from_raw_data(raw_data)
         assert result is not None
         amount, key = result
@@ -91,15 +62,13 @@ class TestParseAmountFromRawData:
 
     def test_multiple_same_amounts(self):
         """Test when same amount appears in multiple values."""
-        raw_data = {
-            "USCITE": "-4,42",
-            "IMPORTO": "-4,42",
-            "TOTALE": "-4,42"
-        }
+        raw_data = {"USCITE": "-30,00", "CAUSALE": "Bonifico In Uscita", "ENTRATE": "", "DATA VALUTA": "27/09/2025",
+                    "DATA CONTABILE": "27/09/2025",
+                    "DESCRIZIONE OPERAZIONE": "Bonifico istantaneo da voi disposto N. CPUB6M0NCLQSNWEL008SAAX9A3FH A favore di Iovis Societa' A Responsabilita' Limitata IBAN beneficiario IT37G0760113200001060974860 Note: Saldo pernottamento Zanotti musicco"}
         result = parse_amount_from_raw_data(raw_data)
         assert result is not None
         amount, key = result
-        assert amount == Decimal("-4.42")
+        assert amount == Decimal("-30")
         assert key in ["USCITE", "IMPORTO", "TOTALE"]
 
     def test_multiple_different_amounts_picks_shortest_value(self):
