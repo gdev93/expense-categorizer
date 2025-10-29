@@ -95,7 +95,6 @@ class ExpenseUploadProcessor:
                   SELECT t.*,
                          WORD_SIMILARITY(t.description, %s) AS description_similarity
                   FROM api_transaction t
-                           INNER JOIN api_merchant m ON t.merchant_id = m.id
                   WHERE t.status = 'categorized'
                     AND t.merchant_id IS NOT NULL
                     AND t.user_id = %s
@@ -119,7 +118,7 @@ class ExpenseUploadProcessor:
                         user=self.user,
                         raw_data=transaction_parse_result.raw_data,
                         merchant=similar_transaction.merchant,
-                        merchant_raw_name=similar_transaction.merchant_raw_name,
+                        merchant_raw_name=similar_transaction.merchant_raw_name or similar_transaction.merchant.normalized_name,
                         category=similar_transaction.category,
                         transaction_date=transaction_parse_result.date,
                         amount=abs(transaction_parse_result.amount),
@@ -167,32 +166,23 @@ class ExpenseUploadProcessor:
                 description = tx_data.description
                 merchant_name = tx_data.merchant
                 category_name = tx_data.category
-                if failure == 'true':
+                if failure == 'true' or not merchant_name or not category_name:
                     print(f"Transaction from agent {tx_data} has failed")
-                    Transaction.objects.filter(id=tx_id, user=self.user, status='uncategorized').update()
+                    Transaction.objects.filter(id=tx_id).update(status='uncategorized', failure_code=1)
                     continue
-                # Get or create merchant
-                if merchant_name:
-                    merchant, _ = Merchant.objects.get_or_create(
-                        name=merchant_name
-                    )
-                else:
-                    print(f"Merchant name in {tx_data} is not known")
-                    Transaction.objects.filter(id=tx_id, user=self.user).update(
-                        merchant=None,
-                        merchant_raw_name=None,
-                        status='uncategorized'
-                    )
+
+                merchant = Merchant.objects.filter(name__icontains=merchant_name.strip()).first()
+                if not merchant:
+                    merchant = Merchant(name=merchant_name)
+                    merchant.save()
+
+
+                category = Category.objects.filter(name__icontains=category_name.strip(), user=self.user).first()
+                if not category:
+                    print(f"Agent response {tx_data} did not use the list of categories given by the user. Set transaction uncategorized.")
+                    Transaction.objects.filter(id=tx_id).update(status='uncategorized', failure_code=1)
                     continue
-                # Get or create category
-                category = None
-                if category_name:
-                    category, _ = Category.objects.get_or_create(
-                        name=category_name,
-                        user=self.user
-                    )
-                else:
-                    Category.objects.create(name='altro', user=self.user, defaults={'is_default': False}).save()
+
                 # Create transaction
                 updated_count = Transaction.objects.filter(id=tx_id, user=self.user).update(
                     transaction_date=transaction_date,

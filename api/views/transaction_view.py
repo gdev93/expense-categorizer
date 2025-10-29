@@ -4,7 +4,7 @@ from django.db import transaction as db_transaction
 from django.db.models import Q  # Import Q for complex lookups
 from django.db.models import Sum
 from django.http import HttpRequest, HttpResponse, JsonResponse
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from django.views import View
 from django.views.generic import ListView
 from django.views.generic import UpdateView
@@ -30,6 +30,18 @@ class TransactionDetailUpdateView(LoginRequiredMixin, UpdateView):
         'category'
     ]
 
+    def post(self, request, *args, **kwargs):
+        """Handle both updates and deletes"""
+        if 'delete' in request.POST:
+            return self.delete(request, *args, **kwargs)
+        return super().post(request, *args, **kwargs)
+
+    def delete(self, request, *args, **kwargs):
+        """Handle transaction deletion"""
+        self.get_object().delete()
+
+        return redirect('transaction_list')
+
     def get_queryset(self):
         return self.model.objects.filter(user=self.request.user)
 
@@ -48,18 +60,17 @@ class TransactionDetailUpdateView(LoginRequiredMixin, UpdateView):
         """
         new_category_name = self.request.POST.get('new_category_name', '').strip()
 
-        with db_transaction.atomic():
-            if new_category_name:
-                new_category, created = Category.objects.get_or_create(
-                    name=new_category_name,
-                    user=self.request.user,  # Assigns the new category to the current user
-                    defaults={'is_default': False}
-                )
-                form.instance.category = new_category
+        if new_category_name:
+            new_category, created = Category.objects.get_or_create(
+                name=new_category_name,
+                user=self.request.user,  # Assigns the new category to the current user
+                defaults={'is_default': False}
+            )
+            form.instance.category = new_category
 
-            form.instance.modified_by_user = True
-
-            self.object = form.save()
+        form.instance.modified_by_user = True
+        form.instance.status = 'categorized'
+        self.object = form.save()
 
         return self.render_to_response(self.get_context_data(form=form))
 
@@ -121,10 +132,10 @@ class TransactionListView(LoginRequiredMixin, ListView):
         context['selected_category'] = self.request.GET.get('category', '')
         context['selected_status'] = self.request.GET.get('status', '')
         context['search_query'] = self.request.GET.get('search', '')
-
         # Calculate summary statistics
         user_transactions = Transaction.objects.filter(user=self.request.user)
-        context['total_count'] = user_transactions.count(),
+        context['uncategorized_transaction'] = user_transactions.filter(~Q(status='categorized'))
+        context['total_count'] = user_transactions.count()
         context['total_amount'] = user_transactions.filter(status="categorized").aggregate(
             total=Sum('amount')
         )['total'] or 0
