@@ -51,6 +51,69 @@ class BatchingHelper:
             return self.batch_max_size
         return self.batch_size
 
+def _create_uncategorized_transaction(user: User, transaction_parse_result: RawTransactionParseResult) -> Transaction:
+    """
+    Create an uncategorized transaction.
+    """
+    return Transaction(
+        user=user,
+        raw_data=transaction_parse_result.raw_data,
+        amount=abs(transaction_parse_result.amount),
+        original_amount=transaction_parse_result.original_amount,
+        transaction_date=transaction_parse_result.date,
+        description=transaction_parse_result.description
+    )
+
+
+def _create_categorized_transaction(
+        user: User,
+        transaction_parse_result: RawTransactionParseResult,
+        reference_transaction: Transaction
+) -> Transaction:
+    """
+    Create a categorized transaction based on a reference transaction.
+    """
+    return Transaction(
+        user=user,
+        raw_data=transaction_parse_result.raw_data,
+        merchant=reference_transaction.merchant,
+        merchant_raw_name=reference_transaction.merchant_raw_name or reference_transaction.merchant.normalized_name,
+        category=reference_transaction.category,
+        transaction_date=transaction_parse_result.date,
+        amount=abs(transaction_parse_result.amount),
+        original_amount=transaction_parse_result.original_amount,
+        description=transaction_parse_result.description,
+        status='categorized'
+    )
+
+
+def _find_reference_transaction(user: User, transaction_parse_result: RawTransactionParseResult,
+                                precheck_confidence_threshold: float) -> Transaction | None:
+    # Try description similarity matching
+    sql = """
+          SELECT t.*,
+                 WORD_SIMILARITY(t.description, %s) AS description_similarity
+          FROM api_transaction t
+          WHERE t.status = 'categorized'
+            AND t.merchant_id IS NOT NULL
+            AND t.user_id = %s
+            AND WORD_SIMILARITY(t.description, %s) >= %s
+          ORDER BY description_similarity DESC, t.updated_at DESC LIMIT 1
+          """
+
+    params = [
+        transaction_parse_result.description,
+        user.id,
+        transaction_parse_result.description,
+        precheck_confidence_threshold
+    ]
+
+    try:
+        return Transaction.objects.raw(sql, params)[0]
+    except IndexError:
+        return None
+
+
 class ExpenseUploadProcessor:
     """
     Handles the processing and persistence of uploaded expense transactions.
@@ -89,55 +152,21 @@ class ExpenseUploadProcessor:
                     print(f"Transaction from description {transaction_parse_result.description} already categorized")
                     continue
 
-            # find transaction that has a merchant_raw_name that has great word similarity
-            # raw sql because word similarity does not work if the first item is not the merchant name, and django builtins do not allow to change the order of parameters
-            sql = """
-                  SELECT t.*,
-                         WORD_SIMILARITY(t.description, %s) AS description_similarity
-                  FROM api_transaction t
-                  WHERE t.status = 'categorized'
-                    AND t.merchant_id IS NOT NULL
-                    AND t.user_id = %s
-                    AND WORD_SIMILARITY(t.description, %s) >= %s
-                  ORDER BY description_similarity DESC, t.updated_at DESC
-                  LIMIT 1
-                  """
+            # Try to find a matching transaction and create categorized transaction
+            reference_transaction = _find_reference_transaction(self.user,
+                                                                transaction_parse_result,
+                                                                self.pre_check_confidence_threshold)
 
-            # Execute with parameters
-            params = [
-                transaction_parse_result.description, # For first WORD_SIMILARITY
-                self.user.id,  # For user_id
-                transaction_parse_result.description,  # For second WORD_SIMILARITY
-                self.pre_check_confidence_threshold  # For threshold
-            ]
-
-            try:
-                similar_transaction = Transaction.objects.raw(sql, params)[0]
-                if similar_transaction:
-                    new_categorized_transaction = Transaction(
-                        user=self.user,
-                        raw_data=transaction_parse_result.raw_data,
-                        merchant=similar_transaction.merchant,
-                        merchant_raw_name=similar_transaction.merchant_raw_name or similar_transaction.merchant.normalized_name,
-                        category=similar_transaction.category,
-                        transaction_date=transaction_parse_result.date,
-                        amount=abs(transaction_parse_result.amount),
-                        original_amount=transaction_parse_result.original_amount,
-                        description=transaction_parse_result.description,
-                        status='categorized'
-                    )
-                    all_transactions_categorized.append(new_categorized_transaction)
-                else:
-                    all_transactions_to_upload.append(
-                        Transaction(user=self.user, raw_data=transaction_parse_result.raw_data))
-            except IndexError:
-                all_transactions_to_upload.append(
-                    Transaction(
-                        user=self.user, raw_data=transaction_parse_result.raw_data,
-                        amount=abs(transaction_parse_result.amount), transaction_date=transaction_parse_result.date,
-                        description=transaction_parse_result.description
-                    )
+            if reference_transaction:
+                categorized_transaction = _create_categorized_transaction(
+                    self.user,
+                    transaction_parse_result,
+                    reference_transaction
                 )
+                all_transactions_categorized.append(categorized_transaction)
+            else:
+                uncategorized_transaction = _create_uncategorized_transaction(self.user, transaction_parse_result)
+                all_transactions_to_upload.append(uncategorized_transaction)
 
         Transaction.objects.bulk_create(all_transactions_categorized + all_transactions_to_upload)
         print(

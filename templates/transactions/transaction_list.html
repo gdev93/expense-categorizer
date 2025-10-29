@@ -196,9 +196,11 @@
                             <div class="transaction-date">
                                 📅 {{ transaction.transaction_date|date:"d/m/Y" }}
                             </div>
+                        {% if transaction.merchant_raw_name %}
                             <div class="transaction-merchant">
-                                {{ transaction.merchant_raw_name|default:"Merchant Sconosciuto" }}
+                                {{ transaction.merchant_raw_name }}
                             </div>
+                        {% endif %}
                             {% if transaction.description %}
                                 <div class="transaction-description" title="{{ transaction.description }}">
                                     {{ transaction.description|truncatewords:15 }}

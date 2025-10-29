@@ -21,10 +21,11 @@ date_formats = os.getenv('PARSE_DATE_FORMATS', default_date_formats)
 default_amount_pattern = re.compile(
     r'[+-]?\s*'  # Optional sign with optional space
     r'(?:'
-    r'\d{1,3}(?:\.\d{3})+,\d{2,}|'  # Italian with thousands: 1.234,56 (use + not *)
-    r'\d{1,3}(?:,\d{3})+\.\d{2,}|'  # US with thousands: 1,234.56 (use + not *)
+    r'\d{1,3}(?:\.\d{3})+,\d{2,}|'  # Italian with thousands: 1.234,56
+    r'\d{1,3}(?:,\d{3})+\.\d{2,}|'  # US with thousands: 1,234.56
     r'\d+,\d{2,}|'  # Simple Italian: 4,42
-    r'\d+\.\d{2,}'  # Simple US: 4.42
+    r'\d+\.\d{2,}|'  # Simple US: 4.42
+    r'\d+'  # Whole numbers without decimals: 3000
     r')'
 )
 amount_pattern = os.getenv('PARSE_AMOUNT_PATTERN', default_amount_pattern)
@@ -40,7 +41,7 @@ def _parse_date(date_str: str) -> date:
     return datetime.now().date()
 
 
-def parse_amount_from_raw_data(raw_data: dict[str, str]) -> tuple[Decimal, str] | None:
+def parse_amount_from_raw_data(raw_data: dict[str, str]) -> tuple[Decimal | None, str | None]:
     """
     Parse transaction amount from raw_data dictionary using smart regex matching.
 
@@ -77,7 +78,7 @@ def parse_amount_from_raw_data(raw_data: dict[str, str]) -> tuple[Decimal, str] 
             found_amounts[key] = (normalized, value)
 
     if not found_amounts:
-        return None
+        return None, None
 
     # Check if all found amounts are the same
     unique_amounts = set(amount for amount, _ in found_amounts.values())
@@ -111,7 +112,7 @@ def normalize_amount(amount_value: str | float) -> Decimal:
     return Decimal('0.00')
 
 
-def parse_date_from_raw_data(raw_data: dict[str, str]) -> tuple[date, str] | None:
+def parse_date_from_raw_data(raw_data: dict[str, str]) -> tuple[date | None, str | None]:
     """
     Parse transaction date from raw_data dictionary by splitting values into words.
 
@@ -150,7 +151,7 @@ def parse_date_from_raw_data(raw_data: dict[str, str]) -> tuple[date, str] | Non
                 found_dates.append((parsed_date, key))
 
     if not found_dates:
-        return None
+        return None, None
 
     # Return the earliest date (minimum) with its key
     return min(found_dates, key=lambda x: x[0])
