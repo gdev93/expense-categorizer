@@ -271,7 +271,12 @@ class ExpenseCategorizerAgent:
        • Cerca in QUALSIASI campo contenente: "data", "date", "valuta", "contabile", "operazione"
        • Intestazioni Italiane comuni: "Data", "Data valuta", "Data contabile", "DATA VALUTA", "DATA CONTABILE"
 
-       FORMATO: "YYYY-MM-DD"
+       FORMATO: **MANTIENI IL FORMATO ORIGINALE ESATTO** così come appare nei dati
+       
+       ⚠️ CRITICO: NON convertire o riformattare la data. Preserva ESATTAMENTE il formato originale.
+       • Se la data è "15/10/2025" → usa "15/10/2025"
+       • Se la data è "2025-10-15" → usa "2025-10-15"
+       • Se la data è "15/10/25" → usa "15/10/25"
 
        STRATEGIA DI ESTRAZIONE:
        • Se esistono più date, preferisci "Data valuta" rispetto a "Data contabile".

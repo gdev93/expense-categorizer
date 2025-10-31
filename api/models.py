@@ -54,6 +54,57 @@ class Merchant(models.Model):
         super().save(*args, **kwargs)
 
 
+class CsvUpload(models.Model):
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='csv_maps',
+    )
+
+    description_column_name = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text="The header name in the CSV that corresponds to the transaction description."
+    )
+    amount_column_name = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text="The header name in the CSV for the transaction amount."
+    )
+    date_column_name = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text="The header name in the CSV for the transaction date."
+    )
+    merchant_column_name = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text="The header name in the CSV for the merchant or payee name."
+    )
+
+    upload_date = models.DateTimeField(
+        auto_now_add=True,
+        help_text="The date and time the mapping record was created/uploaded."
+    )
+    dimension = models.PositiveBigIntegerField(
+        null=True,
+        blank=True,
+        help_text="The size of the associated CSV file in bytes."
+    )
+    processing_time = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="The time taken to process the associated CSV file (in milliseconds)."
+    )
+
+    def __str__(self):
+        return f"CSV Map (Upload: {self.upload_date.strftime('%Y-%m-%d')})"
+
+
 class Transaction(models.Model):
     """Individual financial transactions"""
     STATUS_CHOICES = [
@@ -63,12 +114,14 @@ class Transaction(models.Model):
         ('reviewed', 'Reviewed'),
     ]
 
-    # Core transaction data
-    transaction_date = models.DateField(null=True)
-    amount = models.DecimalField(max_digits=10, decimal_places=2, null=True)
-    original_amount = models.CharField(max_length=50, blank=True, null=True)  # Raw from CSV
-    description = models.TextField(null=True)  # Raw description from bank
 
+
+    csv_upload = models.ForeignKey(
+        CsvUpload,
+        on_delete=models.CASCADE,
+        related_name='transactions',
+        null=False
+    )
     # Relationships
     user = models.ForeignKey(
         User,
@@ -92,6 +145,12 @@ class Transaction(models.Model):
 
     # Processing metadata
     merchant_raw_name = models.CharField(max_length=255, blank=True)  # Original from CSV
+    # Core transaction data
+    transaction_date = models.DateField(null=True)
+    original_date = models.CharField(max_length=255, blank=True, null=True)
+    amount = models.DecimalField(max_digits=10, decimal_places=2, null=True)
+    original_amount = models.CharField(max_length=50, blank=True, null=True)  # Raw from CSV
+    description = models.TextField(null=True)  # Raw description from bank
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     confidence_score = models.FloatField(null=True, blank=True)  # LLM/matching confidence
     failure_code = models.CharField(max_length=20, null=True, blank=True)
@@ -122,12 +181,9 @@ class Rule(models.Model):
     text_content = models.TextField(
         verbose_name='Rule Text'  # Uses TextField for more flexible content
     )
-    priority = models.IntegerField(default=0)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    validity_start_date = models.DateField(null=True, blank=True)
-    validity_end_date = models.DateField(null=True, blank=True)
     category = models.ForeignKey(
         Category,
         on_delete=models.SET_NULL,
@@ -143,7 +199,8 @@ class Rule(models.Model):
 
 
     class Meta:
-        ordering = ['-priority', '-created_at']
+        ordering = ['-created_at']
         indexes = [
             models.Index(fields=['user', 'is_active']),
         ]
+

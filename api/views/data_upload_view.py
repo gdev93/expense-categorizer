@@ -9,7 +9,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
 from django.views.generic import FormView
 
-from api.models import Rule, Category
+from api.models import Rule, Category, CsvUpload
 from processors.expense_upload_processor import ExpenseUploadProcessor
 
 
@@ -73,7 +73,7 @@ class CSVUploadView(LoginRequiredMixin,FormView):
 
 
             # Get user rules
-            user_rules = list(Rule.objects.filter(user=self.request.user,is_active=True).order_by('priority').values_list('text_content',flat=True))
+            user_rules = list(Rule.objects.filter(user=self.request.user,is_active=True).values_list('text_content',flat=True))
             user_categories = list(Category.objects.filter(user=self.request.user).values_list('name', flat=True))
             if not user_categories:
                 Category.objects.bulk_create([

@@ -5,6 +5,8 @@ from decimal import Decimal, InvalidOperation
 from babel import numbers
 from babel.numbers import NumberFormatError
 
+from api.models import CsvUpload
+
 default_date_formats = [
     '%d/%m/%Y',  # DD/MM/YYYY
     '%d-%m-%Y',  # DD-MM-YYYY
@@ -30,67 +32,29 @@ default_amount_pattern = re.compile(
 )
 amount_pattern = os.getenv('PARSE_AMOUNT_PATTERN', default_amount_pattern)
 
+# Common word separators
+separators = [' ', ';', ',', '\t', '|', '\n']
+def parse_amount_from_raw_data(raw_data: dict[str, str], csv_amount_columns:list[str]) -> tuple[Decimal | None, str | None]:
 
-def _parse_date(date_str: str) -> date:
-    # Try common date formats
-    for fmt in ['%d/%m/%Y', '%Y-%m-%d', '%d-%m-%Y', '%m/%d/%Y']:
-        try:
-            return datetime.strptime(date_str, fmt).date()
-        except ValueError:
-            continue
-    return datetime.now().date()
-
-
-def parse_amount_from_raw_data(raw_data: dict[str, str]) -> tuple[Decimal | None, str | None]:
-    """
-    Parse transaction amount from raw_data dictionary using smart regex matching.
-
-    Handles various formats:
-    - Italian format with comma as decimal separator: -4,42
-    - International format with dot: -4.42
-    - Optional signs: +/-
-    - Thousands separators (dots or commas depending on context)
-
-    Args:
-        raw_data: Dictionary with transaction raw data
-
-    Returns:
-        tuple[Decimal, str] | None: Tuple of (parsed_amount, source_key) or None if not found
-
-    Raises:
-        ValueError: If no amount is found or amounts conflict
-    """
     # Regex pattern to match decimal numbers with various formats
     # Order matters: match longer patterns (with thousands) before shorter ones
     # Matches: -4,42 | +4.42 | 1.234,56 | 1,234.56 | 4.42 | 4,42
 
-    found_amounts = {}  # key -> (normalized_decimal, original_value)
-
     # Scan all values in the dictionary
-    for key, value in raw_data.items():
-        if not value.strip():
+    for column_name in csv_amount_columns:
+        if column_name not in raw_data:
             continue
+        value = raw_data.get(column_name)
         matches = amount_pattern.findall(value)
         if matches:
             # Take the first match (usually the complete amount)
             single_match = matches[0]
             normalized = normalize_amount(single_match)
-            found_amounts[key] = (normalized, value)
+            return normalized, column_name
 
-    if not found_amounts:
-        return None, None
+    return None, None
 
     # Check if all found amounts are the same
-    unique_amounts = set(amount for amount, _ in found_amounts.values())
-
-    if len(unique_amounts) == 1:
-        # All amounts are the same, return any
-        first_key = list(found_amounts.keys())[0]
-        return found_amounts[first_key][0], first_key
-
-    # Different amounts found, pick the one from the shortest value
-    shortest_key = min(found_amounts.keys(), key=lambda k: len(found_amounts[k][1]))
-    return found_amounts[shortest_key][0], shortest_key
 
 
 def normalize_amount(amount_value: str | float) -> Decimal:
@@ -112,31 +76,13 @@ def normalize_amount(amount_value: str | float) -> Decimal:
     return Decimal('0.00')
 
 
-def parse_date_from_raw_data(raw_data: dict[str, str]) -> tuple[date | None, str | None]:
-    """
-    Parse transaction date from raw_data dictionary by splitting values into words.
-
-    Handles various formats:
-    - Italian format: DD/MM/YYYY, DD-MM-YYYY, DD.MM.YYYY
-    - International format: YYYY-MM-DD, YYYY/MM/DD
-    - US format: MM/DD/YYYY
-
-    Args:
-        raw_data: Dictionary with transaction raw data
-
-    Returns:
-        tuple[date, str] | None: Tuple of (parsed_date, source_key) or None if not found
-    """
-    # Common word separators
-    separators = [' ', ';', ',', '\t', '|', '\n']
-
-    found_dates = []  # List of (date, key) tuples
+def parse_date_from_raw_data(raw_data: dict[str, str], csv_date_columns:list[str]) -> tuple[date | None, str | None]:
 
     # Scan all values in the dictionary
-    for key, value in raw_data.items():
-        if not value.strip():
+    for csv_date_column in csv_date_columns:
+        if csv_date_column not in raw_data:
             continue
-
+        value = raw_data.get(csv_date_column)
         # Split value into words using multiple separators
         words = _split_by_separators(value, separators)
 
@@ -148,13 +94,8 @@ def parse_date_from_raw_data(raw_data: dict[str, str]) -> tuple[date | None, str
 
             parsed_date = _try_parse_date(word)
             if parsed_date:
-                found_dates.append((parsed_date, key))
-
-    if not found_dates:
-        return None, None
-
-    # Return the earliest date (minimum) with its key
-    return min(found_dates, key=lambda x: x[0])
+                return parsed_date, csv_date_column
+    return None, None
 
 
 def _split_by_separators(text: str, separators: list[str]) -> list[str]:
@@ -198,5 +139,142 @@ def _try_parse_date(word: str) -> date | None:
     return None
 
 
-def parse_description_from_raw_data(raw_data: list[str]) -> str:
-    return max(raw_data, key=len)
+def parse_unstructured_text(raw_data: dict[str,str], column_names:list[str]) -> tuple[str | None, str | None]:
+    for column_name in column_names:
+        if column_name in raw_data:
+            return raw_data[column_name], column_name
+    return None, None
+
+
+def parse_date_from_raw_data_with_no_suggestions(raw_data: dict[str, str]) -> tuple[date | None, str | None]:
+    """
+    Parse transaction date from raw_data dictionary by splitting values into words.
+
+    Handles various formats:
+    - Italian format: DD/MM/YYYY, DD-MM-YYYY, DD.MM.YYYY
+    - International format: YYYY-MM-DD, YYYY/MM/DD
+    - US format: MM/DD/YYYY
+
+    Args:
+        raw_data: Dictionary with transaction raw data
+
+    Returns:
+        tuple[date, str] | None: Tuple of (parsed_date, source_key) or None if not found
+    """
+
+
+    found_dates = []  # List of (date, key) tuples
+
+    # Scan all values in the dictionary
+    for key, value in raw_data.items():
+        if not value.strip():
+            continue
+        parsed_date = parse_raw_date(value)
+        found_dates.append((parsed_date, key))
+
+
+    if not found_dates:
+        return None, None
+
+    return max(found_dates, key=lambda x: x[0])
+
+def parse_raw_date(raw_date:str) -> date | None:
+    # Split value into words using multiple separators
+    words = _split_by_separators(raw_date, separators)
+
+    # Try to parse each word as a date
+    for word in words:
+        word = word.strip()
+        if not word:
+            continue
+
+        parsed_date = _try_parse_date(word)
+        if parsed_date:
+            return parsed_date
+    return None
+
+
+from dataclasses import dataclass
+from decimal import Decimal
+from typing import Any
+
+
+@dataclass
+class ParsedField:
+    """Represents a parsed field with its numeric and original string values"""
+    amount: Decimal
+    original_value: str
+
+    def __str__(self) -> str:
+        return self.original_value
+
+
+@dataclass
+class ParsedAmountRawData:
+    """Structured representation of raw transaction data with parsed fields"""
+    fields: dict[str, ParsedField]
+
+    def is_valid(self) -> bool:
+        return len(self.fields) > 0
+
+    @classmethod
+    def from_raw_dict(cls, raw_data: dict[str, tuple[Decimal, str]]) -> 'ParsedAmountRawData':
+        """
+        Create ParsedRawData from a dictionary of tuples.
+
+        Args:
+            raw_data: Dictionary where values are tuples of (Decimal, str)
+
+        Returns:
+            ParsedRawData instance
+        """
+        fields = {}
+        for key, (amount, original) in raw_data.items():
+            fields[key] = ParsedField(amount=amount, original_value=original)
+        return cls(fields=fields)
+
+    def to_dict(self) -> dict[str, dict[str, Any]]:
+        """Convert to a plain dictionary representation"""
+        return {
+            key: {
+                'amount': field.amount,
+                'original_value': field.original_value
+            }
+            for key, field in self.fields.items()
+        }
+
+
+def parse_amount_from_raw_data_without_suggestion(raw_data: dict[str, str]) -> ParsedAmountRawData:
+    """
+    Parse transaction data from raw_data dictionary using smart regex matching.
+
+    Handles various formats:
+    - Italian format with comma as decimal separator: -4,42
+    - International format with dot: -4.42
+    - Optional signs: +/-
+    - Thousands separators (dots or commas depending on context)
+
+    Args:
+        raw_data: Dictionary with transaction raw data (string values)
+
+    Returns:
+        ParsedAmountRawData: Structured object containing parsed fields with amounts and original values
+    """
+    parsed_fields = {}
+
+    # Scan all values in the dictionary
+    for key, value in raw_data.items():
+        if not value or not value.strip():
+            continue
+
+        matches = amount_pattern.findall(value)
+        if matches:
+            # Take the first match (usually the complete amount)
+            single_match = matches[0]
+            normalized = normalize_amount(single_match)
+            parsed_fields[key] = ParsedField(
+                amount=normalized,
+                original_value=value
+            )
+
+    return ParsedAmountRawData(fields=parsed_fields)

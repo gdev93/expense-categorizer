@@ -2,11 +2,13 @@ import os
 
 from django.contrib.auth.models import User
 from django.db import transaction
+from django.db.models import Q
 
 from agent.agent import ExpenseCategorizerAgent, AgentTransactionUpload, TransactionCategorization
-from api.models import Transaction, Category, Merchant
+from api.models import Transaction, Category, Merchant, CsvUpload
 from processors.data_prechecks import parse_raw_transaction, RawTransactionParseResult
-from processors.parser_utils import _parse_date, normalize_amount
+from processors.parser_utils import normalize_amount, parse_raw_date, parse_amount_from_raw_data_without_suggestion, \
+    parse_date_from_raw_data_with_no_suggestions
 
 
 def _calculate_statistics(transactions: list[dict], results: list[dict]) -> dict:
@@ -61,6 +63,7 @@ def _create_uncategorized_transaction(user: User, transaction_parse_result: RawT
         amount=abs(transaction_parse_result.amount),
         original_amount=transaction_parse_result.original_amount,
         transaction_date=transaction_parse_result.date,
+        original_date=transaction_parse_result.date_original,
         description=transaction_parse_result.description
     )
 
@@ -82,6 +85,7 @@ def _create_categorized_transaction(
         transaction_date=transaction_parse_result.date,
         amount=abs(transaction_parse_result.amount),
         original_amount=transaction_parse_result.original_amount,
+        original_date=transaction_parse_result.date_original,
         description=transaction_parse_result.description,
         status='categorized'
     )
@@ -89,7 +93,14 @@ def _create_categorized_transaction(
 
 def _find_reference_transaction(user: User, transaction_parse_result: RawTransactionParseResult,
                                 precheck_confidence_threshold: float) -> Transaction | None:
-    # Try description similarity matching
+    parse_result_merchant = transaction_parse_result.merchant
+    if parse_result_merchant:
+        similar_transaction_by_merchant = Transaction.objects.filter(
+            Q(user=user) and (Q(merchant__name__search=parse_result_merchant) | Q(
+                merchant__normalized_name__search=parse_result_merchant) | Q(
+                merchant__name__search=parse_result_merchant))).first()
+        if similar_transaction_by_merchant:
+            return similar_transaction_by_merchant
     sql = """
           SELECT t.*,
                  WORD_SIMILARITY(t.description, %s) AS description_similarity
@@ -131,13 +142,13 @@ class ExpenseUploadProcessor:
         self.batch_helper = batch_helper or BatchingHelper()
         self.agent = ExpenseCategorizerAgent(user_rules=user_rules, available_categories=available_categories)
 
-    def _process_prechecks(self, batch: list[RawTransactionParseResult]) -> list[Transaction]:
+    def _process_prechecks(self, batch: list[RawTransactionParseResult], csv_upload: CsvUpload) -> list[Transaction]:
         all_transactions_to_upload: list[Transaction] = []
         all_transactions_categorized: list[Transaction] = []
         for transaction_parse_result in batch:
             if not transaction_parse_result.is_valid():
                 all_transactions_to_upload.append(
-                    Transaction(user=self.user, raw_data=transaction_parse_result.raw_data)
+                    Transaction(user=self.user, raw_data=transaction_parse_result.raw_data, csv_upload=csv_upload)
                 )
                 continue
             if transaction_parse_result.amount > 0:
@@ -151,21 +162,21 @@ class ExpenseUploadProcessor:
                 if transaction_from_description:
                     print(f"Transaction from description {transaction_parse_result.description} already categorized")
                     continue
-
             # Try to find a matching transaction and create categorized transaction
             reference_transaction = _find_reference_transaction(self.user,
                                                                 transaction_parse_result,
                                                                 self.pre_check_confidence_threshold)
-
             if reference_transaction:
                 categorized_transaction = _create_categorized_transaction(
                     self.user,
                     transaction_parse_result,
                     reference_transaction
                 )
+                categorized_transaction.csv_upload = csv_upload
                 all_transactions_categorized.append(categorized_transaction)
             else:
                 uncategorized_transaction = _create_uncategorized_transaction(self.user, transaction_parse_result)
+                uncategorized_transaction.csv_upload = csv_upload
                 all_transactions_to_upload.append(uncategorized_transaction)
 
         Transaction.objects.bulk_create(all_transactions_categorized + all_transactions_to_upload)
@@ -174,8 +185,8 @@ class ExpenseUploadProcessor:
         )
         return all_transactions_to_upload
 
-    def _process_batch(self, batch: list[RawTransactionParseResult]):
-        transaction_to_upload = self._process_prechecks(batch)
+    def _process_batch(self, batch: list[RawTransactionParseResult], csv_upload: CsvUpload):
+        transaction_to_upload = self._process_prechecks(batch, csv_upload)
 
         agent_upload_transaction = [AgentTransactionUpload(transaction_id=tx.id, raw_text=tx.raw_data) for tx in
                                     transaction_to_upload]
@@ -189,7 +200,7 @@ class ExpenseUploadProcessor:
             try:
                 failure = tx_data.failure
                 # Extract and parse transaction data
-                transaction_date = _parse_date(tx_data.date)
+                transaction_date = parse_raw_date(tx_data.date)
                 amount = normalize_amount(tx_data.amount)
                 original_amount = tx_data.original_amount
                 description = tx_data.description
@@ -221,6 +232,7 @@ class ExpenseUploadProcessor:
                     merchant=merchant,
                     merchant_raw_name=merchant_name,
                     category=category,
+                    original_date=tx_data.date,
                     status='categorized',
                     confidence_score=None,
                     modified_by_user=False,
@@ -236,7 +248,8 @@ class ExpenseUploadProcessor:
                 continue
 
     def process_transactions(self, raw_transaction: list[dict[str, str]]):
-        transactions_parsed = parse_raw_transaction(raw_transaction)
+        all_csv_uploads = list(CsvUpload.objects.filter(user=self.user))
+        transactions_parsed = parse_raw_transaction(raw_transaction, all_csv_uploads)
         data_count = len(transactions_parsed)
         batch_size = self.batch_helper.compute_batch_size(data_count)
 
@@ -245,10 +258,59 @@ class ExpenseUploadProcessor:
         print(f"\n{'=' * 60}")
         print(f"🚀 Starting CSV Processing: {data_count} transactions")
         print(f"{'=' * 60}\n")
-
+        csv_upload = CsvUpload.objects.create(user=self.user)
         for batch_num in range(total_batches):
             start_idx = batch_num * batch_size
             end_idx = start_idx + batch_size
             batch = transactions_parsed[start_idx:end_idx]
             with transaction.atomic():
-                self._process_batch(batch)
+                self._process_batch(batch, csv_upload)
+        complete_categorized_transaction = Transaction.objects.filter(user=self.user, csv_upload=csv_upload,
+                                                                      status='categorized',
+                                                                      original_amount__isnull=False,
+                                                                      description__isnull=False,
+                                                                      original_date__isnull=False).first()
+        if complete_categorized_transaction:
+            for key, value in complete_categorized_transaction.raw_data.items():
+                if value == complete_categorized_transaction.original_amount:
+                    csv_upload.amount_column_name = key
+                elif value == complete_categorized_transaction.original_date:
+                    csv_upload.date_column_name = key
+                elif value == complete_categorized_transaction.description:
+                    csv_upload.description_column_name = key
+                elif value == complete_categorized_transaction.merchant_raw_name:
+                    csv_upload.merchant_column_name = key
+
+            csv_upload.save()
+        uncategorized_transactions = Transaction.objects.filter(user=self.user, csv_upload=csv_upload,status__in=['uncategorized', 'pending'])
+        for uncategorized_transaction in uncategorized_transactions:
+            original_amount = uncategorized_transaction.raw_data.get(csv_upload.amount_column_name, '')
+            if not original_amount:
+                parsed_amount_result = parse_amount_from_raw_data_without_suggestion(uncategorized_transaction.raw_data)
+                if parsed_amount_result.is_valid():
+                    for column_name, amount_finding in parsed_amount_result.fields.items():
+                        if column_name in uncategorized_transaction.raw_data:
+                            original_amount = uncategorized_transaction.raw_data[column_name]
+                            if original_amount!=amount_finding.original_value:
+                                continue
+                            uncategorized_transaction.original_amount = original_amount
+                            uncategorized_transaction.amount = abs(amount_finding.amount)
+                            break
+
+            description = uncategorized_transaction.raw_data.get(csv_upload.description_column_name, '')
+            merchant = uncategorized_transaction.raw_data.get(csv_upload.merchant_column_name, '')
+            original_date = uncategorized_transaction.raw_data.get(csv_upload.date_column_name, '')
+            if not original_date:
+                date, original_date_column_name = parse_date_from_raw_data_with_no_suggestions(uncategorized_transaction.raw_data)
+                if date:
+                    uncategorized_transaction.transaction_date = date
+                    uncategorized_transaction.original_date = original_date
+            amount = normalize_amount(original_amount)
+            transaction_date = parse_raw_date(original_date)
+            uncategorized_transaction.transaction_date = transaction_date
+            uncategorized_transaction.amount = abs(amount)
+            uncategorized_transaction.original_amount = original_amount
+            uncategorized_transaction.description = description
+            uncategorized_transaction.merchant_raw_name = merchant
+            uncategorized_transaction.original_date = original_date
+        Transaction.objects.bulk_update(uncategorized_transactions, ['transaction_date', 'amount', 'original_amount', 'description', 'merchant_raw_name', 'original_date'])
