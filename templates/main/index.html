@@ -5,14 +5,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Expenses{% endblock %}</title>
+    <title>{% block title %}Contabilità familiare{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'css/main.css' %}">
+    <link rel="stylesheet" href="{% static 'css/appbar.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sidebar.css' %}">
     {% block extra_css %}{% endblock %}
 </head>
 <body>
-<main>
-    {% block content %}
-    {% endblock %}
-</main>
+    <!-- App Bar -->
+    <header class="app-bar">
+        <button class="menu-toggle" id="menuToggle" aria-label="Toggle menu">
+            <span class="hamburger"></span>
+        </button>
+        <h1 class="app-title">{% block app_title %}Expenses{% endblock %}</h1>
+        <div class="app-bar-actions">
+            {% block app_bar_actions %}
+            <!-- Add action buttons here -->
+            {% endblock %}
+        </div>
+    </header>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <nav class="sidebar-nav">
+            {% block sidebar_content %}
+            <ul class="nav-list">
+
+                <li class="nav-item">
+                    <a href="{% url 'transaction_list' %}" class="nav-link active" data-page="/transactions/">
+                        <span class="nav-icon">💰</span>
+                        <span class="nav-text">Spese Quotidiane</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{% url 'transactions_upload' %}" class="nav-link" data-page="/transactions/upload/">
+                        <span class="nav-icon">🚚</span>
+                        <span class="nav-text">Caricamento dati</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/categories/" class="nav-link">
+                        <span class="nav-icon">📁</span>
+                        <span class="nav-text">Categories</span>
+                    </a>
+                </li>
+
+            </ul>
+            {% endblock %}
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <!-- Overlay for mobile -->
+    <div class="overlay" id="overlay"></div>
+
+    <script src="{% static 'js/index.js' %}"></script>
 </body>
 </html>

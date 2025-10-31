@@ -178,7 +178,6 @@
 
 
         <!-- Uncategorized Transactions Section -->
-        <!-- Uncategorized Transactions Section -->
         <div class="uncategorized-section" style="margin-bottom: 40px;">
             <h2 style="margin-bottom: 20px;">
                 🏷️ Transazioni Non Categorizzate
@@ -218,7 +217,11 @@
                     </span>
 
                             <div class="transaction-amount">
-                                €{{ transaction.amount|floatformat:2 }}
+                                €{% if transaction.original_amount|slice:":1" == '+' %}
+                                {{ transaction.original_amount|slice:"1:" }}
+                            {% else %}
+                                {{ transaction.original_amount }}
+                            {% endif %}
                             </div>
                         </div>
                     </div>
@@ -307,7 +310,6 @@
                     // URL is now set correctly for the transaction update endpoint
                     const BASE_EDIT_TRANSACTION_URL = '{% url 'update_transaction_category' %}';
                     const EDIT_TRANSACTION_CATEGORY_CSRF_TOKEN = "{{ csrf_token }}";
-                    console.log(document.getElementById('category-data').textContent)
                     const CATEGORY_OPTIONS = JSON.parse(document.getElementById('category-data').textContent)
                 </script>
                 <script src="{% static 'js/clickable-transaction-form-input.js' %}"></script>
