@@ -215,13 +215,6 @@
     align-items: flex-end; /* Align filter button to bottom */
 }
 
-.filter-group {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    min-width: 150px; /* Ensures groups have a minimum size */
-}
-
 /* Categories Section (Tags) - Updated for better hover/click */
 .categories {
     display: flex;
@@ -329,6 +322,13 @@
     flex-direction: column;
     min-width: 200px;
     flex-grow: 1;
+    gap: 10px; /* Add spacing between elements */
+}
+.filter-group button,
+.filter-group a {
+    flex-grow: 0 !important; /* Prevent buttons from growing */
+    flex-shrink: 0 !important; /* Prevent buttons from shrinking */
+    align-self: auto; /* Reset any align-self that might be stretching them */
 }
 
 .filters label {
@@ -461,14 +461,6 @@
     padding: 20px;
 }
 
-/* State for collapsed content */
-.expander-body.collapsed {
-    max-height: 0;
-    padding-top: 0;
-    padding-bottom: 0;
-    border-top: 0px solid #e9ecef;
-}
-
 /* Add a border to the body when it is expanded */
 .expander-body:not(.collapsed) {
     border-top: 1px solid #e9ecef;
@@ -497,5 +489,115 @@
     background-color: #ffffff;
     border: 1px solid #e9ecef;
     border-radius: 4px;
-    margin-bottom: 10px;
+}
+
+/* Ensure the content inside the expander body doesn't have a large margin,
+   which could interfere with the max-height calculation for a clean collapse */
+.expander-body .mb-4 {
+    margin-bottom: 0 !important;
+}
+
+.rule-builder-controls {
+    /* Use flex to align all text, inputs, and button horizontally */
+    display: flex;
+    align-items: center;
+    gap: 15px; /* Consistent spacing between all elements */
+}
+
+/* Give inputs controlled, consistent size on desktop */
+.rule-input {
+    flex: 0 0 220px; /* Do not grow/shrink, set base size */
+    max-width: 250px;
+    margin: 0; /* Remove conflicting vertical margins */
+}
+
+.rule-builder-text {
+    flex-shrink: 0; /* Ensures the text doesn't wrap unnecessarily */
+    margin: 0;
+}
+
+/* The button is pushed to the far right end if space allows */
+.btn-primary-gold {
+    flex-shrink: 0;
+    margin-left: auto;
+}
+
+/* --- Rule Creation Card Styling (Renamed from .new-...) --- */
+
+.rule-builder-card {
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05); /* Prominent shadow */
+    background-color: var(--nav-bg-color); /* White background */
+    margin-bottom: 30px !important;
+}
+
+.rule-card-header {
+    padding: 15px 25px;
+    background-color: #f8f9fa; /* Light gray header */
+    border-bottom: 1px solid #e9ecef;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+}
+
+.rule-card-header h3 {
+    font-size: 20px; /* Bolder, more important title */
+    font-weight: 700;
+    color: var(--nav-text-color);
+    margin: 0;
+}
+
+.rule-card-body {
+    padding: 25px; /* Generous padding for breathing room */
+}
+
+/* --- Rule Builder Controls Refinement --- */
+
+/* Remove background/border from the inner rule-builder div since the new card wraps it */
+.rule-builder {
+    background: transparent !important;
+    padding: 0 !important;
+    border: none !important;
+}
+
+.rule-builder-controls {
+    /* Use flex to align all text, inputs, and button horizontally */
+    display: flex;
+    align-items: center;
+    gap: 20px; /* Increased spacing between elements */
+}
+
+/* Give inputs controlled, consistent size on desktop */
+.rule-input {
+    flex: 0 0 200px; /* Do not grow, do not shrink, sets base size */
+    max-width: 250px;
+    margin: 0; /* Remove conflicting vertical margins */
+}
+
+.rule-builder-text {
+    flex-shrink: 0;
+    margin: 0;
+}
+
+.btn-primary-gold {
+    flex-shrink: 0;
+    margin-left: auto; /* Push button to the right end if space allows */
+}
+
+.rule-tip {
+    margin-top: 20px !important; /* More space above the tip */
+    border-top: 1px dashed #e9ecef;
+    padding-top: 15px;
+}
+
+
+/* Ensure the list content itself has proper padding inside the body */
+.expander-body .mb-4.rule-list-container {
+    padding: 0 20px; /* Add horizontal padding to the list */
+    margin-bottom: 0 !important;
+}
+
+.expander-body.collapsed {
+    padding-top: 0;
+    padding-bottom: 0;
 }

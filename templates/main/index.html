@@ -28,8 +28,8 @@
             <div class="user-profile">
                 <div class="user-avatar-placeholder">👤</div>
                 <div class="user-details">
-                    <div class="user-name">John Doe</div>
-                    <div class="user-email">john.doe@example.com</div>
+                    <div class="user-name">{{ user.first_name }} {{ user.last_name }}</div>
+                    <div class="user-email">{{ user.email }}</div>
                 </div>
             </div>
             <div class="savings-info">
