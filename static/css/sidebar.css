@@ -3,23 +3,88 @@
 /* Sidebar Styles */
 .sidebar {
     position: fixed;
-    top: 64px;
+    top: 0;
     left: -250px;
     width: 250px;
-    height: calc(100vh - 64px);
-    background-color: #ffffff;
-    box-shadow: 2px 0 6px rgba(0, 0, 0, 0.1); /* Clearer separation from content */
+    height: 100vh;
+    background-color: var(--nav-bg-color); /* White background */
+    box-shadow: 2px 0 6px rgba(0, 0, 0, 0.1); /* Light shadow */
     transition: left 0.3s ease;
     z-index: 999;
     overflow-y: auto;
+    padding-top: 25px; /* Space for the App Bar */
 }
 
 .sidebar.active {
     left: 0;
 }
 
+/* NEW: User Info Section Styles (Minimal Padding) */
+.sidebar-user-info {
+    padding: 10px 15px; /* Reduced padding for a tighter fit */
+    border-bottom: 1px solid #e9ecef; /* Subtle separator */
+    margin-bottom: 5px; /* Reduced margin before navigation links */
+}
+
+.user-profile {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px; /* Reduced margin */
+}
+
+.user-avatar-placeholder {
+    width: 36px; /* Slightly smaller avatar */
+    height: 36px;
+    background-color: var(--nav-link-active-bg);
+    color: var(--primary-color);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 18px; /* Adjusted icon size */
+    margin-right: 10px; /* Reduced margin */
+}
+
+.user-details {
+    display: flex;
+    flex-direction: column;
+}
+
+.user-name {
+    font-weight: 600;
+    font-size: 15px; /* Slightly smaller font */
+    color: var(--nav-text-color);
+}
+
+.user-email {
+    font-size: 11px; /* Slightly smaller font */
+    color: var(--secondary-color);
+}
+
+.savings-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 10px; /* Minimal padding for the savings box */
+    background-color: var(--background-color);
+    border-radius: 4px;
+    font-size: 13px; /* Slightly smaller font */
+    border: 1px solid #e9ecef;
+}
+
+.savings-label {
+    font-weight: 500;
+    color: var(--nav-text-color);
+}
+
+.savings-value {
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+/* Existing Navigation Styles */
 .sidebar-nav {
-    padding: 10px 0; /* Reduced padding for more links */
+    padding: 10px 0;
 }
 
 .nav-list {
@@ -35,30 +100,34 @@
 .nav-link {
     display: flex;
     align-items: center;
-    padding: 14px 24px; /* Increased vertical padding */
-    color: #495057; /* Darker default text */
+    padding: 14px 24px;
+    color: var(--nav-text-color); /* Charcoal text */
     text-decoration: none;
     transition: background-color 0.2s, color 0.2s;
-    font-size: 15px; /* Slightly larger text */
+    font-size: 15px;
 }
 
 .nav-link:hover {
-    background-color: #e9ecef; /* Lighter hover color */
-    color: #000;
+    background-color: #f8f9fa; /* Very light gray hover */
+    color: var(--nav-text-color);
 }
 
+/* Active Class: Gold accent and light gold background */
 .nav-link.active {
-    background-color: #e6f0ff; /* Light blue background for active */
-    color: #007bff; /* Primary blue text */
-    border-left: 4px solid #007bff; /* Clearer left border indicator */
-    border-right: none; /* Removed old border-right */
+    background-color: var(--nav-link-active-bg); /* Lightest Gold background */
+    color: var(--nav-text-color); /* Charcoal text for active */
+    border-left: 4px solid var(--primary-color); /* Gold ACCENT border */
     padding-left: 20px; /* Adjust padding due to border */
-    font-weight: 600; /* Bold active link */
+    font-weight: 600;
+}
+/* Ensure the icon color also benefits from the accent */
+.nav-link.active .nav-icon {
+    color: var(--primary-color); /* Gold icon accent for active state */
 }
 
 .nav-icon {
-    font-size: 20px; /* Slightly smaller icon */
-    margin-right: 12px; /* Reduced margin */
+    font-size: 20px;
+    margin-right: 12px;
     width: 20px;
     text-align: center;
 }
@@ -69,13 +138,12 @@
 
 /* Overlay for mobile */
 .overlay {
-    /* No major change needed */
     position: fixed;
     top: 64px;
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(0, 0, 0, 0.6); /* Slightly darker overlay */
+    background-color: rgba(0, 0, 0, 0.6);
     opacity: 0;
     visibility: hidden;
     transition: opacity 0.3s, visibility 0.3s;
@@ -87,14 +155,10 @@
     visibility: visible;
 }
 
-/* Desktop */
+/* Desktop: Sidebar is fixed and visible */
 @media (min-width: 768px) {
     .sidebar {
         left: 0;
-    }
-
-    .menu-toggle {
-        display: none;
     }
 
     .overlay {

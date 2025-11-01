@@ -12,7 +12,6 @@
     {% block extra_css %}{% endblock %}
 </head>
 <body>
-    <!-- App Bar -->
     <header class="app-bar">
         <button class="menu-toggle" id="menuToggle" aria-label="Toggle menu">
             <span class="hamburger"></span>
@@ -20,13 +19,24 @@
         <h1 class="app-title">{% block app_title %}Expenses{% endblock %}</h1>
         <div class="app-bar-actions">
             {% block app_bar_actions %}
-            <!-- Add action buttons here -->
             {% endblock %}
         </div>
     </header>
 
-    <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
+        <div class="sidebar-user-info">
+            <div class="user-profile">
+                <div class="user-avatar-placeholder">👤</div>
+                <div class="user-details">
+                    <div class="user-name">John Doe</div>
+                    <div class="user-email">john.doe@example.com</div>
+                </div>
+            </div>
+            <div class="savings-info">
+                <span class="savings-label">Risparmio Obiettivo</span>
+                <span class="savings-value">€ 1.250,00</span>
+            </div>
+        </div>
         <nav class="sidebar-nav">
             {% block sidebar_content %}
             <ul class="nav-list">
@@ -55,13 +65,11 @@
         </nav>
     </aside>
 
-    <!-- Main Content -->
     <main class="main-content">
         {% block content %}
         {% endblock %}
     </main>
 
-    <!-- Overlay for mobile -->
     <div class="overlay" id="overlay"></div>
 
     <script src="{% static 'js/index.js' %}"></script>

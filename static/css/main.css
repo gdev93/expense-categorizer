@@ -6,12 +6,26 @@
     box-sizing: border-box;
 }
 
+/* Define CSS Variables */
+:root {
+    --primary-color: #FFC107; /* Goldish/Amber */
+    --primary-hover-color: #E0A800; /* Darker Gold for hover */
+    --nav-bg-color: #ffffff; /* NEW: White background for navigation surfaces */
+    --nav-text-color: #343a40; /* NEW: Dark Charcoal for navigation text */
+    --nav-link-active-bg: #fff3e0; /* NEW: Lightest Gold background for active link */
+    --text-color: #212529;
+    --background-color: #f8f9fa;
+    --expense-color: #dc3545; /* Red */
+    --income-color: #28a745; /* Green */
+    --secondary-color: #6c757d; /* Standard Gray */
+    --danger-color: #dc3545;
+}
+
 /* 1. Updated Font and Background */
 body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
-    background-color: #f8f9fa; /* Lighter background for a cleaner look */
-    padding-top: 64px; /* Space for fixed app-bar */
-    color: #212529; /* Darker text for better contrast */
+    background-color: var(--background-color);
+    color: var(--text-color);
 }
 
 .container {
@@ -25,8 +39,8 @@ body {
 
 h1, h2, h3 {
     margin-bottom: 20px;
-    font-weight: 600; /* Slightly bolder headings */
-    color: #343a40; /* Dark heading color */
+    font-weight: 600;
+    color: var(--nav-text-color); /* Dark heading color */
 }
 
 h1 {
@@ -57,24 +71,25 @@ h2 {
     text-decoration: none;
     display: inline-block;
     transition: all 0.2s ease-in-out;
-    text-align: center;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); /* Subtle lift */
 }
 
 .btn-primary, .upload-btn {
-    background-color: #007bff; /* Primary Blue */
-    color: white;
+    background-color: var(--primary-color); /* Primary Gold */
+    color: var(--nav-text-color); /* Dark text on gold for contrast */
+    font-weight: 700;
 }
 
 .btn-primary:hover, .upload-btn:hover {
-    background-color: #0056b3;
+    background-color: var(--primary-hover-color);
     transform: translateY(-1px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .btn-secondary {
-    background-color: #6c757d;
+    background-color: var(--secondary-color); /* Secondary Gray */
     color: white;
+    text-align: center;
 }
 
 .btn-secondary:hover {
@@ -83,7 +98,7 @@ h2 {
 }
 
 .btn-danger {
-    background-color: #dc3545; /* Danger Red */
+    background-color: var(--danger-color); /* Danger Red */
     color: white;
 }
 
@@ -105,6 +120,8 @@ h2 {
 .main-content {
     padding: 24px;
     transition: margin-left 0.3s ease;
+    padding-top: 88px; /* Space for fixed app-bar (64px) + margin */
+    min-height: 100vh;
 }
 
 /* Desktop layout */
@@ -118,5 +135,6 @@ h2 {
 @media (max-width: 767px) {
     .main-content {
         margin-left: 0;
+        padding-top: 88px;
     }
 }

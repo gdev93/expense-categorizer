@@ -45,8 +45,8 @@
 }
 
 .form-control:focus {
-    border-color: #007bff;
-    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    border-color: var(--primary-color); /* Use Gold variable */
+    box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.25); /* Adjusted shadow for gold */
     outline: none;
 }
 
@@ -125,19 +125,19 @@
     text-align: right;
     min-width: 90px;
     /* Default to expense color (red) */
-    color: #dc3545;
+    color: var(--expense-color);
 }
 
-/* We should assume an expense unless it is a positive amount (income) */
-/* You would typically need a class like .is-income added dynamically for green */
-/* For this CSS refactor, we stick to the default red for expenses */
+.is-income {
+    color: var(--income-color);
+}
 
-
+/* Transaction Category Tag */
 .transaction-category {
     display: inline-block;
     padding: 4px 10px;
-    background-color: #e6f0ff; /* Lighter blue tag background */
-    color: #007bff;
+    background-color: #ffecc0; /* Light gold background */
+    color: var(--primary-color); /* Gold text */
     border-radius: 12px; /* Pill shape for tags */
     font-size: 12px;
     font-weight: 500;
@@ -183,7 +183,7 @@
     padding: 20px;
     background: white;
     border-radius: 8px;
-    border-left: 5px solid #007bff; /* Primary color accent */
+    border-left: 5px solid var(--primary-color); /* Gold color accent */
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
@@ -251,7 +251,6 @@
 
 /* Pagination - improved styling */
 .pagination {
-    /* ... existing styles with updated colors for clarity ... */
     display: flex;
     justify-content: center;
     gap: 5px;
@@ -276,9 +275,10 @@
 }
 
 .pagination .current {
-    background: #007bff;
-    color: white;
-    border-color: #007bff;
+    background: var(--primary-color); /* Use variable */
+    color: var(--nav-bg-color); /* Dark text on gold */
+    border-color: var(--primary-color); /* Use variable */
+    font-weight: 700;
 }
 
 .pagination .disabled {

@@ -4,20 +4,20 @@
 .app-bar {
     position: fixed;
     top: 0;
-    left: 0;
+    left: 0; /* Default (mobile): full width */
     right: 0;
     height: 64px;
-    background-color: #343a40; /* Dark Charcoal Background */
-    color: white;
+    background-color: var(--nav-bg-color); /* Now white */
+    color: var(--nav-text-color); /* Now charcoal */
+    /* box-shadow has been REMOVED for "invisible" effect */
     display: flex;
     align-items: center;
-    padding: 0 16px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15); /* Slightly stronger shadow */
+    padding: 25px 0 0 16px;
     z-index: 1000;
+    transition: left 0.3s ease, width 0.3s ease;
 }
 
 .menu-toggle {
-    /* No change to functionality, just ensure contrast is good */
     background: none;
     border: none;
     cursor: pointer;
@@ -31,21 +31,19 @@
 }
 
 .menu-toggle:hover {
-    background-color: rgba(255, 255, 255, 0.15); /* Slightly more opaque hover */
+    background-color: rgba(0, 0, 0, 0.05); /* Light gray hover on white background */
 }
 
-/* Hamburger remains white on dark background */
+/* Hamburger color must be charcoal for contrast on white background */
 .hamburger,
 .hamburger::before,
 .hamburger::after {
-    background-color: white;
+    background-color: var(--nav-text-color);
 }
-/* ... rest of .hamburger styles remain the same ... */
-
 
 .app-title {
     font-size: 20px;
-    font-weight: 600; /* Bolder title */
+    font-weight: 600;
     margin: 0;
     flex-grow: 1;
 }
@@ -56,9 +54,13 @@
     align-items: center;
 }
 
-/* Responsive */
+/* Desktop layout: App Bar is shifted and sized to fit next to the visible Sidebar */
 @media (min-width: 768px) {
     .app-bar {
         left: 250px;
+        width: calc(100% - 250px);
+    }
+    .menu-toggle {
+        display: none;
     }
 }
