@@ -138,3 +138,25 @@ h2 {
         padding-top: 88px;
     }
 }
+
+/* -------------------------------------- */
+/* NEW: Small Button (.btn-sm) Styling */
+/* -------------------------------------- */
+
+.btn-sm {
+    padding: 6px 12px; /* Small padding */
+    font-size: 14px; /* Small font size */
+    line-height: 1.5;
+    border-radius: 4px;
+    font-weight: 500;
+}
+
+/* The .btn-danger-custom also confirms the small sizing: */
+.btn-danger-custom {
+    background-color: #f8d7da; /* Light Red */
+    color: #721c24; /* Dark Red text */
+    border: 1px solid #f5c6cb;
+    font-weight: 500;
+    padding: 6px 12px; /* Small sizing */
+    border-radius: 4px;
+}

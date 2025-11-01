@@ -473,3 +473,29 @@
 .expander-body:not(.collapsed) {
     border-top: 1px solid #e9ecef;
 }
+
+.expander-body h5 {
+    font-size: 1.15em; /* Slightly larger than a standard h5 */
+    font-weight: 700;
+    color: var(--nav-text-color); /* Charcoal color */
+    margin-bottom: 15px; /* Add some space below the heading */
+}
+
+/* 2) Remove dots in the list and add margin between the elements (Confirmation) */
+.rule-list {
+    list-style: none; /* Removes dots/bullets */
+    padding: 0; /* Removes default list padding */
+}
+
+.rule-item {
+    /* ... other styles ... */
+    display: flex;
+    justify-content: space-between; /* Pushes content to edges */
+    align-items: center;
+    /* Defines the card look: */
+    padding: 15px 10px;
+    background-color: #ffffff;
+    border: 1px solid #e9ecef;
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
