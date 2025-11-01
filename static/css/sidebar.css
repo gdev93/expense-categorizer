@@ -1,3 +1,5 @@
+/* Refactored sidebar.css */
+
 /* Sidebar Styles */
 .sidebar {
     position: fixed;
@@ -6,7 +8,7 @@
     width: 250px;
     height: calc(100vh - 64px);
     background-color: #ffffff;
-    box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1);
+    box-shadow: 2px 0 6px rgba(0, 0, 0, 0.1); /* Clearer separation from content */
     transition: left 0.3s ease;
     z-index: 999;
     overflow-y: auto;
@@ -17,7 +19,7 @@
 }
 
 .sidebar-nav {
-    padding: 16px 0;
+    padding: 10px 0; /* Reduced padding for more links */
 }
 
 .nav-list {
@@ -27,48 +29,53 @@
 }
 
 .nav-item {
-    margin: 4px 0;
+    margin: 0;
 }
 
 .nav-link {
     display: flex;
     align-items: center;
-    padding: 12px 24px;
-    color: #333;
+    padding: 14px 24px; /* Increased vertical padding */
+    color: #495057; /* Darker default text */
     text-decoration: none;
-    transition: background-color 0.3s;
+    transition: background-color 0.2s, color 0.2s;
+    font-size: 15px; /* Slightly larger text */
 }
 
 .nav-link:hover {
-    background-color: #f5f5f5;
+    background-color: #e9ecef; /* Lighter hover color */
+    color: #000;
 }
 
 .nav-link.active {
-    background-color: #e3f2fd;
-    color: #1976d2;
-    border-right: 3px solid #1976d2;
+    background-color: #e6f0ff; /* Light blue background for active */
+    color: #007bff; /* Primary blue text */
+    border-left: 4px solid #007bff; /* Clearer left border indicator */
+    border-right: none; /* Removed old border-right */
+    padding-left: 20px; /* Adjust padding due to border */
+    font-weight: 600; /* Bold active link */
 }
 
 .nav-icon {
-    font-size: 24px;
-    margin-right: 16px;
-    width: 24px;
+    font-size: 20px; /* Slightly smaller icon */
+    margin-right: 12px; /* Reduced margin */
+    width: 20px;
     text-align: center;
 }
 
 .nav-text {
-    font-size: 16px;
-    font-weight: 400;
+    font-weight: 500;
 }
 
 /* Overlay for mobile */
 .overlay {
+    /* No major change needed */
     position: fixed;
     top: 64px;
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: rgba(0, 0, 0, 0.6); /* Slightly darker overlay */
     opacity: 0;
     visibility: hidden;
     transition: opacity 0.3s, visibility 0.3s;

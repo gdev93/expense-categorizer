@@ -1,84 +1,82 @@
+/* Refactored transactions.css */
+
 .transaction-list {
     max-height: 70vh;
     overflow-y: auto;
-    border: 1px solid #ddd;
-    border-radius: 5px;
+    border: 1px solid #dee2e6; /* Lighter border */
+    border-radius: 8px; /* Softer rounded corners */
+    background: #ffffff;
 }
 
-/* Additional CSS for the Rule Definition Card */
-
-.mb-4 {
-    /* Margin Bottom 4 (or whatever spacing suits your design) */
-    margin-bottom: 20px;
+/* Rule Card Styling - Refined */
+.rule-card {
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+    overflow: hidden; /* Contains card content */
 }
 
 .rule-card .card-header {
-    /* Ensure the header text is a little smaller and fits well */
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #e9ecef;
     padding: 15px 20px;
 }
 
 .rule-card .card-header h2 {
     font-size: 18px;
-    color: #333;
+    color: #343a40;
+    margin-bottom: 0;
 }
 
+.rule-card .card-body {
+    padding: 20px;
+}
+
+/* Forms (Used in detail and list) */
 .form-control {
-    /* General style for form inputs/textareas */
     width: 100%;
     padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 3px;
-    box-sizing: border-box; /* Important for width: 100% */
-    font-size: 14px;
-    resize: vertical; /* Allows user to resize vertically */
+    border: 1px solid #ced4da; /* Standard gray border */
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-size: 15px;
+    resize: vertical;
+    transition: border-color 0.2s;
 }
 
-/* Ensure textarea specifically inherits form control styles */
-#user_rule_input {
-    min-height: 80px; /* Minimum height for the textarea */
+.form-control:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    outline: none;
 }
-/* CSS for Rule Form Button Alignment */
+
 .rule-form-actions {
-    margin-top: 15px;
-    text-align: right; /* Pushes the button to the right */
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #e9ecef;
+    text-align: right;
 }
 
-/* Ensure the submit button looks good */
-.btn-primary {
-    background: #2196f3;
-    color: white;
-    border: 1px solid #2196f3;
-    padding: 10px 15px;
-    border-radius: 3px;
-    cursor: pointer;
-    font-weight: bold;
-    text-decoration: none;
-    display: inline-block;
-    transition: background 0.3s ease;
-}
-
-.btn-primary:hover {
-    background: #1976d2;
-    border-color: #1976d2;
-}
 .form-text {
-    /* Style for the small instructional text */
-    font-size: 13px;
-    color: #888;
+    font-size: 12px;
+    color: #6c757d;
     margin-top: 5px;
-    display: block; /* Make sure it takes its own line */
+    display: block;
 }
 
+/* Transaction List Item */
 .transaction-item {
-    padding: 15px;
-    border-bottom: 1px solid #eee;
+    padding: 15px 20px; /* Increased padding */
+    border-bottom: 1px solid #e9ecef; /* Lighter separator */
     display: flex;
     justify-content: space-between;
     align-items: center;
+    cursor: pointer; /* Explicitly state clickability */
+    transition: background 0.2s;
 }
 
 .transaction-item:hover {
-    background: #f9f9f9;
+    background: #f0f0f0;
 }
 
 .transaction-item:last-child {
@@ -87,29 +85,31 @@
 
 .transaction-main {
     flex: 1;
+    margin-right: 15px;
 }
 
 .transaction-date {
-    font-weight: bold;
-    color: #666;
-    font-size: 13px;
-    margin-bottom: 5px;
+    font-weight: 500;
+    color: #6c757d;
+    font-size: 12px;
+    margin-bottom: 3px;
 }
 
 .transaction-merchant {
     font-size: 16px;
-    font-weight: bold;
-    color: #333;
-    margin-bottom: 5px;
+    font-weight: 600;
+    color: #343a40;
+    margin-bottom: 3px;
 }
 
 .transaction-description {
     font-size: 13px;
-    color: #666;
+    color: #868e96;
     margin-top: 5px;
     max-width: 600px;
     overflow: hidden;
     white-space: nowrap;
+    text-overflow: ellipsis; /* Added ellipsis for truncated text */
 }
 
 .transaction-meta {
@@ -118,225 +118,192 @@
     gap: 15px;
 }
 
+/* Financial Amount Styling */
 .transaction-amount {
-    font-weight: bold;
-    color: #d32f2f;
-    font-size: 18px;
+    font-weight: 700;
+    font-size: 17px;
     text-align: right;
-    min-width: 100px;
+    min-width: 90px;
+    /* Default to expense color (red) */
+    color: #dc3545;
 }
+
+/* We should assume an expense unless it is a positive amount (income) */
+/* You would typically need a class like .is-income added dynamically for green */
+/* For this CSS refactor, we stick to the default red for expenses */
+
 
 .transaction-category {
     display: inline-block;
-    padding: 5px 12px;
-    background: #2196f3;
-    color: white;
-    border-radius: 3px;
+    padding: 4px 10px;
+    background-color: #e6f0ff; /* Lighter blue tag background */
+    color: #007bff;
+    border-radius: 12px; /* Pill shape for tags */
     font-size: 12px;
-    font-weight: bold;
+    font-weight: 500;
+    white-space: nowrap;
 }
 
+/* Status Indicators */
 .transaction-status {
     display: inline-block;
-    padding: 3px 8px;
-    border-radius: 3px;
+    padding: 4px 10px;
+    border-radius: 12px;
     font-size: 11px;
-    font-weight: bold;
+    font-weight: 700;
+    text-transform: uppercase;
 }
 
 .status-pending {
-    background: #fff3e0;
+    background: #fff3e0; /* Light Orange */
     color: #e65100;
 }
 
 .status-categorized {
-    background: #e8f5e9;
-    color: #2e7d32;
+    background: #e8f5e9; /* Light Green */
+    color: #1a7e2b;
 }
 
 .status-reviewed {
-    background: #e3f2fd;
+    background: #e3f2fd; /* Light Blue */
     color: #1565c0;
 }
 
-/* Filters section */
-.filters {
-    display: flex;
-    gap: 15px;
-    margin-bottom: 20px;
-    padding: 15px;
-    background: #f9f9f9;
-    border-radius: 5px;
-    flex-wrap: wrap;
-    align-items: center;
-}
-
-.filter-group {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-}
-
-.filter-group label {
-    font-size: 12px;
-    font-weight: bold;
-    color: #666;
-}
-
-.filter-group select,
-.filter-group input {
-    padding: 8px 12px;
-    border: 1px solid #ddd;
-    border-radius: 3px;
-    font-size: 14px;
-}
-
-/* Summary section */
+/* Summary Cards */
 .summary {
     display: flex;
     gap: 20px;
-    margin-bottom: 20px;
+    margin-bottom: 30px;
     flex-wrap: wrap;
 }
 
 .summary-card {
     flex: 1;
     min-width: 200px;
-    padding: 15px;
-    background: #f9f9f9;
-    border-radius: 5px;
-    border-left: 4px solid #2196f3;
+    padding: 20px;
+    background: white;
+    border-radius: 8px;
+    border-left: 5px solid #007bff; /* Primary color accent */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .summary-label {
-    font-size: 12px;
-    color: #666;
+    font-size: 13px;
+    color: #6c757d;
     text-transform: uppercase;
     margin-bottom: 5px;
+    font-weight: 500;
 }
 
 .summary-value {
-    font-size: 24px;
-    font-weight: bold;
-    color: #333;
+    font-size: 30px; /* Larger value for emphasis */
+    font-weight: 700;
+    color: #343a40;
 }
 
-/* Empty state */
-.empty-state {
-    text-align: center;
-    padding: 60px 20px;
-    color: #666;
+/* Filters section - improved layout and spacing */
+.filters {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 25px;
+    padding: 20px;
+    background: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e9ecef;
+    flex-wrap: wrap;
+    align-items: flex-end; /* Align filter button to bottom */
 }
 
-.empty-state-icon {
-    font-size: 48px;
-    margin-bottom: 20px;
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 150px; /* Ensures groups have a minimum size */
 }
 
-.empty-state h3 {
-    margin-bottom: 10px;
-    color: #333;
+/* Categories Section (Tags) - Updated for better hover/click */
+.categories {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 25px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #e9ecef;
 }
 
-/* Pagination */
+.category-tag {
+    padding: 6px 12px;
+    background: #e9ecef; /* Neutral tag background */
+    color: #495057;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.category-tag:hover {
+    background-color: #dee2e6;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    transform: translateY(-1px);
+}
+
+/* Pagination - improved styling */
 .pagination {
+    /* ... existing styles with updated colors for clarity ... */
     display: flex;
     justify-content: center;
     gap: 5px;
-    margin-top: 20px;
+    margin-top: 30px;
     padding-top: 20px;
-    border-top: 2px solid #ddd;
+    border-top: 1px solid #e9ecef;
 }
 
 .pagination a,
 .pagination span {
     padding: 8px 12px;
-    border: 1px solid #ddd;
-    border-radius: 3px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
     text-decoration: none;
-    color: #333;
+    color: #343a40;
     font-size: 14px;
+    transition: background 0.2s, border-color 0.2s;
 }
 
 .pagination a:hover {
-    background: #f0f0f0;
+    background: #e9ecef;
 }
 
 .pagination .current {
-    background: #2196f3;
+    background: #007bff;
     color: white;
-    border-color: #2196f3;
+    border-color: #007bff;
 }
 
 .pagination .disabled {
-    color: #ccc;
+    color: #adb5bd;
+    border-color: #adb5bd;
     cursor: not-allowed;
 }
-/* --- Styles for the Click-to-Edit Tags --- */
-.categories {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
+
+/* Empty State - subtle and clear */
+.empty-state {
+    text-align: center;
+    padding: 80px 20px;
+    color: #6c757d;
+    background-color: #ffffff;
+    border: 2px dashed #ced4da;
+    border-radius: 8px;
+    margin-top: 20px;
 }
 
-.category-tag-editable {
-    /* Clickable Tag Appearance */
-    display: inline-block;
-    padding: 5px 12px;
-    background: #e3f2fd;
-    color: #1565c0;
-    border-radius: 3px;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer; /* Key: makes it look clickable */
-    transition: background 0.2s, color 0.2s;
-    border: 1px solid #90caf9;
-}
-
-.category-tag-editable:hover {
-    background: #c5e1ff;
-    color: #0d47a1;
-}
-.categories {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
+.empty-state-icon {
+    font-size: 56px;
     margin-bottom: 20px;
-    padding-bottom: 20px;
-    border-bottom: 2px solid #ddd;
 }
 
-.category-tag {
-    padding: 5px 10px;
-    background: #e0e0e0;
-    border-radius: 3px;
-    font-size: 14px;
-}
-/* Style for the temporary input field */
-.category-temp-input {
-    /* Inherit form control styles but make it minimal */
-    padding: 2px 5px !important;
-    margin: -3px 0 !important;
-    border: 1px solid #2196f3 !important;
-    background: white !important;
-    font-size: 14px !important;
-    height: auto !important;
-    width: auto;
-    min-width: 80px;
-    box-sizing: content-box;
-}
-@media (hover: hover) and (pointer: fine) {
-    .category-tag:hover {
-        /* 1. Brighter Background: Indicates activity/selection */
-        background-color: #d1d1d1;
-
-        /* 2. Subtle Shadow: Lifts the element visually off the page */
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-
-        /* 3. Slight Scale (Micro-Interaction): Provides depth and responsiveness */
-        transform: translateY(-2px);
-
-        /* 4. Cursor Change: Clearly signals clickability/interaction */
-        cursor: pointer;
-    }
+.empty-state h3 {
+    margin-bottom: 10px;
+    color: #343a40;
 }
