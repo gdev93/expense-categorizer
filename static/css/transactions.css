@@ -403,3 +403,73 @@
     border: 1px solid var(--primary-color) !important;
     cursor: default !important;
 }
+
+/* -------------------------------------- */
+/* NEW: Expander (Accordion) Styling */
+/* -------------------------------------- */
+
+.expander-card {
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+    margin-bottom: 20px;
+    background-color: #ffffff;
+    overflow: hidden;
+}
+
+.expander-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background-color: #f8f9fa; /* Light gray background for contrast */
+    border-bottom: 1px solid transparent;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.expander-header:hover {
+    background-color: #e9ecef;
+}
+
+.expander-header h2 {
+    font-size: 18px;
+    color: var(--nav-text-color);
+    margin: 0;
+}
+
+.expander-toggle-btn {
+    background: none;
+    border: none;
+    color: var(--primary-color); /* Gold accent for the button */
+    font-size: 16px;
+    cursor: pointer;
+    padding: 5px;
+    transition: transform 0.3s ease;
+    line-height: 1;
+}
+
+/* Rotate icon when active (expanded) */
+.expander-toggle-btn[aria-expanded="true"] .expander-icon {
+    transform: rotate(180deg);
+}
+
+.expander-body {
+    max-height: 500px;
+    overflow: hidden;
+    transition: max-height 0.3s ease-in-out, padding 0.3s ease-in-out, border-top 0.3s;
+    padding: 20px;
+}
+
+/* State for collapsed content */
+.expander-body.collapsed {
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    border-top: 0px solid #e9ecef;
+}
+
+/* Add a border to the body when it is expanded */
+.expander-body:not(.collapsed) {
+    border-top: 1px solid #e9ecef;
+}
