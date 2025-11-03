@@ -116,6 +116,10 @@ h2 {
     margin-bottom: 20px;
 }
 
+.mb-5 {
+    margin-bottom: 50px;
+}
+
 /* Main Layout Styles */
 .main-content {
     padding: 24px;

@@ -5,6 +5,8 @@
 
 {% block extra_css %}
     <link rel="stylesheet" href="{% static 'css/transactions.css' %}">
+    <link rel="stylesheet" href="{% static 'css/list.css' %}">
+    <link rel="stylesheet" href="{% static 'css/pagination.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -186,9 +188,9 @@
         </span>
             </h2>
 
-            <div class="transaction-list">
+            <div class="data-list">
                 {% for transaction in uncategorized_transaction %}
-                    <div class="transaction-item"
+                    <div class="data-list-item"
                          onclick="window.location.href='{% url 'transaction_detail' transaction.id %}'">
                         <div class="transaction-main">
                             <div class="transaction-date">
@@ -226,7 +228,7 @@
                     </div>
                 {% empty %}
                     {% if transactions %}
-                        <div class="transaction-item" style="text-align: center; color: #999;">
+                        <div class="data-list-item" style="text-align: center; color: #999;">
                             ✅ Tutte le transazioni sono categorizzate!
                         </div>
                     {% endif %}
@@ -238,9 +240,9 @@
         {% if transactions %}
             <h2 style="margin-bottom: 20px;">📊 Transazioni Categorizzate</h2>
 
-            <div class="transaction-list">
+            <div class="data-list">
                 {% for transaction in transactions %}
-                    <div class="transaction-item" onclick="window.location.href='{% url 'transaction_detail' transaction.id %}'">
+                    <div class="data-list-item" onclick="window.location.href='{% url 'transaction_detail' transaction.id %}'">
                         <div class="transaction-main">
                             <div class="transaction-date">
                                 📅 {{ transaction.transaction_date|date:"d/m/Y" }}

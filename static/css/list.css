@@ -1,0 +1,25 @@
+.data-list-item {
+    padding: 15px 20px;
+    border-bottom: 1px solid #e9ecef;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.data-list-item:hover {
+    background: #f0f0f0;
+}
+
+.data-list-item:last-child {
+    border-bottom: none;
+}
+
+.data-list {
+    max-height: 70vh;
+    overflow-y: auto;
+    border: 1px solid #dee2e6; /* Lighter border */
+    border-radius: 8px; /* Softer rounded corners */
+    background: #ffffff;
+}

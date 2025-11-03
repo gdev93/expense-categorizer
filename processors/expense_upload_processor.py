@@ -247,7 +247,7 @@ class ExpenseUploadProcessor:
                 print(f"⚠️  Failed to persist transaction {tx_id}: {str(e)}")
                 continue
 
-    def process_transactions(self, raw_transaction: list[dict[str, str]]):
+    def process_transactions(self, raw_transaction: list[dict[str, str]]) -> CsvUpload:
         all_csv_uploads = list(CsvUpload.objects.filter(user=self.user))
         transactions_parsed = parse_raw_transaction(raw_transaction, all_csv_uploads)
         data_count = len(transactions_parsed)
@@ -314,3 +314,4 @@ class ExpenseUploadProcessor:
             uncategorized_transaction.merchant_raw_name = merchant
             uncategorized_transaction.original_date = original_date
         Transaction.objects.bulk_update(uncategorized_transactions, ['transaction_date', 'amount', 'original_amount', 'description', 'merchant_raw_name', 'original_date'])
+        return csv_upload

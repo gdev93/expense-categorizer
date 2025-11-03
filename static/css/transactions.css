@@ -1,14 +1,4 @@
-/* Refactored transactions.css */
 
-.transaction-list {
-    max-height: 70vh;
-    overflow-y: auto;
-    border: 1px solid #dee2e6; /* Lighter border */
-    border-radius: 8px; /* Softer rounded corners */
-    background: #ffffff;
-}
-
-/* Rule Card Styling - Refined */
 .rule-card {
     border: 1px solid #e9ecef;
     border-radius: 8px;
@@ -62,25 +52,6 @@
     color: #6c757d;
     margin-top: 5px;
     display: block;
-}
-
-/* Transaction List Item */
-.transaction-item {
-    padding: 15px 20px; /* Increased padding */
-    border-bottom: 1px solid #e9ecef; /* Lighter separator */
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    cursor: pointer; /* Explicitly state clickability */
-    transition: background 0.2s;
-}
-
-.transaction-item:hover {
-    background: #f0f0f0;
-}
-
-.transaction-item:last-child {
-    border-bottom: none;
 }
 
 .transaction-main {
@@ -242,43 +213,6 @@
     transform: translateY(-1px);
 }
 
-/* Pagination - improved styling */
-.pagination {
-    display: flex;
-    justify-content: center;
-    gap: 5px;
-    margin-top: 30px;
-    padding-top: 20px;
-    border-top: 1px solid #e9ecef;
-}
-
-.pagination a,
-.pagination span {
-    padding: 8px 12px;
-    border: 1px solid #ced4da;
-    border-radius: 4px;
-    text-decoration: none;
-    color: #343a40;
-    font-size: 14px;
-    transition: background 0.2s, border-color 0.2s;
-}
-
-.pagination a:hover {
-    background: #e9ecef;
-}
-
-.pagination .current {
-    background: var(--primary-color); /* Use variable */
-    color: var(--nav-bg-color); /* Dark text on gold */
-    border-color: var(--primary-color); /* Use variable */
-    font-weight: 700;
-}
-
-.pagination .disabled {
-    color: #adb5bd;
-    border-color: #adb5bd;
-    cursor: not-allowed;
-}
 
 /* Empty State - subtle and clear */
 .empty-state {

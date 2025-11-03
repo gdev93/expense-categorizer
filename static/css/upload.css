@@ -1,99 +1,226 @@
-.card {
-    background: white;
-    border-radius: 5px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+/* Styling Specifico per l'Area di Upload */
+
+/* Stile per il link di selezione file */
+.primary-text-link {
+    color: var(--primary-color);
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: underline;
+    transition: color 0.2s;
 }
 
-.card-header {
-    padding: 20px;
-    border-bottom: 2px solid #ddd;
+.primary-text-link:hover {
+    color: var(--primary-hover-color);
 }
 
-.card-header h2 {
-    margin: 0;
+/* Drop Zone */
+.drop-zone {
+    border: 2px dashed #ced4da; /* Bordo tratteggiato */
+    border-radius: 6px;
+    padding: 40px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s;
 }
 
-.card-body {
-    padding: 20px;
+.drop-zone:hover, .drop-zone.drag-over {
+    background-color: #f1f3f5; /* Sfondo leggero al passaggio del mouse o drag */
+    border-color: var(--primary-color); /* Colore primario per feedback */
 }
 
-/* Form specific styles */
-.form-label {
-    font-weight: bold;
-    margin-bottom: 8px;
-    display: block;
+.drop-zone-text {
+    font-size: 16px;
+    margin-bottom: 5px;
+    color: var(--text-color);
+}
+
+/* Anteprima Lista File */
+.file-list-preview {
+    max-height: 200px;
+    overflow-y: auto;
+    border-top: 1px solid #e9ecef;
+    padding-top: 15px;
+}
+
+.file-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #f8f9fa;
     font-size: 14px;
 }
 
-input[type="file"] {
+.file-item-name {
+    font-weight: 500;
+}
+
+.file-item-remove {
+    color: var(--danger-color);
+    cursor: pointer;
+    margin-left: 10px;
+    font-size: 18px; /* Simbolo X */
+    line-height: 1;
+}
+
+/* Stili per la Lista Caricamenti (Tabella) */
+.data-table {
     width: 100%;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 3px;
-    cursor: pointer;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+.data-table th, .data-table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #e9ecef;
     font-size: 14px;
 }
 
-.form-text {
-    font-size: 13px;
-    color: #666;
-    margin-top: 5px;
+.data-table th {
+    background-color: #f1f3f5;
+    font-weight: 600;
+    color: var(--nav-text-color);
 }
 
-/* Alerts */
-.alert {
-    padding: 15px;
-    margin-bottom: 20px;
-    border-radius: 3px;
+/* Stili di stato per la tabella */
+.status-success {
+    color: var(--income-color); /* Green */
+    font-weight: 600;
+}
+.status-pending {
+    color: var(--secondary-color); /* Gray */
+}
+.status-error {
+    color: var(--expense-color); /* Red */
+    font-weight: 600;
+}
+
+/* Filtri */
+.filter-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.form-label {
     font-size: 14px;
+    font-weight: 500;
 }
 
-.alert-info {
-    background: #e3f2fd;
-    border: 1px solid #90caf9;
-    color: #0d47a1;
+.form-control {
+    padding: 8px 12px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font-size: 14px;
+    transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-.alert-info ul {
-    margin: 10px 0 0 0;
-    padding-left: 20px;
+.form-control:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.25);
+    outline: none;
 }
 
-.alert-success {
-    background: #e8f5e9;
-    border: 1px solid #81c784;
-    color: #2e7d32;
+.file-main-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex: 1 1 50%;
+    min-width: 250px;
 }
 
-.alert-warning {
-    background: #fff3e0;
-    border: 1px solid #ffb74d;
-    color: #e65100;
+.file-icon {
+    font-size: 24px;
+    line-height: 1;
 }
 
-.alert-error, .alert-danger {
-    background: #ffebee;
-    border: 1px solid #e57373;
-    color: #c62828;
+.file-name {
+    font-weight: 600;
+    color: var(--nav-text-color);
+    font-size: 16px;
 }
 
-.alert-dismissible {
-    position: relative;
-    padding-right: 40px;
-}
-
-.btn-close {
-    position: absolute;
-    right: 15px;
-    top: 15px;
-    background: transparent;
-    border: none;
-    font-size: 20px;
-    cursor: pointer;
-}
-
-.invalid-feedback {
-    color: #d32f2f;
+.file-date {
     font-size: 13px;
-    margin-top: 5px;
+    color: var(--secondary-color);
+}
+
+.file-meta-info {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex: 1 1 auto;
+    justify-content: flex-end;
+    padding-top: 5px;
+}
+
+/* Stile per il Contatore Spese */
+.expense-count {
+    font-size: 14px;
+    color: var(--secondary-color);
+    white-space: nowrap;
+}
+
+.count-number {
+    font-weight: 700;
+    color: var(--primary-color);
+    font-size: 18px;
+    margin-right: 4px;
+}
+
+/* Stili di stato */
+.upload-status {
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.status-success {
+    background-color: #d4edda;
+    color: var(--income-color);
+}
+.status-pending {
+    background-color: #fff3e0;
+    color: var(--primary-hover-color);
+}
+.status-error {
+    background-color: #f8d7da;
+    color: var(--expense-color);
+}
+
+/* Media Query (Responsività) */
+@media (max-width: 767px) {
+    .uploaded-list-padding .data-list-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .file-main-info {
+        margin-bottom: 10px;
+        min-width: 100%;
+    }
+
+    .file-meta-info {
+        justify-content: space-between;
+        width: 100%;
+        padding-top: 0;
+    }
+
+    .expense-count {
+        order: -1;
+        flex-grow: 1;
+        text-align: left;
+    }
+
+    .upload-status {
+        order: 0;
+    }
+
+    .btn.btn-sm.btn-primary {
+        margin-left: 0 !important;
+    }
 }

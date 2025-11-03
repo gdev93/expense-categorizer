@@ -1,67 +1,171 @@
+
 {% extends "main/index.html" %}
 
 {% load static %}
 
-{% block title %}Upload Transaction CSV{% endblock %}
+{% block title %}Caricamento dati{% endblock %}
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/upload.css' %}">
+    <link rel="stylesheet" href="{% static 'css/upload.css' %}">
+    <link rel="stylesheet" href="{% static 'css/list.css' %}">
+    <link rel="stylesheet" href="{% static 'css/pagination.css' %}">
 {% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card upload-card">
-                <div class="card-header">
-                    <h2>Upload Transaction CSV</h2>
-                </div>
-                <div class="card-body">
-                    {% if messages %}
-                        {% for message in messages %}
-                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                                {{ message }}
-                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                            </div>
-                        {% endfor %}
-                    {% endif %}
+    <div class="container mt-5">
 
-                    <form method="post" enctype="multipart/form-data">
-                        {% csrf_token %}
+        <div class="header">
+            <h1>🚚 Carica Estratti Conto</h1>
+            <a href="{% url 'transaction_list' %}" class="btn btn-secondary btn-sm">Torna alla Dashboard</a>
+        </div>
 
-                        <div class="mb-3">
-                            <label for="{{ form.csv_file.id_for_label }}" class="form-label">
-                                {{ form.csv_file.label }}
-                            </label>
-                            {{ form.csv_file }}
-                            {% if form.csv_file.help_text %}
-                                <div class="form-text">{{ form.csv_file.help_text }}</div>
-                            {% endif %}
-                            {% if form.csv_file.errors %}
-                                <div class="invalid-feedback d-block">
-                                    {{ form.csv_file.errors }}
-                                </div>
-                            {% endif %}
-                        </div>
-
-                        <div class="alert alert-info">
-                            <strong>Note:</strong>
-                            <ul class="mb-0">
-                                <li>Only one CSV can be processed at a time</li>
-                                <li>Maximum file size: 10MB</li>
-                                <li>The system will automatically detect columns</li>
-                            </ul>
-                        </div>
-
-                        <button type="submit" class="btn btn-primary">
-                            📤 Upload and Process
+        <!-- Display Messages -->
+        {% if messages %}
+            <div class="messages mb-3">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
                         </button>
-                        <a href="/" class="btn btn-secondary">
-                            Cancel
-                        </a>
-                    </form>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <div class="upload-area mb-3">
+            <h2>🧾 Carica il tuo file</h2>
+            <p class="text-muted mb-5">
+                Seleziona un file in formato <strong>CSV</strong> da caricare per l'elaborazione.
+                {% if upload_context %}
+                    Dimensione massima: <strong>{{ upload_context.max_file_size_mb }}MB</strong>.
+                {% endif %}
+            </p>
+
+
+            <form id="uploadForm" class="file-upload-form" method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <div class="drop-zone" id="dropZone">
+                    <input type="file" id="fileInput" name="file" accept=".csv" hidden>
+                    <p class="drop-zone-text">Trascina qui il file o <strong class="primary-text-link" id="browseFiles">clicca
+                        per selezionare</strong></p>
+                    <small class="text-muted">
+                        Max 1 file,
+                        {% if upload_context %}
+                            formati supportati: {{ upload_context.allowed_formats|join:", " }},
+                            dimensione massima {{ upload_context.max_file_size_mb }}MB.
+                        {% else %}
+                            dimensione massima 10MB.
+                        {% endif %}
+                    </small>
+                </div>
+
+                <!-- Display form errors -->
+                {% if form.errors %}
+                    <div class="alert alert-danger mt-3">
+                        {% for field, errors in form.errors.items %}
+                            {% for error in errors %}
+                                <p>{{ error }}</p>
+                            {% endfor %}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                <div class="mt-5">
+                    <div id="fileListPreview" class="file-list-preview">
+                    </div>
+
+                    <button type="submit" class="upload-btn" id="submitUpload" disabled>
+                        Carica File Selezionato
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Upload Statistics -->
+{#        {% if upload_stats %}#}
+{#            <div class="upload-statistics mb-4">#}
+{#                <h3>📊 Statistiche Caricamenti</h3>#}
+{#                <div class="stats-grid">#}
+{#                    <div class="stat-item">#}
+{#                        <span class="stat-label">Totale caricamenti:</span>#}
+{#                        <span class="stat-value">{{ upload_stats.total_uploads }}</span>#}
+{#                    </div>#}
+{#                    <div class="stat-item">#}
+{#                        <span class="stat-label">Spazio totale:</span>#}
+{#                        <span class="stat-value">{{ upload_stats.total_size_mb }} MB</span>#}
+{#                    </div>#}
+{#                </div>#}
+{#            </div>#}
+{#        {% endif %}#}
+
+        <h1 class="header">🚚 Tutti i tuoi caricamenti</h1>
+
+        <div class="data-list uploaded-list-padding">
+    {% if uploads %}
+        {% for upload in uploads %}
+            <div class="data-list-item">
+
+                <div class="file-main-info">
+                    <div class="file-icon">📁</div>
+                    <div class="file-text-content">
+                        <div class="file-name">
+                            Estrazione_{{ upload.id }}_{{ upload.upload_date|date:"Ymd_His" }}.csv
+                        </div>
+                        <div class="file-date">
+                            📅 Caricato il {{ upload.upload_date|date:"d/m/Y H:i" }}
+                        </div>
+                        <div class="file-size text-muted">
+                            {% if upload.dimension %}
+                                💾 {{ upload.file_size_display }}
+                            {% endif %}
+                            {% if upload.processing_time %}
+                                • ⏱️ {{ upload.processing_time }}ms
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="file-meta-info">
+                    <span class="upload-status status-completato">
+                        Completato
+                    </span>
+
+                    <div class="expense-count">
+                        <span class="count-number">{{ upload.transactions_count }}</span> Spese trovate
+                    </div>
                 </div>
             </div>
+        {% endfor %}
+    {% else %}
+        <div class="empty-state">
+            <p class="text-muted">📭 Nessun caricamento trovato. Carica il tuo primo file CSV!</p>
         </div>
-    </div>
+    {% endif %}
 </div>
+
+        <!-- Pagination -->
+        {% if is_paginated %}
+            <div class="pagination mt-4">
+                {% if page_obj.has_previous %}
+                    <a href="?page=1" class="pagination-link">&laquo; Prima</a>
+                    <a href="?page={{ page_obj.previous_page_number }}" class="pagination-link">Precedente</a>
+                {% endif %}
+
+                <span class="pagination-current">
+                    Pagina {{ page_obj.number }} di {{ page_obj.paginator.num_pages }}
+                </span>
+
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}" class="pagination-link">Successiva</a>
+                    <a href="?page={{ page_obj.paginator.num_pages }}" class="pagination-link">Ultima &raquo;</a>
+                {% endif %}
+            </div>
+        {% endif %}
+
+    </div>
+    <script>
+        const CSRF_TOKEN = "{{ csrf_token }}"
+    </script>
+    <script src="{% static 'js/upload.js' %}"></script>
 {% endblock %}

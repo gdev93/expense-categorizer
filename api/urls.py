@@ -17,10 +17,10 @@ Including another URLconf
 from django.urls import path
 from django.views.generic import RedirectView
 
-from api.entry_point_views import login_form, index, authenticate_user, register_form, create_user
+from api.entry_point_views import login_form, authenticate_user, register_form, create_user
 from api.views.category_view import CategoryUpdateView
-from api.views.data_upload_view import CSVUploadView
 from api.views.rule_view import RuleDefineView
+from api.views.transaction_upload_view import CsvUploadView
 from api.views.transaction_view import TransactionListView, EditTransactionCategory, TransactionDetailUpdateView
 
 urlpatterns = [
@@ -28,7 +28,7 @@ urlpatterns = [
     path("accounts/authenticate/", authenticate_user, name="authenticate_user"),
     path('accounts/register/', register_form, name='register_form'),
     path('accounts/create/', create_user, name='create_user'),
-    path('transactions/upload/', CSVUploadView.as_view(), name='transactions_upload'),
+    path('transactions/upload/', CsvUploadView.as_view(), name='transactions_upload'),
     path('transactions/', TransactionListView.as_view(), name='transaction_list'),
     path('transactions/<int:pk>/', TransactionDetailUpdateView.as_view(), name='transaction_detail'),
     path('transactions/rules/', RuleDefineView.as_view(), name='define_rule'),
