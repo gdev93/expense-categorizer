@@ -1,7 +1,9 @@
 # views.py (add to your existing views file)
+from dataclasses import dataclass, asdict
+from typing import Any
+
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db import transaction as db_transaction
-from django.db.models import Q  # Import Q for complex lookups
+from django.db.models import Q, QuerySet  # Import Q for complex lookups
 from django.db.models import Sum
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
@@ -74,7 +76,22 @@ class TransactionDetailUpdateView(LoginRequiredMixin, UpdateView):
 
         return self.render_to_response(self.get_context_data(form=form))
 
+@dataclass
+class TransactionListContextData:
+    """Context data for transaction list view"""
+    categories: list[str]
+    selected_category: str
+    selected_status: str
+    search_query: str
+    uncategorized_transaction: QuerySet[Transaction,Transaction]  # QuerySet
+    total_count: int
+    total_amount: float
+    category_count: int
+    rules: QuerySet[Rule,Rule]  # QuerySet
 
+    def to_context(self) -> dict[str, Any]:
+        """Convert dataclass to context dictionary"""
+        return asdict(self)
 
 class TransactionListView(LoginRequiredMixin, ListView):
     """Display list of transactions with filtering and pagination"""
@@ -126,21 +143,22 @@ class TransactionListView(LoginRequiredMixin, ListView):
             available_categories = self.default_categories
         else:
             available_categories = categories
-        context['categories'] = available_categories
-
-        # Get filter values
-        context['selected_category'] = self.request.GET.get('category', '')
-        context['selected_status'] = self.request.GET.get('status', '')
-        context['search_query'] = self.request.GET.get('search', '')
-        # Calculate summary statistics
         user_transactions = Transaction.objects.filter(user=self.request.user)
-        context['uncategorized_transaction'] = user_transactions.filter(~Q(status='categorized'))
-        context['total_count'] = user_transactions.count()
-        context['total_amount'] = user_transactions.filter(status="categorized").aggregate(
-            total=Sum('amount')
-        )['total'] or 0
-        context['category_count'] = user_transactions.values('category').distinct().count()
-        context['rules']=Rule.objects.filter(user=self.request.user,is_active=True)
+
+        transaction_list_context = TransactionListContextData(
+            categories=available_categories,
+            selected_status=self.request.GET.get('status', ''),
+            search_query=self.request.GET.get('search', ''),
+            uncategorized_transaction=user_transactions.filter(~Q(status='categorized')),
+            total_count=user_transactions.count(),
+            total_amount=user_transactions.filter(status="categorized").aggregate(
+                total=Sum('amount')
+            )['total'] or 0,
+            category_count=user_transactions.values('category').distinct().count(),
+            rules=Rule.objects.filter(user=self.request.user,is_active=True),
+            selected_category=self.request.GET.get('category', '')
+        )
+        context.update(transaction_list_context.to_context())
 
         return context
 
