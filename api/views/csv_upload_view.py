@@ -7,11 +7,11 @@ from typing import List, Dict
 from django import forms
 from django.contrib import messages
 from django.core.validators import FileExtensionValidator
-from django.db.models import Sum, Count, Case, When, Q, Value, CharField
+from django.db.models import Sum, Count, Case, When, Q, Value, CharField, Exists, OuterRef
 from django.urls import reverse_lazy
-from django.views.generic import FormView, ListView
+from django.views.generic import FormView, ListView, DeleteView
 
-from api.models import CsvUpload
+from api.models import CsvUpload, Transaction
 from api.models import Rule, Category
 from processors.expense_upload_processor import ExpenseUploadProcessor
 
@@ -81,6 +81,9 @@ def _parse_csv(csv_file) -> List[Dict[str, str]]:
     reader = csv.DictReader(io_string)
     return list(reader)
 
+class CsvUploadDelete(DeleteView):
+    model = CsvUpload
+    success_url = reverse_lazy('transactions_upload')
 
 class CsvUploadForm(forms.Form):
     """Form for CSV file upload with validation"""
@@ -166,7 +169,7 @@ class CsvUploadView(ListView, FormView):
 
     # FormView attributes
     form_class = CsvUploadForm
-    success_url = reverse_lazy('transaction_upload')
+    success_url = reverse_lazy('transactions_upload')
 
     # Shared attributes
     template_name = 'transactions/transactions_upload.html'
@@ -291,15 +294,21 @@ class CsvUploadView(ListView, FormView):
 
         # Convert uploads to display dataclass
         uploads_list = context.get(self.context_object_name, [])
-        queryset = self.get_queryset().annotate(transactions_count=Count('transactions')).annotate(
+        queryset = self.get_queryset().annotate(
+            has_pending=Exists(
+                Transaction.objects.filter(
+                    csv_upload=OuterRef('pk'),
+                    status='pending'
+                )
+            )
+        ).annotate(
             status=Case(
-                When(
-                    Q(transactions__status='pending'),
-                    then=Value('pending')
-                ),
+                When(has_pending=True, then=Value('pending')),
                 default=Value('categorized'),
                 output_field=CharField()
             )
+        ).annotate(
+            transactions_count=Count('transactions')
         )
 
         context['uploads'] = queryset

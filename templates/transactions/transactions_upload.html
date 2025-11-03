@@ -128,12 +128,22 @@
 
                 <div class="file-meta-info">
                     <span class="upload-status status-completato">
+                        {% if upload.status != 'pending' %}
                         Completato
+                        {% else %}
+                        In corso
+                        {% endif %}
                     </span>
 
                     <div class="expense-count">
                         <span class="count-number">{{ upload.transactions_count }}</span> Spese trovate
                     </div>
+                    <form action="{% url 'transactions_upload_delete' upload.id %}" method="post">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger btn-sm">
+                            Elimina
+                        </button>
+                    </form>
                 </div>
             </div>
         {% endfor %}
