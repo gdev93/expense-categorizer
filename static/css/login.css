@@ -1,23 +1,27 @@
 /* login.css - Focus on component styling, leveraging main.css global variables */
 
-/* * Universal styles (*) and body styles are now provided by main.css.
-* We only style the specific component container and its elements.
-*/
+/* Fullscreen centering wrapper for vertical alignment */
+.fullscreen-center {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center; /* Horizontal centering */
+    align-items: center;   /* Vertical centering */
+    padding: 20px; /* Safety padding for small mobile screens */
+}
 
 .login-container {
     /* Inherits font/color/background from main.css and body styles */
     background: white;
-    padding: 2.5rem; /* Increased padding */
-    border-radius: 12px; /* Softer, more modern corners */
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+    padding: 2rem; /* ADJUSTED: Reduced from 2.5rem */
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
     width: 100%;
     max-width: 400px;
-    margin: 2rem auto; /* Ensures vertical centering and minimal separation from page edges */
 }
 
 .login-header {
     text-align: center;
-    margin-bottom: 2.5rem;
+    margin-bottom: 2rem; /* ADJUSTED: Reduced from 2.5rem */
 }
 
 .login-header h2 {
@@ -34,7 +38,7 @@
 }
 
 .form-group {
-    margin-bottom: 1.75rem; /* Improved vertical spacing */
+    margin-bottom: 1.5rem; /* ADJUSTED: Reduced from 1.75rem */
 }
 
 .form-group label {
@@ -98,26 +102,9 @@
     text-decoration: underline;
     color: var(--primary-hover-color, #E0A800); /* Darker Gold on hover */
 }
-.fullscreen-center {
-    min-height: 100vh;
-    display: flex;
-    justify-content: center; /* Horizontal centering */
-    align-items: center;   /* Vertical centering */
-    padding: 20px; /* Safety padding for small mobile screens */
-}
 
-.login-container {
-    /* ... rest of the styling using Gold/Amber variables ... */
-    background: white;
-    padding: 2.5rem;
-    border-radius: 12px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-    width: 100%;
-    max-width: 400px;
-}
 @media (max-width: 480px) {
     .login-container {
-        margin: 1rem;
-        padding: 2rem;
+        padding: 2rem; /* Aligned with new default padding */
     }
 }
