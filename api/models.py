@@ -113,6 +113,10 @@ class Transaction(models.Model):
         ('categorized', 'Categorized'),
         ('reviewed', 'Reviewed'),
     ]
+    TRANSACTION_TYPE_CHOICES = [
+        ('expense', 'Expense'),
+        ('income', 'Income'),
+    ]
 
 
 
@@ -142,7 +146,7 @@ class Transaction(models.Model):
         blank=True,
         related_name='transactions'
     )
-
+    transaction_type = models.CharField(max_length=20, choices=TRANSACTION_TYPE_CHOICES, default='expense')
     # Processing metadata
     merchant_raw_name = models.CharField(max_length=255, blank=True)  # Original from CSV
     # Core transaction data

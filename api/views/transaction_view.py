@@ -11,7 +11,7 @@ from django.views import View
 from django.views.generic import ListView
 from django.views.generic import UpdateView
 
-from api.models import Transaction, Category, Rule
+from api.models import Transaction, Category, Rule, Merchant
 
 
 # views.py
@@ -69,7 +69,12 @@ class TransactionDetailUpdateView(LoginRequiredMixin, UpdateView):
                 defaults={'is_default': False}
             )
             form.instance.category = new_category
-
+        merchant_name = self.request.POST.get('merchant_raw_name', '').strip()
+        if merchant_name:
+            merchant_db = Merchant.objects.filter(Q(name__icontains=merchant_name) | Q(normalized_name__icontains=merchant_name)).first()
+            if not merchant_db:
+                merchant_db = Merchant.objects.create(name=merchant_name)
+            form.instance.merchant = merchant_db
         form.instance.modified_by_user = True
         form.instance.status = 'categorized'
         self.object = form.save()
@@ -143,7 +148,7 @@ class TransactionListView(LoginRequiredMixin, ListView):
             available_categories = self.default_categories
         else:
             available_categories = categories
-        user_transactions = Transaction.objects.filter(user=self.request.user)
+        user_transactions = Transaction.objects.filter(user=self.request.user, transaction_type='expense')
 
         transaction_list_context = TransactionListContextData(
             categories=available_categories,

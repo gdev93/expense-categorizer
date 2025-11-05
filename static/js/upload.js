@@ -157,15 +157,12 @@ document.addEventListener('DOMContentLoaded', () => {
             updateFileList();
         }
         try {
-            const process_response = await fetch(CSV_UPLOAD_PROCESS, {
+            await fetch(CSV_UPLOAD_PROCESS, {
                 method: 'POST',
                 headers: {
                     'X-CSRFToken': CSRF_TOKEN
                 }
             })
-            if (process_response.ok) {
-                alert('Caricamento completato con successo! Il file è in fase di elaborazione.');
-            }
         } catch (error) {
             console.log(error)
         } finally {

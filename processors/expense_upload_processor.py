@@ -196,6 +196,9 @@ class ExpenseUploadProcessor:
                 continue
             if transaction_parse_result.amount > 0:
                 print(f"Only expenses are allowed, skipping transaction {transaction_parse_result.raw_data}")
+                tx.transaction_type = 'income'
+                # income transactions are not categorized yet
+                all_transactions_categorized.append(tx)
                 continue
             if transaction_parse_result.description:
                 transaction_from_description = Transaction.objects.filter(
@@ -222,7 +225,8 @@ class ExpenseUploadProcessor:
 
         Transaction.objects.bulk_update(all_transactions_categorized + all_transactions_to_upload,
                                         ['status', 'merchant', 'merchant_raw_name', 'category', 'transaction_date',
-                                         'original_date', 'description', 'amount', 'original_amount'])
+                                         'original_date', 'description', 'amount', 'original_amount',
+                                         'transaction_type'])
         print(
             f"Found {len(all_transactions_categorized)} {"👌" if len(all_transactions_categorized) > 0 else "😩"} transactions that have similar merchant names with confidence >= {self.pre_check_confidence_threshold}"
         )
@@ -254,7 +258,8 @@ class ExpenseUploadProcessor:
                     Transaction.objects.filter(id=tx_id).update(status='uncategorized', failure_code=1)
                     continue
 
-                merchant = Merchant.objects.filter(name__icontains=merchant_name.strip()).first()
+                merchant = Merchant.objects.filter(Q(name__icontains=merchant_name.strip()) | Q(
+                    normalized_name__icontains=merchant_name.strip())).first()
                 if not merchant:
                     merchant = Merchant(name=merchant_name)
                     merchant.save()
@@ -266,25 +271,22 @@ class ExpenseUploadProcessor:
                     Transaction.objects.filter(id=tx_id).update(status='uncategorized', failure_code=1)
                     continue
 
-                # Create transaction
-                updated_count = Transaction.objects.filter(id=tx_id, user=self.user).update(
-                    transaction_date=transaction_date,
-                    amount=abs(amount),
-                    original_amount=original_amount,
-                    description=description,
-                    merchant=merchant,
-                    merchant_raw_name=merchant_name,
-                    category=category,
-                    original_date=tx_data.date,
-                    status='categorized',
-                    confidence_score=None,
-                    modified_by_user=False,
-                    failure_code=0 if not failure else 1
-                )
-
-                if updated_count == 0:
-                    print(f"⚠️ Transaction {tx_id} not found or doesn't belong to user")
-
+                reference_transaction = Transaction.objects.filter(user=self.user,
+                                                                   id=tx_id).first() or Transaction.objects.filter(
+                    user=self.user, description=description).first()
+                reference_transaction.category = category
+                reference_transaction.merchant = merchant
+                reference_transaction.description = description
+                reference_transaction.merchant_raw_name = merchant_name
+                reference_transaction.original_date = tx_data.date if not reference_transaction.original_date else reference_transaction.original_date
+                reference_transaction.original_amount = original_amount if not reference_transaction.original_amount else reference_transaction.original_amount
+                reference_transaction.transaction_date = transaction_date if not reference_transaction.transaction_date else reference_transaction.transaction_date
+                reference_transaction.amount = abs(
+                    amount) if not reference_transaction.amount else reference_transaction.amount
+                reference_transaction.status = 'categorized'
+                reference_transaction.modified_by_user = False
+                reference_transaction.failure_code = 0 if not failure else 1
+                reference_transaction.save()
 
             except Exception as e:
                 print(f"⚠️  Failed to persist transaction {tx_id}: {str(e)}")
@@ -310,6 +312,7 @@ class ExpenseUploadProcessor:
                                                                       status='categorized',
                                                                       original_amount__isnull=False,
                                                                       description__isnull=False,
+                                                                       transaction_type='expense',
                                                                       original_date__isnull=False).first()
         if completed_categorized_transaction:
             for key, value in completed_categorized_transaction.raw_data.items():
@@ -342,10 +345,13 @@ class ExpenseUploadProcessor:
             merchant = tx.raw_data.get(csv_upload.merchant_column_name, '')
             original_date = tx.raw_data.get(csv_upload.date_column_name, '')
             if not original_date:
-                date, original_date_column_name = parse_date_from_raw_data_with_no_suggestions(tx.raw_data)
-                if date:
-                    tx.transaction_date = date
-                    tx.original_date = original_date
+                try:
+                    date, _ = parse_date_from_raw_data_with_no_suggestions(tx.raw_data)
+                    if date:
+                        tx.transaction_date = date
+                        tx.original_date = original_date
+                except Exception:
+                    print(f"Failed to parse date from transaction {tx.id} with raw data: {tx.raw_data}")
             amount = normalize_amount(original_amount)
             transaction_date = parse_raw_date(original_date)
             tx.transaction_date = transaction_date
@@ -363,6 +369,11 @@ class ExpenseUploadProcessor:
         Transaction.objects.bulk_update(uncategorized_transactions,
                                         ['transaction_date', 'amount', 'original_amount', 'description',
                                          'merchant_raw_name', 'original_date', 'category', 'status'])
+        invalid_transactions = Transaction.objects.filter((Q(user=self.user) & Q(csv_upload=csv_upload)) & (
+                    Q(description__isnull=True) | Q(description='') | Q(merchant__isnull=True) | Q(amount__isnull=True) | Q(amount=0) | Q(
+                original_date='') | Q(original_date__isnull=True)))
+        # if invalid_transactions:
+            #todo think about something
         return csv_upload
 
 
