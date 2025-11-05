@@ -135,6 +135,7 @@ class TransactionCategorization:
     description: str
     applied_user_rule: str | None = None
     failure: str | None = None
+    raw_data: dict[str, Any] = None
 
     @classmethod
     def from_dict(cls, data: dict) -> 'TransactionCategorization':
@@ -148,7 +149,8 @@ class TransactionCategorization:
             original_amount=data.get("original_amount", ""),
             description=data.get("description", ""),
             applied_user_rule=data.get("applied_user_rule"),
-            failure=data.get("failure")
+            failure=data.get("failure"),
+            raw_data=data
         )
 
 
@@ -441,7 +443,7 @@ class ExpenseCategorizerAgent:
 
             # Log completion
             expense_count = len([c for c in categorizations if c.category != "not_expense"])
-            print(f"✅ Analysis completed: {expense_count}/{len(categorizations)} expenses categorized! 🔥🔥")
+            print(f"✅ Analysis completed: {expense_count}/{len(batch)} expenses categorized! 🔥🔥")
 
             return categorizations
 

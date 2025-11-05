@@ -1,19 +1,26 @@
 import csv
 import io
+import os
+import threading
 import time
 from dataclasses import dataclass
 from typing import List, Dict
 
+from asgiref.sync import sync_to_async
 from django import forms
 from django.contrib import messages
+from django.contrib.auth.models import User
 from django.core.validators import FileExtensionValidator
-from django.db.models import Sum, Count, Case, When, Q, Value, CharField, Exists, OuterRef
+from django.db import transaction
+from django.db.models import Sum, Count, Case, When, Value, CharField, Exists, OuterRef
+from django.http import HttpResponse
 from django.urls import reverse_lazy
+from django.views import View
 from django.views.generic import FormView, ListView, DeleteView
 
 from api.models import CsvUpload, Transaction
 from api.models import Rule, Category
-from processors.expense_upload_processor import ExpenseUploadProcessor
+from processors.expense_upload_processor import ExpenseUploadProcessor, persist_csv_file
 
 
 # --- Data Classes ---
@@ -23,7 +30,6 @@ class CsvProcessingResult:
     """Result of CSV processing operation"""
     csv_upload: CsvUpload | None
     rows_processed: int
-    processing_time: int
     success: bool
     error_message: str = ""
 
@@ -174,35 +180,11 @@ class CsvUploadView(ListView, FormView):
     # Shared attributes
     template_name = 'transactions/transactions_upload.html'
 
-    # Default categories to create for new users
-    DEFAULT_CATEGORIES = [
-        "Casa", "Spesa", "Auto", "Carburante", "Vita sociale", "Pizza",
-        "Regali", "Vacanze", "Sport", "Bollette", "Scuola", "Bambini",
-        "Shopping", "Abbonamenti", "Affitto", "Baby-sitter", "Trasporti",
-        "Spese mediche", "Partita Iva", "Bonifico"
-    ]
-
     def get_queryset(self):
         """Get uploads for the current user (ListView method)"""
         return CsvUpload.objects.filter(
             user=self.request.user
         ).select_related('user').prefetch_related('transactions').order_by('-upload_date')
-
-    def _ensure_user_categories(self) -> List[str]:
-        """Ensure user has categories, create defaults if needed"""
-        user_categories = list(
-            Category.objects.filter(user=self.request.user).values_list('name', flat=True)
-        )
-
-        if not user_categories:
-            # Create default categories for new user
-            Category.objects.bulk_create([
-                Category(name=default_category, user=self.request.user)
-                for default_category in self.DEFAULT_CATEGORIES
-            ])
-            return self.DEFAULT_CATEGORIES
-
-        return user_categories
 
     def _get_user_rules(self) -> List[str]:
         """Get active user rules"""
@@ -223,7 +205,6 @@ class CsvUploadView(ListView, FormView):
         Returns:
             CsvProcessingResult with processing details
         """
-        start_time = time.time()
 
         try:
             # Parse CSV file
@@ -233,34 +214,16 @@ class CsvUploadView(ListView, FormView):
                 return CsvProcessingResult(
                     csv_upload=None,
                     rows_processed=0,
-                    processing_time=0,
                     success=False,
                     error_message='The CSV file is empty.'
                 )
+            with transaction.atomic():
+                csv_upload = persist_csv_file(csv_data, self.request.user, csv_file)
 
-            # Get user rules and categories
-            user_rules = self._get_user_rules()
-            available_categories = self._ensure_user_categories()
-
-            # Process transactions using ExpenseUploadProcessor
-            processor = ExpenseUploadProcessor(
-                user=self.request.user,
-                user_rules=user_rules,
-                available_categories=available_categories
-            )
-
-            csv_upload = processor.process_transactions(csv_data)
-
-            # Calculate processing time and update record
-            processing_time = int((time.time() - start_time) * 1000)
-            csv_upload.processing_time = processing_time
-            csv_upload.dimension = csv_file.size
-            csv_upload.save()
 
             return CsvProcessingResult(
                 csv_upload=csv_upload,
                 rows_processed=len(csv_data),
-                processing_time=processing_time,
                 success=True
             )
 
@@ -268,7 +231,6 @@ class CsvUploadView(ListView, FormView):
             return CsvProcessingResult(
                 csv_upload=None,
                 rows_processed=0,
-                processing_time=int((time.time() - start_time) * 1000),
                 success=False,
                 error_message=f'Error parsing CSV file: {str(e)}'
             )
@@ -276,7 +238,6 @@ class CsvUploadView(ListView, FormView):
             return CsvProcessingResult(
                 csv_upload=None,
                 rows_processed=0,
-                processing_time=int((time.time() - start_time) * 1000),
                 success=False,
                 error_message=f'Errore durante l\'elaborazione del file: {str(e)}'
             )
@@ -347,7 +308,7 @@ class CsvUploadView(ListView, FormView):
         if result.success:
             messages.success(
                 self.request,
-                f'File caricato con successo! {result.rows_processed} transazioni elaborate in {result.processing_time}ms.'
+                f'File caricato con successo! {result.rows_processed}'
             )
         else:
             messages.error(self.request, result.error_message)
@@ -364,3 +325,77 @@ class CsvUploadView(ListView, FormView):
         # Need to manually get the list context for rendering
         self.object_list = self.get_queryset()
         return self.render_to_response(self.get_context_data(form=form))
+
+
+DEFAULT_CATEGORIES = [
+    "Casa", "Spesa", "Auto", "Carburante", "Vita sociale", "Pizza",
+    "Regali", "Vacanze", "Sport", "Bollette", "Scuola", "Bambini",
+    "Shopping", "Abbonamenti", "Affitto", "Baby-sitter", "Trasporti",
+    "Spese mediche", "Partita Iva", "Bonifico"
+]
+default_categories_first_upload = os.getenv('DEFAULT_CATEGORIES', '').split(',') or DEFAULT_CATEGORIES
+
+
+class CsvProcessView(View):
+    upload_limit = os.getenv('UPLOAD_LIMIT', 1)
+
+    def post(self, request, *args, **kwargs):
+        thread = threading.Thread(
+            target=self._do_process,
+            args=(request.user,),
+            daemon=True
+        )
+        thread.start()
+
+        # Return immediately
+        return HttpResponse(status=202)
+
+    def _do_process(self, user: User) -> HttpResponse:
+        start_time = time.time()
+
+        csv_upload_query = CsvUpload.objects.filter(user=self.request.user, transactions__status='pending').distinct()
+        if not csv_upload_query.exists():
+            return HttpResponse(status=404)
+        if csv_upload_query.count() > self.upload_limit:
+            return HttpResponse(status=403)
+        csv_upload = csv_upload_query.first()
+        transactions = Transaction.objects.filter(csv_upload=csv_upload, user=user, status='pending')
+        user_rules = list(
+            Rule.objects.filter(
+                user=self.request.user,
+                is_active=True
+            ).values_list('text_content', flat=True)
+        )
+
+        available_categories = self._ensure_user_categories()
+
+        # Process transactions using ExpenseUploadProcessor
+        processor = ExpenseUploadProcessor(
+            user=self.request.user,
+            user_rules=user_rules,
+            available_categories=available_categories
+        )
+
+        csv_upload = processor.process_transactions(list(transactions), csv_upload)
+
+        # Calculate processing time and update record
+        processing_time = int((time.time() - start_time) * 1000)
+        csv_upload.processing_time = processing_time
+        csv_upload.save()
+        return HttpResponse(status=201)
+
+    def _ensure_user_categories(self) -> List[str]:
+        """Ensure user has categories, create defaults if needed"""
+        user_categories = list(
+            Category.objects.filter(user=self.request.user).values_list('name', flat=True)
+        )
+
+        if not user_categories:
+            # Create default categories for new user
+            Category.objects.bulk_create([
+                Category(name=default_category, user=self.request.user)
+                for default_category in default_categories_first_upload
+            ])
+            return default_categories_first_upload
+
+        return user_categories

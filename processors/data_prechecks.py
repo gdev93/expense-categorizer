@@ -61,6 +61,5 @@ class RawTransactionParseResult:
         return raw_transaction_result
 
 
-def parse_raw_transaction(raw_data: list[dict[str, str]], csv_uploads: list[CsvUpload] = None) -> list[
-    RawTransactionParseResult]:
-    return [RawTransactionParseResult.from_dict(raw_data, csv_uploads) for raw_data in raw_data]
+def parse_raw_transaction(raw_data: dict[str, str], csv_uploads: list[CsvUpload] = None) -> RawTransactionParseResult:
+    return RawTransactionParseResult.from_dict(raw_data, csv_uploads)

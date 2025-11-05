@@ -176,6 +176,8 @@
     </div>
     <script>
         const CSRF_TOKEN = "{{ csrf_token }}"
+        const CSV_UPLOADS_PAGE = "{% url 'transactions_upload' %}"
+        const CSV_UPLOAD_PROCESS = "{% url 'transactions_process' %}"
     </script>
     <script src="{% static 'js/upload.js' %}"></script>
 {% endblock %}
