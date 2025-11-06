@@ -4,6 +4,7 @@ from django.contrib.auth.models import User
 from django.core.files.uploadedfile import UploadedFile
 from django.db import transaction
 from django.db.models import Q
+from django.db.models.expressions import RawSQL
 
 from agent.agent import ExpenseCategorizerAgent, AgentTransactionUpload, TransactionCategorization
 from api.models import Transaction, Category, Merchant, CsvUpload
@@ -94,9 +95,9 @@ def _find_similar_transaction_by_merchant(user: User, merchant_name: str) -> Tra
         Q(user=user) &
         Q(status='categorized') &
         (
-                Q(merchant__name__search=merchant_name) |
-                Q(merchant__normalized_name__search=merchant_name) |
-                Q(description__search=merchant_name)
+                Q(merchant__name__icontains=merchant_name) |
+                Q(merchant__normalized_name__icontains=merchant_name) |
+                Q(description__icontains=merchant_name)
         )
     ).first()
 
@@ -107,7 +108,16 @@ def _find_similar_transaction_by_description(
         precheck_confidence_threshold: float,
 ) -> Transaction | None:
     """Search for a similar categorized transaction by description similarity."""
+    merchant = Merchant.objects.annotate(
+        is_contained=RawSQL(
+            "%s ILIKE '%%' || name || '%%'",
+            (description,)
+        )
+    ).filter(is_contained=True).first()
 
+    transaction_from_merchant = _find_similar_transaction_by_merchant(user, merchant.name) if merchant else None
+    if transaction_from_merchant:
+        return transaction_from_merchant
     sql = f"""
           SELECT t.*,
                  WORD_SIMILARITY(t.description, %s) AS description_similarity
@@ -296,7 +306,6 @@ class ExpenseUploadProcessor:
         all_csv_uploads = list(CsvUpload.objects.filter(user=self.user))
         data_count = len(transactions)
         batch_size = self.batch_helper.compute_batch_size(data_count)
-
         total_batches = (data_count + batch_size - 1) // batch_size
 
         print(f"\n{'=' * 60}")
@@ -369,11 +378,6 @@ class ExpenseUploadProcessor:
         Transaction.objects.bulk_update(uncategorized_transactions,
                                         ['transaction_date', 'amount', 'original_amount', 'description',
                                          'merchant_raw_name', 'original_date', 'category', 'status'])
-        invalid_transactions = Transaction.objects.filter((Q(user=self.user) & Q(csv_upload=csv_upload)) & (
-                    Q(description__isnull=True) | Q(description='') | Q(merchant__isnull=True) | Q(amount__isnull=True) | Q(amount=0) | Q(
-                original_date='') | Q(original_date__isnull=True)))
-        # if invalid_transactions:
-            #todo think about something
         return csv_upload
 
 

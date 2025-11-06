@@ -148,7 +148,8 @@ class TransactionListView(LoginRequiredMixin, ListView):
             available_categories = self.default_categories
         else:
             available_categories = categories
-        user_transactions = Transaction.objects.filter(user=self.request.user, transaction_type='expense')
+        user_transactions = Transaction.objects.filter(user=self.request.user, transaction_type='expense',
+                                                       description__isnull=False).filter(~Q(description=''))
 
         transaction_list_context = TransactionListContextData(
             categories=available_categories,
