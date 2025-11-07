@@ -2,13 +2,17 @@ import logging
 
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect
-from django.urls import reverse
+from django.urls import reverse, reverse_lazy
 from django.views import View
+from django.views.generic import DeleteView
 
 from api.models import Rule, Category, Merchant
 
 logger = logging.getLogger(__name__)
 
+class RuleDeleteView(DeleteView):
+    model = Rule
+    success_url = reverse_lazy('transaction_list')
 
 class RuleDefineView(View):
 

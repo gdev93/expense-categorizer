@@ -6,7 +6,6 @@ import time
 from dataclasses import dataclass
 from typing import List, Dict
 
-from asgiref.sync import sync_to_async
 from django import forms
 from django.contrib import messages
 from django.contrib.auth.models import User
@@ -331,9 +330,10 @@ DEFAULT_CATEGORIES = [
     "Casa", "Spesa", "Auto", "Carburante", "Vita sociale", "Pizza",
     "Regali", "Vacanze", "Sport", "Bollette", "Scuola", "Bambini",
     "Shopping", "Abbonamenti", "Affitto", "Baby-sitter", "Trasporti",
-    "Spese mediche", "Partita Iva", "Bonifico"
+    "Spese mediche", "Partita Iva", "Bonifico", "Ristoranti e Bar"
 ]
-default_categories_first_upload = os.getenv('DEFAULT_CATEGORIES', '').split(',') or DEFAULT_CATEGORIES
+default_categories_first_upload = os.getenv('DEFAULT_CATEGORIES').split(',') if os.getenv(
+    'DEFAULT_CATEGORIES') else DEFAULT_CATEGORIES
 
 
 class CsvProcessView(View):
@@ -397,5 +397,10 @@ class CsvProcessView(View):
                 for default_category in default_categories_first_upload
             ])
             return default_categories_first_upload
+        else:
+            Category.objects.bulk_create([
+                Category(name=default_category, user=self.request.user)
+                for default_category in default_categories_first_upload if default_category not in user_categories
+            ])
 
         return user_categories

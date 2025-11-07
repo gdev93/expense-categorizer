@@ -84,7 +84,7 @@ class TransactionDetailUpdateView(LoginRequiredMixin, UpdateView):
 @dataclass
 class TransactionListContextData:
     """Context data for transaction list view"""
-    categories: list[str]
+    categories: list[dict[str, Any]]
     selected_category: str
     selected_status: str
     search_query: str
@@ -140,19 +140,12 @@ class TransactionListView(LoginRequiredMixin, ListView):
         categories = list(Category.objects.filter(
             Q(user=self.request.user) | Q(user__isnull=True)
         ).order_by('name').values('id','name'))
-        if not categories:
-            Category.objects.bulk_create([
-                Category(name=default_category, user=self.request.user)
-                for default_category in self.default_categories
-            ])
-            available_categories = self.default_categories
-        else:
-            available_categories = categories
+
         user_transactions = Transaction.objects.filter(user=self.request.user, transaction_type='expense',
                                                        description__isnull=False).filter(~Q(description=''))
 
         transaction_list_context = TransactionListContextData(
-            categories=available_categories,
+            categories=categories,
             selected_status=self.request.GET.get('status', ''),
             search_query=self.request.GET.get('search', ''),
             uncategorized_transaction=user_transactions.filter(~Q(status='categorized')),

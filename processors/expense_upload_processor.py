@@ -1,6 +1,7 @@
 import os
 
 from django.contrib.auth.models import User
+from django.contrib.postgres.search import TrigramWordSimilarity
 from django.core.files.uploadedfile import UploadedFile
 from django.db import transaction
 from django.db.models import Q
@@ -268,8 +269,13 @@ class ExpenseUploadProcessor:
                     Transaction.objects.filter(id=tx_id).update(status='uncategorized', failure_code=1)
                     continue
 
-                merchant = Merchant.objects.filter(Q(name__icontains=merchant_name.strip()) | Q(
-                    normalized_name__icontains=merchant_name.strip())).first()
+                merchant = Merchant.objects.annotate(
+                    name_similarity=TrigramWordSimilarity(merchant_name.strip(), 'name'),
+                    normalized_name_similarity=TrigramWordSimilarity(merchant_name.strip(), 'normalized_name')
+                ).filter(
+                    Q(name_similarity__gte=self.pre_check_confidence_threshold) | Q(normalized_name_similarity__gte=self.pre_check_confidence_threshold)
+                ).order_by('-name_similarity', '-normalized_name_similarity').first()
+
                 if not merchant:
                     merchant = Merchant(name=merchant_name)
                     merchant.save()
@@ -317,12 +323,30 @@ class ExpenseUploadProcessor:
             batch = transactions[start_idx:end_idx]
             with transaction.atomic():
                 self._process_batch(batch, all_csv_uploads)
-        completed_categorized_transaction = Transaction.objects.filter(user=self.user, csv_upload=csv_upload,
-                                                                      status='categorized',
-                                                                      original_amount__isnull=False,
-                                                                      description__isnull=False,
-                                                                       transaction_type='expense',
-                                                                      original_date__isnull=False).first()
+
+        with transaction.atomic():
+            self._post_process_transactions(csv_upload)
+
+        return csv_upload
+
+    def _post_process_transactions(self, csv_upload: CsvUpload) -> None:
+        """Post-process transactions after batch processing to identify column mappings and categorize uncategorized transactions."""
+        self._identify_csv_column_mappings(csv_upload)
+        self._categorize_remaining_transactions(csv_upload)
+        self._apply_transaction_type_corrections(csv_upload)
+
+    def _identify_csv_column_mappings(self, csv_upload: CsvUpload) -> None:
+        """Identify and tag CSV column names by matching against a completed categorized transaction."""
+        completed_categorized_transaction = Transaction.objects.filter(
+            user=self.user,
+            csv_upload=csv_upload,
+            status='categorized',
+            original_amount__isnull=False,
+            description__isnull=False,
+            transaction_type='expense',
+            original_date__isnull=False
+        ).first()
+
         if completed_categorized_transaction:
             for key, value in completed_categorized_transaction.raw_data.items():
                 if value == completed_categorized_transaction.original_amount:
@@ -335,7 +359,15 @@ class ExpenseUploadProcessor:
                     csv_upload.merchant_column_name = key
 
             csv_upload.save()
-        uncategorized_transactions = Transaction.objects.filter(user=self.user, csv_upload=csv_upload,status__in=['uncategorized', 'pending'])
+
+    def _categorize_remaining_transactions(self, csv_upload: CsvUpload) -> None:
+        """Process uncategorized transactions by parsing their data and attempting to categorize them using similar transactions."""
+        uncategorized_transactions = Transaction.objects.filter(
+            user=self.user,
+            csv_upload=csv_upload,
+            status__in=['uncategorized', 'pending']
+        )
+
         for tx in uncategorized_transactions:
             original_amount = tx.raw_data.get(csv_upload.amount_column_name, '')
             if not original_amount:
@@ -344,7 +376,7 @@ class ExpenseUploadProcessor:
                     for column_name, amount_finding in parsed_amount_result.fields.items():
                         if column_name in tx.raw_data:
                             original_amount = tx.raw_data[column_name]
-                            if original_amount!=amount_finding.original_value:
+                            if original_amount != amount_finding.original_value:
                                 continue
                             tx.original_amount = original_amount
                             tx.amount = abs(amount_finding.amount)
@@ -375,10 +407,23 @@ class ExpenseUploadProcessor:
                 tx.merchant_raw_name = similar_tx.merchant_raw_name
                 tx.merchant = similar_tx.merchant
                 tx.status = 'categorized'
-        Transaction.objects.bulk_update(uncategorized_transactions,
-                                        ['transaction_date', 'amount', 'original_amount', 'description',
-                                         'merchant_raw_name', 'original_date', 'category', 'status'])
-        return csv_upload
+
+        Transaction.objects.bulk_update(
+            uncategorized_transactions,
+            ['transaction_date', 'amount', 'original_amount', 'description',
+             'merchant_raw_name', 'original_date', 'category', 'status','merchant']
+        )
+
+    def _apply_transaction_type_corrections(self, csv_upload: CsvUpload) -> None:
+        """Correct transaction types for transactions marked as expense but are actually income (positive amounts)."""
+        # Find all transactions that are categorized and marked as expense but actually they are income transaction
+        (Transaction.objects.filter(
+            user=self.user,
+            csv_upload=csv_upload,
+            transaction_type='expense'
+        )
+         .filter(~Q(original_amount__startswith='-'))
+         .update(transaction_type='income', status='uncategorized'))
 
 
 def persist_csv_file(csv_data: list[dict[str, str]], user: User, csv_file: UploadedFile) -> CsvUpload:

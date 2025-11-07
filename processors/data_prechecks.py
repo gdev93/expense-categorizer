@@ -22,7 +22,6 @@ class RawTransactionParseResult:
     description: str | None = None
     merchant: str | None = None
     header_names: RawTransactionCsvHeaderNames | None = None
-
     def is_valid(self) -> bool:
         return self.amount is not None and self.date is not None and self.description is not None
 
