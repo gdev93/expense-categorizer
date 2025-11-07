@@ -330,7 +330,7 @@ DEFAULT_CATEGORIES = [
     "Casa", "Spesa", "Auto", "Carburante", "Vita sociale", "Pizza",
     "Regali", "Vacanze", "Sport", "Bollette", "Scuola", "Bambini",
     "Shopping", "Abbonamenti", "Affitto", "Baby-sitter", "Trasporti",
-    "Spese mediche", "Partita Iva", "Bonifico", "Ristoranti e Bar"
+    "Spese mediche", "Partita Iva", "Ristoranti e Bar"
 ]
 default_categories_first_upload = os.getenv('DEFAULT_CATEGORIES').split(',') if os.getenv(
     'DEFAULT_CATEGORIES') else DEFAULT_CATEGORIES
@@ -398,9 +398,7 @@ class CsvProcessView(View):
             ])
             return default_categories_first_upload
         else:
-            Category.objects.bulk_create([
-                Category(name=default_category, user=self.request.user)
-                for default_category in default_categories_first_upload if default_category not in user_categories
-            ])
-
-        return user_categories
+            user_categories = [Category(name=default_category, user=self.request.user)
+                for default_category in default_categories_first_upload if default_category not in user_categories]
+            Category.objects.bulk_create(user_categories)
+            return default_categories_first_upload

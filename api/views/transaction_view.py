@@ -3,6 +3,7 @@ from dataclasses import dataclass, asdict
 from typing import Any
 
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db import transaction
 from django.db.models import Q, QuerySet  # Import Q for complex lookups
 from django.db.models import Sum
 from django.http import HttpRequest, HttpResponse, JsonResponse
@@ -13,8 +14,6 @@ from django.views.generic import UpdateView
 
 from api.models import Transaction, Category, Rule, Merchant
 
-
-# views.py
 
 class TransactionDetailUpdateView(LoginRequiredMixin, UpdateView):
     """
@@ -54,6 +53,7 @@ class TransactionDetailUpdateView(LoginRequiredMixin, UpdateView):
         ).distinct()
         return context
 
+    @transaction.atomic
     def form_valid(self, form):
         """
         Customizes form validation to handle new category creation,
@@ -68,13 +68,18 @@ class TransactionDetailUpdateView(LoginRequiredMixin, UpdateView):
                 user=self.request.user,  # Assigns the new category to the current user
                 defaults={'is_default': False}
             )
-            form.instance.category = new_category
+
+        else:
+            new_category = form.instance.category
         merchant_name = self.request.POST.get('merchant_raw_name', '').strip()
+
         if merchant_name:
             merchant_db = Merchant.objects.filter(Q(name__icontains=merchant_name) | Q(normalized_name__icontains=merchant_name)).first()
             if not merchant_db:
                 merchant_db = Merchant.objects.create(name=merchant_name)
             form.instance.merchant = merchant_db
+
+        form.instance.category = new_category
         form.instance.modified_by_user = True
         form.instance.status = 'categorized'
         self.object = form.save()
@@ -110,6 +115,7 @@ class TransactionListView(LoginRequiredMixin, ListView):
         """Filter transactions based on user and query parameters"""
         queryset = Transaction.objects.filter(
             user=self.request.user,
+            transaction_type='expense',
             merchant_id__isnull=False  # Filtra per escludere i valori NULL
         ).select_related('category', 'merchant').order_by('-transaction_date', '-created_at')
         # Filter by category
@@ -186,7 +192,6 @@ class EditTransactionCategory(View):
             # Return 403 Forbidden if the user doesn't own the transaction
             return JsonResponse({'success': False, 'error': 'You do not have permission to edit this transaction.'},
                                 status=403)
-
         # 4. Update and Save
         transaction.category = new_category
         transaction.save()  # ⬅️ MUST CALL .save() to write the change to the database

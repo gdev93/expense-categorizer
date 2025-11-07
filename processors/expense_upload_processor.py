@@ -5,7 +5,6 @@ from django.contrib.postgres.search import TrigramWordSimilarity
 from django.core.files.uploadedfile import UploadedFile
 from django.db import transaction
 from django.db.models import Q
-from django.db.models.expressions import RawSQL
 
 from agent.agent import ExpenseCategorizerAgent, AgentTransactionUpload, TransactionCategorization
 from api.models import Transaction, Category, Merchant, CsvUpload
@@ -109,33 +108,23 @@ def _find_similar_transaction_by_description(
         precheck_confidence_threshold: float,
 ) -> Transaction | None:
     """Search for a similar categorized transaction by description similarity."""
-    merchant = Merchant.objects.annotate(
-        is_contained=RawSQL(
-            "%s ILIKE '%%' || name || '%%'",
-            (description,)
-        )
-    ).filter(is_contained=True).first()
+    merchants_contained_in_description = Merchant.get_similar_merchants_by_names(compare=description, user=user,
+                                                                                 similarity_threshold=precheck_confidence_threshold)
 
-    transaction_from_merchant = _find_similar_transaction_by_merchant(user, merchant.name) if merchant else None
-    if transaction_from_merchant:
-        return transaction_from_merchant
-    sql = f"""
-          SELECT t.*,
-                 WORD_SIMILARITY(t.description, %s) AS description_similarity
-          FROM api_transaction t
-          WHERE t.status = 'categorized'
-            AND t.merchant_id IS NOT NULL
-            AND t.user_id = %s
-            AND WORD_SIMILARITY(t.description, %s) >= %s
-          ORDER BY description_similarity DESC, t.updated_at DESC LIMIT 1
-          """
+    if len(merchants_contained_in_description) == 1:
+        merchant = merchants_contained_in_description[0]
+        transaction_from_merchant = _find_similar_transaction_by_merchant(user, merchant.name) if merchant else None
+        if transaction_from_merchant:
+            return transaction_from_merchant
 
-    params = [description, user.id, description, precheck_confidence_threshold]
-
-    try:
-        return Transaction.objects.raw(sql, params)[0]
-    except IndexError:
-        return None
+    return Transaction.objects.annotate(
+        description_similarity=TrigramWordSimilarity(description, 'description')
+    ).filter(
+        status='categorized',
+        merchant_id__isnull=False,
+        user=user,
+        description_similarity__gte=precheck_confidence_threshold
+    ).order_by('-description_similarity', '-updated_at').first()
 
 
 def _find_reference_transaction_from_tx(
@@ -269,15 +258,11 @@ class ExpenseUploadProcessor:
                     Transaction.objects.filter(id=tx_id).update(status='uncategorized', failure_code=1)
                     continue
 
-                merchant = Merchant.objects.annotate(
-                    name_similarity=TrigramWordSimilarity(merchant_name.strip(), 'name'),
-                    normalized_name_similarity=TrigramWordSimilarity(merchant_name.strip(), 'normalized_name')
-                ).filter(
-                    Q(name_similarity__gte=self.pre_check_confidence_threshold) | Q(normalized_name_similarity__gte=self.pre_check_confidence_threshold)
-                ).order_by('-name_similarity', '-normalized_name_similarity').first()
+                merchant = Merchant.get_similar_merchants_by_names(compare=merchant_name, user=self.user,
+                                                                   similarity_threshold=self.pre_check_confidence_threshold).first()
 
                 if not merchant:
-                    merchant = Merchant(name=merchant_name)
+                    merchant = Merchant(name=merchant_name, user=self.user)
                     merchant.save()
 
 

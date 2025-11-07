@@ -21,7 +21,7 @@ class RuleDefineView(View):
         category_name = request.POST.get('category_name', '')
 
         # Get or create the merchant - unpack the tuple
-        merchant, created = Merchant.objects.get_or_create(name=merchant_name)
+        merchant, created = Merchant.objects.get_or_create(name=merchant_name, user=request.user)
 
         # Get or create the category with user
         category, _ = Category.objects.get_or_create(name=category_name, user=request.user)

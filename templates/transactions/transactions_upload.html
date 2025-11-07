@@ -120,7 +120,9 @@
                                 💾 {{ upload.file_size_display }}
                             {% endif %}
                             {% if upload.processing_time %}
-                                • ⏱️ {{ upload.processing_time }}ms
+                                ⏱️ {{ upload.processing_time }}ms
+                            {% else %}
+                               🔥 In corso
                             {% endif %}
                         </div>
                     </div>
