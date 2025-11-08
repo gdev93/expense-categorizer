@@ -56,7 +56,7 @@ class Merchant(models.Model):
 
 
     @staticmethod
-    def get_similar_merchants_by_names(compare: str, user: User, similarity_threshold: float) -> QuerySet:
+    def get_similar_merchants_by_names(compare: str, user: User, similarity_threshold: float = 0.9) -> QuerySet:
         """
         Find merchants similar to the compare string using:
         1. Substring containment (ILIKE)

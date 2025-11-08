@@ -265,29 +265,34 @@ class ExpenseUploadProcessor:
                     merchant = Merchant(name=merchant_name, user=self.user)
                     merchant.save()
 
+                reference_transaction_from_merchant = _find_similar_transaction_by_merchant(self.user, merchant_name)
+                if not reference_transaction_from_merchant:
+                    category = Category.objects.filter(name__icontains=category_name.strip(), user=self.user).first()
+                    if not category:
+                        print(
+                            f"Agent response {tx_data} did not use the list of categories given by the user. Set transaction uncategorized.")
+                        Transaction.objects.filter(id=tx_id).update(status='uncategorized', failure_code=1)
+                        continue
+                else:
+                    category = reference_transaction_from_merchant.category
 
-                category = Category.objects.filter(name__icontains=category_name.strip(), user=self.user).first()
-                if not category:
-                    print(f"Agent response {tx_data} did not use the list of categories given by the user. Set transaction uncategorized.")
-                    Transaction.objects.filter(id=tx_id).update(status='uncategorized', failure_code=1)
-                    continue
-
-                reference_transaction = Transaction.objects.filter(user=self.user,
+                # safety check
+                transaction_from_agent = Transaction.objects.filter(user=self.user,
                                                                    id=tx_id).first() or Transaction.objects.filter(
                     user=self.user, description=description).first()
-                reference_transaction.category = category
-                reference_transaction.merchant = merchant
-                reference_transaction.description = description
-                reference_transaction.merchant_raw_name = merchant_name
-                reference_transaction.original_date = tx_data.date if not reference_transaction.original_date else reference_transaction.original_date
-                reference_transaction.original_amount = original_amount if not reference_transaction.original_amount else reference_transaction.original_amount
-                reference_transaction.transaction_date = transaction_date if not reference_transaction.transaction_date else reference_transaction.transaction_date
-                reference_transaction.amount = abs(
-                    amount) if not reference_transaction.amount else reference_transaction.amount
-                reference_transaction.status = 'categorized'
-                reference_transaction.modified_by_user = False
-                reference_transaction.failure_code = 0 if not failure else 1
-                reference_transaction.save()
+                transaction_from_agent.category = category
+                transaction_from_agent.merchant = merchant
+                transaction_from_agent.description = description
+                transaction_from_agent.merchant_raw_name = merchant_name
+                transaction_from_agent.original_date = tx_data.date if not transaction_from_agent.original_date else transaction_from_agent.original_date
+                transaction_from_agent.original_amount = original_amount if not transaction_from_agent.original_amount else transaction_from_agent.original_amount
+                transaction_from_agent.transaction_date = transaction_date if not transaction_from_agent.transaction_date else transaction_from_agent.transaction_date
+                transaction_from_agent.amount = abs(
+                    amount) if not transaction_from_agent.amount else transaction_from_agent.amount
+                transaction_from_agent.status = 'categorized'
+                transaction_from_agent.modified_by_user = False
+                transaction_from_agent.failure_code = 0 if not failure else 1
+                transaction_from_agent.save()
 
             except Exception as e:
                 print(f"⚠️  Failed to persist transaction {tx_id}: {str(e)}")
@@ -351,7 +356,7 @@ class ExpenseUploadProcessor:
             user=self.user,
             csv_upload=csv_upload,
             status__in=['uncategorized', 'pending']
-        )
+        ).exclude(original_amount__startswith='-')
 
         for tx in uncategorized_transactions:
             original_amount = tx.raw_data.get(csv_upload.amount_column_name, '')

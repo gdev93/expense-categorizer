@@ -74,9 +74,9 @@ class TransactionDetailUpdateView(LoginRequiredMixin, UpdateView):
         merchant_name = self.request.POST.get('merchant_raw_name', '').strip()
 
         if merchant_name:
-            merchant_db = Merchant.objects.filter(Q(name__icontains=merchant_name) | Q(normalized_name__icontains=merchant_name)).first()
+            merchant_db = Merchant.get_similar_merchants_by_names(merchant_name, self.request.user).first()
             if not merchant_db:
-                merchant_db = Merchant.objects.create(name=merchant_name)
+                merchant_db = Merchant.objects.create(name=merchant_name, user=self.request.user)
             form.instance.merchant = merchant_db
 
         form.instance.category = new_category
