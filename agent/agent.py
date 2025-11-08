@@ -5,7 +5,16 @@ import re
 from dataclasses import dataclass
 from typing import Any
 
-from google import genai
+try:
+    from google import genai
+except ImportError:
+    try:
+        from google import generativeai as genai
+    except ImportError as e:
+        raise ImportError(
+            "Google Generative AI package not found. "
+            "Please install it with: pip install google-generativeai"
+        ) from e
 
 
 def get_api_key() -> str:
@@ -244,7 +253,7 @@ class ExpenseCategorizerAgent:
 
     REGOLE DI CORRISPONDENZA CATEGORIA:
     • Usa il nome ESATTO della categoria come mostrato sopra
-    
+
     ⚠️ CRITICO: **NON DEVI USARE "Uncategorized".** DEVI assegnare la categoria più probabile basandoti sulla descrizione.
     NON inventare MAI un nuovo nome di categoria non presente nella lista sopra.
 
@@ -272,7 +281,7 @@ class ExpenseCategorizerAgent:
        • Intestazioni Italiane comuni: "Data", "Data valuta", "Data contabile", "DATA VALUTA", "DATA CONTABILE"
 
        FORMATO: **MANTIENI IL FORMATO ORIGINALE ESATTO** così come appare nei dati
-       
+
        ⚠️ CRITICO: NON convertire o riformattare la data. Preserva ESATTAMENTE il formato originale.
        • Se la data è "15/10/2025" → usa "15/10/2025"
        • Se la data è "2025-10-15" → usa "2025-10-15"
@@ -345,9 +354,9 @@ class ExpenseCategorizerAgent:
     Se il commerciante non è possibile da individuare:
     • **NON USARE** "Unkwown" o simili.
     • **USA IL CAMPO FAILURE** .
-    
+
     IMPORTANTE: DEVI comunque estrarre date, amount, original_amount, e description.
-    
+
     Il seguente è un esempio di fallimento:
     {{
         "transaction_id": "1201",
