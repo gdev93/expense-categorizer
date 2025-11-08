@@ -3,3 +3,4 @@ requests>=2.31.0
 psycopg2-binary
 pytest
 babel
+google-genai
