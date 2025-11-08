@@ -3,6 +3,7 @@ from dataclasses import dataclass, asdict
 from typing import Any
 
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db import transaction
 from django.db.models import Q, QuerySet  # Import Q for complex lookups
 from django.db.models import Sum
 from django.http import HttpRequest, HttpResponse, JsonResponse
@@ -11,10 +12,8 @@ from django.views import View
 from django.views.generic import ListView
 from django.views.generic import UpdateView
 
-from api.models import Transaction, Category, Rule
+from api.models import Transaction, Category, Rule, Merchant
 
-
-# views.py
 
 class TransactionDetailUpdateView(LoginRequiredMixin, UpdateView):
     """
@@ -54,6 +53,7 @@ class TransactionDetailUpdateView(LoginRequiredMixin, UpdateView):
         ).distinct()
         return context
 
+    @transaction.atomic
     def form_valid(self, form):
         """
         Customizes form validation to handle new category creation,
@@ -68,8 +68,18 @@ class TransactionDetailUpdateView(LoginRequiredMixin, UpdateView):
                 user=self.request.user,  # Assigns the new category to the current user
                 defaults={'is_default': False}
             )
-            form.instance.category = new_category
 
+        else:
+            new_category = form.instance.category
+        merchant_name = self.request.POST.get('merchant_raw_name', '').strip()
+
+        if merchant_name:
+            merchant_db = Merchant.get_similar_merchants_by_names(merchant_name, self.request.user).first()
+            if not merchant_db:
+                merchant_db = Merchant.objects.create(name=merchant_name, user=self.request.user)
+            form.instance.merchant = merchant_db
+
+        form.instance.category = new_category
         form.instance.modified_by_user = True
         form.instance.status = 'categorized'
         self.object = form.save()
@@ -79,7 +89,7 @@ class TransactionDetailUpdateView(LoginRequiredMixin, UpdateView):
 @dataclass
 class TransactionListContextData:
     """Context data for transaction list view"""
-    categories: list[str]
+    categories: list[dict[str, Any]]
     selected_category: str
     selected_status: str
     search_query: str
@@ -105,6 +115,7 @@ class TransactionListView(LoginRequiredMixin, ListView):
         """Filter transactions based on user and query parameters"""
         queryset = Transaction.objects.filter(
             user=self.request.user,
+            transaction_type='expense',
             merchant_id__isnull=False  # Filtra per escludere i valori NULL
         ).select_related('category', 'merchant').order_by('-transaction_date', '-created_at')
         # Filter by category
@@ -135,18 +146,12 @@ class TransactionListView(LoginRequiredMixin, ListView):
         categories = list(Category.objects.filter(
             Q(user=self.request.user) | Q(user__isnull=True)
         ).order_by('name').values('id','name'))
-        if not categories:
-            Category.objects.bulk_create([
-                Category(name=default_category, user=self.request.user)
-                for default_category in self.default_categories
-            ])
-            available_categories = self.default_categories
-        else:
-            available_categories = categories
-        user_transactions = Transaction.objects.filter(user=self.request.user)
+
+        user_transactions = Transaction.objects.filter(user=self.request.user, transaction_type='expense',
+                                                       description__isnull=False).filter(~Q(description=''))
 
         transaction_list_context = TransactionListContextData(
-            categories=available_categories,
+            categories=categories,
             selected_status=self.request.GET.get('status', ''),
             search_query=self.request.GET.get('search', ''),
             uncategorized_transaction=user_transactions.filter(~Q(status='categorized')),
@@ -187,7 +192,6 @@ class EditTransactionCategory(View):
             # Return 403 Forbidden if the user doesn't own the transaction
             return JsonResponse({'success': False, 'error': 'You do not have permission to edit this transaction.'},
                                 status=403)
-
         # 4. Update and Save
         transaction.category = new_category
         transaction.save()  # ⬅️ MUST CALL .save() to write the change to the database

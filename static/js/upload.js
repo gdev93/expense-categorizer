@@ -146,10 +146,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: formData
             });
 
-            if (response.ok) {
-                alert('Caricamento completato con successo! Il file è in fase di elaborazione.');
-                fileToUpload = null;
-            } else {
+            if (!response.ok) {
                 const errorData = await response.json();
                 alert(`Errore di Caricamento: ${errorData.error || 'Si è verificato un errore sul server.'}`);
             }
@@ -159,8 +156,18 @@ document.addEventListener('DOMContentLoaded', () => {
         } finally {
             updateFileList();
         }
+        try {
+            await fetch(CSV_UPLOAD_PROCESS, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': CSRF_TOKEN
+                }
+            })
+        } catch (error) {
+            console.log(error)
+        } finally {
+            window.location.href = CSV_UPLOADS_PAGE
+        }
     });
-
     updateFileList();
-
 });

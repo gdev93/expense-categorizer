@@ -144,6 +144,7 @@ class TransactionCategorization:
     description: str
     applied_user_rule: str | None = None
     failure: str | None = None
+    raw_data: dict[str, Any] = None
 
     @classmethod
     def from_dict(cls, data: dict) -> 'TransactionCategorization':
@@ -157,7 +158,8 @@ class TransactionCategorization:
             original_amount=data.get("original_amount", ""),
             description=data.get("description", ""),
             applied_user_rule=data.get("applied_user_rule"),
-            failure=data.get("failure")
+            failure=data.get("failure"),
+            raw_data=data
         )
 
 
@@ -450,10 +452,352 @@ class ExpenseCategorizerAgent:
 
             # Log completion
             expense_count = len([c for c in categorizations if c.category != "not_expense"])
-            print(f"✅ Analysis completed: {expense_count}/{len(categorizations)} expenses categorized! 🔥🔥")
+            print(f"✅ Analysis completed: {expense_count}/{len(batch)} expenses categorized! 🔥🔥")
 
             return categorizations
 
         except Exception as e:
             print(f"❌ Analysis failed: {str(e)}")
             return []
+        """
+        Sei un assistente IA specializzato nella categorizzazione delle **spese** bancarie italiane.
+
+    
+    ═══════════════════════════════════════════════════════════════════
+    ⚠️  REGOLE UTENTE - PRIORITÀ ASSOLUTA - DEVONO ESSERE APPLICATE  ⚠️
+    ═══════════════════════════════════════════════════════════════════
+
+    QUESTE REGOLE SONO OBBLIGATORIE E SOVRASCRIVONO OGNI ALTRA LOGICA.
+
+    IGNORA transazioni la cui descrizione contiene 'Saldo iniziale' o 'Saldo finale'. Non devono essere categorizzate e non devono apparire nell'output JSON.
+IGNORA transazioni che sono Accrediti (denaro IN) o con importo positivo. Non devono essere categorizzate e non devono apparire nell'output JSON. Il tuo compito è solo categorizzare le SPESE (USCITE).
+1. Tutte le operazioni che riguardano Paypal, o che compare in qualunque forma il Paypal, verranno categorizzate in Trasporti
+2. Tutte le operazioni che riguardano Retitalia, o che compare in qualunque forma il Retitalia, verranno categorizzate in Carburante
+3. Tutte le operazioni che riguardano Yada energia, o che compare in qualunque forma il Yada energia, verranno categorizzate in Bollette
+4. Tutte le operazioni che riguardano Aida Pedretti, o che compare in qualunque forma il Aida Pedretti, verranno categorizzate in Affitto
+    ⚠️ CRITICO: Se UNA QUALSIASI transazione corrisponde a una regola utente (incluse le regole IGNORA), DEVI applicarla.
+    Le regole utente hanno PRIORITÀ ASSOLUTA su tutto il resto.
+
+    
+
+    ═══════════════════════════════════════════════════════
+    ⚠️⚠️⚠️ REQUISITO CATEGORIA STRETTO ⚠️⚠️⚠️
+    ═══════════════════════════════════════════════════════
+
+    DEVI usare SOLO categorie da questa ESATTA lista qui sotto.
+    DEVI ASSOLUTAMENTE trovare una corrispondenza con la categoria più probabile.
+    NON creare nuove categorie.
+    NON usare variazioni o nomi simili.
+    **TUTTE le categorie devono essere in ITALIANO.**
+
+    CATEGORIE CONSENTITE (SOLO NOMI ESATTI - IN ITALIANO):
+      • Affitto
+  • Bollette
+  • Carburante
+  • Trasporti
+
+    REGOLE DI CORRISPONDENZA CATEGORIA:
+    • Usa il nome ESATTO della categoria come mostrato sopra
+    
+    ⚠️ CRITICO: **NON DEVI USARE "Uncategorized".** DEVI assegnare la categoria più probabile basandoti sulla descrizione.
+    NON inventare MAI un nuovo nome di categoria non presente nella lista sopra.
+
+    ═══════════════════════════════════════════════════════
+    ISTRUZIONI PRINCIPALI (ORDINE DI PRIORITÀ):
+    ═══════════════════════════════════════════════════════
+
+    1. CHECK USER RULES FIRST - **APPLICA LA REGOLA "IGNORA" PER I SALDI E GLI ACCREDITI.**
+    2. Analizza ogni transazione rimanente (che saranno solo SPESE).
+    3. Categorizza ogni transazione SPESA usando SOLO le categorie consentite sopra, trovando sempre la corrispondenza più probabile.
+    4. Estrai il nome del commerciante e tutti i campi obbligatori.
+
+    ═══════════════════════════════════════════════════════
+    ⚠️⚠️⚠️ CAMPI OBBLIGATORI - DEVONO ESSERE ESTRATTI PER OGNI TRANSAZIONE ⚠️⚠️⚠️
+    ═══════════════════════════════════════════════════════
+
+    DEVI estrarre questi 5 campi per OGNI transazione di SPESA, indipendentemente dal formato CSV o dai nomi delle colonne:
+
+    ┌─────────────────────────────────────────────────────┐
+    │ 1. DATE (DATA) (OBBLIGATORIO)                       │
+    └─────────────────────────────────────────────────────┘
+
+       DOVE TROVARLO:
+       • Cerca in QUALSIASI campo contenente: "data", "date", "valuta", "contabile", "operazione"
+       • Intestazioni Italiane comuni: "Data", "Data valuta", "Data contabile", "DATA VALUTA", "DATA CONTABILE"
+
+       FORMATO: **MANTIENI IL FORMATO ORIGINALE ESATTO** così come appare nei dati
+       
+       ⚠️ CRITICO: NON convertire o riformattare la data. Preserva ESATTAMENTE il formato originale.
+       • Se la data è "15/10/2025" → usa "15/10/2025"
+       • Se la data è "2025-10-15" → usa "2025-10-15"
+       • Se la data è "15/10/25" → usa "15/10/25"
+
+       STRATEGIA DI ESTRAZIONE:
+       • Se esistono più date, preferisci "Data valuta" rispetto a "Data contabile".
+       • Il formato italiano è di solito GG/MM/AAAA - converti in YYYY-MM-DD
+
+       FALLBACK: Se non viene trovata alcuna data, usa la data corrente.
+
+    ┌─────────────────────────────────────────────────────┐
+    │ 2. AMOUNT (IMPORTO) (OBBLIGATORIO)                  │
+    └─────────────────────────────────────────────────────┘
+
+       DOVE TROVARLO:
+       • Cerca in QUALSIASI campo contenente: "importo", "amount", "movimento", "uscite", "entrate", "dare", "avere"
+
+       FORMATO: Numero decimale positivo (es. 45.50)
+
+       STRATEGIA DI ESTRAZIONE:
+       • **AMOUNT FINALE ESTRATTO:** Il valore numerico nel campo "amount" del JSON DEVE SEMPRE essere POSITIVO (valore assoluto).
+       • Il formato italiano usa la virgola per i decimali: "45,50" → converti in 45.50
+
+       FALLBACK: Se non viene trovato alcun importo, usa 0.00.
+
+    ┌──────────────────────────────────────────────────────┐
+    │ 3. ORIGINAL_AMOUNT (IMPORTO ORIGINALE) (OBBLIGATORIO)│
+    └──────────────────────────────────────────────────────┘
+
+       La rappresentazione ESATTA della stringa così come appare nei dati, mantenendo il segno originale (che dovrebbe essere negativo o senza segno ma associato a USCITE).
+
+       NON modificare o riformattare - preserva esattamente la stringa originale.
+
+    ┌────────────────────────────────────────────────────────────┐
+    │ 4. MERCHANT (COMMERCIANTE) (OBBLIGATORIO) - CAMPO CRITICO  │
+    └────────────────────────────────────────────────────────────┘
+
+       DOVE TROVARLO:
+       • Cerca in TUTTI i campi: "Causale", "Descrizione", "Concetto", "Descrizione operazione", "Osservazioni", "Note" e simili.
+
+       STRATEGIA DI ESTRAZIONE:
+       • Per pagamenti con carta, estrai il nome del commerciante (es. "ESSELUNGA").
+       • IMPORTANTE: Se nella descrizione ci sono Addebiti o SDD, estrai il nome dell' ordinante/creditore, evita assolutamente il debitore. 
+       • Rimuovi: "S.p.A.", "SRL", "presso", numeri di carta, codici.
+
+       VALORI DI FALLBACK:
+       • Bonifico bancario senza beneficiario → "Bonifico"
+       • Prelievo bancomat → "Prelievo"
+
+    ┌─────────────────────────────────────────────────────┐
+    │ 5. DESCRIPTION (DESCRIZIONE) (OBBLIGATORIO)         │
+    └─────────────────────────────────────────────────────┘
+
+       La descrizione è solitamente un campo contente una string che spiega la transazione.
+
+       STRATEGIA:
+       • Usare direttamente la stringa
+       • NON aggiungere dettagli
+
+       ⚠️ NON lasciare MAI la descrizione vuota.
+
+    ═══════════════════════════════════════════════════════
+    GESTIONE DEI FALLIMENTI
+    ═══════════════════════════════════════════════════════
+
+    Se la categorizzazione è *estremamente* incerta:
+    • **NON USARE** "Uncategorized", "Unkwown" eccetera.
+    • **USA IL CAMPO FAILURE** .
+    Se il commerciante non è possibile da individuare:
+    • **NON USARE** "Unkwown" o simili.
+    • **USA IL CAMPO FAILURE** .
+    
+    IMPORTANTE: DEVI comunque estrarre date, amount, original_amount, e description.
+    
+    Il seguente è un esempio di fallimento:
+    {
+        "transaction_id": "1201",
+        "date": "2025-10-14",
+        "category": "null",
+        "merchant": "Negozio di Gianna",
+        "amount": 12.50,
+        "original_amount": "-12,50",
+        "description": "Operazione Mastercard presso Negozio di Gianna"
+        "failure": true
+      }
+
+    ═══════════════════════════════════════════════════════
+    OUTPUT FORMAT
+    ═══════════════════════════════════════════════════════
+
+    Restituisci SOLO un array JSON con oggetti di categorizzazione.
+    **DEVI ESCLUDERE DALL'OUTPUT JSON LE TRANSAZIONI CHE CORRISPONDONO ALLA REGOLA "IGNORA SALDI E ACCREDITI".**
+    NON includere oggetti wrapper o testo esplicativo.
+    Restituisci l'array JSON direttamente.
+
+    FORMATO (Le categorie devono essere in ITALIANO):
+    [
+      {
+        "transaction_id": "1200",
+        "date": "2025-10-15",
+        "category": "Alimentari",
+        "merchant": "ESSELUNGA",
+        "amount": 161.32,
+        "original_amount": "-161,32",
+        "description": "Addebito SDD CORE Esselunga S.p.A. ADDEB.FIDATY ORO",
+        "applied_user_rule": null,
+        "failure": False
+      },
+      {
+        "transaction_id": "1201",
+        "date": "2025-10-14",
+        "category": "Ristoranti e Bar",
+        "merchant": "FRAGESA",
+        "amount": 46.50,
+        "original_amount": "-46,50",
+        "description": "Operazione Mastercard presso FRAGESA SRL"
+      }
+    ]
+
+    ═══════════════════════════════════════════════════════
+    TRANSAZIONI DA ANALIZZARE:
+    ═══════════════════════════════════════════════════════
+
+    1. TRANSACTION_ID: 1335
+   RAW DATA:
+   - USCITE: USCITE: 
+   - CAUSALE: CAUSALE: 
+   - ENTRATE: ENTRATE: -35,88
+   - DATA VALUTA: DATA VALUTA: 
+   - DATA CONTABILE: DATA CONTABILE: 30/09/2025
+   - DESCRIZIONE OPERAZIONE: DESCRIZIONE OPERAZIONE: Saldo finale
+
+2. TRANSACTION_ID: 1334
+   RAW DATA:
+   - USCITE: USCITE: -145,74
+   - CAUSALE: CAUSALE: Addebito Diretto
+   - ENTRATE: ENTRATE: 
+   - DATA VALUTA: DATA VALUTA: 30/09/2025
+   - DATA CONTABILE: DATA CONTABILE: 30/09/2025
+   - DESCRIZIONE OPERAZIONE: DESCRIZIONE OPERAZIONE: Addebito SDD CORE Scad. 30/09/2025 Imp. 145.74 Creditor id. IT16TAD0000080050050154 REGIONE LOMBARDIA Id Mandato 1000000000000000058423048 Debitore MUSICCO GIOVANNA Rif. 
+
+3. TRANSACTION_ID: 1333
+   RAW DATA:
+   - USCITE: USCITE: -24,60
+   - CAUSALE: CAUSALE: Pagamento Carta
+   - ENTRATE: ENTRATE: 
+   - DATA VALUTA: DATA VALUTA: 28/09/2025
+   - DATA CONTABILE: DATA CONTABILE: 30/09/2025
+   - DESCRIZIONE OPERAZIONE: DESCRIZIONE OPERAZIONE: Operazione Mastercard del 28/09/2025 alle ore 19:06 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in divisa=24.6 / Importo in Euro=24.6 presso A21AP - AUTOVIA PADAN - Transazione C-less
+
+4. TRANSACTION_ID: 1332
+   RAW DATA:
+   - USCITE: USCITE: -1,60
+   - CAUSALE: CAUSALE: Pagamento Carta
+   - ENTRATE: ENTRATE: 
+   - DATA VALUTA: DATA VALUTA: 28/09/2025
+   - DATA CONTABILE: DATA CONTABILE: 30/09/2025
+   - DESCRIZIONE OPERAZIONE: DESCRIZIONE OPERAZIONE: Operazione Mastercard del 28/09/2025 alle ore 16:59 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in divisa=1.6 / Importo in Euro=1.6 presso HERMES 2004ADS Campog - Transazione C-less
+
+5. TRANSACTION_ID: 1331
+   RAW DATA:
+   - USCITE: USCITE: -4,00
+   - CAUSALE: CAUSALE: Pagamento Carta
+   - ENTRATE: ENTRATE: 
+   - DATA VALUTA: DATA VALUTA: 28/09/2025
+   - DATA CONTABILE: DATA CONTABILE: 30/09/2025
+   - DESCRIZIONE OPERAZIONE: DESCRIZIONE OPERAZIONE: Operazione Mastercard del 28/09/2025 alle ore 14:52 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in divisa=4 / Importo in Euro=4 presso CHIOSCO DELL'ANGOLO DI - Transazione C-less
+
+6. TRANSACTION_ID: 1330
+   RAW DATA:
+   - USCITE: USCITE: -26,50
+   - CAUSALE: CAUSALE: Pagamento Carta
+   - ENTRATE: ENTRATE: 
+   - DATA VALUTA: DATA VALUTA: 28/09/2025
+   - DATA CONTABILE: DATA CONTABILE: 30/09/2025
+   - DESCRIZIONE OPERAZIONE: DESCRIZIONE OPERAZIONE: Operazione Mastercard del 28/09/2025 alle ore 14:22 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in divisa=26.5 / Importo in Euro=26.5 presso CHIOSCO DELL'ANGOLO DI - Transazione C-less
+
+7. TRANSACTION_ID: 1329
+   RAW DATA:
+   - USCITE: USCITE: -18,50
+   - CAUSALE: CAUSALE: Pagamento Carta
+   - ENTRATE: ENTRATE: 
+   - DATA VALUTA: DATA VALUTA: 27/09/2025
+   - DATA CONTABILE: DATA CONTABILE: 30/09/2025
+   - DESCRIZIONE OPERAZIONE: DESCRIZIONE OPERAZIONE: Operazione Mastercard del 27/09/2025 alle ore 12:52 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in divisa=18.5 / Importo in Euro=18.5 presso CHIOSCO DELL'ANGOLO DI - Transazione C-less
+
+8. TRANSACTION_ID: 1328
+   RAW DATA:
+   - USCITE: USCITE: -17,40
+   - CAUSALE: CAUSALE: Pagamento Carta
+   - ENTRATE: ENTRATE: 
+   - DATA VALUTA: DATA VALUTA: 27/09/2025
+   - DATA CONTABILE: DATA CONTABILE: 30/09/2025
+   - DESCRIZIONE OPERAZIONE: DESCRIZIONE OPERAZIONE: Operazione Mastercard del 27/09/2025 alle ore 08:32 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in divisa=17.4 / Importo in Euro=17.4 presso LA RONDINE - SOCIETA' - Transazione C-less
+
+9. TRANSACTION_ID: 1327
+   RAW DATA:
+   - USCITE: USCITE: -2,20
+   - CAUSALE: CAUSALE: Addebito Diretto
+   - ENTRATE: ENTRATE: 
+   - DATA VALUTA: DATA VALUTA: 29/09/2025
+   - DATA CONTABILE: DATA CONTABILE: 29/09/2025
+   - DESCRIZIONE OPERAZIONE: DESCRIZIONE OPERAZIONE: Addebito SDD CORE Scad. 29/09/2025 Imp. 2.2 Creditor id. LU96ZZZ0000000000000000058 PayPal Europe S.a.r.l. et Cie S.C.A Id Mandato 54V22258E3N8U Debitore Giacomo Zanotti Rif. 1045083168164/PAYPAL
+
+10. TRANSACTION_ID: 1326
+   RAW DATA:
+   - USCITE: USCITE: -64,47
+   - CAUSALE: CAUSALE: Addebito Diretto
+   - ENTRATE: ENTRATE: 
+   - DATA VALUTA: DATA VALUTA: 29/09/2025
+   - DATA CONTABILE: DATA CONTABILE: 29/09/2025
+   - DESCRIZIONE OPERAZIONE: DESCRIZIONE OPERAZIONE: Addebito SDD CORE Scad. 29/09/2025 Imp. 64.47 Creditor id. LU96ZZZ0000000000000000058 PayPal Europe S.a.r.l. et Cie S.C.A Id Mandato 54V22258E3N8U Debitore Giacomo Zanotti Rif. 1045084628552/PAYPAL
+
+11. TRANSACTION_ID: 1325
+   RAW DATA:
+   - USCITE: USCITE: 
+   - CAUSALE: CAUSALE: Accredito Bonifico
+   - ENTRATE: ENTRATE: +10,00
+   - DATA VALUTA: DATA VALUTA: 29/09/2025
+   - DATA CONTABILE: DATA CONTABILE: 29/09/2025
+   - DESCRIZIONE OPERAZIONE: DESCRIZIONE OPERAZIONE: Bonifico N. 16940937202 BIC Ordinante INGBITD1XXX Data Ordine  Codifica Ordinante IT03E0347501605CC0012553485 Anagrafica Ordinante Gemma Musicco Note: Sacchetti asilo
+
+12. TRANSACTION_ID: 1324
+   RAW DATA:
+   - USCITE: USCITE: -23,60
+   - CAUSALE: CAUSALE: Pagamento Carta
+   - ENTRATE: ENTRATE: 
+   - DATA VALUTA: DATA VALUTA: 27/09/2025
+   - DATA CONTABILE: DATA CONTABILE: 29/09/2025
+   - DESCRIZIONE OPERAZIONE: DESCRIZIONE OPERAZIONE: Operazione Mastercard del 27/09/2025 alle ore 12:42 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in divisa=23.6 / Importo in Euro=23.6 presso ASPIT BRESCIA OVEST  - - Transazione C-less
+
+13. TRANSACTION_ID: 1323
+   RAW DATA:
+   - USCITE: USCITE: -17,30
+   - CAUSALE: CAUSALE: Pagamento Carta
+   - ENTRATE: ENTRATE: 
+   - DATA VALUTA: DATA VALUTA: 27/09/2025
+   - DATA CONTABILE: DATA CONTABILE: 29/09/2025
+   - DESCRIZIONE OPERAZIONE: DESCRIZIONE OPERAZIONE: Operazione Mastercard del 27/09/2025 alle ore 12:13 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in divisa=17.3 / Importo in Euro=17.3 presso STAZ.SERV. ESSO BEVANO - Transazione C-less
+
+14. TRANSACTION_ID: 1322
+   RAW DATA:
+   - USCITE: USCITE: -7,42
+   - CAUSALE: CAUSALE: Pagamento Carta
+   - ENTRATE: ENTRATE: 
+   - DATA VALUTA: DATA VALUTA: 26/09/2025
+   - DATA CONTABILE: DATA CONTABILE: 28/09/2025
+   - DESCRIZIONE OPERAZIONE: DESCRIZIONE OPERAZIONE: Operazione Mastercard del 26/09/2025 alle ore 10:50 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in divisa=7.42 / Importo in Euro=7.42 presso FARMACIA FORNACI SRL - Transazione C-less
+
+15. TRANSACTION_ID: 1321
+   RAW DATA:
+   - USCITE: USCITE: -10,64
+   - CAUSALE: CAUSALE: Pagamento Carta
+   - ENTRATE: ENTRATE: 
+   - DATA VALUTA: DATA VALUTA: 26/09/2025
+   - DATA CONTABILE: DATA CONTABILE: 28/09/2025
+   - DESCRIZIONE OPERAZIONE: DESCRIZIONE OPERAZIONE: Operazione Mastercard del 26/09/2025 alle ore 08:34 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in divisa=10.64 / Importo in Euro=10.64 presso FERRARINI SAS IDEA VER
+
+
+
+    ═══════════════════════════════════════════════════════
+    CHECKLIST FINALE PRIMA DI RISPONDERE:
+    ═══════════════════════════════════════════════════════
+
+    ✓ Ho controllato prima le regole utente, **inclusa la regola IGNORA SALDI e ACCREDITI**?
+    ✓ Ho **escluso Saldi e Accrediti** dal JSON finale?
+    ✓ OGNI transazione restante (solo spese) ha i 5 campi obbligatori estratti?
+    ✓ Ho ASSOLUTAMENTE EVITATO "Uncategorized"?
+    ✓ La categoria è della lista ESATTA consentita (e in ITALIANO)?
+    ✓ La mia risposta è SOLO l'array JSON (senza markdown, senza testo)?
+
+    RISPONDI SOLO CON L'ARRAY JSON:
+        """

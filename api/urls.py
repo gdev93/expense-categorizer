@@ -19,8 +19,8 @@ from django.views.generic import RedirectView
 
 from api.entry_point_views import login_form, authenticate_user, register_form, create_user
 from api.views.category_view import CategoryUpdateView
-from api.views.rule_view import RuleDefineView
-from api.views.csv_upload_view import CsvUploadView, CsvUploadDelete
+from api.views.csv_upload_view import CsvUploadView, CsvUploadDelete, CsvProcessView
+from api.views.rule_view import RuleDefineView, RuleDeleteView
 from api.views.transaction_view import TransactionListView, EditTransactionCategory, TransactionDetailUpdateView
 
 urlpatterns = [
@@ -29,9 +29,11 @@ urlpatterns = [
     path('accounts/register/', register_form, name='register_form'),
     path('accounts/create/', create_user, name='create_user'),
     path('transactions/upload/', CsvUploadView.as_view(), name='transactions_upload'),
+    path('transactions/upload/process', CsvProcessView.as_view(), name='transactions_process'),
     path('transactions/upload/<int:pk>/delete/', CsvUploadDelete.as_view(), name='transactions_upload_delete'),
     path('transactions/', TransactionListView.as_view(), name='transaction_list'),
     path('transactions/<int:pk>/', TransactionDetailUpdateView.as_view(), name='transaction_detail'),
+    path('transactions/rules/<int:pk>/delete/', RuleDeleteView.as_view(), name='delete_rule'),
     path('transactions/rules/', RuleDefineView.as_view(), name='define_rule'),
     path('transactions/category/', CategoryUpdateView.as_view(), name='update_category'),
     path('transactions/category/edit', EditTransactionCategory.as_view(), name='update_transaction_category'),

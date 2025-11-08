@@ -2,13 +2,17 @@ import logging
 
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect
-from django.urls import reverse
+from django.urls import reverse, reverse_lazy
 from django.views import View
+from django.views.generic import DeleteView
 
 from api.models import Rule, Category, Merchant
 
 logger = logging.getLogger(__name__)
 
+class RuleDeleteView(DeleteView):
+    model = Rule
+    success_url = reverse_lazy('transaction_list')
 
 class RuleDefineView(View):
 
@@ -17,7 +21,7 @@ class RuleDefineView(View):
         category_name = request.POST.get('category_name', '')
 
         # Get or create the merchant - unpack the tuple
-        merchant, created = Merchant.objects.get_or_create(name=merchant_name)
+        merchant, created = Merchant.objects.get_or_create(name=merchant_name, user=request.user)
 
         # Get or create the category with user
         category, _ = Category.objects.get_or_create(name=category_name, user=request.user)

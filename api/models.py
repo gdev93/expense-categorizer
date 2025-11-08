@@ -1,6 +1,8 @@
 # models.py
-from django.db import models
 from django.contrib.auth.models import User
+from django.db import models
+from django.db.models import QuerySet, Q
+from django.db.models.expressions import RawSQL
 
 
 class Category(models.Model):
@@ -33,7 +35,11 @@ class Merchant(models.Model):
     normalized_name = models.CharField(max_length=255, db_index=True)  # For fuzzy matching
     description = models.TextField(blank=True)
     address = models.TextField(blank=True)
-
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='merchants'
+    )
     default_categories = models.ManyToManyField(
         Category,
         blank=True,
@@ -47,6 +53,54 @@ class Merchant(models.Model):
 
     def __str__(self):
         return self.name
+
+
+    @staticmethod
+    def get_similar_merchants_by_names(compare: str, user: User, similarity_threshold: float = 0.9) -> QuerySet:
+        """
+        Find merchants similar to the compare string using:
+        1. Substring containment (ILIKE)
+        2. Word similarity (PostgreSQL trigram)
+
+        Args:
+            compare: The merchant name to search for
+            user: The user whose merchants to search
+            similarity_threshold: Minimum similarity score (0.0 to 1.0)
+
+        Returns:
+            QuerySet of matching Merchant objects ordered by similarity
+        """
+
+        return Merchant.objects.annotate(
+            is_contained_name=RawSQL(
+                "%s ILIKE '%%' || name || '%%'",
+                (compare,)
+            ),
+            is_contained_normalized_name=RawSQL(
+                "%s ILIKE '%%' || normalized_name || '%%'",
+                (compare,)
+            ),
+            name_similarity=RawSQL(
+                "word_similarity(name, %s)",
+                (compare,)
+            ),
+            normalized_name_similarity=RawSQL(
+                "word_similarity(normalized_name, %s)",
+                (compare,)
+            )
+        ).filter(
+            Q(is_contained_name=True) |
+            Q(is_contained_normalized_name=True) |
+            Q(name__icontains=compare) |
+            Q(normalized_name__icontains=compare) |
+            Q(name_similarity__gte=similarity_threshold) |
+            Q(normalized_name_similarity__gte=similarity_threshold)
+        ).filter(
+            user=user
+        ).order_by(
+            '-name_similarity',
+            '-normalized_name_similarity'
+        ).distinct()
 
     def save(self, *args, **kwargs):
         # Auto-normalize name for fuzzy matching
@@ -113,6 +167,10 @@ class Transaction(models.Model):
         ('categorized', 'Categorized'),
         ('reviewed', 'Reviewed'),
     ]
+    TRANSACTION_TYPE_CHOICES = [
+        ('expense', 'Expense'),
+        ('income', 'Income'),
+    ]
 
 
 
@@ -142,7 +200,7 @@ class Transaction(models.Model):
         blank=True,
         related_name='transactions'
     )
-
+    transaction_type = models.CharField(max_length=20, choices=TRANSACTION_TYPE_CHOICES, default='expense')
     # Processing metadata
     merchant_raw_name = models.CharField(max_length=255, blank=True)  # Original from CSV
     # Core transaction data

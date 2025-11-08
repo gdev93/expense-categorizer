@@ -111,7 +111,7 @@
                                 vanno nella categoria <strong
                                     class="rule-category-highlight">{{ rule.category.name }}</strong>
                             </span>
-                                    <form method="post" action="" style="display: inline; margin: 0;">
+                                    <form method="post" action="{% url 'delete_rule' rule.id %}" style="display: inline; margin: 0;">
                                         {% csrf_token %}
                                         <button type="submit" class="btn btn-sm btn-danger-custom"
                                                 onclick="return confirm('Sei sicuro di voler eliminare questa regola?');">
@@ -248,7 +248,7 @@
                                 📅 {{ transaction.transaction_date|date:"d/m/Y" }}
                             </div>
                             <div class="transaction-merchant">
-                                {{ transaction.merchant_raw_name|default:"Merchant Sconosciuto" }}
+                                {{ transaction.merchant.name|default:"Merchant Sconosciuto" }}
                             </div>
                             {% if transaction.description %}
                                 <div class="transaction-description" title="{{ transaction.description }}">
