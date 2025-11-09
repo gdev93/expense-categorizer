@@ -2,7 +2,8 @@
  * Transforms the clicked <span> into a <select> dropdown using pre-loaded options.
  * This function relies on the global array: CATEGORY_OPTIONS.
  */
-function makeSelectable(element) {
+function makeSelectable(element, event) {
+    if (event) event.stopPropagation();
     // Exit if already a select element
     if (element.querySelector('select')) {
         return;

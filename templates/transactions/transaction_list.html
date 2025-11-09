@@ -209,13 +209,7 @@
                         </div>
 
                         <div class="transaction-meta">
-                    <span class="transaction-category" style="background-color: #ffc107; color: #000;">
-                        Non Categorizzata
-                    </span>
 
-                            <span class="transaction-status status-{{ transaction.status }}">
-                        {{ transaction.get_status_display }}
-                    </span>
 
                             <div class="transaction-amount">
                                 €{% if transaction.original_amount|slice:":1" == '+' %}
@@ -262,14 +256,10 @@
                                 <span class="transaction-category"
                                       data-transaction-id="{{ transaction.id }}"
                                       data-current-category-id="{{ transaction.category.id }}"
-                                      onclick="makeSelectable(this)">
+                                      onclick="makeSelectable(this,event)">
                     {{ transaction.category.name }}
                 </span>
                             {% endif %}
-
-                            <span class="transaction-status status-{{ transaction.status }}">
-                    {{ transaction.get_status_display }}
-                </span>
 
                             <div class="transaction-amount">
                                 €{{ transaction.amount|floatformat:2 }}

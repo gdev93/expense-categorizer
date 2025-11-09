@@ -4,6 +4,7 @@ import os
 import threading
 import time
 from dataclasses import dataclass
+from math import ceil
 from typing import List, Dict
 
 from django import forms
@@ -12,7 +13,7 @@ from django.contrib.auth.models import User
 from django.core.validators import FileExtensionValidator
 from django.db import transaction
 from django.db.models import Sum, Count, Case, When, Value, CharField, Exists, OuterRef
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.urls import reverse_lazy
 from django.views import View
 from django.views.generic import FormView, ListView, DeleteView
@@ -204,7 +205,15 @@ class CsvUploadView(ListView, FormView):
         Returns:
             CsvProcessingResult with processing details
         """
-
+        csv_upload_query = CsvUpload.objects.filter(user=self.request.user, transactions__status='pending',
+                                                    processing_time__isnull=True).distinct()
+        if csv_upload_query.exists():
+            return CsvProcessingResult(
+                csv_upload=None,
+                rows_processed=0,
+                success=False,
+                error_message='There is already a pending upload'
+            )
         try:
             # Parse CSV file
             csv_data = _parse_csv(csv_file)
@@ -336,29 +345,53 @@ default_categories_first_upload = os.getenv('DEFAULT_CATEGORIES').split(',') if 
     'DEFAULT_CATEGORIES') else DEFAULT_CATEGORIES
 
 
+class CsvProgressView(View):
+    long_polling_limit = os.getenv('LONG_POLLING_SLEEP', 5)
+
+    def get(self, request, *args, **kwargs):
+        csv_upload_query = CsvUpload.objects.filter(user=self.request.user, transactions__status='pending',
+                                                    processing_time__isnull=True).distinct()
+        if not csv_upload_query.exists():
+            return HttpResponse(status=404)
+        csv_upload = csv_upload_query.first()
+        time.sleep(self.long_polling_limit)
+        total = Transaction.objects.filter(csv_upload=csv_upload, user=request.user).count()
+        current_pending = Transaction.objects.filter(csv_upload=csv_upload, user=request.user, status='pending').count()
+        if current_pending == 0:
+            return JsonResponse(status=200, data={
+                "total": total,
+                "current_pending": 0,
+                "current_categorized": total,
+                "percentage": "100%"
+            })
+        current_categorized = Transaction.objects.filter(csv_upload=csv_upload, user=request.user,
+                                                         status__in=['categorized', 'uncategorized']).count()
+        return JsonResponse(status=200, data={
+            "total": total,
+            "current_pending": current_pending,
+            "current_categorized": current_categorized,
+            "percentage": f"{ceil(current_categorized / total * 100)}%"
+        })
+
 class CsvProcessView(View):
-    upload_limit = os.getenv('UPLOAD_LIMIT', 1)
 
     def post(self, request, *args, **kwargs):
+        csv_upload_query = CsvUpload.objects.filter(user=self.request.user, transactions__status='pending',
+                                                    processing_time__isnull=True).distinct()
+        if not csv_upload_query.exists():
+            return HttpResponse(status=404)
+        csv_upload = csv_upload_query.first()
         thread = threading.Thread(
             target=self._do_process,
-            args=(request.user,),
+            args=(request.user, csv_upload,),
             daemon=True
         )
         thread.start()
-
-        # Return immediately
         return HttpResponse(status=202)
 
-    def _do_process(self, user: User) -> HttpResponse:
+    def _do_process(self, user: User, csv_upload: CsvUpload) -> HttpResponse:
         start_time = time.time()
 
-        csv_upload_query = CsvUpload.objects.filter(user=self.request.user, transactions__status='pending').distinct()
-        if not csv_upload_query.exists():
-            return HttpResponse(status=404)
-        if csv_upload_query.count() > self.upload_limit:
-            return HttpResponse(status=403)
-        csv_upload = csv_upload_query.first()
         transactions = Transaction.objects.filter(csv_upload=csv_upload, user=user, status='pending')
         user_rules = list(
             Rule.objects.filter(

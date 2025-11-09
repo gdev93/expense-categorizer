@@ -535,3 +535,13 @@
     padding-top: 0;
     padding-bottom: 0;
 }
+
+
+@media (min-width: 768px) {
+    .transaction-category {
+        font-size: 14px;
+        font-weight: 500;
+        white-space: nowrap;
+    }
+
+}

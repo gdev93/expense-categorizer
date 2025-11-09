@@ -6,12 +6,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const submitUpload = document.getElementById('submitUpload');
     const uploadForm = document.getElementById('uploadForm');
 
+    // Assumi che queste costanti siano definite altrove nel tuo codice
+    // Es: const CSRF_TOKEN = '...';
+    // Es: const CSV_UPLOAD_PROCESS = '/api/process-csv/'; // URL per AVVIARE l'elaborazione
+    // Es: const CSV_UPLOAD_PROGRESS = '/api/progress-check/'; // URL per CONTROLLARE lo stato
+    // Es: const CSV_UPLOADS_PAGE = '/uploads/';
+
     // Variabile per tenere traccia di UN SOLO file
     let fileToUpload = null;
 
     // Costanti
     const MAX_FILE_SIZE_MB = 10 * 1024 * 1024; // 10MB in bytes
     const ALLOWED_TYPES = ['.csv'];
+
+    // --- Variabile di Stato per il Polling ---
+    let processingComplete = false; // Flag per controllare lo stato di elaborazione
 
     // --- Funzioni di Utilità ---
 
@@ -42,7 +51,8 @@ document.addEventListener('DOMContentLoaded', () => {
             fileListPreview.appendChild(fileItem);
 
             // Aggiorna il bottone: Abilitato se il file è presente
-            submitUpload.textContent = `Carica File Selezionato`;
+            submitUpload.textContent = fileToUpload ? 'Carica File Selezionato' : 'Carica CSV';
+            ;
             submitUpload.disabled = false;
 
         } else {
@@ -71,9 +81,136 @@ document.addEventListener('DOMContentLoaded', () => {
         updateFileList();
     }
 
-    // --- Event Handlers ---
+    // --- Funzioni per Avvio e Controllo Processo ---
 
-    // 1. Attivazione Clic sul testo
+    /**
+     * Invia la richiesta POST a CSV_UPLOAD_PROCESS per avviare l'elaborazione in background.
+     */
+    async function startCsvProcessing() {
+        try {
+            const response = await fetch(CSV_UPLOAD_PROCESS, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': CSRF_TOKEN
+                }
+            });
+
+            // L'endpoint di processo ritorna 200/403/404, ma in caso di successo
+            // dovrebbe tornare 200 con lo stato iniziale o un 201.
+            if (!response.ok) {
+                console.error("Errore nell'avvio del processo:", response.status);
+                // Se l'avvio fallisce, il polling non deve partire
+                processingComplete = true;
+                submitUpload.disabled = false;
+                submitUpload.textContent = 'Errore nell\'avvio processo';
+            }
+        } catch (error) {
+            console.error('Errore di Rete nell\'avvio del processo:', error);
+            processingComplete = true;
+            submitUpload.disabled = false;
+            submitUpload.textContent = 'Errore di Rete';
+        }
+    }
+
+
+    /**
+     * Controlla lo stato di avanzamento usando CSV_UPLOAD_PROGRESS (GET request).
+     */
+    async function checkProcessingProgress() {
+        try {
+            // Usa il nuovo URL CSV_UPLOAD_PROGRESS
+            const response = await fetch(CSV_UPLOAD_PROGRESS, {
+                method: 'GET', // Assumiamo sia GET per un check di stato
+                headers: {
+                    'X-CSRFToken': CSRF_TOKEN
+                }
+            });
+
+            if (response.status === 200) {
+                const data = await response.json();
+
+                // Aggiorna il testo del bottone con la percentuale di completamento
+                submitUpload.textContent = `Elaborazione in corso... ${data.percentage}`;
+                submitUpload.disabled = true;
+
+                // Verifica la condizione di completamento (100% o total == current_categorized)
+                if (data.percentage === "100%" || (data.total > 0 && data.total === data.current_categorized)) {
+                    console.log("Processing complete!");
+                    processingComplete = true;
+                } else {
+                    console.log(`Processing progress: ${data.percentage}`);
+                }
+                return true; // Success: process is running/complete
+
+            } else if (response.status === 404) {
+                // Nessun caricamento in attesa trovato (processo terminato o mai iniziato)
+                console.log("Nessun caricamento in attesa trovato (404).");
+                processingComplete = true; // Ferma il loop
+
+                // Aggiorna l'UI alla modalità di attesa di upload
+                submitUpload.disabled = !fileToUpload;
+                submitUpload.textContent = fileToUpload ? 'Carica File Selezionato' : 'Carica CSV';
+                return false; // Failure: process not found
+
+            } else {
+                console.error("Errore durante il controllo dello stato di elaborazione:", response.status);
+                processingComplete = true;
+                submitUpload.disabled = false;
+                submitUpload.textContent = 'Errore di Elaborazione';
+                return false;
+            }
+
+        } catch (error) {
+            console.error('Errore di Rete durante il polling:', error);
+            processingComplete = true;
+            submitUpload.disabled = false;
+            submitUpload.textContent = 'Errore di Rete';
+            return false;
+        }
+    }
+
+    async function startPolling() {
+        console.log("Polling avviato.");
+
+        // Loop di polling
+        while (!processingComplete) {
+            await checkProcessingProgress();
+
+            // Micro-delay per non saturare la CPU del browser
+            if (!processingComplete) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+        }
+
+        // Una volta completato, reindirizza l'utente
+        if (processingComplete && window.location.href !== CSV_UPLOADS_PAGE) {
+            window.location.href = CSV_UPLOADS_PAGE;
+        }
+    }
+
+    // --- GESTIONE DEL REFRESH DELLA PAGINA ---
+    async function handlePageRefresh() {
+        // Disabilita il bottone e cambia il testo durante il controllo iniziale
+        submitUpload.disabled = true;
+        submitUpload.textContent = 'Controllo Stato Upload...'
+        // Esegui la prima chiamata per vedere se c'è un processo in corso
+        setTimeout(async () => {
+            const processFound = await checkProcessingProgress();
+
+            if (processFound && !processingComplete) {
+                // Se un processo è attivo (200) ma non è finito, avvia il polling.
+                await startPolling();
+            }
+
+            // Assicurati che il bottone sia ripristinato se non c'è polling attivo
+            if (processingComplete) {
+                updateFileList();
+            }
+        }, 1000);
+    }
+
+
+
     browseFiles.addEventListener('click', (e) => {
         e.preventDefault();
         fileInput.click();
@@ -123,24 +260,23 @@ document.addEventListener('DOMContentLoaded', () => {
     }, false);
 
 
+    // --- 5. SUBMIT FORM con Long Polling ---
     uploadForm.addEventListener('submit', async function (e) {
         e.preventDefault();
 
-        if (!fileToUpload) return; // Controlla la variabile singola
+        if (!fileToUpload) return;
 
         const formData = new FormData();
-
-        // AGGIUNGE IL TOKEN CSRF
         formData.append('csrfmiddlewaretoken', CSRF_TOKEN);
-
-        // Aggiunge il singolo file
-        // Utilizza il 'name' aggiornato (es. 'file')
         formData.append(fileInput.name, fileToUpload, fileToUpload.name);
 
         submitUpload.disabled = true;
-        submitUpload.textContent = 'Caricamento in corso... ⏳';
+        submitUpload.textContent = 'Caricamento file... ⏳';
+
+        processingComplete = false;
 
         try {
+            // 1. UPLOAD DEL FILE
             const response = await fetch(uploadForm.action, {
                 method: 'POST',
                 body: formData
@@ -149,25 +285,31 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!response.ok) {
                 const errorData = await response.json();
                 alert(`Errore di Caricamento: ${errorData.error || 'Si è verificato un errore sul server.'}`);
+                submitUpload.disabled = false;
+                submitUpload.textContent = fileToUpload ? 'Carica File Selezionato' : 'Carica CSV';
+            } else {
+                console.log("Upload file riuscito.");
+                submitUpload.textContent = 'Avvio elaborazione... ⚙️';
+
+                // 2. AVVIA L'ELABORAZIONE IN BACKGROUND
+                await startCsvProcessing();
+
+                // 3. AVVIA IL CONTROLLO DELLO STATO (POLLING)
+                if (!processingComplete) {
+                    await startPolling();
+                }
             }
         } catch (error) {
             console.error('Errore di Rete:', error);
             alert('Errore di connessione. Controlla la tua rete.');
+            submitUpload.disabled = false;
+            submitUpload.textContent = fileToUpload ? 'Carica File Selezionato' : 'Carica CSV';
         } finally {
             updateFileList();
         }
-        try {
-            await fetch(CSV_UPLOAD_PROCESS, {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': CSRF_TOKEN
-                }
-            })
-        } catch (error) {
-            console.log(error)
-        } finally {
-            window.location.href = CSV_UPLOADS_PAGE
-        }
     });
+
+    // --- ESECUZIONE INIZIALE ---
     updateFileList();
+    handlePageRefresh(); // Chiama la funzione per gestire il refresh
 });

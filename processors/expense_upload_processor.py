@@ -397,6 +397,8 @@ class ExpenseUploadProcessor:
                 tx.merchant_raw_name = similar_tx.merchant_raw_name
                 tx.merchant = similar_tx.merchant
                 tx.status = 'categorized'
+            else:
+                tx.status = 'uncategorized'
 
         Transaction.objects.bulk_update(
             uncategorized_transactions,

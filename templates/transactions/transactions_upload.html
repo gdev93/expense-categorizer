@@ -71,12 +71,12 @@
                     </div>
                 {% endif %}
 
-                <div class="mt-5">
+                <div class="mt-5" id="fileListContainer">
                     <div id="fileListPreview" class="file-list-preview">
                     </div>
 
                     <button type="submit" class="upload-btn" id="submitUpload" disabled>
-                        Carica File Selezionato
+                        Carica CSV
                     </button>
                 </div>
             </form>
@@ -180,6 +180,7 @@
         const CSRF_TOKEN = "{{ csrf_token }}"
         const CSV_UPLOADS_PAGE = "{% url 'transactions_upload' %}"
         const CSV_UPLOAD_PROCESS = "{% url 'transactions_process' %}"
+        const CSV_UPLOAD_PROGRESS = "{% url 'transactions_progress' %}"
     </script>
     <script src="{% static 'js/upload.js' %}"></script>
 {% endblock %}
