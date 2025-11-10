@@ -5,12 +5,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const fileListPreview = document.getElementById('fileListPreview');
     const submitUpload = document.getElementById('submitUpload');
     const uploadForm = document.getElementById('uploadForm');
-
-    // Assumi che queste costanti siano definite altrove nel tuo codice
-    // Es: const CSRF_TOKEN = '...';
-    // Es: const CSV_UPLOAD_PROCESS = '/api/process-csv/'; // URL per AVVIARE l'elaborazione
-    // Es: const CSV_UPLOAD_PROGRESS = '/api/progress-check/'; // URL per CONTROLLARE lo stato
-    // Es: const CSV_UPLOADS_PAGE = '/uploads/';
+    const processingProgressBarContainer = document.getElementById('processingProgressBarContainer');
+    const processingProgressBar = document.getElementById('processingProgressBar');
 
     // Variabile per tenere traccia di UN SOLO file
     let fileToUpload = null;
@@ -118,45 +114,58 @@ document.addEventListener('DOMContentLoaded', () => {
      */
     async function checkProcessingProgress() {
         try {
-            // Usa il nuovo URL CSV_UPLOAD_PROGRESS
             const response = await fetch(CSV_UPLOAD_PROGRESS, {
-                method: 'GET', // Assumiamo sia GET per un check di stato
+                method: 'GET',
                 headers: {
                     'X-CSRFToken': CSRF_TOKEN
                 }
             });
 
+
             if (response.status === 200) {
                 const data = await response.json();
 
-                // Aggiorna il testo del bottone con la percentuale di completamento
-                submitUpload.textContent = `Elaborazione in corso... ${data.percentage}`;
-                submitUpload.disabled = true;
+                // NUOVO: Estrai la percentuale e puliscila se necessario
+                let percentage = data.percentage ? data.percentage.replace('%', '') : '0';
+                percentage = parseInt(percentage, 10);
 
-                // Verifica la condizione di completamento (100% o total == current_categorized)
-                if (data.percentage === "100%" || (data.total > 0 && data.total === data.current_categorized)) {
+                // Aggiorna l'elemento della Progress Bar
+                processingProgressBar.style.width = `${percentage}%`;
+                processingProgressBar.textContent = `${percentage}% Elaborazione...`;
+                processingProgressBar.setAttribute('aria-valuenow', percentage);
+
+                submitUpload.disabled = true; // Mantieni il bottone disabilitato
+                submitUpload.textContent = 'Elaborazione in corso...'; // Bottone mostra solo lo stato generale
+
+                // Verifica la condizione di completamento
+                if (percentage === 100 || (data.total > 0 && data.total === data.current_categorized)) {
                     console.log("Processing complete!");
                     processingComplete = true;
+                    // Imposta la barra al 100% finale e la nasconde nel "finally" del submit.
                 } else {
-                    console.log(`Processing progress: ${data.percentage}`);
+                    console.log(`Processing progress: ${percentage}%`);
                 }
                 return true; // Success: process is running/complete
 
             } else if (response.status === 404) {
-                // Nessun caricamento in attesa trovato (processo terminato o mai iniziato)
+                // Nessun caricamento in attesa trovato
                 console.log("Nessun caricamento in attesa trovato (404).");
                 processingComplete = true; // Ferma il loop
+
+                // NUOVO: Nascondi la Progress Bar al termine o se non trovata
+                processingProgressBarContainer.style.display = 'none';
 
                 // Aggiorna l'UI alla modalità di attesa di upload
                 submitUpload.disabled = !fileToUpload;
                 submitUpload.textContent = fileToUpload ? 'Carica File Selezionato' : 'Carica CSV';
-                return false; // Failure: process not found
+                return false;
 
             } else {
                 console.error("Errore durante il controllo dello stato di elaborazione:", response.status);
                 processingComplete = true;
                 submitUpload.disabled = false;
                 submitUpload.textContent = 'Errore di Elaborazione';
+                processingProgressBarContainer.style.display = 'none'; // Nascondi
                 return false;
             }
 
@@ -165,6 +174,7 @@ document.addEventListener('DOMContentLoaded', () => {
             processingComplete = true;
             submitUpload.disabled = false;
             submitUpload.textContent = 'Errore di Rete';
+            processingProgressBarContainer.style.display = 'none'; // Nascondi
             return false;
         }
     }
@@ -184,21 +194,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Una volta completato, reindirizza l'utente
         if (processingComplete && window.location.href !== CSV_UPLOADS_PAGE) {
-            window.location.href = CSV_UPLOADS_PAGE;
+            setTimeout(() => {
+                window.location.href = CSV_UPLOADS_PAGE;
+            }, 1000)
         }
     }
 
-    // --- GESTIONE DEL REFRESH DELLA PAGINA ---
     async function handlePageRefresh() {
         // Disabilita il bottone e cambia il testo durante il controllo iniziale
         submitUpload.disabled = true;
         submitUpload.textContent = 'Controllo Stato Upload...'
+
+        // NUOVO: Nascondi la barra durante il controllo iniziale
+        processingProgressBarContainer.style.display = 'none';
+
         // Esegui la prima chiamata per vedere se c'è un processo in corso
         setTimeout(async () => {
             const processFound = await checkProcessingProgress();
 
             if (processFound && !processingComplete) {
                 // Se un processo è attivo (200) ma non è finito, avvia il polling.
+                // NUOVO: Mostra la barra prima di avviare il loop
+                processingProgressBarContainer.style.display = 'block';
                 await startPolling();
             }
 
@@ -208,7 +225,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }, 1000);
     }
-
 
 
     browseFiles.addEventListener('click', (e) => {
@@ -294,7 +310,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 // 2. AVVIA L'ELABORAZIONE IN BACKGROUND
                 await startCsvProcessing();
 
-                // 3. AVVIA IL CONTROLLO DELLO STATO (POLLING)
+                // 3. MOSTRA LA PROGRESS BAR
+                processingProgressBarContainer.style.display = 'block';
+                processingProgressBar.style.width = '0%';
+                processingProgressBar.textContent = '0% Elaborazione...';
+                processingProgressBar.setAttribute('aria-valuenow', 0);
+
+                // 4. AVVIA IL CONTROLLO DELLO STATO (POLLING)
                 if (!processingComplete) {
                     await startPolling();
                 }

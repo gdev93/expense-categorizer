@@ -1,0 +1,45 @@
+/*
+ * File: progress-bar.css
+ * Stili per la barra di progresso durante l'elaborazione (polling)
+ */
+
+/* Contenitore principale della barra, definisce lo spazio e l'aspetto esterno */
+.progress-container {
+    background-color: #e9ecef; /* Colore di sfondo della traccia */
+    border-radius: 0.5rem; /* <<< MANTIENI: Angoli arrotondati per il contenitore */
+    height: 1.5rem; /* Altezza fissa */
+    overflow: hidden; /* Assicura che la barra interna non esca */
+    margin-top: 10px;
+    margin-bottom: 10px;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1); /* Leggera ombra interna */
+}
+
+/* La barra interna che rappresenta l'avanzamento */
+.progress-bar {
+    display: flex;
+    flex-direction: column;
+    justify-content: center; /* Centra il testo verticalmente */
+    color: #ffffff; /* Colore del testo (percentuale) */
+    text-align: center;
+    white-space: nowrap;
+    background-color: #007bff; /* Colore blu primario */
+    transition: width 0.3s ease-in-out; /* Animazione fluida quando la percentuale cambia */
+    height: 100%; /* Occupa l'intera altezza del contenitore */
+    line-height: 1.5rem; /* Allinea il testo all'interno dell'altezza */
+    /* RIMUOVI/MODIFICA QUESTO: Il raggio del bordo sulla barra interna crea il problema */
+    /* border-radius: 0.5rem; */
+
+    /* Alternativamente, se vuoi che la parte riempita abbia gli angoli, usa: */
+    border-top-left-radius: 0.5rem;
+    border-bottom-left-radius: 0.5rem;
+    /* La barra si espanderà verso destra, e non ha bisogno di bordi a destra finché non è al 100% */
+
+    font-size: 0.875rem; /* Dimensione del testo */
+}
+
+/* Stile per quando la barra è completata (100%) - aggiustiamo il raggio per coprire tutto */
+.progress-bar[aria-valuenow="100"] {
+    background-color: #28a745; /* Verde per completato */
+    /* Quando è al 100%, deve avere tutti i bordi arrotondati */
+    border-radius: 0.5rem;
+}

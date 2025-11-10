@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="{% static 'css/upload.css' %}">
     <link rel="stylesheet" href="{% static 'css/list.css' %}">
     <link rel="stylesheet" href="{% static 'css/pagination.css' %}">
+    <link rel="stylesheet" href="{% static 'css/progress-bar.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -74,13 +75,20 @@
                 <div class="mt-5" id="fileListContainer">
                     <div id="fileListPreview" class="file-list-preview">
                     </div>
-
+                    <div id="processingProgressBarContainer" class="progress-container mt-3" style="display: none;">
+                        <div id="processingProgressBar" class="progress-bar" role="progressbar" style="width: 0%;"
+                             aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                            0%
+                        </div>
+                    </div>
                     <button type="submit" class="upload-btn" id="submitUpload" disabled>
                         Carica CSV
                     </button>
+
                 </div>
             </form>
         </div>
+
 
         <!-- Upload Statistics -->
 {#        {% if upload_stats %}#}
