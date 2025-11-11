@@ -1,3 +1,4 @@
+
 document.addEventListener('DOMContentLoaded', () => {
     const dropZone = document.getElementById('dropZone');
     const fileInput = document.getElementById('fileInput');
@@ -17,6 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Variabile di Stato per il Polling ---
     let processingComplete = false; // Flag per controllare lo stato di elaborazione
+    let uploadInProgress = false; // Flag per indicare se c'è un upload in corso
 
     // --- Funzioni di Utilità ---
 
@@ -27,6 +29,51 @@ document.addEventListener('DOMContentLoaded', () => {
         const sizes = ['Bytes', 'KB', 'MB', 'GB'];
         const i = Math.floor(Math.log(bytes) / Math.log(k));
         return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+    }
+
+    /**
+     * Controlla se è possibile caricare un nuovo file.
+     */
+    async function checkUploadAvailability() {
+        try {
+            const response = await fetch(CSV_UPLOAD_CHECK, {
+                method: 'GET',
+                headers: {
+                    'X-CSRFToken': CSRF_TOKEN
+                }
+            });
+
+            if (response.status === 200) {
+                // C'è un upload in corso
+                const data = await response.json();
+                uploadInProgress = true;
+                return {
+                    canUpload: false,
+                    data: data
+                };
+            } else if (response.status === 404) {
+                // Nessun upload in corso, può caricare
+                uploadInProgress = false;
+                return {
+                    canUpload: true,
+                    data: null
+                };
+            } else {
+                console.error("Errore durante il controllo della disponibilità:", response.status);
+                uploadInProgress = false;
+                return {
+                    canUpload: false,
+                    data: null
+                };
+            }
+        } catch (error) {
+            console.error('Errore di Rete durante il controllo della disponibilità:', error);
+            uploadInProgress = false;
+            return {
+                canUpload: false,
+                data: null
+            };
+        }
     }
 
     function updateFileList() {
@@ -45,21 +92,22 @@ document.addEventListener('DOMContentLoaded', () => {
                     <span class="file-item-remove" title="Rimuovi">&times;</span>
                 `;
             fileListPreview.appendChild(fileItem);
-
-            // Aggiorna il bottone: Abilitato se il file è presente
-            submitUpload.textContent = fileToUpload ? 'Carica File Selezionato' : 'Carica CSV';
-            submitUpload.classList.remove('btn-disabled');
-            submitUpload.disabled = false;
-
         } else {
             fileListPreview.style.display = 'none';
-            submitUpload.disabled = true
+        }
+
+        // Aggiorna il bottone: Disabilitato SOLO se c'è un upload in corso
+        if (uploadInProgress) {
             submitUpload.classList.add('btn-disabled');
+            submitUpload.disabled = true;
+        } else {
+            submitUpload.classList.remove('btn-disabled');
+            submitUpload.disabled = false;
         }
     }
 
 
-    function addFile(file) {
+    async function addFile(file) {
         const fileNameLower = file.name.toLowerCase();
         const isValidType = ALLOWED_TYPES.some(type => fileNameLower.endsWith(type));
 
@@ -70,6 +118,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (file.size > MAX_FILE_SIZE_MB) {
             alert(`Errore: Il file "${file.name}" supera la dimensione massima di 10MB.`);
+            return;
+        }
+
+        // Controlla se è possibile caricare prima di aggiungere il file
+        const uploadCheck = await checkUploadAvailability();
+
+        if (!uploadCheck.canUpload) {
+            alert('⚠️ ATTENZIONE: C\'è un caricamento CSV in corso!\n\n' +
+                'Non è possibile caricare un nuovo file mentre è in corso l\'elaborazione di un altro upload.\n\n' +
+                'È importante che tu:\n' +
+                '• Completi l\'elaborazione in corso, oppure\n' +
+                '• Elimini il caricamento in sospeso\n\n' +
+                'Riprova dopo aver gestito il caricamento in corso.');
             return;
         }
 
@@ -135,14 +196,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 processingProgressBar.textContent = `${percentage}% Elaborazione...`;
                 processingProgressBar.setAttribute('aria-valuenow', percentage);
 
+                uploadInProgress = true;
                 submitUpload.disabled = true;
                 submitUpload.classList.add('btn-disabled');
-                submitUpload.textContent = 'Elaborazione in corso...'; // Bottone mostra solo lo stato generale
 
                 // Verifica la condizione di completamento
                 if (percentage === 100 || (data.total > 0 && data.total === data.current_categorized)) {
                     console.log("Processing complete!");
                     processingComplete = true;
+                    uploadInProgress = false;
                     // Imposta la barra al 100% finale e la nasconde nel "finally" del submit.
                 } else {
                     console.log(`Processing progress: ${percentage}%`);
@@ -153,21 +215,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Nessun caricamento in attesa trovato
                 console.log("Nessun caricamento in attesa trovato (404).");
                 processingComplete = true; // Ferma il loop
+                uploadInProgress = false;
 
                 // NUOVO: Nascondi la Progress Bar al termine o se non trovata
                 processingProgressBarContainer.style.display = 'none';
 
                 // Aggiorna l'UI alla modalità di attesa di upload
-                submitUpload.disabled = !fileToUpload;
-                submitUpload.textContent = fileToUpload ? 'Carica File Selezionato' : 'Carica CSV';
+                submitUpload.disabled = false;
+                submitUpload.classList.remove('btn-disabled');
                 return false;
 
             } else {
                 console.error("Errore durante il controllo dello stato di elaborazione:", response.status);
                 processingComplete = true;
+                uploadInProgress = false;
                 submitUpload.disabled = false;
                 submitUpload.classList.remove('btn-disabled');
-                submitUpload.textContent = 'Errore di Elaborazione';
                 processingProgressBarContainer.style.display = 'none'; // Nascondi
                 return false;
             }
@@ -175,9 +238,9 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             console.error('Errore di Rete durante il polling:', error);
             processingComplete = true;
+            uploadInProgress = false;
             submitUpload.disabled = false;
             submitUpload.classList.remove('btn-disabled');
-            submitUpload.textContent = 'Errore di Rete';
             processingProgressBarContainer.style.display = 'none'; // Nascondi
             return false;
         }
@@ -205,30 +268,24 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function handlePageRefresh() {
-        // Disabilita il bottone e cambia il testo durante il controllo iniziale
-        submitUpload.disabled = true;
-        submitUpload.classList.add('btn-disabled');
-        submitUpload.textContent = 'Controllo Stato Upload...'
-
-        // NUOVO: Nascondi la barra durante il controllo iniziale
         processingProgressBarContainer.style.display = 'none';
 
-        // Esegui la prima chiamata per vedere se c'è un processo in corso
-        setTimeout(async () => {
-            const processFound = await checkProcessingProgress();
+        const uploadCheck = await checkUploadAvailability();
 
-            if (processFound && !processingComplete) {
-                // Se un processo è attivo (200) ma non è finito, avvia il polling.
-                // NUOVO: Mostra la barra prima di avviare il loop
-                processingProgressBarContainer.style.display = 'block';
-                await startPolling();
-            }
-
-            // Assicurati che il bottone sia ripristinato se non c'è polling attivo
-            if (processingComplete) {
-                updateFileList();
-            }
-        }, 1000);
+        if (!uploadCheck.canUpload && uploadCheck.data) {
+            // C'è un upload in corso
+            submitUpload.disabled = true;
+            submitUpload.classList.add('btn-disabled');
+            processingProgressBarContainer.style.display = 'block';
+            uploadInProgress = true;
+            await startPolling();
+        } else {
+            // Nessun upload in corso - Abilita il bottone
+            uploadInProgress = false;
+            processingProgressBarContainer.style.display = 'none';
+            submitUpload.disabled = false;
+            submitUpload.classList.remove('btn-disabled');
+        }
     }
 
 
@@ -238,9 +295,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // 2. Selezione tramite input (il browser assicura che sia un solo file)
-    fileInput.addEventListener('change', (e) => {
+    fileInput.addEventListener('change', async (e) => {
         if (e.target.files.length > 0) {
-            addFile(e.target.files[0]);
+            await addFile(e.target.files[0]);
         }
         e.target.value = ''; // Resetta il valore
     });
@@ -272,11 +329,11 @@ document.addEventListener('DOMContentLoaded', () => {
         dropZone.addEventListener(eventName, () => dropZone.classList.remove('drag-over'), false);
     });
 
-    dropZone.addEventListener('drop', (e) => {
+    dropZone.addEventListener('drop', async (e) => {
         const dt = e.dataTransfer;
         // Prende solo il primo file trascinato
         if (dt.files.length > 0) {
-            addFile(dt.files[0]);
+            await addFile(dt.files[0]);
         }
     }, false);
 
@@ -287,13 +344,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!fileToUpload) return;
 
+        // Controlla se è possibile caricare prima di procedere
+        const uploadCheck = await checkUploadAvailability();
+        if (!uploadCheck.canUpload) {
+            alert('Non è possibile caricare un nuovo file mentre è in corso l\'elaborazione di un altro upload.');
+            updateFileList();
+            return;
+        }
+
         const formData = new FormData();
         formData.append('csrfmiddlewaretoken', CSRF_TOKEN);
         formData.append(fileInput.name, fileToUpload, fileToUpload.name);
 
         submitUpload.disabled = true;
         submitUpload.classList.add('btn-disabled');
-        submitUpload.textContent = 'Caricamento file... ⏳';
 
         processingComplete = false;
 
@@ -309,10 +373,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert(`Errore di Caricamento: ${errorData.error || 'Si è verificato un errore sul server.'}`);
                 submitUpload.disabled = false;
                 submitUpload.classList.remove('btn-disabled');
-                submitUpload.textContent = fileToUpload ? 'Carica File Selezionato' : 'Carica CSV';
             } else {
                 console.log("Upload file riuscito.");
-                submitUpload.textContent = 'Avvio elaborazione... ⚙️';
+                uploadInProgress = true;
 
                 // 2. AVVIA L'ELABORAZIONE IN BACKGROUND
                 await startCsvProcessing();
@@ -322,7 +385,6 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('Errore di connessione. Controlla la tua rete.');
             submitUpload.disabled = false;
             submitUpload.classList.remove('btn-disabled');
-            submitUpload.textContent = fileToUpload ? 'Carica File Selezionato' : 'Carica CSV';
         } finally {
             updateFileList();
         }

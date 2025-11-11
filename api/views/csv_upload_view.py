@@ -297,6 +297,7 @@ class CsvUploadView(ListView, FormView):
             total_size_mb=round(total_size / (1024 * 1024), 2),
             total_transactions=total_transactions,
         )
+        context['has_pending'] = queryset.filter(has_pending=True).exists()
 
         return context
 
@@ -437,3 +438,17 @@ class CsvProcessView(View):
                 for default_category in default_categories_first_upload if default_category not in user_categories]
             Category.objects.bulk_create(user_categories)
             return default_categories_first_upload
+
+class CsvUploadCheckView(View):
+
+    def get(self, request, *args, **kwargs):
+        csv_upload_query = CsvUpload.objects.filter(user=self.request.user, transactions__status='pending',
+                                                    processing_time__isnull=True).distinct()
+        if not csv_upload_query.exists():
+            return HttpResponse(status=404)
+        csv_upload = csv_upload_query.first()
+        return JsonResponse(status=200, data={
+            "total": Transaction.objects.filter(csv_upload=csv_upload, user=request.user).count(),
+            "current_pending": Transaction.objects.filter(csv_upload=csv_upload, user=request.user, status='pending').count(),
+            "current_categorized": Transaction.objects.filter(csv_upload=csv_upload, user=request.user, status__in=['categorized', 'uncategorized']).count(),
+        })

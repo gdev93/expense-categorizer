@@ -83,9 +83,15 @@
                             0%
                         </div>
                     </div>
+                    {% if not has_pending %}
                     <button type="submit" class="btn btn-primary" id="submitUpload" disabled>
                         Carica CSV
                     </button>
+                    {% else %}
+                        <button type="submit" class="btn btn-primary btn-disabled" id="submitUpload" disabled>
+                            Carica CSV
+                        </button>
+                    {% endif %}
 
                 </div>
             </form>
@@ -173,6 +179,7 @@
         const CSV_UPLOADS_PAGE = "{% url 'transactions_upload' %}"
         const CSV_UPLOAD_PROCESS = "{% url 'transactions_process' %}"
         const CSV_UPLOAD_PROGRESS = "{% url 'transactions_progress' %}"
+        const CSV_UPLOAD_CHECK = "{% url 'transactions_upload_check' %}"
     </script>
     <script src="{% static 'js/upload.js' %}"></script>
 {% endblock %}
