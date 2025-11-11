@@ -267,7 +267,9 @@ class CsvUploadView(ListView, FormView):
             has_pending=Exists(
                 Transaction.objects.filter(
                     csv_upload=OuterRef('pk'),
-                    status='pending'
+                    status__in=['pending','uncategorized'],
+                    user=self.request.user,
+                    transaction_type='expense'
                 )
             )
         ).annotate(

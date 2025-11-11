@@ -48,12 +48,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Aggiorna il bottone: Abilitato se il file è presente
             submitUpload.textContent = fileToUpload ? 'Carica File Selezionato' : 'Carica CSV';
-            ;
+            submitUpload.classList.remove('btn-disabled');
             submitUpload.disabled = false;
 
         } else {
             fileListPreview.style.display = 'none';
-            submitUpload.disabled = true;
+            submitUpload.disabled = true
+            submitUpload.classList.add('btn-disabled');
         }
     }
 
@@ -96,16 +97,16 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!response.ok) {
                 console.error("Errore nell'avvio del processo:", response.status);
                 // Se l'avvio fallisce, il polling non deve partire
-                processingComplete = true;
-                submitUpload.disabled = false;
-                submitUpload.textContent = 'Errore nell\'avvio processo';
             }
         } catch (error) {
             console.error('Errore di Rete nell\'avvio del processo:', error);
+        } finally {
             processingComplete = true;
             submitUpload.disabled = false;
-            submitUpload.textContent = 'Errore di Rete';
+            submitUpload.classList.remove('btn-disabled');
+            window.location.href = CSV_UPLOADS_PAGE;
         }
+
     }
 
 
@@ -134,7 +135,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 processingProgressBar.textContent = `${percentage}% Elaborazione...`;
                 processingProgressBar.setAttribute('aria-valuenow', percentage);
 
-                submitUpload.disabled = true; // Mantieni il bottone disabilitato
+                submitUpload.disabled = true;
+                submitUpload.classList.add('btn-disabled');
                 submitUpload.textContent = 'Elaborazione in corso...'; // Bottone mostra solo lo stato generale
 
                 // Verifica la condizione di completamento
@@ -164,6 +166,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error("Errore durante il controllo dello stato di elaborazione:", response.status);
                 processingComplete = true;
                 submitUpload.disabled = false;
+                submitUpload.classList.remove('btn-disabled');
                 submitUpload.textContent = 'Errore di Elaborazione';
                 processingProgressBarContainer.style.display = 'none'; // Nascondi
                 return false;
@@ -173,6 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Errore di Rete durante il polling:', error);
             processingComplete = true;
             submitUpload.disabled = false;
+            submitUpload.classList.remove('btn-disabled');
             submitUpload.textContent = 'Errore di Rete';
             processingProgressBarContainer.style.display = 'none'; // Nascondi
             return false;
@@ -203,6 +207,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function handlePageRefresh() {
         // Disabilita il bottone e cambia il testo durante il controllo iniziale
         submitUpload.disabled = true;
+        submitUpload.classList.add('btn-disabled');
         submitUpload.textContent = 'Controllo Stato Upload...'
 
         // NUOVO: Nascondi la barra durante il controllo iniziale
@@ -287,6 +292,7 @@ document.addEventListener('DOMContentLoaded', () => {
         formData.append(fileInput.name, fileToUpload, fileToUpload.name);
 
         submitUpload.disabled = true;
+        submitUpload.classList.add('btn-disabled');
         submitUpload.textContent = 'Caricamento file... ⏳';
 
         processingComplete = false;
@@ -302,6 +308,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const errorData = await response.json();
                 alert(`Errore di Caricamento: ${errorData.error || 'Si è verificato un errore sul server.'}`);
                 submitUpload.disabled = false;
+                submitUpload.classList.remove('btn-disabled');
                 submitUpload.textContent = fileToUpload ? 'Carica File Selezionato' : 'Carica CSV';
             } else {
                 console.log("Upload file riuscito.");
@@ -309,22 +316,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // 2. AVVIA L'ELABORAZIONE IN BACKGROUND
                 await startCsvProcessing();
-
-                // 3. MOSTRA LA PROGRESS BAR
-                processingProgressBarContainer.style.display = 'block';
-                processingProgressBar.style.width = '0%';
-                processingProgressBar.textContent = '0% Elaborazione...';
-                processingProgressBar.setAttribute('aria-valuenow', 0);
-
-                // 4. AVVIA IL CONTROLLO DELLO STATO (POLLING)
-                if (!processingComplete) {
-                    await startPolling();
-                }
             }
         } catch (error) {
             console.error('Errore di Rete:', error);
             alert('Errore di connessione. Controlla la tua rete.');
             submitUpload.disabled = false;
+            submitUpload.classList.remove('btn-disabled');
             submitUpload.textContent = fileToUpload ? 'Carica File Selezionato' : 'Carica CSV';
         } finally {
             updateFileList();

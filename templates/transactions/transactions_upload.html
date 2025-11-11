@@ -1,4 +1,6 @@
 
+
+
 {% extends "main/index.html" %}
 
 {% load static %}
@@ -81,31 +83,13 @@
                             0%
                         </div>
                     </div>
-                    <button type="submit" class="upload-btn" id="submitUpload" disabled>
+                    <button type="submit" class="btn btn-primary" id="submitUpload" disabled>
                         Carica CSV
                     </button>
 
                 </div>
             </form>
         </div>
-
-
-        <!-- Upload Statistics -->
-{#        {% if upload_stats %}#}
-{#            <div class="upload-statistics mb-4">#}
-{#                <h3>📊 Statistiche Caricamenti</h3>#}
-{#                <div class="stats-grid">#}
-{#                    <div class="stat-item">#}
-{#                        <span class="stat-label">Totale caricamenti:</span>#}
-{#                        <span class="stat-value">{{ upload_stats.total_uploads }}</span>#}
-{#                    </div>#}
-{#                    <div class="stat-item">#}
-{#                        <span class="stat-label">Spazio totale:</span>#}
-{#                        <span class="stat-value">{{ upload_stats.total_size_mb }} MB</span>#}
-{#                    </div>#}
-{#                </div>#}
-{#            </div>#}
-{#        {% endif %}#}
 
         <h1 class="header">🚚 Tutti i tuoi caricamenti</h1>
 
@@ -138,10 +122,10 @@
 
                 <div class="file-meta-info">
                     <span class="upload-status status-completato">
-                        {% if upload.status != 'pending' %}
-                        Completato
-                        {% else %}
+                        {% if upload.status != 'categorized' %}
                         In corso
+                        {% else %}
+                        Completato
                         {% endif %}
                     </span>
 
