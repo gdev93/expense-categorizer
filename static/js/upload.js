@@ -81,7 +81,7 @@ document.addEventListener('DOMContentLoaded', () => {
         fileListPreview.innerHTML = '';
 
         if (fileToUpload) {
-            fileListPreview.style.display = 'block';
+            fileListPreview.classList.remove('hidden');
 
             const fileItem = document.createElement('div');
             fileItem.className = 'file-item';
@@ -93,7 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 `;
             fileListPreview.appendChild(fileItem);
         } else {
-            fileListPreview.style.display = 'none';
+            fileListPreview.classList.add('hidden');
         }
 
         // Aggiorna il bottone: Disabilitato SOLO se c'è un upload in corso
@@ -217,8 +217,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 processingComplete = true; // Ferma il loop
                 uploadInProgress = false;
 
-                // NUOVO: Nascondi la Progress Bar al termine o se non trovata
-                processingProgressBarContainer.style.display = 'none';
+                // Nascondi la Progress Bar al termine o se non trovata
+                processingProgressBarContainer.classList.add('hidden');
 
                 // Aggiorna l'UI alla modalità di attesa di upload
                 submitUpload.disabled = false;
@@ -231,7 +231,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 uploadInProgress = false;
                 submitUpload.disabled = false;
                 submitUpload.classList.remove('btn-disabled');
-                processingProgressBarContainer.style.display = 'none'; // Nascondi
+                processingProgressBarContainer.classList.add('hidden');
                 return false;
             }
 
@@ -241,7 +241,7 @@ document.addEventListener('DOMContentLoaded', () => {
             uploadInProgress = false;
             submitUpload.disabled = false;
             submitUpload.classList.remove('btn-disabled');
-            processingProgressBarContainer.style.display = 'none'; // Nascondi
+            processingProgressBarContainer.classList.add('hidden');
             return false;
         }
     }
@@ -268,7 +268,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function handlePageRefresh() {
-        processingProgressBarContainer.style.display = 'none';
+        processingProgressBarContainer.classList.add('hidden');
 
         const uploadCheck = await checkUploadAvailability();
 
@@ -276,13 +276,12 @@ document.addEventListener('DOMContentLoaded', () => {
             // C'è un upload in corso
             submitUpload.disabled = true;
             submitUpload.classList.add('btn-disabled');
-            processingProgressBarContainer.style.display = 'block';
+            processingProgressBarContainer.classList.remove('hidden');
             uploadInProgress = true;
             await startPolling();
         } else {
             // Nessun upload in corso - Abilita il bottone
             uploadInProgress = false;
-            processingProgressBarContainer.style.display = 'none';
             submitUpload.disabled = false;
             submitUpload.classList.remove('btn-disabled');
         }
