@@ -81,7 +81,9 @@ class SummaryPageContext:
             SummaryPageContext instance ready for template rendering
         """
         # Get all transactions for the user
-        transactions = Transaction.objects.filter(user=user)
+        transactions = Transaction.objects.filter(user=user, status='categorized').order_by(
+            '-transaction_date'
+        )
 
         # Apply filters
         if selected_year:
@@ -172,7 +174,7 @@ class SummaryPageContext:
 
         return cls(
             total_expenses=total_expenses,
-            average_monthly=monthly_avg,
+            average_monthly=round(monthly_avg,2),
             top_category=top_category,
             top_category_percentage=top_category_percentage,
             available_categories=list(available_categories),
