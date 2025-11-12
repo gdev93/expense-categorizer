@@ -1,114 +1,120 @@
 {% extends "main/index.html" %}
 {% load static %}
+{% load i18n %}
 
-{% block title %}Transaction Detail{% endblock %}
+{% block title %}{% trans "Transaction Detail" %}{% endblock %}
 
 {% block extra_css %}
     <link rel="stylesheet" href="{% static 'css/summary.css' %}">
     <link rel="stylesheet" href="{% static 'css/layout.css' %}">
+    <link rel="stylesheet" href="{% static 'css/filters.css' %}">
 {% endblock %}
 
 {% block content %}
-<div class="container">
-    <header class="page-header">
-        <h1>Expenses Summary</h1>
-        <p class="subtitle">Monthly expense visualization and analysis</p>
-    </header>
+<div class="container mt-5">
+
+    {% include "components/header.html" with icon="📈" title="Riepilogo" %}
 
     <!-- Summary Cards -->
     <div class="summary">
-    {% include "components/summary-card.html" with icon="💰" label="Total Expenses" value="$12,450.75" subtext="+8.5% from last month" change_class="negative" %}
-    {% include "components/summary-card.html" with icon="📊" label="Average Monthly" value="$4,150.25" subtext="-2.3% from average" change_class="positive" %}
-    {% include "components/summary-card.html" with icon="🏷️" label="Top Category" value="Groceries" subtext="35% of total" change_class="neutral" %}
+    {% include "components/summary-card.html" with icon="💰" label="{% trans 'Total Expenses' %}" value="$12,450.75" subtext="{% trans '+8.5% from last month' %}" change_class="negative" %}
+    {% include "components/summary-card.html" with icon="📊" label="{% trans 'Average Monthly' %}" value="$4,150.25" subtext="{% trans '-2.3% from average' %}" change_class="positive" %}
+    {% include "components/summary-card.html" with icon="🏷️" label="{% trans 'Top Category' %}" value="{% trans 'Groceries' %}" subtext="{% trans '35% of total' %}" change_class="neutral" %}
 </div>
     <!-- Filters and Controls -->
-    <div class="controls-section">
-        <div class="filter-group">
-            <label for="year-select">Year:</label>
-            <select id="year-select" class="input-field">
-                <option value="2025">2025</option>
-                <option value="2024" selected>2024</option>
-                <option value="2023">2023</option>
-            </select>
-        </div>
-        <div class="filter-group">
-            <label for="category-select">Category:</label>
-            <select id="category-select" class="input-field">
-                <option value="all">All Categories</option>
-                <option value="groceries">Groceries</option>
-                <option value="utilities">Utilities</option>
-                <option value="transport">Transport</option>
-                <option value="entertainment">Entertainment</option>
-                <option value="healthcare">Healthcare</option>
-            </select>
-        </div>
-        <button class="btn btn-primary">Apply Filters</button>
-        <button class="btn btn-secondary">Reset</button>
+
+<form method="get" class="filters">
+    <div class="filter-group">
+        <label for="year-select">{% trans "Year:" %}</label>
+        <select name="year" id="year-select" class="input-field" onchange="this.form.submit()">
+            <option value="">{% trans "All Years" %}</option>
+            <option value="2025" {% if selected_year == "2025" %}selected{% endif %}>2025</option>
+            <option value="2024" {% if selected_year == "2024" %}selected{% endif %}>2024</option>
+            <option value="2023" {% if selected_year == "2023" %}selected{% endif %}>2023</option>
+        </select>
     </div>
+
+    <div class="filter-group">
+        <label for="category-select">{% trans "Category:" %}</label>
+        <select name="category" id="category-select" class="input-field" onchange="this.form.submit()">
+            <option value="">{% trans "All Categories" %}</option>
+            {% for cat in categories %}
+                <option value="{{ cat.id }}" {% if selected_category == cat.id|stringformat:"s" %}selected{% endif %}>
+                    {{ cat.name }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="filter-group" style="align-self: flex-end;">
+        <button type="submit" class="btn btn-primary">{% trans "Apply Filters" %}</button>
+        <a href="{% url 'summary' %}" class="btn btn-secondary">{% trans "Reset" %}</a>
+    </div>
+</form>
 
     <!-- Monthly Chart -->
     <div class="chart-container">
-        <h2>Monthly Expenses Trend</h2>
+        <h2>{% trans "Monthly Expenses Trend" %}</h2>
         <div class="bar-chart">
             <div class="chart-bar" style="--bar-height: 65%;">
                 <div class="bar-fill" data-value="$3,250"></div>
-                <span class="bar-label">Jan</span>
+                <span class="bar-label">{% trans "Jan" %}</span>
             </div>
             <div class="chart-bar" style="--bar-height: 55%;">
                 <div class="bar-fill" data-value="$2,750"></div>
-                <span class="bar-label">Feb</span>
+                <span class="bar-label">{% trans "Feb" %}</span>
             </div>
             <div class="chart-bar" style="--bar-height: 75%;">
                 <div class="bar-fill" data-value="$3,750"></div>
-                <span class="bar-label">Mar</span>
+                <span class="bar-label">{% trans "Mar" %}</span>
             </div>
             <div class="chart-bar" style="--bar-height: 85%;">
                 <div class="bar-fill" data-value="$4,250"></div>
-                <span class="bar-label">Apr</span>
+                <span class="bar-label">{% trans "Apr" %}</span>
             </div>
             <div class="chart-bar" style="--bar-height: 70%;">
                 <div class="bar-fill" data-value="$3,500"></div>
-                <span class="bar-label">May</span>
+                <span class="bar-label">{% trans "May" %}</span>
             </div>
             <div class="chart-bar" style="--bar-height: 90%;">
                 <div class="bar-fill" data-value="$4,500"></div>
-                <span class="bar-label">Jun</span>
+                <span class="bar-label">{% trans "Jun" %}</span>
             </div>
             <div class="chart-bar" style="--bar-height: 80%;">
                 <div class="bar-fill" data-value="$4,000"></div>
-                <span class="bar-label">Jul</span>
+                <span class="bar-label">{% trans "Jul" %}</span>
             </div>
             <div class="chart-bar" style="--bar-height: 95%;">
                 <div class="bar-fill" data-value="$4,750"></div>
-                <span class="bar-label">Aug</span>
+                <span class="bar-label">{% trans "Aug" %}</span>
             </div>
             <div class="chart-bar" style="--bar-height: 100%;">
                 <div class="bar-fill" data-value="$5,000"></div>
-                <span class="bar-label">Sep</span>
+                <span class="bar-label">{% trans "Sep" %}</span>
             </div>
             <div class="chart-bar" style="--bar-height: 88%;">
                 <div class="bar-fill" data-value="$4,400"></div>
-                <span class="bar-label">Oct</span>
+                <span class="bar-label">{% trans "Oct" %}</span>
             </div>
             <div class="chart-bar" style="--bar-height: 78%;">
                 <div class="bar-fill" data-value="$3,900"></div>
-                <span class="bar-label">Nov</span>
+                <span class="bar-label">{% trans "Nov" %}</span>
             </div>
             <div class="chart-bar" style="--bar-height: 60%;">
                 <div class="bar-fill" data-value="$3,000"></div>
-                <span class="bar-label">Dec</span>
+                <span class="bar-label">{% trans "Dec" %}</span>
             </div>
         </div>
     </div>
 
     <!-- Category Breakdown -->
     <div class="breakdown-section">
-        <h2>Category Breakdown - Current Month</h2>
+        <h2>{% trans "Category Breakdown - Current Month" %}</h2>
         <div class="category-list">
             <div class="category-item">
                 <div class="category-info">
                     <span class="category-icon" style="background-color: #4CAF50;">🛒</span>
-                    <span class="category-name">Groceries</span>
+                    <span class="category-name">{% trans "Groceries" %}</span>
                 </div>
                 <div class="category-bar-container">
                     <div class="category-bar" style="width: 85%; background-color: #4CAF50;"></div>
@@ -118,7 +124,7 @@
             <div class="category-item">
                 <div class="category-info">
                     <span class="category-icon" style="background-color: #2196F3;">💡</span>
-                    <span class="category-name">Utilities</span>
+                    <span class="category-name">{% trans "Utilities" %}</span>
                 </div>
                 <div class="category-bar-container">
                     <div class="category-bar" style="width: 65%; background-color: #2196F3;"></div>
@@ -128,7 +134,7 @@
             <div class="category-item">
                 <div class="category-info">
                     <span class="category-icon" style="background-color: #FF9800;">🚗</span>
-                    <span class="category-name">Transport</span>
+                    <span class="category-name">{% trans "Transport" %}</span>
                 </div>
                 <div class="category-bar-container">
                     <div class="category-bar" style="width: 50%; background-color: #FF9800;"></div>
@@ -138,7 +144,7 @@
             <div class="category-item">
                 <div class="category-info">
                     <span class="category-icon" style="background-color: #9C27B0;">🎬</span>
-                    <span class="category-name">Entertainment</span>
+                    <span class="category-name">{% trans "Entertainment" %}</span>
                 </div>
                 <div class="category-bar-container">
                     <div class="category-bar" style="width: 35%; background-color: #9C27B0;"></div>
@@ -148,7 +154,7 @@
             <div class="category-item">
                 <div class="category-info">
                     <span class="category-icon" style="background-color: #F44336;">⚕️</span>
-                    <span class="category-name">Healthcare</span>
+                    <span class="category-name">{% trans "Healthcare" %}</span>
                 </div>
                 <div class="category-bar-container">
                     <div class="category-bar" style="width: 20%; background-color: #F44336;"></div>
@@ -160,46 +166,46 @@
 
     <!-- Recent Transactions Table -->
     <div class="transactions-section">
-        <h2>Recent Transactions</h2>
+        <h2>{% trans "Recent Transactions" %}</h2>
         <div class="table-container">
             <table class="data-table">
                 <thead>
                 <tr>
-                    <th>Date</th>
-                    <th>Description</th>
-                    <th>Category</th>
-                    <th>Amount</th>
+                    <th>{% trans "Date" %}</th>
+                    <th>{% trans "Description" %}</th>
+                    <th>{% trans "Category" %}</th>
+                    <th>{% trans "Amount" %}</th>
                 </tr>
                 </thead>
                 <tbody>
                 <tr>
                     <td>2024-11-10</td>
                     <td>Whole Foods Market</td>
-                    <td><span class="badge badge-green">Groceries</span></td>
+                    <td><span class="badge badge-green">{% trans "Groceries" %}</span></td>
                     <td class="amount-cell">$156.75</td>
                 </tr>
                 <tr>
                     <td>2024-11-08</td>
                     <td>Electric Bill - November</td>
-                    <td><span class="badge badge-blue">Utilities</span></td>
+                    <td><span class="badge badge-blue">{% trans "Utilities" %}</span></td>
                     <td class="amount-cell">$89.50</td>
                 </tr>
                 <tr>
                     <td>2024-11-05</td>
                     <td>Gas Station</td>
-                    <td><span class="badge badge-orange">Transport</span></td>
+                    <td><span class="badge badge-orange">{% trans "Transport" %}</span></td>
                     <td class="amount-cell">$45.00</td>
                 </tr>
                 <tr>
                     <td>2024-11-03</td>
                     <td>Netflix Subscription</td>
-                    <td><span class="badge badge-purple">Entertainment</span></td>
+                    <td><span class="badge badge-purple">{% trans "Entertainment" %}</span></td>
                     <td class="amount-cell">$15.99</td>
                 </tr>
                 <tr>
                     <td>2024-11-01</td>
                     <td>Doctor's Appointment</td>
-                    <td><span class="badge badge-red">Healthcare</span></td>
+                    <td><span class="badge badge-red">{% trans "Healthcare" %}</span></td>
                     <td class="amount-cell">$125.00</td>
                 </tr>
                 </tbody>
@@ -209,9 +215,9 @@
 
     <!-- Action Buttons -->
     <div class="actions-footer">
-        <button class="btn btn-primary">Export to PDF</button>
-        <button class="btn btn-secondary">Export to CSV</button>
-        <button class="btn btn-outline">Print Summary</button>
+        <button class="btn btn-primary">{% trans "Export to PDF" %}</button>
+        <button class="btn btn-secondary">{% trans "Export to CSV" %}</button>
+        <button class="btn btn-outline">{% trans "Print Summary" %}</button>
     </div>
 </div>
 {% endblock %}

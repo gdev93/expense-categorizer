@@ -8,14 +8,13 @@
     <link rel="stylesheet" href="{% static 'css/list.css' %}">
     <link rel="stylesheet" href="{% static 'css/pagination.css' %}">
     <link rel="stylesheet" href="{% static 'css/layout.css' %}">
+    <link rel="stylesheet" href="{% static 'css/filters.css' %}">
 {% endblock %}
 
 {% block content %}
     <div class="container mt-5">
-        <div class="header">
-            <h1>💰 Transazioni</h1>
-            <a href="{% url 'transactions_upload' %}" class="btn btn-primary">📤 Carica Nuovo CSV</a>
-        </div>
+
+        {% include "components/header-with-back-to-summary-button.html" with icon="💰" title="Spese Quotidiane" %}
 
         <!-- Summary Cards -->
         {% if transactions %}

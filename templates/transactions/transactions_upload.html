@@ -15,12 +15,7 @@
 
 {% block content %}
     <div class="container mt-5">
-
-        <div class="header">
-            <h1>🚚 Carica Estratti Conto</h1>
-            <a href="{% url 'transaction_list' %}" class="btn btn-secondary btn-sm">Torna alla Dashboard</a>
-        </div>
-
+        {% include "components/header-with-back-to-summary-button.html" with icon="💰" title="Spese Quotidiane" %}
         <!-- Display Messages -->
         {% if messages %}
             <div class="messages mb-3">
