@@ -1,0 +1,217 @@
+{% extends "main/index.html" %}
+{% load static %}
+
+{% block title %}Transaction Detail{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/summary.css' %}">
+    <link rel="stylesheet" href="{% static 'css/layout.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <header class="page-header">
+        <h1>Expenses Summary</h1>
+        <p class="subtitle">Monthly expense visualization and analysis</p>
+    </header>
+
+    <!-- Summary Cards -->
+    <div class="summary">
+    {% include "components/summary-card.html" with icon="💰" label="Total Expenses" value="$12,450.75" subtext="+8.5% from last month" change_class="negative" %}
+    {% include "components/summary-card.html" with icon="📊" label="Average Monthly" value="$4,150.25" subtext="-2.3% from average" change_class="positive" %}
+    {% include "components/summary-card.html" with icon="🏷️" label="Top Category" value="Groceries" subtext="35% of total" change_class="neutral" %}
+</div>
+    <!-- Filters and Controls -->
+    <div class="controls-section">
+        <div class="filter-group">
+            <label for="year-select">Year:</label>
+            <select id="year-select" class="input-field">
+                <option value="2025">2025</option>
+                <option value="2024" selected>2024</option>
+                <option value="2023">2023</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label for="category-select">Category:</label>
+            <select id="category-select" class="input-field">
+                <option value="all">All Categories</option>
+                <option value="groceries">Groceries</option>
+                <option value="utilities">Utilities</option>
+                <option value="transport">Transport</option>
+                <option value="entertainment">Entertainment</option>
+                <option value="healthcare">Healthcare</option>
+            </select>
+        </div>
+        <button class="btn btn-primary">Apply Filters</button>
+        <button class="btn btn-secondary">Reset</button>
+    </div>
+
+    <!-- Monthly Chart -->
+    <div class="chart-container">
+        <h2>Monthly Expenses Trend</h2>
+        <div class="bar-chart">
+            <div class="chart-bar" style="--bar-height: 65%;">
+                <div class="bar-fill" data-value="$3,250"></div>
+                <span class="bar-label">Jan</span>
+            </div>
+            <div class="chart-bar" style="--bar-height: 55%;">
+                <div class="bar-fill" data-value="$2,750"></div>
+                <span class="bar-label">Feb</span>
+            </div>
+            <div class="chart-bar" style="--bar-height: 75%;">
+                <div class="bar-fill" data-value="$3,750"></div>
+                <span class="bar-label">Mar</span>
+            </div>
+            <div class="chart-bar" style="--bar-height: 85%;">
+                <div class="bar-fill" data-value="$4,250"></div>
+                <span class="bar-label">Apr</span>
+            </div>
+            <div class="chart-bar" style="--bar-height: 70%;">
+                <div class="bar-fill" data-value="$3,500"></div>
+                <span class="bar-label">May</span>
+            </div>
+            <div class="chart-bar" style="--bar-height: 90%;">
+                <div class="bar-fill" data-value="$4,500"></div>
+                <span class="bar-label">Jun</span>
+            </div>
+            <div class="chart-bar" style="--bar-height: 80%;">
+                <div class="bar-fill" data-value="$4,000"></div>
+                <span class="bar-label">Jul</span>
+            </div>
+            <div class="chart-bar" style="--bar-height: 95%;">
+                <div class="bar-fill" data-value="$4,750"></div>
+                <span class="bar-label">Aug</span>
+            </div>
+            <div class="chart-bar" style="--bar-height: 100%;">
+                <div class="bar-fill" data-value="$5,000"></div>
+                <span class="bar-label">Sep</span>
+            </div>
+            <div class="chart-bar" style="--bar-height: 88%;">
+                <div class="bar-fill" data-value="$4,400"></div>
+                <span class="bar-label">Oct</span>
+            </div>
+            <div class="chart-bar" style="--bar-height: 78%;">
+                <div class="bar-fill" data-value="$3,900"></div>
+                <span class="bar-label">Nov</span>
+            </div>
+            <div class="chart-bar" style="--bar-height: 60%;">
+                <div class="bar-fill" data-value="$3,000"></div>
+                <span class="bar-label">Dec</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Category Breakdown -->
+    <div class="breakdown-section">
+        <h2>Category Breakdown - Current Month</h2>
+        <div class="category-list">
+            <div class="category-item">
+                <div class="category-info">
+                    <span class="category-icon" style="background-color: #4CAF50;">🛒</span>
+                    <span class="category-name">Groceries</span>
+                </div>
+                <div class="category-bar-container">
+                    <div class="category-bar" style="width: 85%; background-color: #4CAF50;"></div>
+                </div>
+                <span class="category-amount">$4,250.00</span>
+            </div>
+            <div class="category-item">
+                <div class="category-info">
+                    <span class="category-icon" style="background-color: #2196F3;">💡</span>
+                    <span class="category-name">Utilities</span>
+                </div>
+                <div class="category-bar-container">
+                    <div class="category-bar" style="width: 65%; background-color: #2196F3;"></div>
+                </div>
+                <span class="category-amount">$3,250.00</span>
+            </div>
+            <div class="category-item">
+                <div class="category-info">
+                    <span class="category-icon" style="background-color: #FF9800;">🚗</span>
+                    <span class="category-name">Transport</span>
+                </div>
+                <div class="category-bar-container">
+                    <div class="category-bar" style="width: 50%; background-color: #FF9800;"></div>
+                </div>
+                <span class="category-amount">$2,500.00</span>
+            </div>
+            <div class="category-item">
+                <div class="category-info">
+                    <span class="category-icon" style="background-color: #9C27B0;">🎬</span>
+                    <span class="category-name">Entertainment</span>
+                </div>
+                <div class="category-bar-container">
+                    <div class="category-bar" style="width: 35%; background-color: #9C27B0;"></div>
+                </div>
+                <span class="category-amount">$1,750.00</span>
+            </div>
+            <div class="category-item">
+                <div class="category-info">
+                    <span class="category-icon" style="background-color: #F44336;">⚕️</span>
+                    <span class="category-name">Healthcare</span>
+                </div>
+                <div class="category-bar-container">
+                    <div class="category-bar" style="width: 20%; background-color: #F44336;"></div>
+                </div>
+                <span class="category-amount">$1,000.00</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Transactions Table -->
+    <div class="transactions-section">
+        <h2>Recent Transactions</h2>
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Description</th>
+                    <th>Category</th>
+                    <th>Amount</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td>2024-11-10</td>
+                    <td>Whole Foods Market</td>
+                    <td><span class="badge badge-green">Groceries</span></td>
+                    <td class="amount-cell">$156.75</td>
+                </tr>
+                <tr>
+                    <td>2024-11-08</td>
+                    <td>Electric Bill - November</td>
+                    <td><span class="badge badge-blue">Utilities</span></td>
+                    <td class="amount-cell">$89.50</td>
+                </tr>
+                <tr>
+                    <td>2024-11-05</td>
+                    <td>Gas Station</td>
+                    <td><span class="badge badge-orange">Transport</span></td>
+                    <td class="amount-cell">$45.00</td>
+                </tr>
+                <tr>
+                    <td>2024-11-03</td>
+                    <td>Netflix Subscription</td>
+                    <td><span class="badge badge-purple">Entertainment</span></td>
+                    <td class="amount-cell">$15.99</td>
+                </tr>
+                <tr>
+                    <td>2024-11-01</td>
+                    <td>Doctor's Appointment</td>
+                    <td><span class="badge badge-red">Healthcare</span></td>
+                    <td class="amount-cell">$125.00</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="actions-footer">
+        <button class="btn btn-primary">Export to PDF</button>
+        <button class="btn btn-secondary">Export to CSV</button>
+        <button class="btn btn-outline">Print Summary</button>
+    </div>
+</div>
+{% endblock %}

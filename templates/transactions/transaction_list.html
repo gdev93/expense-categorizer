@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="{% static 'css/transactions.css' %}">
     <link rel="stylesheet" href="{% static 'css/list.css' %}">
     <link rel="stylesheet" href="{% static 'css/pagination.css' %}">
+    <link rel="stylesheet" href="{% static 'css/layout.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -19,18 +20,9 @@
         <!-- Summary Cards -->
         {% if transactions %}
             <div class="summary">
-                <div class="summary-card">
-                    <div class="summary-label">Totale Transazioni</div>
-                    <div class="summary-value">{{ total_count }}</div>
-                </div>
-                <div class="summary-card">
-                    <div class="summary-label">Importo Totale</div>
-                    <div class="summary-value">€{{ total_amount|floatformat:2 }}</div>
-                </div>
-                <div class="summary-card">
-                    <div class="summary-label">Categorie</div>
-                    <div class="summary-value">{{ category_count }}</div>
-                </div>
+                {% include "components/summary-card.html" with label="Totale Transazioni" value=total_count %}
+                {% include "components/summary-card.html" with label="Importo Totale" value=total_amount|floatformat:2 %}
+                {% include "components/summary-card.html" with label="Categorie" value=category_count %}
             </div>
         {% endif %}
 
@@ -319,4 +311,5 @@
         {% endif %}
     </div>
 <script src="{% static 'js/expander.js' %}"></script>
+    <script src="{% static 'js/components/summary-card.js' %}"></script>
 {% endblock %}
