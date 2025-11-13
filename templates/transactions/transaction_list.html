@@ -182,7 +182,7 @@
             <div class="data-list">
                 {% for transaction in uncategorized_transaction %}
                     <div class="data-list-item"
-                         onclick="window.location.href='{% url 'transaction_detail' transaction.id %}'">
+                         onclick="saveFiltersAndRedirect('{% url 'transaction_detail' transaction.id %}')">
                         <div class="transaction-main">
                             <div class="transaction-date">
                                 📅 {{ transaction.transaction_date|date:"d/m/Y" }}
@@ -227,7 +227,7 @@
 
             <div class="data-list">
                 {% for transaction in transactions %}
-                    <div class="data-list-item" onclick="window.location.href='{% url 'transaction_detail' transaction.id %}'">
+                    <div class="data-list-item" onclick="saveFiltersAndRedirect('{% url 'transaction_detail' transaction.id %}')">
                         <div class="transaction-main">
                             <div class="transaction-date">
                                 📅 {{ transaction.transaction_date|date:"d/m/Y" }}
@@ -310,5 +310,5 @@
         {% endif %}
     </div>
 <script src="{% static 'js/expander.js' %}"></script>
-    <script src="{% static 'js/components/summary-card.js' %}"></script>
+<script type="module" src="{% static 'js/filter-handler.js' %}"></script>
 {% endblock %}

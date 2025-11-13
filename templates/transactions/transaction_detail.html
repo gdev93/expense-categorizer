@@ -10,7 +10,7 @@
 {% block content %}
     <div class="container mt-5">
         <div class="header">
-            <a href="{% url 'transaction_list' %}" class="btn btn-secondary">
+            <a href="{% url 'transaction_list' %}" class="btn btn-secondary" id="back-button-list">
                 < Back to Transactions
             </a>
             <h1>📝 Transaction Detail</h1>
@@ -96,4 +96,8 @@
             </div>
         </div>
     </div>
+<script>
+const BASE_BACK_URL = "{% url 'transaction_list' %}";
+</script>
+<script type="module" src="{% static 'js/back-button-filter-handler.js' %}"></script>
 {% endblock %}
