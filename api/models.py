@@ -262,3 +262,53 @@ class Rule(models.Model):
             models.Index(fields=['user', 'is_active']),
         ]
 
+class UserFinancialSummary(models.Model):
+    """
+    Database view that provides a financial summary for each user.
+    Shows total spending, monthly average, and top spending category.
+    """
+    user = models.OneToOneField(
+        User,
+        on_delete=models.DO_NOTHING,
+        related_name='financial_summary',
+        primary_key=True
+    )
+    total_spending = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        help_text="Total amount spent across all categorized expenses"
+    )
+    monthly_average_spending = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        help_text="Average spending per active month"
+    )
+    top_category_id = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="ID of the category with highest spending"
+    )
+    top_category_name = models.CharField(
+        max_length=100,
+        null=True,
+        blank=True,
+        help_text="Name of the top spending category"
+    )
+    top_category_spending = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        help_text="Top category total expenses amount"
+    )
+    top_category_percentage = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        help_text="Percentage of total spending for top category"
+    )
+    class Meta:
+        managed = False  # This is a database view, not a regular table
+        db_table = 'user_financial_summary'
+        verbose_name = "User Financial Summary"
+        verbose_name_plural = "User Financial Summaries"
+
+    def __str__(self):
+        return f"Financial Summary - {self.user.username}"

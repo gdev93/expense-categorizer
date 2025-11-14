@@ -1,98 +1,59 @@
 {% extends "main/index.html" %}
 {% load static %}
-{% load i18n %}
-
-{% block title %}{% trans "Transaction Detail" %}{% endblock %}
 
 {% block extra_css %}
-    <link rel="stylesheet" href="{% static 'css/summary.css' %}">
+    <link rel="stylesheet" href="{% static 'css/list.css' %}">
+    <link rel="stylesheet" href="{% static 'css/pagination.css' %}">
     <link rel="stylesheet" href="{% static 'css/layout.css' %}">
     <link rel="stylesheet" href="{% static 'css/filters.css' %}">
-{% endblock %}
+    <link rel="stylesheet" href="{% static 'css/summary.css' %}">
+{% endblock extra_css %}
 
 {% block content %}
-<div class="container mt-5">
+    <div class="container mt-5">
+        {% include "components/header-with-year-select.html" with icon="📈" title="Riepilogo" %}
 
-    {% include "components/header.html" with icon="📈" title="Riepilogo" %}
-    <!-- Summary Cards -->
-    <div class="summary">
-    {% include "components/summary-card.html" with icon="💰" label="Spese totali" value=data.total_expenses subtext="+8.5% from last month" change_class="negative" %}
-    {% include "components/summary-card.html" with icon="📊" label="Media mensile" value=data.average_monthly subtext="-2.3% from average" change_class="positive" %}
-    {% include "components/summary-card.html" with icon="🏷️" label="Voce di spesa più alta" value=data.top_category subtext="35% of total" change_class="neutral" %}
-</div>
-    <!-- Filters and Controls -->
 
-<form method="get" class="filters">
-    <div class="filter-group">
-        <label for="year-select">{% trans "Year:" %}</label>
-        <select name="year" id="year-select" class="input-field" onchange="this.form.submit()">
-            <option value="">{% trans "All Years" %}</option>
-            {% for year in data.available_years %}
-                <option value="{{ year }}"
-                        {% if data.selected_year == year|stringformat:"s" %}selected{% endif %}>{{ year }}</option>
+        {% if months %}
+            {% for month in months %}
+                <section class="chart-container" style="margin-bottom: 1.5rem;">
+                    <header style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h2 style="margin:0;">
+                            {% if month.display_name %}
+                                {{ month.display_name }}
+                            {% elif month.date %}
+                                {{ month.date|date:"F" }}
+                            {% else %}
+                                Mese {{ month.month_number }}
+                            {% endif %}
+                        </h2>
+                        {% if month.date %}
+                            <span class="subtitle">
+                            {{ month.date|date:"F Y" }}
+                        </span>
+                        {% else %}
+                            <span class="subtitle">
+                            {{ selected_year }}
+                        </span>
+                        {% endif %}
+                    </header>
+
+                     <div class="summary-cards">
+                            {% include "components/summary-card.html" with icon="💸" label="Totale spese" value=month.total_spending subtext="" change_class="neutral" %}
+                            {% include "components/summary-card.html" with icon="💰" label="Totale entrate" value=month.total_income subtext="" change_class="neutral" %}
+                            {% include "components/summary-card.html" with icon="📈" label="Risparmi" value=month.total_savings subtext="" change_class="neutral" %}
+                        </div>
+                </section>
             {% endfor %}
-        </select>
-    </div>
-
-    <div class="filter-group">
-        <label for="category-select">{% trans "Category:" %}</label>
-        <select name="category" id="category-select" class="input-field" onchange="this.form.submit()">
-            <option value="">{% trans "All Categories" %}</option>
-            {% for cat in data.available_categories %}
-                <option value="{{ cat.id }}"
-                        {% if data.selected_category == cat.id|stringformat:"s" %}selected{% endif %}>
-                    {{ cat.name }}
-                </option>
-            {% endfor %}
-        </select>
-    </div>
-
-    <div class="filter-group" style="align-self: flex-end;">
-        <button type="submit" class="btn btn-primary">{% trans "Apply Filters" %}</button>
-        <a href="{% url 'summary' %}" class="btn btn-secondary">{% trans "Reset" %}</a>
-    </div>
-</form>
-
-    <!-- Monthly Chart -->
-    <div class="chart-container">
-        <h2>{% trans "Monthly Expenses Trend" %}</h2>
-        <div class="bar-chart">
-            {% for monthly in data.monthly_summaries %}
-                <div class="chart-bar" style="--bar-height: {{ monthly.percentage }}%;">
-                    <div class="bar-fill" data-value="${{ monthly.amount|floatformat:2 }}"></div>
-                    <span class="bar-label">{{ monthly.month }}</span>
-            </div>
-            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <div class="empty-state-icon">📊</div>
+                <h3>Nessun dato disponibile</h3>
+                <p>
+                    Non ci sono transazioni per l'anno selezionato.
+                    Prova a scegliere un altro anno o ad importare nuove spese.
+                </p>
         </div>
+        {% endif %}
     </div>
-
-    <!-- Category Breakdown -->
-    <div class="breakdown-section">
-        <h2>{% trans "Category Breakdown" %}</h2>
-        <div class="category-list">
-            {% for breakdown in data.category_breakdowns %}
-            <div class="category-item">
-                <div class="category-info">
-                    <span class="category-icon"
-                          style="background-color: #{{ breakdown.category.color|default:'4CAF50' }};">{{ breakdown.category.icon|default:'📊' }}</span>
-                    <span class="category-name">{{ breakdown.category.name }}</span>
-                </div>
-                <div class="category-bar-container">
-                    <div class="category-bar"
-                         style="width: {{ breakdown.percentage }}%; background-color: #{{ breakdown.category.color|default:'4CAF50' }};"></div>
-                </div>
-                <span class="category-amount">${{ breakdown.total_amount|floatformat:2 }} ({{ breakdown.transaction_count }} {% trans "transactions" %})</span>
-            </div>
-            {% empty %}
-                <p>{% trans "No category data available" %}</p>
-            {% endfor %}
-        </div>
-    </div>
-
-    <!-- Action Buttons -->
-    <div class="actions-footer">
-        <button class="btn btn-primary">{% trans "Export to PDF" %}</button>
-        <button class="btn btn-secondary">{% trans "Export to CSV" %}</button>
-        <button class="btn btn-outline">{% trans "Print Summary" %}</button>
-    </div>
-{% endblock %}
+{% endblock content %}
