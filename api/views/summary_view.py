@@ -127,6 +127,6 @@ class SummaryView(View):
 
         return render(
             request=request,
-            template_name="summary/summary.html",
+            template_name="summary/summary-monthly.html",
             context=context,
         )

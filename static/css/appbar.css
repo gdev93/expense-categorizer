@@ -1,15 +1,14 @@
 /* Refactored appbar.css */
 
-/* App Bar Styles */
+/* App Bar Styles - Mobile Only */
 .app-bar {
     position: fixed;
     top: 0;
-    left: 0; /* Default (mobile): full width */
+    left: 0;
     right: 0;
     height: 64px;
-    background-color: var(--nav-bg-color); /* Now white */
+    background-color: var(--body-bg-color, #f5f5f5); /* Blend with body background */
     color: var(--nav-text-color); /* Now charcoal */
-    /* box-shadow has been REMOVED for "invisible" effect */
     display: flex;
     align-items: center;
     padding: 25px 0 0 16px;
@@ -31,10 +30,10 @@
 }
 
 .menu-toggle:hover {
-    background-color: rgba(0, 0, 0, 0.05); /* Light gray hover on white background */
+    background-color: rgba(0, 0, 0, 0.05); /* Light gray hover */
 }
 
-/* Hamburger color must be charcoal for contrast on white background */
+/* Hamburger color must be charcoal for contrast */
 .hamburger,
 .hamburger::before,
 .hamburger::after {
@@ -54,13 +53,9 @@
     align-items: center;
 }
 
-/* Desktop layout: App Bar is shifted and sized to fit next to the visible Sidebar */
+/* Desktop layout: Hide app bar completely */
 @media (min-width: 768px) {
     .app-bar {
-        left: 250px;
-        width: calc(100% - 250px);
-    }
-    .menu-toggle {
-        display: none;
+        display: none; /* Hide entire app bar on desktop */
     }
 }
