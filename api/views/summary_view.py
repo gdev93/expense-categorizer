@@ -18,6 +18,8 @@ class MonthSummary:
     total_spending: float
     total_income: float
     total_savings: float
+    is_current: bool = False
+    is_previous: bool = False
 
 
 class SummaryView(View):
@@ -70,6 +72,18 @@ class SummaryView(View):
             elif transaction.transaction_type == "income":
                 month_data[month_number]["income"] += amount
 
+        # Determine current and previous month
+        current_month = today.month
+        current_year = today.year
+
+        # Calculate previous month
+        if current_month == 1:
+            previous_month = 12
+            previous_year = current_year - 1
+        else:
+            previous_month = current_month - 1
+            previous_year = current_year
+
         # Convert to MonthSummary objects
         months: list[MonthSummary] = []
         for month_number, data in month_data.items():
@@ -80,6 +94,10 @@ class SummaryView(View):
             income = data["income"]
             savings = income - spending
 
+            # Determine if this is current or previous month
+            is_current = (month_number == current_month and selected_year == current_year)
+            is_previous = (month_number == previous_month and selected_year == previous_year)
+
             months.append(
                 MonthSummary(
                     month_number=month_number,
@@ -88,11 +106,18 @@ class SummaryView(View):
                     total_spending=round(spending, 2),
                     total_income=round(income, 2),
                     total_savings=round(savings, 2),
+                    is_current=is_current,
+                    is_previous=is_previous,
                 )
             )
 
-        # Sort by month number ascending (Jan..Dec)
-        months.sort(key=lambda m: m.month_number)
+        # Sort by month number descending (Dec..Jan) to show recent months first
+        # But keep current and previous at the top
+        months.sort(key=lambda m: (
+            not m.is_current,  # Current month first
+            not m.is_previous,  # Previous month second
+            -m.month_number  # Rest in descending order
+        ))
 
         context = {
             "available_years": available_years,

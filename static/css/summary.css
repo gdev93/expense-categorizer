@@ -1,3 +1,8 @@
+
+/* =================================
+   HEADER & PAGE STRUCTURE
+   ================================= */
+
 .page-header {
     text-align: center;
     margin-bottom: 2rem;
@@ -18,7 +23,10 @@
     margin: 0;
 }
 
-/* Summary Cards */
+/* =================================
+   SUMMARY CARDS
+   ================================= */
+
 .summary-cards {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -37,8 +45,6 @@
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     transition: box-shadow 0.3s ease, transform 0.3s ease;
 }
-
-
 
 .card-icon {
     font-size: 2.5rem;
@@ -83,7 +89,10 @@
     color: #6c757d;
 }
 
-/* Controls Section */
+/* =================================
+   CONTROLS & FILTERS
+   ================================= */
+
 .controls-section {
     display: flex;
     align-items: flex-end;
@@ -109,7 +118,113 @@
     color: #495057;
 }
 
-/* Chart Container */
+/* =================================
+   HIGHLIGHTED MONTHS
+   ================================= */
+
+.highlighted-months {
+    margin-bottom: 3rem;
+}
+
+.month-highlight {
+    background: #fff;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.month-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.month-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: #212529;
+}
+
+.month-header .subtitle {
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+/* =================================
+   OTHER MONTHS LIST
+   ================================= */
+
+.other-months {
+    margin-top: 2rem;
+}
+
+.section-title {
+    font-size: 1.25rem;
+    color: #212529;
+    margin-bottom: 1rem;
+    padding-left: 0.5rem;
+    font-weight: 600;
+}
+
+.months-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.month-list-item {
+    background: #fff;
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: box-shadow 0.2s ease;
+}
+
+.month-list-item:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+.month-info h4 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: #212529;
+    font-weight: 600;
+}
+
+.month-stats {
+    display: flex;
+    gap: 1.5rem;
+}
+
+.stat {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    color: #6c757d;
+    margin-bottom: 0.25rem;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.stat-value {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #212529;
+}
+
+/* =================================
+   CHART CONTAINER
+   ================================= */
+
 .chart-container {
     background: #fff;
     border: 1px solid #dee2e6;
@@ -127,7 +242,10 @@
     font-weight: 600;
 }
 
-/* Bar Chart */
+/* =================================
+   BAR CHART
+   ================================= */
+
 .bar-chart {
     display: flex;
     align-items: flex-end;
@@ -191,7 +309,10 @@
     color: #495057;
 }
 
-/* Breakdown Section */
+/* =================================
+   BREAKDOWN SECTION
+   ================================= */
+
 .breakdown-section {
     background: #fff;
     border: 1px solid #dee2e6;
@@ -265,7 +386,10 @@
     font-size: 1rem;
 }
 
-/* Transactions Section */
+/* =================================
+   TRANSACTIONS SECTION
+   ================================= */
+
 .transactions-section {
     background: #fff;
     border: 1px solid #dee2e6;
@@ -331,7 +455,10 @@
     color: #212529;
 }
 
-/* Badges */
+/* =================================
+   BADGES
+   ================================= */
+
 .badge {
     display: inline-block;
     padding: 0.25rem 0.75rem;
@@ -372,7 +499,10 @@
     border: 1px solid #f5c6cb;
 }
 
-/* Actions Footer */
+/* =================================
+   ACTIONS FOOTER
+   ================================= */
+
 .actions-footer {
     display: flex;
     gap: 1rem;
@@ -392,7 +522,10 @@
     color: #fff;
 }
 
-/* Responsive Design */
+/* =================================
+   RESPONSIVE DESIGN
+   ================================= */
+
 @media (max-width: 992px) {
     .category-item {
         grid-template-columns: 160px 1fr 100px;
@@ -448,6 +581,22 @@
 
     .actions-footer .btn {
         width: 100%;
+    }
+
+    .month-list-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .month-stats {
+        width: 100%;
+        justify-content: space-between;
+        gap: 1rem;
+    }
+
+    .stat {
+        align-items: flex-start;
     }
 }
 

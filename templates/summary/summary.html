@@ -7,44 +7,87 @@
     <link rel="stylesheet" href="{% static 'css/layout.css' %}">
     <link rel="stylesheet" href="{% static 'css/filters.css' %}">
     <link rel="stylesheet" href="{% static 'css/summary.css' %}">
+    <link rel="stylesheet" href="{% static 'css/summary-card.css' %}">
 {% endblock extra_css %}
 
 {% block content %}
     <div class="container mt-5">
         {% include "components/header-with-year-select.html" with icon="📈" title="Riepilogo" %}
 
-
         {% if months %}
-            {% for month in months %}
-                <section class="chart-container" style="margin-bottom: 1.5rem;">
-                    <header style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                        <h2 style="margin:0;">
-                            {% if month.display_name %}
-                                {{ month.display_name }}
-                            {% elif month.date %}
-                                {{ month.date|date:"F" }}
-                            {% else %}
-                                Mese {{ month.month_number }}
-                            {% endif %}
-                        </h2>
-                        {% if month.date %}
-                            <span class="subtitle">
-                            {{ month.date|date:"F Y" }}
-                        </span>
-                        {% else %}
-                            <span class="subtitle">
-                            {{ selected_year }}
-                        </span>
-                        {% endif %}
-                    </header>
+            <!-- Highlighted Section for Current and Previous Month -->
+            <section class="highlighted-months">
+                {% for month in months %}
+                    {% if month.is_current or month.is_previous %}
+                        <div class="month-highlight">
+                            <header class="month-header">
+                                <h2>
+                                    {% if month.display_name %}
+                                        {{ month.display_name }}
+                                    {% elif month.date %}
+                                        {{ month.date|date:"F" }}
+                                    {% else %}
+                                        Mese {{ month.month_number }}
+                                    {% endif %}
+                                </h2>
+                                {% if month.date %}
+                                    <span class="subtitle">
+                                        {{ month.date|date:"F Y" }}
+                                    </span>
+                                {% else %}
+                                    <span class="subtitle">
+                                        {{ selected_year }}
+                                    </span>
+                                {% endif %}
+                            </header>
 
-                     <div class="summary-cards">
-                            {% include "components/summary-card.html" with icon="💸" label="Totale spese" value=month.total_spending subtext="" change_class="neutral" %}
-                            {% include "components/summary-card.html" with icon="💰" label="Totale entrate" value=month.total_income subtext="" change_class="neutral" %}
-                            {% include "components/summary-card.html" with icon="📈" label="Risparmi" value=month.total_savings subtext="" change_class="neutral" %}
+                            <div class="summary-cards">
+                                {% include "components/summary-card.html" with icon="💸" label="Totale spese" value=month.total_spending subtext="" change_class="neutral" %}
+                                {% include "components/summary-card.html" with icon="💰" label="Totale entrate" value=month.total_income subtext="" change_class="neutral" %}
+                                {% include "components/summary-card.html" with icon="📈" label="Risparmi" value=month.total_savings subtext="" change_class="neutral" %}
+                            </div>
                         </div>
-                </section>
-            {% endfor %}
+                    {% endif %}
+                {% endfor %}
+            </section>
+
+            <!-- List of Other Months -->
+            <section class="other-months">
+                <h3 class="section-title">Altri mesi</h3>
+                <div class="months-list">
+                    {% for month in months %}
+                        {% if not month.is_current and not month.is_previous %}
+                            <div class="month-list-item">
+                                <div class="month-info">
+                                    <h4>
+                                        {% if month.display_name %}
+                                            {{ month.display_name }}
+                                        {% elif month.date %}
+                                            {{ month.date|date:"F Y" }}
+                                        {% else %}
+                                            Mese {{ month.month_number }} {{ selected_year }}
+                                        {% endif %}
+                                    </h4>
+                                </div>
+                                <div class="month-stats">
+                                    <span class="stat">
+                                        <span class="stat-label">Spese:</span>
+                                        <span class="stat-value">{{ month.total_spending }}</span>
+                                    </span>
+                                    <span class="stat">
+                                        <span class="stat-label">Entrate:</span>
+                                        <span class="stat-value">{{ month.total_income }}</span>
+                                    </span>
+                                    <span class="stat">
+                                        <span class="stat-label">Risparmi:</span>
+                                        <span class="stat-value">{{ month.total_savings }}</span>
+                                    </span>
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </section>
         {% else %}
             <div class="empty-state">
                 <div class="empty-state-icon">📊</div>
@@ -53,7 +96,7 @@
                     Non ci sono transazioni per l'anno selezionato.
                     Prova a scegliere un altro anno o ad importare nuove spese.
                 </p>
-        </div>
+            </div>
         {% endif %}
     </div>
 {% endblock content %}

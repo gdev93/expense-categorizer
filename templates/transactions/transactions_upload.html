@@ -15,7 +15,7 @@
 
 {% block content %}
     <div class="container mt-5">
-        {% include "components/header-with-back-to-summary-button.html" with icon="💰" title="Spese Quotidiane" %}
+        {% include "components/header-with-back-to-summary-button.html" with icon="🚚" title="Carica Estratti Conto" %}
         <!-- Display Messages -->
         {% if messages %}
             <div class="messages mb-3">
@@ -31,7 +31,6 @@
         {% endif %}
 
         <div class="upload-area mb-3">
-            <h2>🧾 Carica il tuo file</h2>
             <p class="text-muted mb-5">
                 Seleziona un file in formato <strong>CSV</strong> da caricare per l'elaborazione.
                 {% if upload_context %}
