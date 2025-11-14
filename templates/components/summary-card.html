@@ -5,7 +5,15 @@
     {% if icon %}<div class="card-icon">{{ icon }}</div>{% endif %}
     <div class="card-content">
         {% if label %}<h3>{{ label }}</h3>{% endif %}
-        {% if value %}<p class="card-value">{{ value }}</p>{% endif %}
+        {% if value is not None %}
+            <p class="card-value">
+                {% if value == 0 or value == 0.0 %}
+                    —
+                {% else %}
+                    € {{ value }}
+                {% endif %}
+            </p>
+        {% endif %}
         {% if subtext %}<span class="card-change {{ change_class }}">{{ subtext }}</span>{% endif %}
     </div>
 </div>

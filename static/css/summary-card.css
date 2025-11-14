@@ -3,6 +3,7 @@
     min-width: 200px;
     padding: 20px;
     background: white;
+    gap: 2rem;
     border-radius: 8px;
     border-left: 5px solid var(--primary-color); /* Gold color accent */
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
@@ -36,6 +37,7 @@
 
 .card-content {
     flex: 1;
+    text-align: start;
 }
 
 .card-content h3 {
