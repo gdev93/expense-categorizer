@@ -69,6 +69,19 @@ def _update_transaction_with_parse_result(tx: Transaction,
     return tx
 
 
+def _update_categorized_transaction_with_category_merchant(tx: Transaction, category: Category, merchant: Merchant,
+                                                           transaction_parse_result: RawTransactionParseResult) -> Transaction:
+    tx.status = 'categorized'
+    tx.merchant = merchant
+    tx.merchant_raw_name = merchant.normalized_name
+    tx.category = category
+    tx.transaction_date = transaction_parse_result.date
+    tx.original_date = transaction_parse_result.date_original
+    tx.description = transaction_parse_result.description
+    tx.amount = abs(transaction_parse_result.amount)
+    tx.original_amount = transaction_parse_result.original_amount
+    return tx
+
 def _update_categorized_transaction(
         tx: Transaction,
         transaction_parse_result: RawTransactionParseResult,
@@ -189,6 +202,7 @@ class ExpenseUploadProcessor:
     def _process_prechecks(self, batch: list[Transaction], past_csv_uploads: list[CsvUpload]) -> list[Transaction]:
         all_transactions_to_upload: list[Transaction] = []
         all_transactions_categorized: list[Transaction] = []
+        merchant_with_category: dict[str, tuple[Merchant, Category]] = {}
         for tx in batch:
             transaction_parse_result = parse_raw_transaction(tx.raw_data, past_csv_uploads)
             if not transaction_parse_result.is_valid():
@@ -208,20 +222,26 @@ class ExpenseUploadProcessor:
                 if transaction_from_description:
                     print(f"Transaction from description {transaction_parse_result.description} already categorized")
                     continue
-
-            reference_transaction = _find_reference_transaction_from_raw(self.user,
-                                                                         transaction_parse_result,
-                                                                         self.pre_check_confidence_threshold)
-            if reference_transaction:
-                categorized_transaction = _update_categorized_transaction(
-                    tx,
-                    transaction_parse_result,
-                    reference_transaction
-                )
+            if transaction_parse_result.merchant and merchant_with_category.get(transaction_parse_result.merchant):
+                merchant, category = merchant_with_category[transaction_parse_result.merchant]
+                categorized_transaction = _update_categorized_transaction_with_category_merchant(tx, category, merchant,
+                                                                                                 transaction_parse_result)
                 all_transactions_categorized.append(categorized_transaction)
             else:
-                uncategorized_transaction = _update_transaction_with_parse_result(tx, transaction_parse_result)
-                all_transactions_to_upload.append(uncategorized_transaction)
+                reference_transaction = _find_reference_transaction_from_raw(self.user,
+                                                                             transaction_parse_result,
+                                                                             self.pre_check_confidence_threshold)
+                if reference_transaction:
+                    categorized_transaction = _update_categorized_transaction(
+                        tx,
+                        transaction_parse_result,
+                        reference_transaction
+                    )
+                    all_transactions_categorized.append(categorized_transaction)
+                    merchant_with_category[categorized_transaction.merchant.name] = categorized_transaction.merchant, categorized_transaction.category
+                else:
+                    uncategorized_transaction = _update_transaction_with_parse_result(tx, transaction_parse_result)
+                    all_transactions_to_upload.append(uncategorized_transaction)
 
         Transaction.objects.bulk_update(all_transactions_categorized + all_transactions_to_upload,
                                         ['status', 'merchant', 'merchant_raw_name', 'category', 'transaction_date',
@@ -232,11 +252,9 @@ class ExpenseUploadProcessor:
         )
         return all_transactions_to_upload
 
-    def _process_batch(self, batch: list[Transaction], past_csv_upload: list[CsvUpload]):
-        transactions_to_upload = self._process_prechecks(batch, past_csv_upload)
-
+    def _process_batch(self, batch: list[Transaction]):
         agent_upload_transaction = [AgentTransactionUpload(transaction_id=tx.id, raw_text=tx.raw_data) for tx in
-                                    transactions_to_upload]
+                                    batch]
         if agent_upload_transaction:
             batch_result = self.agent.process_batch(agent_upload_transaction)
             self._persist_batch_results(batch_result)
@@ -300,7 +318,8 @@ class ExpenseUploadProcessor:
 
     def process_transactions(self, transactions: list[Transaction], csv_upload: CsvUpload) -> CsvUpload:
         all_csv_uploads = list(CsvUpload.objects.filter(user=self.user))
-        data_count = len(transactions)
+        all_transactions_to_upload = self._process_prechecks(transactions, all_csv_uploads)
+        data_count = len(all_transactions_to_upload)
         batch_size = self.batch_helper.compute_batch_size(data_count)
         total_batches = (data_count + batch_size - 1) // batch_size
 
@@ -310,9 +329,9 @@ class ExpenseUploadProcessor:
         for batch_num in range(total_batches):
             start_idx = batch_num * batch_size
             end_idx = start_idx + batch_size
-            batch = transactions[start_idx:end_idx]
+            batch = all_transactions_to_upload[start_idx:end_idx]
             with transaction.atomic():
-                self._process_batch(batch, all_csv_uploads)
+                self._process_batch(batch)
 
         with transaction.atomic():
             self._post_process_transactions(csv_upload)
@@ -324,6 +343,7 @@ class ExpenseUploadProcessor:
         self._identify_csv_column_mappings(csv_upload)
         self._categorize_remaining_transactions(csv_upload)
         self._apply_transaction_type_corrections(csv_upload)
+        #TODO sanity check for rules
 
     def _identify_csv_column_mappings(self, csv_upload: CsvUpload) -> None:
         """Identify and tag CSV column names by matching against a completed categorized transaction."""

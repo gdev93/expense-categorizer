@@ -87,9 +87,8 @@
                         <button type="submit" class="btn btn-primary">
                             💾 Save Changes
                         </button>
-                        <button type="submit" class="btn btn-secondary" name="delete"
-                                onclick="if(confirm('Are you sure you want to delete this transaction?')) { document.querySelectorAll('#id_merchant_raw_name, #id_amount, #id_transaction_date, #id_category').forEach(field => field.removeAttribute('required')); return true; } else { return false; }">
-                            🗑️ Delete
+                        <button type="submit" class="btn btn-secondary" name="delete">
+                            🗑️ Elimina
                         </button>
                     </div>
                 </form>
@@ -99,5 +98,5 @@
 <script>
 const BASE_BACK_URL = "{% url 'transaction_list' %}";
 </script>
-<script type="module" src="{% static 'js/back-button-filter-handler.js' %}"></script>
+    <script type="module" src="{% static 'js/handle-filter-when-back-transaction-detail.js' %}"></script>
 {% endblock %}

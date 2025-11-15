@@ -10,7 +10,7 @@
                 {% if value == 0 or value == 0.0 %}
                     —
                 {% else %}
-                    € {{ value }}
+                    {{ currency }}{{ value }}
                 {% endif %}
             </p>
         {% endif %}

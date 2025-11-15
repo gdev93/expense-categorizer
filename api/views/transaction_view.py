@@ -8,6 +8,7 @@ from django.db.models import Q, QuerySet  # Import Q for complex lookups
 from django.db.models import Sum
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
+from django.urls import reverse
 from django.views import View
 from django.views.generic import ListView
 from django.views.generic import UpdateView
@@ -41,7 +42,17 @@ class TransactionDetailUpdateView(LoginRequiredMixin, UpdateView):
         """Handle transaction deletion"""
         self.get_object().delete()
 
-        return redirect('transaction_list')
+        # Check if filters were stored before deletion
+        redirect_filters = request.POST.get('redirect_filters', '')
+
+        # Build redirect URL with preserved filters
+        redirect_url = reverse('transaction_list')
+
+        if redirect_filters:
+            # The filters already include the '?' or are empty
+            redirect_url = redirect_url + redirect_filters
+
+        return redirect(redirect_url)
 
     def get_queryset(self):
         return self.model.objects.filter(user=self.request.user)
@@ -86,6 +97,7 @@ class TransactionDetailUpdateView(LoginRequiredMixin, UpdateView):
 
         return self.render_to_response(self.get_context_data(form=form))
 
+
 @dataclass
 class TransactionListContextData:
     """Context data for transaction list view"""
@@ -93,15 +105,18 @@ class TransactionListContextData:
     selected_category: str
     selected_status: str
     search_query: str
-    uncategorized_transaction: QuerySet[Transaction,Transaction]  # QuerySet
+    uncategorized_transaction: QuerySet[Transaction, Transaction]  # QuerySet
     total_count: int
     total_amount: float
     category_count: int
-    rules: QuerySet[Rule,Rule]  # QuerySet
+    rules: QuerySet[Rule, Rule]  # QuerySet
+    available_months: list[dict[str, Any]]
+    selected_months: list[str]
 
     def to_context(self) -> dict[str, Any]:
         """Convert dataclass to context dictionary"""
         return asdict(self)
+
 
 class TransactionListView(LoginRequiredMixin, ListView):
     """Display list of transactions with filtering and pagination"""
@@ -109,7 +124,9 @@ class TransactionListView(LoginRequiredMixin, ListView):
     template_name = 'transactions/transaction_list.html'
     context_object_name = 'transactions'
     paginate_by = 50
-    default_categories: list[str] = "Casa,Spesa,Auto,Carburante,Vita sociale,Pizza,Regali,Vacanze,Sport,Bollette,Scuola,Bambini,Shopping,Abbonamenti,Affitto,Baby-sitter,Trasporti,Spese mediche,Partita Iva, Bonifico".split(',')
+    default_categories: list[
+        str] = "Casa,Spesa,Auto,Carburante,Vita sociale,Pizza,Regali,Vacanze,Sport,Bollette,Scuola,Bambini,Shopping,Abbonamenti,Affitto,Baby-sitter,Trasporti,Spese mediche,Partita Iva, Bonifico".split(
+        ',')
 
     def get_queryset(self):
         """Filter transactions based on user and query parameters"""
@@ -118,6 +135,7 @@ class TransactionListView(LoginRequiredMixin, ListView):
             transaction_type='expense',
             merchant_id__isnull=False  # Filtra per escludere i valori NULL
         ).select_related('category', 'merchant').order_by('-transaction_date', '-created_at')
+
         # Filter by category
         category_id = self.request.GET.get('category')
         if category_id:
@@ -127,6 +145,22 @@ class TransactionListView(LoginRequiredMixin, ListView):
         status = self.request.GET.get('status')
         if status:
             queryset = queryset.filter(status=status)
+
+        # Filter by months
+        selected_months = self.request.GET.getlist('months')
+        if selected_months:
+            month_queries = Q()
+            for month_str in selected_months:
+                try:
+                    year, month = map(int, month_str.split('-'))
+                    month_queries |= Q(
+                        transaction_date__year=year,
+                        transaction_date__month=month
+                    )
+                except (ValueError, AttributeError):
+                    pass
+            if month_queries:
+                queryset = queryset.filter(month_queries)
 
         # Search filter
         search_query = self.request.GET.get('search')
@@ -138,6 +172,32 @@ class TransactionListView(LoginRequiredMixin, ListView):
 
         return queryset
 
+    def get_available_months(self):
+        """Get list of available months from transactions"""
+        transactions = Transaction.objects.filter(
+            user=self.request.user,
+            transaction_type='expense'
+        ).dates('transaction_date', 'month', order='DESC')
+
+        months = []
+        for date in transactions:
+            months.append({
+                'value': date.strftime('%Y-%m'),
+                'label': date.strftime('%B %Y'),
+                'label_it': self.get_italian_month_name(date)
+            })
+        return months
+
+    @staticmethod
+    def get_italian_month_name(date):
+        """Convert date to Italian month name format"""
+        italian_months = {
+            1: 'Gennaio', 2: 'Febbraio', 3: 'Marzo', 4: 'Aprile',
+            5: 'Maggio', 6: 'Giugno', 7: 'Luglio', 8: 'Agosto',
+            9: 'Settembre', 10: 'Ottobre', 11: 'Novembre', 12: 'Dicembre'
+        }
+        return f"{italian_months[date.month]} {date.year}"
+
     def get_context_data(self, **kwargs):
         """Add extra context data"""
         context = super().get_context_data(**kwargs)
@@ -145,10 +205,30 @@ class TransactionListView(LoginRequiredMixin, ListView):
         # Get all categories for filter dropdown
         categories = list(Category.objects.filter(
             Q(user=self.request.user) | Q(user__isnull=True)
-        ).order_by('name').values('id','name'))
+        ).order_by('name').values('id', 'name'))
 
-        user_transactions = Transaction.objects.filter(user=self.request.user, transaction_type='expense',
-                                                       description__isnull=False).filter(~Q(description=''))
+        # Base queryset for user transactions
+        user_transactions = Transaction.objects.filter(
+            user=self.request.user,
+            transaction_type='expense',
+            description__isnull=False
+        ).filter(~Q(description=''))
+
+        # Apply month filter to summary data if months are selected
+        selected_months = self.request.GET.getlist('months')
+        if selected_months:
+            month_queries = Q()
+            for month_str in selected_months:
+                try:
+                    year, month = map(int, month_str.split('-'))
+                    month_queries |= Q(
+                        transaction_date__year=year,
+                        transaction_date__month=month
+                    )
+                except (ValueError, AttributeError):
+                    pass
+            if month_queries:
+                user_transactions = user_transactions.filter(month_queries)
 
         transaction_list_context = TransactionListContextData(
             categories=categories,
@@ -160,8 +240,10 @@ class TransactionListView(LoginRequiredMixin, ListView):
                 total=Sum('amount')
             )['total'] or 0,
             category_count=user_transactions.values('category').distinct().count(),
-            rules=Rule.objects.filter(user=self.request.user,is_active=True),
-            selected_category=self.request.GET.get('category', '')
+            rules=Rule.objects.filter(user=self.request.user, is_active=True),
+            selected_category=self.request.GET.get('category', ''),
+            available_months=self.get_available_months(),
+            selected_months=selected_months
         )
         context.update(transaction_list_context.to_context())
 

@@ -52,3 +52,24 @@
     outline: none;
     box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.25); /* Goldish shadow on focus */
 }
+
+/* Enhanced month selector */
+#months {
+    min-height: 38px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+#months option {
+    padding: 8px;
+}
+
+#months option:checked {
+    background: linear-gradient(0deg, #4CAF50 0%, #4CAF50 100%);
+    color: white;
+}
+
+.filter-group small.form-text {
+    display: block;
+    color: #6c757d;
+}
