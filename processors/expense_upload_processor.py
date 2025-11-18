@@ -7,7 +7,7 @@ from django.db import transaction
 from django.db.models import Q
 
 from agent.agent import ExpenseCategorizerAgent, AgentTransactionUpload, TransactionCategorization
-from api.models import Transaction, Category, Merchant, CsvUpload
+from api.models import Transaction, Category, Merchant, CsvUpload, normalize_string
 from processors.data_prechecks import parse_raw_transaction, RawTransactionParseResult
 from processors.parser_utils import normalize_amount, parse_raw_date, parse_amount_from_raw_data_without_suggestion, \
     parse_date_from_raw_data_with_no_suggestions
@@ -66,6 +66,7 @@ def _update_transaction_with_parse_result(tx: Transaction,
     tx.transaction_date = transaction_parse_result.date
     tx.original_date = transaction_parse_result.date_original
     tx.description = transaction_parse_result.description
+    tx.normalized_description = normalize_string(transaction_parse_result.description)
     return tx
 
 
@@ -78,6 +79,7 @@ def _update_categorized_transaction_with_category_merchant(tx: Transaction, cate
     tx.transaction_date = transaction_parse_result.date
     tx.original_date = transaction_parse_result.date_original
     tx.description = transaction_parse_result.description
+    tx.normalized_description = normalize_string(transaction_parse_result.description)
     tx.amount = abs(transaction_parse_result.amount)
     tx.original_amount = transaction_parse_result.original_amount
     return tx
@@ -97,6 +99,7 @@ def _update_categorized_transaction(
     tx.transaction_date = transaction_parse_result.date
     tx.original_date = transaction_parse_result.date_original
     tx.description = transaction_parse_result.description
+    tx.normalized_description = normalize_string(transaction_parse_result.description)
     tx.amount = abs(transaction_parse_result.amount)
     tx.original_amount = transaction_parse_result.original_amount
     return tx
@@ -108,9 +111,8 @@ def _find_similar_transaction_by_merchant(user: User, merchant_name: str) -> Tra
         Q(user=user) &
         Q(status='categorized') &
         (
-                Q(merchant__name__icontains=merchant_name) |
-                Q(merchant__normalized_name__icontains=merchant_name) |
-                Q(description__icontains=merchant_name)
+                Q(merchant__normalized_name__icontains=normalize_string(merchant_name)) |
+                Q(description__icontains=normalize_string(merchant_name))
         )
     ).first()
 
@@ -121,8 +123,7 @@ def _find_similar_transaction_by_description(
         precheck_confidence_threshold: float,
 ) -> Transaction | None:
     """Search for a similar categorized transaction by description similarity."""
-    merchants_contained_in_description = Merchant.get_similar_merchants_by_names(compare=description, user=user,
-                                                                                 similarity_threshold=precheck_confidence_threshold)
+    merchants_contained_in_description = Merchant.get_similar_merchants_by_names(compare=description, user=user)
 
     if len(merchants_contained_in_description) == 1:
         merchant = merchants_contained_in_description[0]
@@ -276,8 +277,7 @@ class ExpenseUploadProcessor:
                     Transaction.objects.filter(id=tx_id).update(status='uncategorized', failure_code=1)
                     continue
 
-                merchant = Merchant.get_similar_merchants_by_names(compare=merchant_name, user=self.user,
-                                                                   similarity_threshold=self.pre_check_confidence_threshold).first()
+                merchant = Merchant.get_similar_merchants_by_names(compare=merchant_name, user=self.user).first()
 
                 if not merchant:
                     merchant = Merchant(name=merchant_name, user=self.user)

@@ -1,4 +1,6 @@
 # models.py
+import re
+
 from django.contrib.auth.models import User
 from django.db import models
 from django.db.models import QuerySet, Q
@@ -55,56 +57,40 @@ class Merchant(models.Model):
         return self.name
 
 
+
     @staticmethod
-    def get_similar_merchants_by_names(compare: str, user: User, similarity_threshold: float = 0.9) -> QuerySet:
+    def get_similar_merchants_by_names(compare: str, user: User) -> QuerySet:
         """
-        Find merchants similar to the compare string using:
-        1. Substring containment (ILIKE)
-        2. Word similarity (PostgreSQL trigram)
+        Find merchants similar to the compare string using bidirectional ILIKE matching.
 
         Args:
             compare: The merchant name to search for
             user: The user whose merchants to search
-            similarity_threshold: Minimum similarity score (0.0 to 1.0)
+            similarity_threshold: Not used (kept for backward compatibility)
 
         Returns:
-            QuerySet of matching Merchant objects ordered by similarity
+            QuerySet of matching Merchant objects
         """
 
         return Merchant.objects.annotate(
-            is_contained_name=RawSQL(
-                "%s ILIKE '%%' || name || '%%'",
-                (compare,)
-            ),
-            is_contained_normalized_name=RawSQL(
+            input_contains_normalized=RawSQL(
                 "%s ILIKE '%%' || normalized_name || '%%'",
-                (compare,)
+                (normalize_string(compare),)
             ),
-            name_similarity=RawSQL(
-                "word_similarity(name, %s)",
-                (compare,)
-            ),
-            normalized_name_similarity=RawSQL(
-                "word_similarity(normalized_name, %s)",
-                (compare,)
+            normalized_contains_input=RawSQL(
+                "normalized_name ILIKE '%%' || %s || '%%'",
+                (normalize_string(compare),)
             )
         ).filter(
-            Q(is_contained_name=True) |
-            Q(is_contained_normalized_name=True) |
-            Q(name__icontains=compare) |
-            Q(normalized_name__icontains=compare) |
-            Q(name_similarity__gte=similarity_threshold) |
-            Q(normalized_name_similarity__gte=similarity_threshold)
+            Q(input_contains_normalized=True) |
+            Q(normalized_contains_input=True)
         ).filter(
             user=user
-        ).order_by(
-            '-name_similarity',
-            '-normalized_name_similarity'
         ).distinct()
 
     def save(self, *args, **kwargs):
         # Auto-normalize name for fuzzy matching
-        self.normalized_name = self.name.upper().strip().replace("  ", " ")
+        self.normalized_name = normalize_string(self.name)
         super().save(*args, **kwargs)
 
 
@@ -209,6 +195,7 @@ class Transaction(models.Model):
     amount = models.DecimalField(max_digits=10, decimal_places=2, null=True)
     original_amount = models.CharField(max_length=50, blank=True, null=True)  # Raw from CSV
     description = models.TextField(null=True)  # Raw description from bank
+    normalized_description = models.TextField(null=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     confidence_score = models.FloatField(null=True, blank=True)  # LLM/matching confidence
     failure_code = models.CharField(max_length=20, null=True, blank=True)
@@ -218,6 +205,10 @@ class Transaction(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     raw_data = models.JSONField(default=dict)
 
+    def save(self, *args, **kwargs):
+        # Auto-normalize name for fuzzy matching
+        self.normalized_description = normalize_string(self.description)
+        super().save(*args, **kwargs)
     class Meta:
         ordering = ['-transaction_date', '-created_at']
         indexes = [
@@ -312,3 +303,6 @@ class UserFinancialSummary(models.Model):
 
     def __str__(self):
         return f"Financial Summary - {self.user.username}"
+
+def normalize_string(input_data:str)->str:
+    return re.sub(r'[^a-z0-9]', '', input_data.lower())
