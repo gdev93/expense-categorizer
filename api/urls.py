@@ -22,7 +22,7 @@ from api.views.category_view import CategoryUpdateView
 from api.views.csv_upload_view import CsvUploadView, CsvUploadDelete, CsvProcessView, CsvProgressView, \
     CsvUploadCheckView
 from api.views.rule_view import RuleDefineView, RuleDeleteView
-from api.views.summary_view import SummaryView
+from api.views.monthly_summary_view import MonthlySummerView
 from api.views.transaction_view import TransactionListView, EditTransactionCategory, TransactionDetailUpdateView
 
 urlpatterns = [
@@ -30,7 +30,7 @@ urlpatterns = [
     path("accounts/authenticate/", authenticate_user, name="authenticate_user"),
     path('accounts/register/', register_form, name='register_form'),
     path('accounts/create/', create_user, name='create_user'),
-    path('summary/', SummaryView.as_view(), name='summary'),
+    path('summary/', MonthlySummerView.as_view(), name='summary'),
     path('transactions/upload/', CsvUploadView.as_view(), name='transactions_upload'),
     path('transactions/upload/process', CsvProcessView.as_view(), name='transactions_process'),
     path('transactions/upload/progress/', CsvProgressView.as_view(), name='transactions_progress'),

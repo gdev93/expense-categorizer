@@ -1,3 +1,4 @@
+
 {% extends "main/index.html" %}
 {% load static %}
 
@@ -15,44 +16,44 @@
         {% include "components/header-with-year-select.html" with icon="🗓️" title="Riepilogo Mensile" %}
 
         {% if months %}
-            <!-- Highlighted Section for Current and Previous Month -->
-                {% for month in months %}
-                    {% if month.is_current or month.is_previous %}
-                            <header class="month-header">
-                                <h2>
-                                    {% if month.display_name %}
-                                        {{ month.display_name }}
-                                    {% elif month.date %}
-                                        {{ month.date|date:"F" }}
-                                    {% else %}
-                                        Mese {{ month.month_number }}
-                                    {% endif %}
-                                </h2>
-                                {% if month.date %}
-                                    <span class="subtitle">
-                                        {{ month.date|date:"F Y" }}
-                                    </span>
-                                {% else %}
-                                    <span class="subtitle">
-                                        {{ selected_year }}
-                                    </span>
-                                {% endif %}
-                            </header>
+            <!-- Highlighted Section for Current Month -->
+            {% for month in months %}
+                {% if month.is_current %}
+                    <header class="month-header">
+                        <h2>
+                            {% if month.display_name %}
+                                {{ month.display_name }}
+                            {% elif month.date %}
+                                {{ month.date|date:"F" }}
+                            {% else %}
+                                Mese {{ month.month_number }}
+                            {% endif %}
+                        </h2>
+                        {% if month.date %}
+                            <span class="subtitle">
+                                {{ month.date|date:"F Y" }}
+                            </span>
+                        {% else %}
+                            <span class="subtitle">
+                                {{ selected_year }}
+                            </span>
+                        {% endif %}
+                    </header>
 
-                            <div class="summary-cards">
-                                {% include "components/summary-card.html" with icon="💸" label="Totale spese" value=month.total_spending subtext="" change_class="neutral" %}
-                                {% include "components/summary-card.html" with icon="💰" label="Totale entrate" value=month.total_income subtext="" change_class="neutral" %}
-                                {% include "components/summary-card.html" with icon="📈" label="Risparmi" value=month.total_savings subtext="" change_class="neutral" %}
-                            </div>
-                    {% endif %}
-                {% endfor %}
+                    <div class="summary">
+                        {% include "components/summary-card.html" with icon="💸" label="Totale spese" value=month.total_spending subtext="" change_class="neutral" %}
+                        {% include "components/summary-card.html" with icon="💰" label="Totale entrate" value=month.total_income subtext="" change_class="neutral" %}
+                        {% include "components/summary-card.html" with icon="📈" label="Risparmi" value=month.total_savings subtext="" change_class="neutral" %}
+                    </div>
+                {% endif %}
+            {% endfor %}
 
             <!-- List of Other Months -->
             <section class="other-months">
-                <h3 class="section-title">Altri mesi</h3>
+                <h2 style="margin-bottom: 20px;">📊 Altri mesi</h2>
                 <div class="data-list">
                     {% for month in months %}
-                        {% if not month.is_current and not month.is_previous %}
+                        {% if not month.is_current %}
                             <div class="data-list-item">
                                 {% include "summary/components/month-info-list-item.html" %}
                             </div>
