@@ -1,7 +1,7 @@
 import os
 
 from django.contrib.auth.models import User
-from django.contrib.postgres.search import TrigramWordSimilarity
+from django.contrib.postgres.search import TrigramSimilarity
 from django.core.files.uploadedfile import UploadedFile
 from django.db import transaction
 from django.db.models import Q
@@ -125,14 +125,14 @@ def _find_similar_transaction_by_description(
     """Search for a similar categorized transaction by description similarity."""
     merchants_contained_in_description = Merchant.get_similar_merchants_by_names(compare=description, user=user)
 
-    if len(merchants_contained_in_description) == 1:
-        merchant = merchants_contained_in_description[0]
+    if merchants_contained_in_description.count() == 1:
+        merchant = merchants_contained_in_description.first()
         transaction_from_merchant = _find_similar_transaction_by_merchant(user, merchant.name) if merchant else None
         if transaction_from_merchant:
             return transaction_from_merchant
 
     return Transaction.objects.annotate(
-        description_similarity=TrigramWordSimilarity(description, 'description')
+        description_similarity=TrigramSimilarity('normalized_description', normalize_string(description))
     ).filter(
         status='categorized',
         merchant_id__isnull=False,
@@ -203,6 +203,7 @@ class ExpenseUploadProcessor:
     def _process_prechecks(self, batch: list[Transaction], past_csv_uploads: list[CsvUpload]) -> list[Transaction]:
         all_transactions_to_upload: list[Transaction] = []
         all_transactions_categorized: list[Transaction] = []
+        all_transactions_to_delete: list[Transaction] = []
         merchant_with_category: dict[str, tuple[Merchant, Category]] = {}
         for tx in batch:
             transaction_parse_result = parse_raw_transaction(tx.raw_data, past_csv_uploads)
@@ -218,10 +219,11 @@ class ExpenseUploadProcessor:
             if transaction_parse_result.description:
                 transaction_from_description = Transaction.objects.filter(
                     user=self.user,
-                    description=transaction_parse_result.description,
+                    normalized_description=normalize_string(transaction_parse_result.description),
                 ).exists()
                 if transaction_from_description:
                     print(f"Transaction from description {transaction_parse_result.description} already categorized")
+                    all_transactions_to_delete.append(tx)
                     continue
             if transaction_parse_result.merchant and merchant_with_category.get(transaction_parse_result.merchant):
                 merchant, category = merchant_with_category[transaction_parse_result.merchant]
@@ -247,7 +249,8 @@ class ExpenseUploadProcessor:
         Transaction.objects.bulk_update(all_transactions_categorized + all_transactions_to_upload,
                                         ['status', 'merchant', 'merchant_raw_name', 'category', 'transaction_date',
                                          'original_date', 'description', 'amount', 'original_amount',
-                                         'transaction_type'])
+                                         'transaction_type', 'normalized_description'])
+        Transaction.objects.filter(user=self.user, id__in=[tx.id for tx in all_transactions_to_delete]).delete()
         print(
             f"Found {len(all_transactions_categorized)} {"👌" if len(all_transactions_categorized) > 0 else "😩"} transactions that have similar merchant names with confidence >= {self.pre_check_confidence_threshold}"
         )
@@ -300,7 +303,6 @@ class ExpenseUploadProcessor:
                     user=self.user, description=description).first()
                 transaction_from_agent.category = category
                 transaction_from_agent.merchant = merchant
-                transaction_from_agent.description = description
                 transaction_from_agent.merchant_raw_name = merchant_name
                 transaction_from_agent.original_date = tx_data.date if not transaction_from_agent.original_date else transaction_from_agent.original_date
                 transaction_from_agent.original_amount = original_amount if not transaction_from_agent.original_amount else transaction_from_agent.original_amount
@@ -310,6 +312,9 @@ class ExpenseUploadProcessor:
                 transaction_from_agent.status = 'categorized'
                 transaction_from_agent.modified_by_user = False
                 transaction_from_agent.failure_code = 0 if not failure else 1
+                transaction_from_agent.description = tx_data.description if not transaction_from_agent.description else transaction_from_agent.description
+                transaction_from_agent.normalized_description = normalize_string(transaction_from_agent.description)
+                transaction_from_agent.categorized_by_agent = True
                 transaction_from_agent.save()
 
             except Exception as e:

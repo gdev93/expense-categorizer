@@ -86,7 +86,7 @@ class Merchant(models.Model):
             Q(normalized_contains_input=True)
         ).filter(
             user=user
-        ).distinct()
+        ).distinct('normalized_name').order_by('normalized_name')
 
     def save(self, *args, **kwargs):
         # Auto-normalize name for fuzzy matching
@@ -204,6 +204,8 @@ class Transaction(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     raw_data = models.JSONField(default=dict)
+    categorized_by_agent = models.BooleanField(default=False)
+
 
     def save(self, *args, **kwargs):
         # Auto-normalize name for fuzzy matching

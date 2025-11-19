@@ -18,7 +18,7 @@ from django.urls import reverse_lazy
 from django.views import View
 from django.views.generic import FormView, ListView, DeleteView
 
-from api.models import CsvUpload, Transaction
+from api.models import CsvUpload, Transaction, Merchant
 from api.models import Rule, Category
 from processors.expense_upload_processor import ExpenseUploadProcessor, persist_csv_file
 
@@ -90,6 +90,17 @@ def _parse_csv(csv_file) -> List[Dict[str, str]]:
 class CsvUploadDelete(DeleteView):
     model = CsvUpload
     success_url = reverse_lazy('transactions_upload')
+
+    def post(self, request, *args, **kwargs):
+        response = super().post(request, *args, **kwargs)
+        # Delete merchants that have no transactions and no rules
+        Merchant.objects.filter(user=request.user).exclude(
+            transactions__isnull=False
+        ).exclude(
+            rule__isnull=False
+        ).delete()
+        return response
+
 
 class CsvUploadForm(forms.Form):
     """Form for CSV file upload with validation"""
@@ -368,7 +379,7 @@ class CsvProgressView(View):
                 "percentage": "100%"
             })
         current_categorized = Transaction.objects.filter(csv_upload=csv_upload, user=request.user,
-                                                         status__in=['categorized', 'uncategorized']).count()
+                                                         status='categorized').count()
         return JsonResponse(status=200, data={
             "total": total,
             "current_pending": current_pending,
@@ -450,5 +461,5 @@ class CsvUploadCheckView(View):
         return JsonResponse(status=200, data={
             "total": Transaction.objects.filter(csv_upload=csv_upload, user=request.user).count(),
             "current_pending": Transaction.objects.filter(csv_upload=csv_upload, user=request.user, status='pending').count(),
-            "current_categorized": Transaction.objects.filter(csv_upload=csv_upload, user=request.user, status__in=['categorized', 'uncategorized']).count(),
+            "current_categorized": Transaction.objects.filter(csv_upload=csv_upload, user=request.user, status='categorized').count(),
         })
