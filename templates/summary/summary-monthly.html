@@ -45,6 +45,21 @@
                         {% include "components/summary-card.html" with icon="💰" label="Totale entrate" value=month.total_income subtext="" change_class="neutral" %}
                         {% include "components/summary-card.html" with icon="📈" label="Risparmi" value=month.total_savings subtext="" change_class="neutral" %}
                     </div>
+
+                    <!-- Quick Actions -->
+                    <div class="quick-actions"
+                         style="display: flex; gap: 12px; margin-top: 24px; margin-bottom: 32px; flex-wrap: wrap;">
+                        <a href="#" class="btn btn-primary"
+                           style="flex: 1; min-width: 200px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                            <span style="font-size: 1.2em;">➕</span>
+                            <span>Nuova Spesa</span>
+                        </a>
+                        <a href="{% url 'new_transaction_income' %}" class="btn btn-success"
+                           style="flex: 1; min-width: 200px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                            <span style="font-size: 1.2em;">💵</span>
+                            <span>Nuova Entrata</span>
+                        </a>
+                    </div>
                 {% endif %}
             {% endfor %}
 

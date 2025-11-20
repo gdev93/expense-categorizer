@@ -1,0 +1,61 @@
+{% extends "main/index.html" %}
+{% load static %}
+
+{% block title %}Nuova Entrata{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/transactions.css' %}">
+{% endblock %}
+
+{% block content %}
+    <div class="container mt-2">
+        <div class="header">
+            <a href="{% url 'transaction_list' %}" class="btn btn-secondary">
+                < Torna alle Transazioni
+            </a>
+            <h1>💰 Inserisci Nuova Entrata</h1>
+        </div>
+
+        <div class="rule-card card mb-4">
+            <div class="card-header">
+                <h2>Dati Nuova Entrata</h2>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{% url 'new_transaction_income' %}">
+                    {% csrf_token %}
+
+                    <p class="alert alert-info">
+                        Stai creando una transazione di **tipo Entrata (Ricavo)**.
+                    </p>
+
+                    <div class="form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+
+                        <div class="filter-group">
+                            <label for="id_transaction_date">Data dell'Entrata</label>
+                            <input type="date" name="transaction_date" id="id_transaction_date"
+                                   class="form-control" value="{{ today|date:'Y-m-d' }}" required />
+                            <small class="form-text">La data in cui è avvenuta l'entrata.</small>
+                        </div>
+
+                        <div class="filter-group">
+                            <label for="id_amount">Ammontare (€)</label>
+                            <input type="number" name="amount" id="id_amount" step="0.01"
+                                   class="form-control" placeholder="Inserisci l'importo" required />
+                            <small class="form-text">Inserisci l'importo positivo.</small>
+                        </div>
+                    </div>
+
+                    <input type="hidden" name="transaction_type" value="Income">
+                    <input type="hidden" name="description" value="Entrata Manuale">
+
+
+                    <div class="rule-form-actions" style="border-top: 2px solid #ddd; padding-top: 15px;">
+                        <button type="submit" class="btn btn-primary">
+                            ➕ Aggiungi Entrata
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}

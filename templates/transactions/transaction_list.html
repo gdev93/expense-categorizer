@@ -1,7 +1,7 @@
 {% extends "main/index.html" %}
 {% load static %}
 
-{% block title %}Lista Transazioni{% endblock %}
+{% block title %}Lista Spese{% endblock %}
 
 {% block extra_css %}
     <link rel="stylesheet" href="{% static 'css/transactions.css' %}">
@@ -19,7 +19,7 @@
         <!-- Summary Cards -->
         {% if transactions %}
             <div class="summary">
-                {% include "components/summary-card.html" with label="Totale Transazioni" value=total_count %}
+                {% include "components/summary-card.html" with label="Totale Spese" value=total_count %}
                 {% include "components/summary-card.html" with label="Importo Totale" value=total_amount|floatformat:2 currency="€" %}
                 {% include "components/summary-card.html" with label="Categorie" value=category_count %}
             </div>
@@ -188,7 +188,7 @@
         <!-- Uncategorized Transactions Section -->
         <div class="uncategorized-section" style="margin-bottom: 40px;">
             <h2 style="margin-bottom: 20px;">
-                🏷️ Transazioni Non Categorizzate
+                🏷️ Spese Non Categorizzate
                 <span class="badge"
                       style="background-color: #ffc107; color: #000; padding: 4px 8px; border-radius: 12px; font-size: 14px;">
             {{ uncategorized_transaction.count }}
@@ -230,7 +230,7 @@
                 {% empty %}
                     {% if transactions %}
                         <div class="data-list-item" style="text-align: center; color: #999;">
-                            ✅ Tutte le transazioni sono categorizzate!
+                            ✅ Tutte le spese sono categorizzate!
                         </div>
                     {% endif %}
                 {% endfor %}
@@ -239,7 +239,7 @@
 
         <!-- Transaction List -->
         {% if transactions %}
-            <h2 style="margin-bottom: 20px;">📊 Transazioni Categorizzate</h2>
+            <h2 style="margin-bottom: 20px;">📊 Spese Categorizzate</h2>
 
             <div class="data-list">
                 {% for transaction in transactions %}
