@@ -9,12 +9,8 @@
 
 {% block content %}
     <div class="container mt-2">
-        <div class="header">
-            <a href="{% url 'transaction_list' %}" class="btn btn-secondary">
-                < Torna alle Transazioni
-            </a>
-            <h1>💰 Inserisci Nuova Entrata</h1>
-        </div>
+
+        {% include "components/header-with-back-to-summary-button.html" with icon="💰" title="Nuova Entrata" back_url=request.META.HTTP_REFERER%}
 
         <div class="rule-card card mb-4">
             <div class="card-header">
@@ -33,7 +29,7 @@
                         <div class="filter-group">
                             <label for="id_transaction_date">Data dell'Entrata</label>
                             <input type="date" name="transaction_date" id="id_transaction_date"
-                                   class="form-control" value="{{ today|date:'Y-m-d' }}" required />
+                                   class="form-control" value="" required />
                             <small class="form-text">La data in cui è avvenuta l'entrata.</small>
                         </div>
 
@@ -47,6 +43,7 @@
 
                     <input type="hidden" name="transaction_type" value="Income">
                     <input type="hidden" name="description" value="Entrata Manuale">
+                    <input type="hidden" name="redirect_target_url" value="{{ request.META.HTTP_REFERER }}">
 
 
                     <div class="rule-form-actions" style="border-top: 2px solid #ddd; padding-top: 15px;">
@@ -57,5 +54,6 @@
                 </form>
             </div>
         </div>
+        <script src="{% static 'js/transaction-date.js' %}"></script>
     </div>
 {% endblock %}

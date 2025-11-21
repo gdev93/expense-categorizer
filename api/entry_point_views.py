@@ -66,7 +66,6 @@ def index(request):
         template_name='main/index.html',
         context={'user_avatar': user.username[0].capitalize(),
                  'user_name': f"{user.first_name} {user.last_name}",
-                 'users_active': True,
                  'main_content': 'users/users.html'
                  }
 

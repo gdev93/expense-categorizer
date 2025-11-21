@@ -45,11 +45,24 @@ class MonthlySummerView(View):
             else (available_years[0] if available_years else today.year)
         )
 
-        # Selected year from query string
+        # Selected year from query string (check both 'year' and 'selected_year')
         try:
-            selected_year = int(request.GET.get("year", default_year))
+            selected_year = int(
+                request.GET.get("selected_year") or request.GET.get("year", default_year)
+            )
         except (TypeError, ValueError):
             selected_year = default_year
+
+        # Selected month from query string (defaults to current month)
+        try:
+            selected_month = request.GET.get("selected_month")
+            selected_month = int(selected_month) if selected_month else None
+        except (TypeError, ValueError):
+            selected_month = None
+
+        # If no month is selected, use current month only if viewing current year
+        if selected_month is None and selected_year == today.year:
+            selected_month = today.month
 
         # Fetch all categorized transactions for the selected year
         transactions = Transaction.objects.filter(
@@ -71,10 +84,6 @@ class MonthlySummerView(View):
             elif transaction.transaction_type == "income":
                 month_data[month_number]["income"] += amount
 
-        # Determine current and previous month
-        current_month = today.month
-        current_year = today.year
-
         # Convert to MonthSummary objects
         months: list[MonthSummary] = []
         for month_number, data in month_data.items():
@@ -85,8 +94,8 @@ class MonthlySummerView(View):
             income = data["income"]
             savings = income - spending
 
-            # Determine if this is current month
-            is_current = (month_number == current_month and selected_year == current_year)
+            # Mark the selected month as current (or actual current month if none selected)
+            is_current = (month_number == selected_month)
 
             months.append(
                 MonthSummary(
@@ -109,6 +118,8 @@ class MonthlySummerView(View):
         context = {
             "available_years": available_years,
             "selected_year": selected_year,
+            "selected_month": selected_month,
+            "selected_month_number": next(month for month in months if month.is_current).month_number,
             "months": months,
         }
 

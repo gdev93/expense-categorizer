@@ -33,8 +33,8 @@
                 </div>
             </div>
             <div class="savings-info">
-                <span class="savings-label">Risparmio Obiettivo</span>
-                <span class="savings-value">€ 1.250,00</span>
+                <span class="savings-label">Risparmio totale {{ current_year }}</span>
+                <span class="savings-value">€ {{ total_savings_by_current_year }}</span>
             </div>
         </div>
         <nav class="sidebar-nav">
@@ -54,7 +54,7 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="{% url 'summary' %}" class="nav-link">
+                    <a href="{% url 'monthly_summary' %}" class="nav-link">
                         <span class="nav-icon">🗓️</span>
                         <span class="nav-text">Riepilogo Mensile</span>
                     </a>

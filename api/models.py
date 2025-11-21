@@ -2,6 +2,8 @@
 import re
 
 from django.contrib.auth.models import User
+from django.contrib.postgres.lookups import TrigramWordSimilar
+from django.contrib.postgres.search import TrigramSimilarity, TrigramWordSimilarity
 from django.db import models
 from django.db.models import QuerySet, Q
 from django.db.models.expressions import RawSQL
@@ -56,30 +58,16 @@ class Merchant(models.Model):
     def __str__(self):
         return self.name
 
-
-
     @staticmethod
-    def get_similar_merchants_by_names(compare: str, user: User) -> QuerySet:
-        """
-        Find merchants similar to the compare string using bidirectional ILIKE matching.
-
-        Args:
-            compare: The merchant name to search for
-            user: The user whose merchants to search
-            similarity_threshold: Not used (kept for backward compatibility)
-
-        Returns:
-            QuerySet of matching Merchant objects
-        """
-
+    def get_merchants_by_transaction_description(description: str, user: User) -> QuerySet:
         return Merchant.objects.annotate(
             input_contains_normalized=RawSQL(
                 "%s ILIKE '%%' || normalized_name || '%%'",
-                (normalize_string(compare),)
+                (normalize_string(description),)
             ),
             normalized_contains_input=RawSQL(
                 "normalized_name ILIKE '%%' || %s || '%%'",
-                (normalize_string(compare),)
+                (normalize_string(description),)
             )
         ).filter(
             Q(input_contains_normalized=True) |
@@ -87,6 +75,18 @@ class Merchant(models.Model):
         ).filter(
             user=user
         ).distinct('normalized_name').order_by('normalized_name')
+
+    @staticmethod
+    def get_similar_merchants_by_names(merchant_name_candidate: str, user: User,
+                                       similarity_threshold: float) -> QuerySet:
+
+        return Merchant.objects.filter(user=user, normalized_name__exact=normalize_string(
+            merchant_name_candidate)) or Merchant.objects.annotate(
+            similarity=TrigramWordSimilarity(normalize_string(merchant_name_candidate),'normalized_name')
+        ).filter(
+            similarity__gte=similarity_threshold,
+            user=user
+        ).order_by('-similarity')
 
     def save(self, *args, **kwargs):
         # Auto-normalize name for fuzzy matching

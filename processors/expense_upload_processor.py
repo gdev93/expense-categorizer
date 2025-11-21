@@ -1,10 +1,11 @@
 import os
 
 from django.contrib.auth.models import User
-from django.contrib.postgres.search import TrigramSimilarity
+from django.contrib.postgres.search import TrigramSimilarity, TrigramWordSimilarity
 from django.core.files.uploadedfile import UploadedFile
 from django.db import transaction
 from django.db.models import Q
+from django.db.models.aggregates import Count
 
 from agent.agent import ExpenseCategorizerAgent, AgentTransactionUpload, TransactionCategorization
 from api.models import Transaction, Category, Merchant, CsvUpload, normalize_string
@@ -123,7 +124,7 @@ def _find_similar_transaction_by_description(
         precheck_confidence_threshold: float,
 ) -> Transaction | None:
     """Search for a similar categorized transaction by description similarity."""
-    merchants_contained_in_description = Merchant.get_similar_merchants_by_names(compare=description, user=user)
+    merchants_contained_in_description = Merchant.get_merchants_by_transaction_description(description=description, user=user)
 
     if merchants_contained_in_description.count() == 1:
         merchant = merchants_contained_in_description.first()
@@ -132,7 +133,7 @@ def _find_similar_transaction_by_description(
             return transaction_from_merchant
 
     return Transaction.objects.annotate(
-        description_similarity=TrigramSimilarity('normalized_description', normalize_string(description))
+        description_similarity=TrigramWordSimilarity(normalize_string(description),'normalized_description')
     ).filter(
         status='categorized',
         merchant_id__isnull=False,
@@ -192,7 +193,7 @@ class ExpenseUploadProcessor:
     - Persistence of results
     - Progress tracking and logging
     """
-    pre_check_confidence_threshold = os.environ.get('PRE_CHECK_CONFIDENCE_THRESHOLD', 0.9)
+    pre_check_confidence_threshold = os.environ.get('PRE_CHECK_CONFIDENCE_THRESHOLD', 0.7)
 
 
     def __init__(self, user: User, user_rules: list[str] = None, available_categories: list[str] | None = None, batch_helper:BatchingHelper | None = None):
@@ -252,7 +253,7 @@ class ExpenseUploadProcessor:
                                          'transaction_type', 'normalized_description'])
         Transaction.objects.filter(user=self.user, id__in=[tx.id for tx in all_transactions_to_delete]).delete()
         print(
-            f"Found {len(all_transactions_categorized)} {"👌" if len(all_transactions_categorized) > 0 else "😩"} transactions that have similar merchant names with confidence >= {self.pre_check_confidence_threshold}"
+            f"Found {len(all_transactions_categorized)} {"👌" if len(all_transactions_categorized) > 0 else "😩"} transactions that have similar merchant names"
         )
         return all_transactions_to_upload
 
@@ -280,11 +281,13 @@ class ExpenseUploadProcessor:
                     Transaction.objects.filter(id=tx_id).update(status='uncategorized', failure_code=1)
                     continue
 
-                merchant = Merchant.get_similar_merchants_by_names(compare=merchant_name, user=self.user).first()
-
-                if not merchant:
+                similar_merchants = Merchant.get_similar_merchants_by_names(merchant_name_candidate=merchant_name, user=self.user, similarity_threshold=self.pre_check_confidence_threshold)
+                if not similar_merchants.exists():
                     merchant = Merchant(name=merchant_name, user=self.user)
                     merchant.save()
+                else:
+                    most_frequent_transaction = Transaction.objects.filter(user=self.user).annotate(merchant_presence_count=Count()).filter(merchant__in=similar_merchants).order_by('-updated_at').first()
+
 
                 reference_transaction_from_merchant = _find_similar_transaction_by_merchant(self.user, merchant_name)
                 if not reference_transaction_from_merchant:
@@ -384,7 +387,14 @@ class ExpenseUploadProcessor:
         ).exclude(original_amount__startswith='-')
 
         for tx in uncategorized_transactions:
-            original_amount = tx.raw_data.get(csv_upload.amount_column_name, '')
+            # Get values from raw_data, handling None column names
+            original_amount = tx.raw_data.get(csv_upload.amount_column_name,
+                                              '') if csv_upload.amount_column_name else ''
+            description = tx.raw_data.get(csv_upload.description_column_name,
+                                          '') if csv_upload.description_column_name else ''
+            merchant = tx.raw_data.get(csv_upload.merchant_column_name, '') if csv_upload.merchant_column_name else ''
+            original_date = tx.raw_data.get(csv_upload.date_column_name, '') if csv_upload.date_column_name else ''
+
             if not original_amount:
                 parsed_amount_result = parse_amount_from_raw_data_without_suggestion(tx.raw_data)
                 if parsed_amount_result.is_valid():
@@ -397,9 +407,15 @@ class ExpenseUploadProcessor:
                             tx.amount = abs(amount_finding.amount)
                             break
 
-            description = tx.raw_data.get(csv_upload.description_column_name, '')
-            merchant = tx.raw_data.get(csv_upload.merchant_column_name, '')
-            original_date = tx.raw_data.get(csv_upload.date_column_name, '')
+            # If description is still empty, try to infer it from raw_data
+            if not description:
+                # Look for a description-like field in raw_data
+                for key, value in tx.raw_data.items():
+                    if value and isinstance(value, str) and len(
+                            value) > 20:  # Heuristic: descriptions are usually longer
+                        description = value
+                        break
+
             if not original_date:
                 try:
                     date, _ = parse_date_from_raw_data_with_no_suggestions(tx.raw_data)
@@ -408,27 +424,39 @@ class ExpenseUploadProcessor:
                         tx.original_date = original_date
                 except Exception:
                     print(f"Failed to parse date from transaction {tx.id} with raw data: {tx.raw_data}")
-            amount = normalize_amount(original_amount)
-            transaction_date = parse_raw_date(original_date)
-            tx.transaction_date = transaction_date
-            tx.amount = abs(amount)
-            tx.original_amount = original_amount
+
+            if original_amount:
+                amount = normalize_amount(original_amount)
+                tx.amount = abs(amount)
+                tx.original_amount = original_amount
+
+            if original_date:
+                transaction_date = parse_raw_date(original_date)
+                tx.transaction_date = transaction_date
+                tx.original_date = original_date
+
             tx.description = description
+            tx.normalized_description = normalize_string(description) if description else ''
             tx.merchant_raw_name = merchant
-            tx.original_date = original_date
-            similar_tx = _find_reference_transaction_from_tx(csv_upload.user, tx, self.pre_check_confidence_threshold)
-            if similar_tx:
-                tx.category = similar_tx.category
-                tx.merchant_raw_name = similar_tx.merchant_raw_name
-                tx.merchant = similar_tx.merchant
-                tx.status = 'categorized'
+
+            # Only try to find similar transactions if we have a description
+            if description:
+                similar_tx = _find_reference_transaction_from_tx(csv_upload.user, tx,
+                                                                 self.pre_check_confidence_threshold)
+                if similar_tx:
+                    tx.category = similar_tx.category
+                    tx.merchant_raw_name = similar_tx.merchant_raw_name
+                    tx.merchant = similar_tx.merchant
+                    tx.status = 'categorized'
+                else:
+                    tx.status = 'uncategorized'
             else:
                 tx.status = 'uncategorized'
 
         Transaction.objects.bulk_update(
             uncategorized_transactions,
             ['transaction_date', 'amount', 'original_amount', 'description',
-             'merchant_raw_name', 'original_date', 'category', 'status','merchant']
+             'merchant_raw_name', 'original_date', 'category', 'status', 'merchant', 'normalized_description']
         )
 
     def _apply_transaction_type_corrections(self, csv_upload: CsvUpload) -> None:

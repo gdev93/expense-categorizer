@@ -150,7 +150,7 @@ h2 {
 /* Desktop layout */
 @media (min-width: 768px) {
     .main-content {
-        margin-left: 250px;
+        margin-left: 330px;
         padding: 16px; /* Remove top padding on desktop */
     }
 }

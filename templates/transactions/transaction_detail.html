@@ -29,7 +29,7 @@
                         <div class="filter-group">
                             <label for="id_merchant_raw_name">Nome Esercente (Originale)</label>
                             <input type="text" name="merchant_raw_name" id="id_merchant_raw_name"
-                                   class="form-control" value="{{ transaction.merchant_raw_name|default:"" }}" required />
+                                   class="form-control" value="{{ transaction.merchant.name|default:"" }}" required />
                         </div>
 
                         <div class="filter-group">

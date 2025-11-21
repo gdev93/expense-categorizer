@@ -1,4 +1,6 @@
 # views.py (add to your existing views file)
+import os
+from calendar import monthrange
 from dataclasses import dataclass, asdict
 from typing import Any
 
@@ -13,8 +15,9 @@ from django.views import View
 from django.views.generic import ListView, CreateView
 from django.views.generic import UpdateView
 
-from api.models import Transaction, Category, Rule, Merchant
+from api.models import Transaction, Category, Rule, Merchant, CsvUpload
 
+pre_check_confidence_threshold = os.environ.get('PRE_CHECK_CONFIDENCE_THRESHOLD', 0.8)
 
 class TransactionIncomeCreateView(LoginRequiredMixin, CreateView):
     """
@@ -28,11 +31,6 @@ class TransactionIncomeCreateView(LoginRequiredMixin, CreateView):
         'amount',
     ]
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        from datetime import date
-        context['today'] = date.today()
-        return context
 
     @transaction.atomic
     def form_valid(self, form):
@@ -43,18 +41,38 @@ class TransactionIncomeCreateView(LoginRequiredMixin, CreateView):
         # Set transaction defaults for income
         form.instance.user = self.request.user
         form.instance.transaction_type = 'income'
-        form.instance.description = self.request.POST.get('description', 'Entrata Manuale')
+        form.instance.description = self.request.POST.get('description', 'User input')
         form.instance.modified_by_user = True
         form.instance.status = 'categorized'
 
         # Income transactions typically don't have a merchant
         form.instance.merchant = None
-        form.instance.merchant_raw_name = 'Entrata'
+        form.instance.merchant_raw_name = 'Income'
+
+        # Get the transaction date from the form
+        transaction_date = form.cleaned_data.get('transaction_date')
+
+        # Calculate the first and last day of the month
+        first_day_of_month = transaction_date.replace(day=1)
+
+        # Get the last day of the month using monthrange
+        last_day = monthrange(transaction_date.year, transaction_date.month)[1]
+        last_day_of_month = transaction_date.replace(day=last_day)
+
+        # Find CSV upload that has transactions in this date range
+        csv_upload_in_date_range = CsvUpload.objects.filter(
+            user=self.request.user,
+            transactions__transaction_date__gte=first_day_of_month,
+            transactions__transaction_date__lte=last_day_of_month
+        ).distinct().first()
+
+        # Associate the transaction with the found CSV upload (if any)
+        form.instance.csv_upload = csv_upload_in_date_range
 
         self.object = form.save()
 
         # Redirect to transaction list after successful creation
-        return redirect('transaction_list')
+        return redirect(self.request.POST.get("redirect_target_url") or 'transaction_list')
 
     def get_success_url(self):
         """Redirect to transaction list after successful creation"""
@@ -103,7 +121,7 @@ class TransactionCreateView(LoginRequiredMixin, CreateView):
         merchant_name = self.request.POST.get('merchant_raw_name', '').strip()
 
         if merchant_name:
-            merchant_db = Merchant.get_similar_merchants_by_names(merchant_name, self.request.user).first()
+            merchant_db = Merchant.get_similar_merchants_by_names(merchant_name, self.request.user, pre_check_confidence_threshold).first()
             if not merchant_db:
                 merchant_db = Merchant.objects.create(name=merchant_name, user=self.request.user)
             form.instance.merchant = merchant_db
@@ -192,7 +210,7 @@ class TransactionDetailUpdateView(LoginRequiredMixin, UpdateView):
         merchant_name = self.request.POST.get('merchant_raw_name', '').strip()
 
         if merchant_name:
-            merchant_db = Merchant.get_similar_merchants_by_names(merchant_name, self.request.user).first()
+            merchant_db = Merchant.get_similar_merchants_by_names(merchant_name, self.request.user, pre_check_confidence_threshold).first()
             if not merchant_db:
                 merchant_db = Merchant.objects.create(name=merchant_name, user=self.request.user)
             form.instance.merchant = merchant_db
@@ -315,11 +333,7 @@ class TransactionListView(LoginRequiredMixin, ListView):
         ).order_by('name').values('id', 'name'))
 
         # Base queryset for user transactions
-        user_transactions = Transaction.objects.filter(
-            user=self.request.user,
-            transaction_type='expense',
-            description__isnull=False
-        ).filter(~Q(description=''))
+        user_transactions = self.get_queryset()
 
         # Apply month filter to summary data if months are selected
         selected_months = self.request.GET.getlist('months')

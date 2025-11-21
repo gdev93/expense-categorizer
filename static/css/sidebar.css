@@ -5,7 +5,7 @@
     position: fixed;
     top: 0;
     left: -250px;
-    width: 250px;
+    width: 330px;
     height: 100vh;
     background-color: var(--nav-bg-color); /* White background */
     box-shadow: 2px 0 6px rgba(0, 0, 0, 0.1); /* Light shadow */
