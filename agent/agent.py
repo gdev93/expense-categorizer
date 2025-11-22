@@ -222,49 +222,66 @@ class ExpenseCategorizerAgent:
         # Build the prompt
         samples_text = ""
         for i, tx in enumerate(sample_transactions, 1):
-            samples_text += f"Transaction {i}:\n"
+            samples_text += f"Transazione {i}:\n"
             samples_text += f"  ID: {tx.transaction_id}\n"
-            samples_text += "  Fields:\n"
+            samples_text += "  Campi:\n"
             for column, value in tx.raw_text.items():
                 display_value = str(value)[:100] + "..." if len(str(value)) > 100 else value
                 samples_text += f"    - {column}: {display_value}\n"
             samples_text += "\n"
 
-        prompt = f"""You are an expert at analyzing CSV/transaction data structures.
+        prompt = f"""Sei un esperto nell'analisi di strutture CSV di transazioni bancarie italiane.
 
-    Analyze the following transaction samples and identify which fields correspond to:
-    1. **description_field**: The field containing transaction description/details
-    2. **merchant_field**: The field containing merchant/vendor name
-    3. **transaction_date_field**: The field containing the transaction date
-    4. **amount_field**: The field containing the transaction amount
-    5. **operation_type_field**: The field containing the operation type (e.g., "Pagamento", "Bonifico", "Prelievo", "Addebito", "Accredito", etc.)
+    Analizza i seguenti campioni di transazioni e identifica quali campi corrispondono a:
+    1. **description_field**: Il campo contenente la descrizione/dettagli della transazione
+    2. **merchant_field**: Il campo contenente il nome del commerciante/beneficiario
+    3. **transaction_date_field**: Il campo contenente la data della transazione
+    4. **amount_field**: Il campo contenente l'importo della transazione
+    5. **operation_type_field**: Il campo contenente il tipo di operazione (es. "Pagamento", "Bonifico", "Prelievo", "Addebito", "Accredito", ecc.)
 
-    TRANSACTION SAMPLES:
+    CAMPIONI DI TRANSAZIONI:
     {samples_text}
 
-    INSTRUCTIONS:
-    - Return ONLY the field names as they appear in the data (exact column names)
-    - If a field cannot be determined with confidence, return null
-    - The operation_type_field typically contains keywords like: "Pagamento", "Bonifico", "Prelievo", "Addebito", "SDD", "Accredito", or similar operation descriptors
-    - Provide a confidence level: "high", "medium", or "low"
-    - Add notes if there are any ambiguities or important observations
+    ISTRUZIONI GENERALI:
+    - Restituisci SOLO i nomi dei campi esattamente come appaiono nei dati (nomi esatti delle colonne)
+    - Se un campo non può essere determinato con sicurezza, restituisci null
+    - Il campo operation_type_field contiene tipicamente parole chiave come: "Pagamento", "Bonifico", "Prelievo", "Addebito", "SDD", "Accredito", o descrittori di operazioni simili
+    - Fornisci un livello di confidenza: "high", "medium", o "low"
+    - Aggiungi note se ci sono ambiguità o osservazioni importanti
 
-    OUTPUT FORMAT (JSON only, no markdown):
+    ⚠️ ISTRUZIONI CRITICHE PER LA DATA TRANSAZIONE:
+    - Il campo transaction_date_field DEVE essere una colonna dedicata alle date (es. "Data", "Data Valuta", "Data Contabile", "Data Operazione")
+    - NON selezionare campi che contengono date all'interno di descrizioni testuali o campi narrativi
+    - Cerca colonne con SOLO valori di date (formati come: GG/MM/AAAA, AAAA-MM-GG, GG/MM/AA)
+    - IGNORA date che appaiono come parte di stringhe di testo più lunghe o descrizioni
+    - Se esistono più colonne di date (es. "Data Operazione", "Data Valuta", "Data Contabile"), preferisci "Data Valuta" o la data più specifica della transazione
+    - Esempio: Scegli la colonna "Data Valuta", NON un campo "Descrizione" che menziona casualmente una data
+
+    ⚠️ ISTRUZIONI CRITICHE PER L'IMPORTO:
+    - Il campo amount_field DEVE contenere SOLO importi NEGATIVI o importi contrassegnati come spese/addebiti
+    - IGNORA colonne con importi positivi (accrediti/entrate)
+    - Cerca colonne con segni negativi (es. "-45,50", "-100,00") o chiari indicatori di addebito
+    - L'obiettivo è identificare SOLO LE SPESE, non le entrate
+    - Se gli importi sono in più colonne (es. "Dare" per addebiti, "Avere" per accrediti), scegli la colonna degli addebiti
+    - Nomi comuni di colonne italiane per addebiti: "Importo", "Dare", "Uscite", "Addebito", "Movimenti" (se negativi)
+    - Se c'è una singola colonna "Importo" o "Movimenti" con valori sia positivi che negativi, selezionala comunque (verranno filtrati i valori negativi successivamente)
+
+    FORMATO OUTPUT (solo JSON, niente markdown):
     {{
-      "description_field": "exact_column_name_or_null",
-      "merchant_field": "exact_column_name_or_null",
-      "transaction_date_field": "exact_column_name_or_null",
-      "amount_field": "exact_column_name_or_null",
-      "operation_type_field": "exact_column_name_or_null",
+      "description_field": "nome_colonna_esatto_o_null",
+      "merchant_field": "nome_colonna_esatto_o_null",
+      "transaction_date_field": "nome_colonna_esatto_o_null",
+      "amount_field": "nome_colonna_esatto_o_null",
+      "operation_type_field": "nome_colonna_esatto_o_null",
       "confidence": "high|medium|low",
-      "notes": "any relevant observations or null"
+      "notes": "eventuali osservazioni rilevanti o null"
     }}
 
-    Return ONLY the JSON object, nothing else."""
+    Restituisci SOLO l'oggetto JSON, nient'altro."""
 
         try:
 
-            response = call_gemini_api(prompt=prompt,client=self.client,temperature=1.0)
+            response = call_gemini_api(prompt=prompt, client=self.client, temperature=1.0)
 
             # Parse the response
             result_dict = parse_llm_response_json(response)
@@ -277,7 +294,7 @@ class ExpenseCategorizerAgent:
             return CsvStructure.from_dict(result_dict)
 
         except Exception as e:
-            print(f"❌ CSV structure detection failed: {e}")
+            print(f"❌ Rilevamento struttura CSV fallito: {e}")
             # Return empty structure on failure
             return CsvStructure(
                 description_field=None,
@@ -286,7 +303,7 @@ class ExpenseCategorizerAgent:
                 amount_field=None,
                 operation_type_field=None,
                 confidence="low",
-                notes=f"Detection failed: {str(e)}"
+                notes=f"Rilevamento fallito: {str(e)}"
             )
 
     def build_batch_prompt(self, batch: list[AgentTransactionUpload]) -> str:
