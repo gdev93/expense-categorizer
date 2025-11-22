@@ -325,7 +325,8 @@ class ExpenseUploadProcessor:
         data_count = len(all_transactions_to_upload)
         batch_size = self.batch_helper.compute_batch_size(data_count)
         total_batches = (data_count + batch_size - 1) // batch_size
-
+        result_from_agent = self.agent.detect_csv_structure([AgentTransactionUpload(transaction_id=tx.id, raw_text=tx.raw_data) for tx in
+                                    all_transactions_to_upload])
         print(f"\n{'=' * 60}")
         print(f"🚀 Starting CSV Processing: {data_count} transactions")
         print(f"{'=' * 60}\n")
@@ -372,32 +373,32 @@ class ExpenseUploadProcessor:
             description__isnull=False,
             transaction_type='expense',
             original_date__isnull=False
-        ).iterator(chunk_size=1)
+        ).iterator(chunk_size=10)
 
-        for transaction in completed_transactions:
+        for tx in completed_transactions:
             # Check if we've found all columns
             if not any(columns_to_find.values()):
                 break
 
             # Try to match each column we haven't found yet
-            for key, value in transaction.raw_data.items():
+            for key, value in tx.raw_data.items():
                 # Check amount column
-                if columns_to_find['amount_column_name'] and value == transaction.original_amount:
+                if columns_to_find['amount_column_name'] and value == tx.original_amount:
                     csv_upload.amount_column_name = key
                     columns_to_find['amount_column_name'] = False
 
                 # Check date column
-                elif columns_to_find['date_column_name'] and value == transaction.original_date:
+                elif columns_to_find['date_column_name'] and value == tx.original_date:
                     csv_upload.date_column_name = key
                     columns_to_find['date_column_name'] = False
 
                 # Check description column
-                elif columns_to_find['description_column_name'] and value == transaction.description:
+                elif columns_to_find['description_column_name'] and value == tx.description:
                     csv_upload.description_column_name = key
                     columns_to_find['description_column_name'] = False
 
                 # Check merchant column
-                elif columns_to_find['merchant_column_name'] and value == transaction.merchant_raw_name:
+                elif columns_to_find['merchant_column_name'] and value == tx.merchant_raw_name:
                     csv_upload.merchant_column_name = key
                     columns_to_find['merchant_column_name'] = False
 

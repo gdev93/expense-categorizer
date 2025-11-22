@@ -9,7 +9,7 @@ from google import genai
 
 def get_api_key() -> str:
     """Get API key from environment variable"""
-    api_key = os.getenv('GEMINI_API_KEY', 'AIzaSyC7hR3okrohJCmAU_mgx3KSIeU8S2POjt4')
+    api_key = os.getenv('GEMINI_API_KEY')
     if not api_key:
         raise ValueError(
             "❌ GEMINI_API_KEY environment variable not set.\n"
@@ -19,11 +19,11 @@ def get_api_key() -> str:
     return api_key
 
 
-def call_gemini_api(prompt: str, client: genai.Client) -> str:
+def call_gemini_api(prompt: str, client: genai.Client, temperature:float=0.1) -> str:
     """Make request to Gemini API using the new SDK"""
     try:
         config = genai.types.GenerateContentConfig(
-            temperature=0.1,
+            temperature=temperature,
         )
         response = client.models.generate_content(
             model='gemini-2.5-flash-lite',
@@ -159,6 +159,31 @@ class AgentTransactionUpload:
     raw_text: dict[str, Any]
 
 
+@dataclass
+class CsvStructure:
+    """Structured CSV structure detection result"""
+    description_field: str | None
+    merchant_field: str | None
+    transaction_date_field: str | None
+    amount_field: str | None
+    operation_type_field: str | None
+    confidence: str  # "high", "medium", "low"
+    notes: str | None = None
+
+    @classmethod
+    def from_dict(cls, data: dict) -> 'CsvStructure':
+        """Create instance from dictionary"""
+        return cls(
+            description_field=data.get("description_field"),
+            merchant_field=data.get("merchant_field"),
+            transaction_date_field=data.get("transaction_date_field"),
+            amount_field=data.get("amount_field"),
+            operation_type_field=data.get("operation_type_field"),
+            confidence=data.get("confidence", "low"),
+            notes=data.get("notes")
+        )
+
+
 class ExpenseCategorizerAgent:
     """Agent for categorizing expense transactions using LLM"""
 
@@ -174,6 +199,95 @@ class ExpenseCategorizerAgent:
         self.client = genai.Client(api_key=self.api_key)
         self.available_categories = available_categories or []
         self.user_rules = user_rules or []
+
+    def detect_csv_structure(
+            self,
+            transactions: list[AgentTransactionUpload]
+    ) -> CsvStructure:
+        """
+        Analyze the CSV structure using Gemini to identify column mappings.
+
+        Args:
+            transactions: List of AgentTransactionUpload objects to analyze
+            client: Gemini API client
+
+        Returns:
+            CsvStructure: Detected field mappings for description, merchant, date, amount, and operation type
+        """
+
+        # Sample first few transactions to reduce token usage
+        sample_size = min(5, len(transactions))
+        sample_transactions = transactions[:sample_size]
+
+        # Build the prompt
+        samples_text = ""
+        for i, tx in enumerate(sample_transactions, 1):
+            samples_text += f"Transaction {i}:\n"
+            samples_text += f"  ID: {tx.transaction_id}\n"
+            samples_text += "  Fields:\n"
+            for column, value in tx.raw_text.items():
+                display_value = str(value)[:100] + "..." if len(str(value)) > 100 else value
+                samples_text += f"    - {column}: {display_value}\n"
+            samples_text += "\n"
+
+        prompt = f"""You are an expert at analyzing CSV/transaction data structures.
+
+    Analyze the following transaction samples and identify which fields correspond to:
+    1. **description_field**: The field containing transaction description/details
+    2. **merchant_field**: The field containing merchant/vendor name
+    3. **transaction_date_field**: The field containing the transaction date
+    4. **amount_field**: The field containing the transaction amount
+    5. **operation_type_field**: The field containing the operation type (e.g., "Pagamento", "Bonifico", "Prelievo", "Addebito", "Accredito", etc.)
+
+    TRANSACTION SAMPLES:
+    {samples_text}
+
+    INSTRUCTIONS:
+    - Return ONLY the field names as they appear in the data (exact column names)
+    - If a field cannot be determined with confidence, return null
+    - The operation_type_field typically contains keywords like: "Pagamento", "Bonifico", "Prelievo", "Addebito", "SDD", "Accredito", or similar operation descriptors
+    - Provide a confidence level: "high", "medium", or "low"
+    - Add notes if there are any ambiguities or important observations
+
+    OUTPUT FORMAT (JSON only, no markdown):
+    {{
+      "description_field": "exact_column_name_or_null",
+      "merchant_field": "exact_column_name_or_null",
+      "transaction_date_field": "exact_column_name_or_null",
+      "amount_field": "exact_column_name_or_null",
+      "operation_type_field": "exact_column_name_or_null",
+      "confidence": "high|medium|low",
+      "notes": "any relevant observations or null"
+    }}
+
+    Return ONLY the JSON object, nothing else."""
+
+        try:
+
+            response = call_gemini_api(prompt=prompt,client=self.client,temperature=1.0)
+
+            # Parse the response
+            result_dict = parse_llm_response_json(response)
+
+            if not result_dict:
+                # Fallback: try direct JSON parsing
+                import json
+                result_dict = json.loads(response.strip())
+
+            return CsvStructure.from_dict(result_dict)
+
+        except Exception as e:
+            print(f"❌ CSV structure detection failed: {e}")
+            # Return empty structure on failure
+            return CsvStructure(
+                description_field=None,
+                merchant_field=None,
+                transaction_date_field=None,
+                amount_field=None,
+                operation_type_field=None,
+                confidence="low",
+                notes=f"Detection failed: {str(e)}"
+            )
 
     def build_batch_prompt(self, batch: list[AgentTransactionUpload]) -> str:
         """Costruisce il prompt per un batch di transazioni"""
