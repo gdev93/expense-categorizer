@@ -355,7 +355,7 @@ class TransactionListView(LoginRequiredMixin, ListView):
             categories=categories,
             selected_status=self.request.GET.get('status', ''),
             search_query=self.request.GET.get('search', ''),
-            uncategorized_transaction=user_transactions.filter(~Q(status='categorized')),
+            uncategorized_transaction=Transaction.objects.filter(user=self.request.user, status='uncategorized', transaction_type='expense'),
             total_count=user_transactions.count(),
             total_amount=user_transactions.filter(status="categorized").aggregate(
                 total=Sum('amount')

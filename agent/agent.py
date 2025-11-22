@@ -195,8 +195,7 @@ class ExpenseCategorizerAgent:
 
         # ------------------- REGOLA CRITICA: IGNORARE I SALDI -------------------
         critical_rules = [
-            "IGNORA transazioni la cui descrizione contiene 'Saldo iniziale' o 'Saldo finale'. Non devono essere categorizzate e non devono apparire nell'output JSON.",
-            # NUOVA REGOLA CRITICA: IGNORA ANCHE LE ENTRATE/RICAVI
+            "IGNORA transazioni la cui descrizione contiene 'Saldo'. Non devono essere categorizzate e non devono apparire nell'output JSON.",
             "IGNORA transazioni che sono Accrediti (denaro IN) o con importo positivo. Non devono essere categorizzate e non devono apparire nell'output JSON. Il tuo compito è solo categorizzare le SPESE (USCITE).",
         ]
 
@@ -231,6 +230,20 @@ class ExpenseCategorizerAgent:
     {user_rules_section}
 
     ═══════════════════════════════════════════════════════
+    ⚠️⚠️⚠️ REQUISITO TRANSACTION_ID OBBLIGATORIO ⚠️⚠️⚠️
+    ═══════════════════════════════════════════════════════
+
+    **REQUISITO CRITICO ASSOLUTO:**
+    • OGNI oggetto JSON nell'output DEVE contenere il campo "transaction_id"
+    • Il valore di "transaction_id" DEVE essere ESATTAMENTE IDENTICO al TRANSACTION_ID fornito nei dati di input
+    • NON modificare, NON riformattare, NON cambiare il transaction_id in alcun modo
+    • Se il TRANSACTION_ID di input è "1200", l'output DEVE avere "transaction_id": "1200"
+    • Se il TRANSACTION_ID di input è "TX_12345", l'output DEVE avere "transaction_id": "TX_12345"
+
+    ⚠️ CRITICO: Il transaction_id è l'UNICO modo per collegare i risultati alle transazioni originali.
+    Se questo campo è mancante o errato, l'intera analisi è INUTILIZZABILE.
+
+    ═══════════════════════════════════════════════════════
     ⚠️⚠️⚠️ REQUISITO CATEGORIA STRETTO ⚠️⚠️⚠️
     ═══════════════════════════════════════════════════════
 
@@ -245,7 +258,7 @@ class ExpenseCategorizerAgent:
 
     REGOLE DI CORRISPONDENZA CATEGORIA:
     • Usa il nome ESATTO della categoria come mostrato sopra
-    
+
     ⚠️ CRITICO: **NON DEVI USARE "Uncategorized".** DEVI assegnare la categoria più probabile basandoti sulla descrizione.
     NON inventare MAI un nuovo nome di categoria non presente nella lista sopra.
 
@@ -262,7 +275,29 @@ class ExpenseCategorizerAgent:
     ⚠️⚠️⚠️ CAMPI OBBLIGATORI - DEVONO ESSERE ESTRATTI PER OGNI TRANSAZIONE ⚠️⚠️⚠️
     ═══════════════════════════════════════════════════════
 
-    DEVI estrarre questi 5 campi per OGNI transazione di SPESA, indipendentemente dal formato CSV o dai nomi delle colonne:
+    DEVI estrarre questi campi per OGNI transazione di SPESA, indipendentemente dal formato CSV o dai nomi delle colonne:
+
+    ┌─────────────────────────────────────────────────────┐
+    │ 0. TRANSACTION_ID (OBBLIGATORIO - MASSIMA PRIORITÀ) │
+    └─────────────────────────────────────────────────────┘
+
+       **QUESTO È IL CAMPO PIÙ IMPORTANTE DI TUTTI.**
+
+       DOVE TROVARLO:
+       • È fornito all'inizio di ogni transazione nel formato "TRANSACTION_ID: <valore>"
+       • È la PRIMA informazione di ogni transazione nei dati di input
+
+       FORMATO: Copia ESATTAMENTE il valore così come appare
+
+       ⚠️ CRITICO: 
+       • NON modificare il transaction_id
+       • NON convertirlo in numero
+       • NON aggiungere o rimuovere caratteri
+       • Preserva ESATTAMENTE il formato originale (stringa o numero)
+
+       ESEMPIO:
+       • Input: "TRANSACTION_ID: 1200" → Output: "transaction_id": "1200"
+       • Input: "TRANSACTION_ID: TX_ABC_123" → Output: "transaction_id": "TX_ABC_123"
 
     ┌─────────────────────────────────────────────────────┐
     │ 1. DATE (DATA) (OBBLIGATORIO)                       │
@@ -273,7 +308,7 @@ class ExpenseCategorizerAgent:
        • Intestazioni Italiane comuni: "Data", "Data valuta", "Data contabile", "DATA VALUTA", "DATA CONTABILE"
 
        FORMATO: **MANTIENI IL FORMATO ORIGINALE ESATTO** così come appare nei dati
-       
+
        ⚠️ CRITICO: NON convertire o riformattare la data. Preserva ESATTAMENTE il formato originale.
        • Se la data è "15/10/2025" → usa "15/10/2025"
        • Se la data è "2025-10-15" → usa "2025-10-15"
@@ -346,9 +381,9 @@ class ExpenseCategorizerAgent:
     Se il commerciante non è possibile da individuare:
     • **NON USARE** "Unkwown" o simili.
     • **USA IL CAMPO FAILURE** .
-    
+
     IMPORTANTE: DEVI comunque estrarre date, amount, original_amount, e description.
-    
+
     Il seguente è un esempio di fallimento:
     {{
         "transaction_id": "1201",
@@ -404,6 +439,7 @@ class ExpenseCategorizerAgent:
     CHECKLIST FINALE PRIMA DI RISPONDERE:
     ═══════════════════════════════════════════════════════
 
+    ✓ OGNI oggetto JSON ha il campo "transaction_id" con il valore ESATTO dell'input?
     ✓ Ho controllato prima le regole utente, **inclusa la regola IGNORA SALDI e ACCREDITI**?
     ✓ Ho **escluso Saldi e Accrediti** dal JSON finale?
     ✓ OGNI transazione restante (solo spese) ha i 5 campi obbligatori estratti?

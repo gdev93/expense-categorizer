@@ -1,7 +1,7 @@
 import os
 
 from django.contrib.auth.models import User
-from django.contrib.postgres.search import TrigramSimilarity, TrigramWordSimilarity
+from django.contrib.postgres.search import TrigramWordSimilarity
 from django.core.files.uploadedfile import UploadedFile
 from django.db import transaction
 from django.db.models import Q
@@ -106,16 +106,15 @@ def _update_categorized_transaction(
     return tx
 
 
-def _find_similar_transaction_by_merchant(user: User, merchant_name: str) -> Transaction | None:
+def _find_similar_transaction_by_merchant(user: User, merchant_name: str,
+                                          similarity_threshold: float) -> Transaction | None:
     """Search for a similar categorized transaction by merchant name."""
+    similar_merchants = Merchant.get_similar_merchants_by_names(merchant_name_candidate=merchant_name, user=user,
+                                                                similarity_threshold=similarity_threshold)
     return Transaction.objects.filter(
-        Q(user=user) &
-        Q(status='categorized') &
-        (
-                Q(merchant__normalized_name__icontains=normalize_string(merchant_name)) |
-                Q(description__icontains=normalize_string(merchant_name))
-        )
-    ).first()
+        user=user, merchant__in=similar_merchants, status='categorized', transaction_type='expense').annotate(
+        merchant_count=Count('merchant')).annotate(category_count=Count('category')).order_by('-merchant_count',
+                                                                                              '-category_count').first()
 
 
 def _find_similar_transaction_by_description(
@@ -124,13 +123,6 @@ def _find_similar_transaction_by_description(
         precheck_confidence_threshold: float,
 ) -> Transaction | None:
     """Search for a similar categorized transaction by description similarity."""
-    merchants_contained_in_description = Merchant.get_merchants_by_transaction_description(description=description, user=user)
-
-    if merchants_contained_in_description.count() == 1:
-        merchant = merchants_contained_in_description.first()
-        transaction_from_merchant = _find_similar_transaction_by_merchant(user, merchant.name) if merchant else None
-        if transaction_from_merchant:
-            return transaction_from_merchant
 
     return Transaction.objects.annotate(
         description_similarity=TrigramWordSimilarity(normalize_string(description),'normalized_description')
@@ -150,7 +142,8 @@ def _find_reference_transaction_from_tx(
     """Find reference transaction from an existing Transaction object."""
     # Check if tx has a merchant and search for similar transactions by merchant
     if tx.merchant:
-        similar_transaction = _find_similar_transaction_by_merchant(user, tx.merchant.name)
+        similar_transaction = _find_similar_transaction_by_merchant(user, tx.merchant.name,
+                                                                    precheck_confidence_threshold)
         if similar_transaction:
             return similar_transaction
 
@@ -172,11 +165,17 @@ def _find_reference_transaction_from_raw(
     if transaction_parse_result.merchant:
         similar_transaction = _find_similar_transaction_by_merchant(
             user,
-            transaction_parse_result.merchant
+            transaction_parse_result.merchant,
+            precheck_confidence_threshold
         )
         if similar_transaction:
             return similar_transaction
-
+    if transaction_parse_result.description:
+        merchants_from_description = Merchant.get_merchants_by_transaction_description(
+            transaction_parse_result.description, user)
+        if merchants_from_description.count() == 1:
+            return _find_similar_transaction_by_merchant(user, merchants_from_description[0].name,
+                                                         precheck_confidence_threshold)
     # Fall back to description similarity search
     return _find_similar_transaction_by_description(
         user,
@@ -281,16 +280,11 @@ class ExpenseUploadProcessor:
                     Transaction.objects.filter(id=tx_id).update(status='uncategorized', failure_code=1)
                     continue
 
-                similar_merchants = Merchant.get_similar_merchants_by_names(merchant_name_candidate=merchant_name, user=self.user, similarity_threshold=self.pre_check_confidence_threshold)
-                if not similar_merchants.exists():
+                similar_transaction = _find_similar_transaction_by_merchant(user=self.user, merchant_name=merchant_name,
+                                                                            similarity_threshold=self.pre_check_confidence_threshold)
+                if not similar_transaction:
                     merchant = Merchant(name=merchant_name, user=self.user)
                     merchant.save()
-                else:
-                    most_frequent_transaction = Transaction.objects.filter(user=self.user).annotate(merchant_presence_count=Count()).filter(merchant__in=similar_merchants).order_by('-updated_at').first()
-
-
-                reference_transaction_from_merchant = _find_similar_transaction_by_merchant(self.user, merchant_name)
-                if not reference_transaction_from_merchant:
                     category = Category.objects.filter(name__icontains=category_name.strip(), user=self.user).first()
                     if not category:
                         print(
@@ -298,7 +292,8 @@ class ExpenseUploadProcessor:
                         Transaction.objects.filter(id=tx_id).update(status='uncategorized', failure_code=1)
                         continue
                 else:
-                    category = reference_transaction_from_merchant.category
+                    merchant = similar_transaction.merchant
+                    category = similar_transaction.category
 
                 # safety check
                 transaction_from_agent = Transaction.objects.filter(user=self.user,
@@ -354,8 +349,22 @@ class ExpenseUploadProcessor:
         #TODO sanity check for rules
 
     def _identify_csv_column_mappings(self, csv_upload: CsvUpload) -> None:
-        """Identify and tag CSV column names by matching against a completed categorized transaction."""
-        completed_categorized_transaction = Transaction.objects.filter(
+        """Identify and tag CSV column names by matching against completed categorized transactions."""
+
+        # Track which columns we still need to find
+        columns_to_find = {
+            'amount_column_name': csv_upload.amount_column_name is None,
+            'date_column_name': csv_upload.date_column_name is None,
+            'description_column_name': csv_upload.description_column_name is None,
+            'merchant_column_name': csv_upload.merchant_column_name is None
+        }
+
+        # If all columns are already identified, skip
+        if not any(columns_to_find.values()):
+            return
+
+        # Fetch transactions one at a time until all columns are identified
+        completed_transactions = Transaction.objects.filter(
             user=self.user,
             csv_upload=csv_upload,
             status='categorized',
@@ -363,19 +372,38 @@ class ExpenseUploadProcessor:
             description__isnull=False,
             transaction_type='expense',
             original_date__isnull=False
-        ).first()
+        ).iterator(chunk_size=1)
 
-        if completed_categorized_transaction:
-            for key, value in completed_categorized_transaction.raw_data.items():
-                if value == completed_categorized_transaction.original_amount:
+        for transaction in completed_transactions:
+            # Check if we've found all columns
+            if not any(columns_to_find.values()):
+                break
+
+            # Try to match each column we haven't found yet
+            for key, value in transaction.raw_data.items():
+                # Check amount column
+                if columns_to_find['amount_column_name'] and value == transaction.original_amount:
                     csv_upload.amount_column_name = key
-                elif value == completed_categorized_transaction.original_date:
-                    csv_upload.date_column_name = key
-                elif value == completed_categorized_transaction.description:
-                    csv_upload.description_column_name = key
-                elif value == completed_categorized_transaction.merchant_raw_name:
-                    csv_upload.merchant_column_name = key
+                    columns_to_find['amount_column_name'] = False
 
+                # Check date column
+                elif columns_to_find['date_column_name'] and value == transaction.original_date:
+                    csv_upload.date_column_name = key
+                    columns_to_find['date_column_name'] = False
+
+                # Check description column
+                elif columns_to_find['description_column_name'] and value == transaction.description:
+                    csv_upload.description_column_name = key
+                    columns_to_find['description_column_name'] = False
+
+                # Check merchant column
+                elif columns_to_find['merchant_column_name'] and value == transaction.merchant_raw_name:
+                    csv_upload.merchant_column_name = key
+                    columns_to_find['merchant_column_name'] = False
+
+        # Save if any columns were identified
+        if csv_upload.amount_column_name or csv_upload.date_column_name or \
+                csv_upload.description_column_name or csv_upload.merchant_column_name:
             csv_upload.save()
 
     def _categorize_remaining_transactions(self, csv_upload: CsvUpload) -> None:
