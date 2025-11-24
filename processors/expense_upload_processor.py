@@ -1,4 +1,5 @@
 import os
+from math import floor
 
 from django.contrib.auth.models import User
 from django.contrib.postgres.search import TrigramWordSimilarity
@@ -200,13 +201,13 @@ class ExpenseUploadProcessor:
         self.batch_helper = batch_helper or BatchingHelper()
         self.agent = ExpenseCategorizerAgent(user_rules=user_rules, available_categories=available_categories)
 
-    def _process_prechecks(self, batch: list[Transaction], past_csv_uploads: list[CsvUpload]) -> list[Transaction]:
+    def _process_prechecks(self, batch: list[Transaction], csv_upload: CsvUpload) -> list[Transaction]:
         all_transactions_to_upload: list[Transaction] = []
         all_transactions_categorized: list[Transaction] = []
         all_transactions_to_delete: list[Transaction] = []
         merchant_with_category: dict[str, tuple[Merchant, Category]] = {}
         for tx in batch:
-            transaction_parse_result = parse_raw_transaction(tx.raw_data, past_csv_uploads)
+            transaction_parse_result = parse_raw_transaction(tx.raw_data, [csv_upload])
             if not transaction_parse_result.is_valid():
                 all_transactions_to_upload.append(tx)
                 continue
@@ -256,11 +257,11 @@ class ExpenseUploadProcessor:
         )
         return all_transactions_to_upload
 
-    def _process_batch(self, batch: list[Transaction]):
+    def _process_batch(self, batch: list[Transaction], csv_upload: CsvUpload):
         agent_upload_transaction = [AgentTransactionUpload(transaction_id=tx.id, raw_text=tx.raw_data) for tx in
                                     batch]
         if agent_upload_transaction:
-            batch_result = self.agent.process_batch(agent_upload_transaction)
+            batch_result = self.agent.process_batch(agent_upload_transaction, csv_upload)
             self._persist_batch_results(batch_result)
 
     def _persist_batch_results(self, batch: list[TransactionCategorization]):
@@ -320,13 +321,48 @@ class ExpenseUploadProcessor:
                 continue
 
     def process_transactions(self, transactions: list[Transaction], csv_upload: CsvUpload) -> CsvUpload:
+        is_new_upload = True
         all_csv_uploads = list(CsvUpload.objects.filter(user=self.user))
-        all_transactions_to_upload = self._process_prechecks(transactions, all_csv_uploads)
+        for csv_upload_candidate in all_csv_uploads:
+            first_transaction_raw_data = csv_upload_candidate.transactions.first().raw_data
+            first_transaction_raw_data_keys = set(first_transaction_raw_data.keys())
+            new_transaction_raw_data_keys = set(transactions[0].raw_data.keys())
+            if new_transaction_raw_data_keys in first_transaction_raw_data_keys and len(
+                    first_transaction_raw_data_keys) == len(new_transaction_raw_data_keys):
+                is_new_upload = False
+                break
+        if is_new_upload:
+            transaction_sample_size = min(30, floor(len(transactions) * 30 / 100))  # 30%
+            result_from_agent = self.agent.detect_csv_structure(
+                [AgentTransactionUpload(transaction_id=tx.id, raw_text=tx.raw_data) for tx in
+                 transactions[:transaction_sample_size]])
+            description_column_name = result_from_agent.description_field
+            notes = result_from_agent.notes
+            merchant_column_name = result_from_agent.merchant_field
+            date_column_name = result_from_agent.transaction_date_field
+            amount_column_name = result_from_agent.amount_field
+            operation_type_column_name = result_from_agent.operation_type_field
+        else:
+            description_column_name = csv_upload.description_column_name
+            notes = csv_upload.notes
+            merchant_column_name = csv_upload.merchant_column_name
+            date_column_name = csv_upload.date_column_name
+            amount_column_name = csv_upload.amount_column_name
+            operation_type_column_name = csv_upload.operation_type_column_name
+
+        csv_upload.description_column_name = description_column_name
+        csv_upload.merchant_column_name = merchant_column_name
+        csv_upload.date_column_name = date_column_name
+        csv_upload.amount_column_name = amount_column_name
+        csv_upload.operation_type_column_name = operation_type_column_name
+        csv_upload.notes = notes
+        csv_upload.save()
+
+        all_transactions_to_upload = self._process_prechecks(transactions, csv_upload)
         data_count = len(all_transactions_to_upload)
         batch_size = self.batch_helper.compute_batch_size(data_count)
         total_batches = (data_count + batch_size - 1) // batch_size
-        result_from_agent = self.agent.detect_csv_structure([AgentTransactionUpload(transaction_id=tx.id, raw_text=tx.raw_data) for tx in
-                                    all_transactions_to_upload])
+
         print(f"\n{'=' * 60}")
         print(f"🚀 Starting CSV Processing: {data_count} transactions")
         print(f"{'=' * 60}\n")
@@ -335,7 +371,7 @@ class ExpenseUploadProcessor:
             end_idx = start_idx + batch_size
             batch = all_transactions_to_upload[start_idx:end_idx]
             with transaction.atomic():
-                self._process_batch(batch)
+                self._process_batch(batch, csv_upload)
 
         with transaction.atomic():
             self._post_process_transactions(csv_upload)
@@ -344,7 +380,6 @@ class ExpenseUploadProcessor:
 
     def _post_process_transactions(self, csv_upload: CsvUpload) -> None:
         """Post-process transactions after batch processing to identify column mappings and categorize uncategorized transactions."""
-        self._identify_csv_column_mappings(csv_upload)
         self._categorize_remaining_transactions(csv_upload)
         self._apply_transaction_type_corrections(csv_upload)
         #TODO sanity check for rules
@@ -412,8 +447,10 @@ class ExpenseUploadProcessor:
         uncategorized_transactions = Transaction.objects.filter(
             user=self.user,
             csv_upload=csv_upload,
-            status__in=['uncategorized', 'pending']
-        ).exclude(original_amount__startswith='-')
+            status__in=['uncategorized', 'pending'],
+            # The AI detects the correct columns, so income type of transaction have no amount
+            original_amount__isnull=False
+        )
 
         for tx in uncategorized_transactions:
             # Get values from raw_data, handling None column names
@@ -432,8 +469,7 @@ class ExpenseUploadProcessor:
                             original_amount = tx.raw_data[column_name]
                             if original_amount != amount_finding.original_value:
                                 continue
-                            tx.original_amount = original_amount
-                            tx.amount = abs(amount_finding.amount)
+
                             break
 
             # If description is still empty, try to infer it from raw_data
@@ -487,6 +523,9 @@ class ExpenseUploadProcessor:
             ['transaction_date', 'amount', 'original_amount', 'description',
              'merchant_raw_name', 'original_date', 'category', 'status', 'merchant', 'normalized_description']
         )
+        Transaction.objects.filter(user=self.user, csv_upload=csv_upload, status__in=['pending', 'uncategorized'],
+                                   original_amount__isnull=True).update(status='uncategorized',
+                                                                        transaction_type='income')
 
     def _apply_transaction_type_corrections(self, csv_upload: CsvUpload) -> None:
         """Correct transaction types for transactions marked as expense but are actually income (positive amounts)."""

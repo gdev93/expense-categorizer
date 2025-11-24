@@ -6,6 +6,8 @@ from dataclasses import dataclass
 from typing import Any
 from google import genai
 
+from api.models import CsvUpload
+
 
 def get_api_key() -> str:
     """Get API key from environment variable"""
@@ -306,7 +308,7 @@ class ExpenseCategorizerAgent:
                 notes=f"Rilevamento fallito: {str(e)}"
             )
 
-    def build_batch_prompt(self, batch: list[AgentTransactionUpload]) -> str:
+    def build_batch_prompt(self, batch: list[AgentTransactionUpload], csv_upload:CsvUpload) -> str:
         """Costruisce il prompt per un batch di transazioni"""
 
         # Formatta le transazioni
@@ -320,6 +322,42 @@ class ExpenseCategorizerAgent:
                     display_value = str(value)[:200] + "..." if len(str(value)) > 200 else value
                     transactions_text += f"   - {column}: {column}: {display_value}\n"
             transactions_text += "\n"
+
+            # Build CSV structure hints section
+        csv_hints_section = ""
+        if csv_upload:
+            csv_hints_section = """
+    ═══════════════════════════════════════════════════════════════════
+    📋 INFORMAZIONI STRUTTURA CSV - SUGGERIMENTI PER L'ESTRAZIONE 📋
+    ═══════════════════════════════════════════════════════════════════
+
+    Per aiutarti nell'estrazione dei dati, ecco le informazioni sulla struttura CSV identificata:
+
+    """
+
+            if csv_upload.description_column_name:
+                csv_hints_section += f"📝 **DESCRIPTION FIELD**: Il campo '{csv_upload.description_column_name}' contiene la descrizione della transazione.\n"
+
+            if csv_upload.merchant_column_name:
+                csv_hints_section += f"🏪 **MERCHANT FIELD**: Il campo '{csv_upload.merchant_column_name}' contiene informazioni sul commerciante/beneficiario.\n"
+
+            if csv_upload.date_column_name:
+                csv_hints_section += f"📅 **DATE FIELD**: Il campo '{csv_upload.date_column_name}' contiene la data della transazione.\n"
+
+            if csv_upload.amount_column_name:
+                csv_hints_section += f"💰 **AMOUNT FIELD**: Il campo '{csv_upload.amount_column_name}' contiene l'importo della transazione.\n"
+
+            if csv_upload.operation_type_column_name:
+                csv_hints_section += f"🔄 **OPERATION TYPE FIELD**: Il campo '{csv_upload.operation_type_column_name}' contiene il tipo di operazione.\n"
+
+            if csv_upload.notes:
+                csv_hints_section += f"\n📌 **NOTE SULLA STRUTTURA CSV**:\n{csv_upload.notes}\n"
+
+            csv_hints_section += """
+    ⚠️ IMPORTANTE: Usa questi suggerimenti come guida principale per identificare e estrarre i campi corretti.
+    Questi mapping sono stati identificati automaticamente analizzando la struttura del CSV.
+
+    """
 
         # Costruisce la sezione delle regole utente
         user_rules_section = ""
@@ -357,7 +395,9 @@ class ExpenseCategorizerAgent:
         categories_formatted = "\n".join([f"  • {cat}" for cat in self.available_categories if cat != 'not_expense'])
 
         return f"""Sei un assistente IA specializzato nella categorizzazione delle **spese** bancarie italiane.
-
+    
+    {csv_hints_section}
+    
     {user_rules_section}
 
     ═══════════════════════════════════════════════════════
@@ -580,20 +620,22 @@ class ExpenseCategorizerAgent:
 
     RISPONDI SOLO CON L'ARRAY JSON:"""
 
-    def process_batch(self, batch: list[AgentTransactionUpload]) -> list[TransactionCategorization]:
+    def process_batch(self, batch: list[AgentTransactionUpload], csv_upload: CsvUpload) -> list[
+        TransactionCategorization]:
         """
         Process a single batch through LLM and deserialize into structured objects.
 
         Args:
             batch: list of transactions with 'id' and raw data
+            csv_upload: CsvUpload instance with column mappings and notes
 
         Returns:
             list[TransactionCategorization]: Array of categorization objects
         """
         try:
             print(f"👀 Analyzing batch with length {len(batch)}...")
-            # Build prompt
-            prompt = self.build_batch_prompt(batch)
+            # Build prompt with CSV column hints
+            prompt = self.build_batch_prompt(batch, csv_upload)
 
             # Send to API using new SDK
             response_text = call_gemini_api(prompt, self.client)

@@ -125,6 +125,12 @@ class CsvUpload(models.Model):
         null=True,
         help_text="The header name in the CSV for the merchant or payee name."
     )
+    operation_type_column_name = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text="The header name in the CSV for the operation type."
+    )
 
     upload_date = models.DateTimeField(
         auto_now_add=True,
@@ -140,6 +146,8 @@ class CsvUpload(models.Model):
         blank=True,
         help_text="The time taken to process the associated CSV file (in milliseconds)."
     )
+    notes = models.TextField(blank=True, help_text='Agent description of the csv structure')
+
 
     def __str__(self):
         return f"CSV Map (Upload: {self.upload_date.strftime('%Y-%m-%d')})"
