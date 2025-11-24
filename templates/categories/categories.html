@@ -1,0 +1,87 @@
+{% extends "main/index.html" %}
+{% load static %}
+
+{% block title %}Gestione Categorie{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/layout.css' %}">
+    <link rel="stylesheet" href="{% static 'css/list.css' %}">
+    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+    <link rel="stylesheet" href="{% static 'css/categories.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container mt-2">
+
+    <div class="header">
+        <div class="header-title-group">
+            <h1>📂 Gestione Categorie</h1>
+            <p class="text-muted">Crea e organizza le categorie per le tue spese.</p>
+        </div>
+        <a href="{% url 'transaction_list' %}" class="btn btn-secondary">
+            ⬅️ Torna alle Spese
+        </a>
+    </div>
+
+    <div class="category-layout">
+
+        <div class="category-form-section">
+            <div class="create-category-card">
+                <div class="card-header">
+                    <h3>✨ Nuova Categoria</h3>
+                </div>
+
+                <form method="post" class="category-form">
+                    {% csrf_token %}
+
+                    <div class="form-group">
+                        <label for="id_name">Nome Categoria</label>
+                        <input type="text" name="name" id="id_name" class="form-control" placeholder="es. Alimentari" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="id_description">Descrizione</label>
+                        <textarea name="description" id="id_description" class="form-control" rows="4" placeholder="es. Spese fatte al supermercato, panificio..."></textarea>
+                        <small class="form-text text-muted">
+                            Una breve descrizione per aiutarti a ricordare cosa includere qui.
+                        </small>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-full-width">
+                        ➕ Crea Categoria
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="category-list-section">
+            <h2 class="section-title">Categorie Esistenti <span class="badge-count">{{ categories.count }}</span></h2>
+
+            {% if categories %}
+            <div class="data-list">
+                {% for category in categories %}
+                    <div class="data-list-item category-item">
+                        <div class="category-info">
+                            <span class="category-name">{{ category.name }}</span>
+                            {% if category.description %}
+                                <p class="category-description">{{ category.description }}</p>
+                            {% else %}
+                                <p class="category-description text-muted"><em>Nessuna descrizione</em></p>
+                            {% endif %}
+                        </div>
+
+                        <div class="category-actions">
+                             </div>
+                    </div>
+                {% endfor %}
+            </div>
+            {% else %}
+                <div class="empty-state-simple">
+                    <p>Non hai ancora creato nessuna categoria.</p>
+                </div>
+            {% endif %}
+        </div>
+
+    </div>
+</div>
+{% endblock %}

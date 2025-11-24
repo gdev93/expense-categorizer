@@ -1,0 +1,143 @@
+/* * File: categories.css
+ * Specific styles for the Category Creation page
+ */
+
+/* Layout: Side by side on desktop, stacked on mobile */
+.category-layout {
+    display: flex;
+    gap: 30px;
+    margin-top: 20px;
+}
+
+.category-form-section {
+    flex: 1;
+    min-width: 300px;
+}
+
+.category-list-section {
+    flex: 1.5;
+}
+
+/* Creation Card Styles */
+.create-category-card {
+    background: white;
+    padding: 25px;
+    border-radius: 8px;
+    border-left: 5px solid var(--primary-color); /* Gold accent */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    position: sticky;
+    top: 90px; /* Sticks when scrolling if list is long */
+}
+
+.card-header h3 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    font-size: 1.25rem;
+    color: var(--nav-text-color);
+    font-weight: 700;
+}
+
+/* Form Elements */
+.category-form .form-group {
+    margin-bottom: 20px;
+}
+
+.category-form label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: var(--nav-text-color);
+    font-size: 0.95rem;
+}
+
+.category-form .form-control {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    font-size: 15px;
+    font-family: inherit;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.category-form .form-control:focus {
+    outline: none;
+    border-color: var(--primary-hover-color);
+    box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.2);
+}
+
+.category-form textarea.form-control {
+    resize: vertical; /* Allow vertical resizing only */
+    min-height: 100px;
+}
+
+.btn-full-width {
+    width: 100%;
+    padding: 12px;
+    font-size: 1rem;
+    margin-top: 10px;
+}
+
+/* List Section Specifics */
+.section-title {
+    font-size: 1.25rem;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.badge-count {
+    background-color: #e9ecef;
+    color: var(--nav-text-color);
+    font-size: 0.8rem;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-weight: 600;
+}
+
+/* Enhancing the reused .data-list-item for this specific context */
+.category-item {
+    align-items: flex-start; /* Align text to top if description is long */
+}
+
+.category-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.category-name {
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--nav-text-color);
+}
+
+.category-description {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--secondary-color);
+    line-height: 1.4;
+}
+
+.empty-state-simple {
+    text-align: center;
+    padding: 40px;
+    color: var(--secondary-color);
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px dashed #ced4da;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .category-layout {
+        flex-direction: column;
+    }
+
+    .create-category-card {
+        position: static; /* Remove sticky on mobile */
+        border-left: none;
+        border-top: 5px solid var(--primary-color);
+    }
+}
