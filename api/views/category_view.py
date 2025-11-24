@@ -1,11 +1,14 @@
 import logging
+from dataclasses import dataclass
 
 from django import forms
 from django.contrib import messages
+from django.db.models import Count, Sum, DecimalField
+from django.db.models.functions import Coalesce
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView
 
-from api.models import Category
+from api.models import Category, Transaction
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +33,6 @@ class CategoryForm(forms.ModelForm):
             'description': 'Descrizione (Opzionale)'
         }
 
-
 # 1. VISUALIZATION VIEW (The List)
 class CategoryListView(ListView):
     model = Category
@@ -38,13 +40,53 @@ class CategoryListView(ListView):
     context_object_name = 'categories'
 
     def get_queryset(self):
-        # Only fetch categories belonging to the logged-in user
-        return Category.objects.filter(user=self.request.user).order_by('name')
+        """
+        Returns categories belonging to the logged-in user, annotated with:
+        1. The count of associated transactions (transaction_count).
+        2. The total amount of associated transactions (transaction_amount).
+        """
+
+        # 1. Filter: Start with categories belonging to the current user
+        user_categories = self.model.objects.filter(user=self.request.user)
+
+        # 2. Annotate: Add the aggregated fields
+        #    - Count('transactions'): Counts all related Transaction objects.
+        #    - Sum('transactions__amount'): Sums the 'amount' field of related transactions.
+        #    - Coalesce: Ensures the result is 0 instead of None if no transactions exist.
+        enriched_categories = user_categories.annotate(
+            transaction_count=Count('transactions'),
+            transaction_amount=Coalesce(
+                Sum('transactions__amount'),
+                0.0,
+                output_field=DecimalField()
+            )
+        ).order_by('name')
+
+        return enriched_categories
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         # Pass the form to the template so it can be rendered in the "New Category" card
         context['form'] = CategoryForm()
+
+        # --- LOGIC FOR SUMMARY CARD ---
+        # Get the queryset used by the list
+        categories = context['categories']
+
+        default_category = max(categories, key=lambda cat: cat.transaction_count)
+        context['default_category'] = default_category
+        context['available_years'] =  available_years = list(
+            Transaction.objects.filter(
+                user=self.request.user,
+                status="categorized",
+                transaction_date__isnull=False,
+            )
+            .values_list("transaction_date__year", flat=True)
+            .distinct()
+            .order_by("-transaction_date__year")
+        )
+
+
         return context
 
 
@@ -72,6 +114,17 @@ class CategoryCreateView(CreateView):
         # Re-populate the category list if the form submission fails
         context = super().get_context_data(**kwargs)
         context['categories'] = Category.objects.filter(user=self.request.user).order_by('name')
+
+
+        # Ensure the summary card logic is also present even on form error re-render
+        if context['categories'].exists():
+            default_cat = context['categories'].first()
+            stats = default_cat.transaction_set.aggregate(count=Count('id'), total=Sum('amount'))
+            context['show_default_card'] = True
+            context['default_category'] = default_cat
+            context['default_category_count'] = stats['count'] or 0
+            context['default_category_amount'] = stats['total'] or 0
+
         return context
 
 

@@ -18,7 +18,7 @@ from django.urls import path
 from django.views.generic import RedirectView
 
 from api.entry_point_views import login_form, authenticate_user, register_form, create_user
-from api.views.category_view import CategoryUpdateView
+from api.views.category_view import CategoryUpdateView, CategoryCreateView, CategoryListView
 from api.views.csv_upload_view import CsvUploadView, CsvUploadDelete, CsvProcessView, CsvProgressView, \
     CsvUploadCheckView
 from api.views.rule_view import RuleDefineView, RuleDeleteView
@@ -45,5 +45,7 @@ urlpatterns = [
     path('transactions/rules/', RuleDefineView.as_view(), name='define_rule'),
     path('transactions/category/', CategoryUpdateView.as_view(), name='update_category'),
     path('transactions/category/edit', EditTransactionCategory.as_view(), name='update_transaction_category'),
+    path('categories/create/', CategoryCreateView.as_view(), name='create_category'),
+    path('categories/', CategoryListView.as_view(), name='category_list'),
     path("", RedirectView.as_view(url="transactions/"), name="entry_point")
 ]

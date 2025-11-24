@@ -129,6 +129,128 @@
     border: 1px dashed #ced4da;
 }
 
+.category-layout-stacked {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    max-width: 800px; /* Limit width for better readability on desktop */
+    margin: 0 auto; /* Center the column */
+}
+
+.category-form-section,
+.category-list-section {
+    width: 100%;
+    flex: none; /* Disable the flex-grow from previous css */
+}
+
+/* Highlight / Default Category Card Styling */
+.category-highlight-section {
+    max-width: 800px;
+    margin: 0 auto 30px auto;
+}
+
+.highlight-card {
+    background: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    border-top: 5px solid var(--primary-color); /* Gold accent */
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.highlight-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+}
+
+.highlight-icon {
+    font-size: 2rem;
+    background: var(--nav-link-active-bg);
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+}
+
+.highlight-titles h4 {
+    margin: 0 0 5px 0;
+    font-size: 1.25rem;
+    color: var(--nav-text-color);
+    font-weight: 700;
+}
+
+.badge-tag {
+    background-color: var(--primary-color);
+    color: var(--nav-text-color);
+    font-size: 0.75rem;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.highlight-description {
+    color: var(--secondary-color);
+    font-size: 0.95rem;
+    line-height: 1.5;
+    margin: 0;
+}
+
+/* Stats Section within the card */
+.highlight-stats {
+    margin-top: 10px;
+    padding-top: 15px;
+    border-top: 1px solid #e9ecef;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 30px;
+}
+
+.stat-box {
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: var(--secondary-color);
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.stat-value {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--nav-text-color);
+}
+
+.stat-separator {
+    width: 1px;
+    height: 30px;
+    background-color: #e9ecef;
+}
+
+/* Mobile Adjustment for the card */
+@media (max-width: 600px) {
+    .highlight-stats {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+
+    .stat-separator {
+        display: none;
+    }
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
     .category-layout {

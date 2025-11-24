@@ -8,22 +8,46 @@
     <link rel="stylesheet" href="{% static 'css/list.css' %}">
     <link rel="stylesheet" href="{% static 'css/main.css' %}">
     <link rel="stylesheet" href="{% static 'css/categories.css' %}">
+    <link rel="stylesheet" href="{% static 'css/filters.css' %}">
 {% endblock %}
 
 {% block content %}
 <div class="container mt-2">
+    {% include "components/header-with-year-select.html" with icon="📂" title="Categorie" %}
 
-    <div class="header">
-        <div class="header-title-group">
-            <h1>📂 Gestione Categorie</h1>
-            <p class="text-muted">Crea e organizza le categorie per le tue spese.</p>
+    {% if default_category %}
+    <div class="category-highlight-section mb-4">
+        <div class="highlight-card">
+            <div class="highlight-header">
+                <div class="highlight-icon">⭐</div>
+                <div class="highlight-titles">
+                    <h4>{{ default_category.name }}</h4>
+                    <span class="badge-tag">Categoria Principale</span>
+                </div>
+            </div>
+
+            <div class="highlight-body">
+                <p class="highlight-description">
+                    {{ default_category.description|default:"Nessuna descrizione disponibile per questa categoria." }}
+                </p>
+            </div>
+
+            <div class="highlight-stats">
+                <div class="stat-box">
+                    <span class="stat-label">Transazioni</span>
+                    <span class="stat-value">{{ default_category.transaction_count|default:"0" }}</span>
+                </div>
+                <div class="stat-separator"></div>
+                <div class="stat-box">
+                    <span class="stat-label">Totale Speso</span>
+                    <span class="stat-value">€ {{ default_category.transaction_amount|floatformat:2|default:"0,00" }}</span>
+                </div>
+            </div>
         </div>
-        <a href="{% url 'transaction_list' %}" class="btn btn-secondary">
-            ⬅️ Torna alle Spese
-        </a>
     </div>
+    {% endif %}
 
-    <div class="category-layout">
+    <div class="category-layout-stacked">
 
         <div class="category-form-section">
             <div class="create-category-card">
@@ -31,7 +55,7 @@
                     <h3>✨ Nuova Categoria</h3>
                 </div>
 
-                <form method="post" class="category-form">
+                <form method="post" class="category-form" action="{% url 'create_category' %}">
                     {% csrf_token %}
 
                     <div class="form-group">
@@ -55,7 +79,10 @@
         </div>
 
         <div class="category-list-section">
-            <h2 class="section-title">Categorie Esistenti <span class="badge-count">{{ categories.count }}</span></h2>
+            <h2 class="section-title">
+                Categorie Esistenti
+                <span class="badge-count">{{ categories.count }}</span>
+            </h2>
 
             {% if categories %}
             <div class="data-list">
@@ -64,14 +91,14 @@
                         <div class="category-info">
                             <span class="category-name">{{ category.name }}</span>
                             {% if category.description %}
-                                <p class="category-description">{{ category.description }}</p>
+                                <p class="category-description">{{ category.description|truncatechars:100 }}</p>
                             {% else %}
                                 <p class="category-description text-muted"><em>Nessuna descrizione</em></p>
                             {% endif %}
                         </div>
 
                         <div class="category-actions">
-                             </div>
+                            </div>
                     </div>
                 {% endfor %}
             </div>
