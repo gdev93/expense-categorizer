@@ -349,16 +349,6 @@ class CsvUploadView(ListView, FormView):
         return self.render_to_response(self.get_context_data(form=form))
 
 
-DEFAULT_CATEGORIES = [
-    "Casa", "Spesa", "Auto", "Carburante", "Vita sociale", "Pizza",
-    "Regali", "Vacanze", "Sport", "Bollette", "Scuola", "Bambini",
-    "Shopping", "Abbonamenti", "Affitto", "Baby-sitter", "Trasporti",
-    "Spese mediche", "Partita Iva", "Ristoranti e Bar"
-]
-default_categories_first_upload = os.getenv('DEFAULT_CATEGORIES').split(',') if os.getenv(
-    'DEFAULT_CATEGORIES') else DEFAULT_CATEGORIES
-
-
 class CsvProgressView(View):
     long_polling_limit = os.getenv('LONG_POLLING_SLEEP', 5)
 
@@ -414,13 +404,13 @@ class CsvProcessView(View):
             ).values_list('text_content', flat=True)
         )
 
-        available_categories = self._ensure_user_categories()
-
         # Process transactions using ExpenseUploadProcessor
         processor = ExpenseUploadProcessor(
             user=self.request.user,
             user_rules=user_rules,
-            available_categories=available_categories
+            available_categories=list(
+                Category.objects.filter(user=self.request.user)
+            )
         )
 
         csv_upload = processor.process_transactions(list(transactions), csv_upload)
@@ -430,25 +420,6 @@ class CsvProcessView(View):
         csv_upload.processing_time = processing_time
         csv_upload.save()
         return HttpResponse(status=201)
-
-    def _ensure_user_categories(self) -> List[str]:
-        """Ensure user has categories, create defaults if needed"""
-        user_categories = list(
-            Category.objects.filter(user=self.request.user).values_list('name', flat=True)
-        )
-
-        if not user_categories:
-            # Create default categories for new user
-            Category.objects.bulk_create([
-                Category(name=default_category, user=self.request.user)
-                for default_category in default_categories_first_upload
-            ])
-            return default_categories_first_upload
-        else:
-            user_categories = [Category(name=default_category, user=self.request.user)
-                for default_category in default_categories_first_upload if default_category not in user_categories]
-            Category.objects.bulk_create(user_categories)
-            return default_categories_first_upload
 
 class CsvUploadCheckView(View):
 

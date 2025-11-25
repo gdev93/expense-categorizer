@@ -73,21 +73,19 @@ class CategoryListView(ListView):
         # --- LOGIC FOR SUMMARY CARD ---
         # Get the queryset used by the list
         categories = context['categories']
-
-        default_category = max(categories, key=lambda cat: cat.transaction_count)
-        context['default_category'] = default_category
-        context['available_years'] =  list(
-            Transaction.objects.filter(
-                user=self.request.user,
-                status="categorized",
-                transaction_date__isnull=False,
+        if categories:
+            default_category = max(categories, key=lambda cat: cat.transaction_amount)
+            context['default_category'] = default_category
+            context['available_years'] =  list(
+                Transaction.objects.filter(
+                    user=self.request.user,
+                    status="categorized",
+                    transaction_date__isnull=False,
+                )
+                .values_list("transaction_date__year", flat=True)
+                .distinct()
+                .order_by("-transaction_date__year")
             )
-            .values_list("transaction_date__year", flat=True)
-            .distinct()
-            .order_by("-transaction_date__year")
-        )
-
-
         return context
 
 
