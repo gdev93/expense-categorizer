@@ -1,0 +1,10 @@
+{% extends "components/header.html" %}
+{% block header_content %}
+    <div>
+        <a href="{% url 'category_list' %}" class="btn btn-secondary">Categorie</a>
+        <a href="{% url 'category_delete' pk=category_summary.pk %}" class="btn btn-danger">
+            <i class="fas fa-trash-alt"></i>
+            Elimina
+        </a>
+    </div>
+{% endblock %}

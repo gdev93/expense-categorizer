@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import Any
 from google import genai
 
-from api.models import CsvUpload
+from api.models import CsvUpload, Category
 
 
 def get_api_key() -> str:
@@ -190,7 +190,7 @@ class ExpenseCategorizerAgent:
     """Agent for categorizing expense transactions using LLM"""
 
     def __init__(self, api_key: str | None = None, user_rules: list[str] | None = None,
-                 available_categories: list[str] | None = None):
+                 available_categories: list[Category] | None = None):
         """
         Args:
             api_key: Gemini API key (optional, will try env var)
@@ -308,7 +308,7 @@ class ExpenseCategorizerAgent:
                 notes=f"Rilevamento fallito: {str(e)}"
             )
 
-    def build_batch_prompt(self, batch: list[AgentTransactionUpload], csv_upload:CsvUpload) -> str:
+    def build_batch_prompt(self, batch: list[AgentTransactionUpload], csv_upload: CsvUpload) -> str:
         """Costruisce il prompt per un batch di transazioni"""
 
         # Formatta le transazioni
@@ -391,13 +391,21 @@ class ExpenseCategorizerAgent:
 
     """
 
-        # Formatta le categorie disponibili con struttura chiara
-        categories_formatted = "\n".join([f"  • {cat}" for cat in self.available_categories if cat != 'not_expense'])
+        # Formatta le categorie disponibili con struttura chiara, includendo le descrizioni
+        categories_formatted_list = []
+        for cat in self.available_categories:
+            if cat.name != 'not_expense':
+                if cat.description:
+                    categories_formatted_list.append(f"  • {cat.name} - {cat.description}")
+                else:
+                    categories_formatted_list.append(f"  • {cat.name}")
+
+        categories_formatted = "\n".join(categories_formatted_list)
 
         return f"""Sei un assistente IA specializzato nella categorizzazione delle **spese** bancarie italiane.
-    
+
     {csv_hints_section}
-    
+
     {user_rules_section}
 
     ═══════════════════════════════════════════════════════

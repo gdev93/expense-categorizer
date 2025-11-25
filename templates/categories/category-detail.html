@@ -1,0 +1,125 @@
+{% extends "main/index.html" %}
+{% load static %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/categories.css' %}">
+    <link rel="stylesheet" href="{% static 'css/summary-card.css' %}">
+    <link rel="stylesheet" href="{% static 'css/list.css' %}">
+    <link rel="stylesheet" href="{% static 'css/pagination.css' %}">
+{% endblock %}
+
+{% block content %}
+    <div class="container mt-2">
+
+        {% include "components/header-with-back-to-category-button.html" with icon="📂" title=category_summary.name %}
+
+        <div class="category-layout-stacked">
+
+            <div class="category-form-section">
+
+                <div class="highlight-card">
+                    <div class="highlight-header">
+                        <div class="highlight-titles">
+                            <h4>{{ category_summary.name }} {% if category_summary.is_default %}
+                                <span class="badge-tag">Default</span>{% endif %}</h4>
+                            <p class="highlight-description">{{ category_summary.description|default:"Nessuna descrizione fornita." }}</p>
+                        </div>
+                    </div>
+
+                    <div class="highlight-stats">
+                        <div class="stat-box">
+                            <span class="stat-label">Totale Speso</span>
+                            <span class="stat-value">€{{ category_summary.transaction_amount|floatformat:2 }}</span>
+                        </div>
+                        <span class="stat-separator"></span>
+                        <div class="stat-box">
+                            <span class="stat-label">Transazioni</span>
+                            <span class="stat-value">{{ category_summary.transaction_count }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="create-category-card mt-5" style="position: static;">
+                    <div class="card-header">
+                        <h3>Modifica Categoria</h3>
+                    </div>
+
+                    <form method="post" class="category-form">
+                        {% csrf_token %}
+
+                        <div class="form-group mb-3">
+                            <label for="{{ form.name.id_for_label }}">Nome Categoria</label>
+                            {{ form.name }}
+                            {% if form.name.errors %}
+                                <div class="text-danger">{{ form.name.errors }}</div>{% endif %}
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label for="{{ form.description.id_for_label }}">Descrizione (Opzionale)</label>
+                            {{ form.description }}
+                            {% if form.description.errors %}
+                                <div class="text-danger">{{ form.description.errors }}</div>{% endif %}
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-full-width">Salva Modifiche</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="category-list-section mt-5">
+                <div class="section-title">
+                    Transazioni Associate
+                    <span class="badge-count">{{ category_summary.transaction_count }}</span>
+                </div>
+
+                <div class="data-list">
+                    {% if transactions %}
+                        {% for transaction in transactions %}
+                            <div class="data-list-item">
+                                <div class="category-info">
+                                    <div class="category-name">
+                                        {{ transaction.transaction_date|date:"d M Y" }}
+                                        <span class="text-muted small">({{ transaction.merchant_raw_name|default:"Nessun Mercante" }})</span>
+                                    </div>
+                                    <p class="category-description">
+                                        {{ transaction.description|default:"Nessuna descrizione"|truncatechars:100 }}
+                                    </p>
+                                </div>
+                                <div class="text-end">
+                            <span style="font-weight: 700; color: var(--{{ transaction.transaction_type|lower }}-color);">
+                                €{{ transaction.amount|floatformat:2 }}
+                            </span>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="empty-state-simple">
+                            Nessuna transazione registrata per questa categoria.
+                        </div>
+                    {% endif %}
+                </div>
+
+                {% if transactions.has_other_pages %}
+                    <div class="pagination">
+                        {% if transactions.has_previous %}
+                            <a href="?page={{ transactions.previous_page_number }}" class="btn btn-sm">Precedente</a>
+                        {% else %}
+                            <span class="disabled">Precedente</span>
+                        {% endif %}
+
+                        <span class="current">
+                    Pagina {{ transactions.number }} di {{ transactions.paginator.num_pages }}
+                </span>
+
+                        {% if transactions.has_next %}
+                            <a href="?page={{ transactions.next_page_number }}" class="btn btn-sm">Successiva</a>
+                        {% else %}
+                            <span class="disabled">Successiva</span>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+
+        </div>
+    </div>
+{% endblock content %}

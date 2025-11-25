@@ -3,10 +3,11 @@ from dataclasses import dataclass
 
 from django import forms
 from django.contrib import messages
+from django.core.paginator import Paginator
 from django.db.models import Count, Sum, DecimalField
 from django.db.models.functions import Coalesce
 from django.urls import reverse_lazy
-from django.views.generic import ListView, CreateView, UpdateView
+from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 
 from api.models import Category, Transaction
 
@@ -75,7 +76,7 @@ class CategoryListView(ListView):
 
         default_category = max(categories, key=lambda cat: cat.transaction_count)
         context['default_category'] = default_category
-        context['available_years'] =  available_years = list(
+        context['available_years'] =  list(
             Transaction.objects.filter(
                 user=self.request.user,
                 status="categorized",
@@ -110,35 +111,79 @@ class CategoryCreateView(CreateView):
         # If invalid, we must re-render the list context so the page doesn't break
         return self.render_to_response(self.get_context_data(form=form))
 
-    def get_context_data(self, **kwargs):
-        # Re-populate the category list if the form submission fails
-        context = super().get_context_data(**kwargs)
-        context['categories'] = Category.objects.filter(user=self.request.user).order_by('name')
 
 
-        # Ensure the summary card logic is also present even on form error re-render
-        if context['categories'].exists():
-            default_cat = context['categories'].first()
-            stats = default_cat.transaction_set.aggregate(count=Count('id'), total=Sum('amount'))
-            context['show_default_card'] = True
-            context['default_category'] = default_cat
-            context['default_category_count'] = stats['count'] or 0
-            context['default_category_amount'] = stats['total'] or 0
 
-        return context
-
-
-# 3. UPDATE VIEW
-class CategoryUpdateView(UpdateView):
+class CategoryDetailView(UpdateView):
+    """
+    A view to display the details of a specific Category, allow updates,
+    and list all associated transactions with pagination.
+    """
     model = Category
     form_class = CategoryForm
-    template_name = 'categories/category_update.html'  # Requires a small separate template
+    template_name = 'categories/category-detail.html'  # New template
     success_url = reverse_lazy('category_list')
 
     def get_queryset(self):
-        # Security: Prevent editing other users' categories
+        # Security: Only allow the user to view/edit their own categories
         return Category.objects.filter(user=self.request.user)
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        category = self.object
+
+        # 1. Fetch Aggregated Summary Data for the Summary Card
+        # This re-calculates the enrichment for the single category object
+        summary = Category.objects.filter(pk=category.pk).annotate(
+            transaction_count=Count('transactions'),
+            transaction_amount=Coalesce(
+                Sum('transactions__amount'),
+                0.00,
+                output_field=DecimalField()
+            )
+        ).first()
+
+        context['category_summary'] = summary
+
+        # 2. Fetch and Paginate Associated Transactions
+        transaction_list = Transaction.objects.filter(
+            user=self.request.user,
+            category=category
+        ).order_by('-transaction_date', '-created_at')  # Ordering defined in models.py
+
+        # Pagination logic
+        paginator = Paginator(transaction_list, 20)  # Show 20 transactions per page
+        page_number = self.request.GET.get('page') or 1
+
+        transactions = paginator.page(page_number)
+
+        context['transactions'] = transactions
+
+        return context
+
     def form_valid(self, form):
+        # The form_valid method handles the update. The success message is shown
+        # after the redirect to the success_url (or in this case, the same page).
         messages.success(self.request, "📝 Categoria aggiornata correttamente.")
+        return super().form_valid(form)
+
+class CategoryDeleteView(DeleteView):
+    """
+    A view to securely delete a user's category.
+    """
+    model = Category
+    # Django's DeleteView expects a template named *_confirm_delete.html by default
+    template_name = 'categories/category_confirm_delete.html'
+    success_url = reverse_lazy('category_list')
+
+    def get_queryset(self):
+        # Security: Only allow the user to delete their own categories that are NOT default/system categories
+        return Category.objects.filter(user=self.request.user, is_default=False)
+
+    def form_valid(self, form):
+        # Add a success message after deletion
+        messages.success(self.request, f"🗑️ Categoria '{self.object.name}' eliminata con successo.")
+        # Important: The model's Foreign Key (Category to Transaction) configuration
+        # (e.g., CASCADE, SET_NULL, PROTECT) will determine what happens to related transactions.
         return super().form_valid(form)

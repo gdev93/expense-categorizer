@@ -383,7 +383,7 @@ class EditTransactionCategory(View):
 
         # 2. Retrieve objects (using get_object_or_404 is good for immediate 404 response)
         try:
-            transaction = get_object_or_404(Transaction, id=transaction_id)
+            expense = get_object_or_404(Transaction, id=transaction_id)
             new_category = get_object_or_404(Category, id=new_category_id)
         except Exception as e:
             # Catch exceptions if IDs are malformed or missing
@@ -391,19 +391,19 @@ class EditTransactionCategory(View):
 
         # 3. Authorization Check (CRUCIAL for security)
         # Assuming Transaction has a 'user' field
-        if transaction.user != request.user:
+        if expense.user != request.user:
             # Return 403 Forbidden if the user doesn't own the transaction
             return JsonResponse({'success': False, 'error': 'You do not have permission to edit this transaction.'},
                                 status=403)
         # 4. Update and Save
-        transaction.category = new_category
-        transaction.save()  # ⬅️ MUST CALL .save() to write the change to the database
+        expense.category = new_category
+        expense.save()  # ⬅️ MUST CALL .save() to write the change to the database
 
         # 5. Return success response (JSON for AJAX)
         return JsonResponse({
             'success': True,
             'message': 'Category updated successfully.',
-            'transaction_id': transaction.id,
+            'transaction_id': expense.id,
             'new_category_name': new_category.name,  # Return updated data for client-side update
             'new_category_id': new_category.id
         }, status=200)  # Use 200 OK for a successful update

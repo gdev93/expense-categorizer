@@ -30,6 +30,7 @@ body {
 
 .container {
     width: 100%;
+    max-width: 800px;
     margin: 0 auto;
     background: white;
     padding: 30px; /* Increased padding */
@@ -152,6 +153,9 @@ h2 {
     .main-content {
         margin-left: 330px;
         padding: 16px; /* Remove top padding on desktop */
+    }
+    .container {
+        max-width: 70%;
     }
 }
 
