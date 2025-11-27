@@ -202,73 +202,62 @@ class ExpenseCategorizerAgent:
         self.available_categories = available_categories or []
         self.user_rules = user_rules or []
 
-    def detect_csv_structure(
-            self,
-            transactions: list[AgentTransactionUpload]
-    ) -> CsvStructure:
-        """
-        Analyze the CSV structure using Gemini to identify column mappings.
+        def detect_csv_structure(
+                self,
+                transactions: list[AgentTransactionUpload]
+        ) -> CsvStructure:
+            """
+            Analyze the CSV structure using Gemini to identify column mappings.
+            """
 
-        Args:
-            transactions: List of AgentTransactionUpload objects to analyze
-            client: Gemini API client
+            # Sample first few transactions
+            sample_size = min(5, len(transactions))
+            sample_transactions = transactions[:sample_size]
 
-        Returns:
-            CsvStructure: Detected field mappings for description, merchant, date, amount, and operation type
-        """
+            # Build the prompt
+            samples_text = ""
+            for i, tx in enumerate(sample_transactions, 1):
+                samples_text += f"Transazione {i}:\n"
+                samples_text += f"  ID: {tx.transaction_id}\n"
+                samples_text += "  Campi:\n"
+                for column, value in tx.raw_text.items():
+                    # Truncate long values for token efficiency
+                    display_value = str(value)[:100] + "..." if len(str(value)) > 100 else value
+                    samples_text += f"    - {column}: {display_value}\n"
+                samples_text += "\n"
 
-        # Sample first few transactions to reduce token usage
-        sample_size = min(5, len(transactions))
-        sample_transactions = transactions[:sample_size]
-
-        # Build the prompt
-        samples_text = ""
-        for i, tx in enumerate(sample_transactions, 1):
-            samples_text += f"Transazione {i}:\n"
-            samples_text += f"  ID: {tx.transaction_id}\n"
-            samples_text += "  Campi:\n"
-            for column, value in tx.raw_text.items():
-                display_value = str(value)[:100] + "..." if len(str(value)) > 100 else value
-                samples_text += f"    - {column}: {display_value}\n"
-            samples_text += "\n"
-
-        prompt = f"""Sei un esperto nell'analisi di strutture CSV di transazioni bancarie italiane.
+            prompt = f"""Sei un esperto nell'analisi di strutture CSV di transazioni bancarie italiane.
 
     Analizza i seguenti campioni di transazioni e identifica quali campi corrispondono a:
     1. **description_field**: Il campo contenente la descrizione/dettagli della transazione
     2. **merchant_field**: Il campo contenente il nome del commerciante/beneficiario
     3. **transaction_date_field**: Il campo contenente la data della transazione
     4. **amount_field**: Il campo contenente l'importo della transazione
-    5. **operation_type_field**: Il campo contenente il tipo di operazione (es. "Pagamento", "Bonifico", "Prelievo", "Addebito", "Accredito", ecc.)
+    5. **operation_type_field**: Il campo contenente il tipo di operazione
 
     CAMPIONI DI TRANSAZIONI:
     {samples_text}
 
     ISTRUZIONI GENERALI:
-    - Restituisci SOLO i nomi dei campi esattamente come appaiono nei dati (nomi esatti delle colonne)
+    - Restituisci SOLO i nomi dei campi esattamente come appaiono nei dati
     - Se un campo non può essere determinato con sicurezza, restituisci null
-    - Il campo operation_type_field contiene tipicamente parole chiave come: "Pagamento", "Bonifico", "Prelievo", "Addebito", "SDD", "Accredito", o descrittori di operazioni simili
     - Fornisci un livello di confidenza: "high", "medium", o "low"
-    - Aggiungi note se ci sono ambiguità o osservazioni importanti
 
     ⚠️ ISTRUZIONI CRITICHE PER LA DATA TRANSAZIONE:
-    - Il campo transaction_date_field DEVE essere una colonna dedicata alle date (es. "Data", "Data Valuta", "Data Contabile", "Data Operazione")
-    - NON selezionare campi che contengono date all'interno di descrizioni testuali o campi narrativi
-    - Cerca colonne con SOLO valori di date (formati come: GG/MM/AAAA, AAAA-MM-GG, GG/MM/AA)
-    - IGNORA date che appaiono come parte di stringhe di testo più lunghe o descrizioni
-    - Se esistono più colonne di date (es. "Data Operazione", "Data Valuta", "Data Contabile"), preferisci "Data Valuta" o la data più specifica della transazione
-    - Esempio: Scegli la colonna "Data Valuta", NON un campo "Descrizione" che menziona casualmente una data
+    - Il campo transaction_date_field DEVE essere una colonna dedicata ESCLUSIVAMENTE alle date (es. "Data", "Data Valuta", "Data Contabile").
+    - **CRITERIO DI ESCLUSIONE:** Ignora qualsiasi colonna che contenga testo narrativo insieme alla data. Cerca formati puri (GG/MM/AAAA, AAAA-MM-GG, ecc.).
+    - **CRITERIO "DATA MAGGIORE":** Se nel CSV sono presenti più colonne valide di date (es. sia "Data Operazione" che "Data Valuta"):
+      1. Confronta i valori delle date nei campioni forniti.
+      2. Seleziona la colonna che contiene sistematicamente la data cronologicamente PIÙ RECENTE (la data maggiore).
+      3. NON basare la scelta sul nome della colonna (es. non preferire a priori "Data Contabile"), ma basa la scelta sui valori effettivi.
 
     ⚠️ ISTRUZIONI CRITICHE PER L'IMPORTO:
-    - Il campo amount_field DEVE contenere SOLO importi NEGATIVI o importi contrassegnati come spese/addebiti
-    - IGNORA colonne con importi positivi (accrediti/entrate)
-    - Cerca colonne con segni negativi (es. "-45,50", "-100,00") o chiari indicatori di addebito
-    - L'obiettivo è identificare SOLO LE SPESE, non le entrate
-    - Se gli importi sono in più colonne (es. "Dare" per addebiti, "Avere" per accrediti), scegli la colonna degli addebiti
-    - Nomi comuni di colonne italiane per addebiti: "Importo", "Dare", "Uscite", "Addebito", "Movimenti" (se negativi)
-    - Se c'è una singola colonna "Importo" o "Movimenti" con valori sia positivi che negativi, selezionala comunque (verranno filtrati i valori negativi successivamente)
+    - Il campo amount_field DEVE permettere di identificare le SPESE.
+    - Cerca colonne con importi negativi o indicatori di addebito.
+    - Se esistono colonne separate (es. "Dare"/"Avere"), scegli la colonna degli addebiti ("Dare", "Uscite").
+    - Se c'è una colonna unica ("Importo"), selezionala.
 
-    FORMATO OUTPUT (solo JSON, niente markdown):
+    FORMATO OUTPUT (JSON):
     {{
       "description_field": "nome_colonna_esatto_o_null",
       "merchant_field": "nome_colonna_esatto_o_null",
@@ -276,7 +265,7 @@ class ExpenseCategorizerAgent:
       "amount_field": "nome_colonna_esatto_o_null",
       "operation_type_field": "nome_colonna_esatto_o_null",
       "confidence": "high|medium|low",
-      "notes": "eventuali osservazioni rilevanti o null"
+      "notes": "string"
     }}
 
     Restituisci SOLO l'oggetto JSON, nient'altro."""

@@ -42,9 +42,9 @@ def _calculate_statistics(transactions: list[dict], results: list[dict]) -> dict
 
 
 class BatchingHelper:
-    batch_size = os.environ.get('AGENT_BATCH_SIZE', 15)
-    batch_max_size = os.environ.get('AGENT_BATCH_MAX_SIZE', 25)
-    batch_min_size = os.environ.get('AGENT_BATCH_MIN_SIZE', 10)
+    batch_size = os.environ.get('AGENT_BATCH_SIZE', 30)
+    batch_max_size = os.environ.get('AGENT_BATCH_MAX_SIZE', 40)
+    batch_min_size = os.environ.get('AGENT_BATCH_MIN_SIZE', 25)
     def __init__(self, batch_size:int = batch_size, batch_max_size:int=batch_max_size, batch_min_size:int=batch_min_size):
         self.batch_size = batch_size
         self.batch_max_size = batch_max_size
@@ -319,23 +319,27 @@ class ExpenseUploadProcessor:
             except Exception as e:
                 print(f"⚠️  Failed to persist transaction {tx_id}: {str(e)}")
                 continue
-
-    def process_transactions(self, transactions: list[Transaction], csv_upload: CsvUpload) -> CsvUpload:
-        is_new_upload = True
-        all_csv_uploads = list(CsvUpload.objects.filter(user=self.user))
+    def _setup_csv_upload_structure(self, current_data:list[Transaction], csv_upload: CsvUpload):
+        csv_upload_same_structure = None
+        all_csv_uploads = list(CsvUpload.objects.filter(user=self.user).exclude(id=csv_upload.id))
         for csv_upload_candidate in all_csv_uploads:
-            first_transaction_raw_data = csv_upload_candidate.transactions.first().raw_data
+            first_transaction_candidate = Transaction.objects.filter(user=self.user, csv_upload=csv_upload_candidate,
+                                                                     original_amount__isnull=False,
+                                                                     category__isnull=False).first()
+            if not first_transaction_candidate:
+                continue
+            first_transaction_raw_data = first_transaction_candidate.raw_data
             first_transaction_raw_data_keys = set(first_transaction_raw_data.keys())
-            new_transaction_raw_data_keys = set(transactions[0].raw_data.keys())
-            if new_transaction_raw_data_keys in first_transaction_raw_data_keys and len(
-                    first_transaction_raw_data_keys) == len(new_transaction_raw_data_keys):
-                is_new_upload = False
+            new_transaction_raw_data_keys = set(current_data[0].raw_data.keys())
+            # the idea is to check that each element in the set in the other set
+            if first_transaction_raw_data_keys == new_transaction_raw_data_keys:
+                csv_upload_same_structure = csv_upload_candidate
                 break
-        if is_new_upload:
-            transaction_sample_size = min(30, floor(len(transactions) * 30 / 100))  # 30%
+        if not csv_upload_same_structure:
+            transaction_sample_size = min(30, floor(len(current_data) * 30 / 100))  # 30%
             result_from_agent = self.agent.detect_csv_structure(
                 [AgentTransactionUpload(transaction_id=tx.id, raw_text=tx.raw_data) for tx in
-                 transactions[:transaction_sample_size]])
+                 current_data[:transaction_sample_size]])
             description_column_name = result_from_agent.description_field
             notes = result_from_agent.notes
             merchant_column_name = result_from_agent.merchant_field
@@ -343,12 +347,12 @@ class ExpenseUploadProcessor:
             amount_column_name = result_from_agent.amount_field
             operation_type_column_name = result_from_agent.operation_type_field
         else:
-            description_column_name = csv_upload.description_column_name
-            notes = csv_upload.notes
-            merchant_column_name = csv_upload.merchant_column_name
-            date_column_name = csv_upload.date_column_name
-            amount_column_name = csv_upload.amount_column_name
-            operation_type_column_name = csv_upload.operation_type_column_name
+            description_column_name = csv_upload_same_structure.description_column_name
+            notes = csv_upload_same_structure.notes
+            merchant_column_name = csv_upload_same_structure.merchant_column_name
+            date_column_name = csv_upload_same_structure.date_column_name
+            amount_column_name = csv_upload_same_structure.amount_column_name
+            operation_type_column_name = csv_upload_same_structure.operation_type_column_name
 
         csv_upload.description_column_name = description_column_name
         csv_upload.merchant_column_name = merchant_column_name
@@ -357,6 +361,10 @@ class ExpenseUploadProcessor:
         csv_upload.operation_type_column_name = operation_type_column_name
         csv_upload.notes = notes
         csv_upload.save()
+
+    def process_transactions(self, transactions: list[Transaction], csv_upload: CsvUpload) -> CsvUpload:
+
+        self._setup_csv_upload_structure(transactions, csv_upload)
 
         all_transactions_to_upload = self._process_prechecks(transactions, csv_upload)
         data_count = len(all_transactions_to_upload)
@@ -532,10 +540,9 @@ class ExpenseUploadProcessor:
         # Find all transactions that are categorized and marked as expense but actually they are income transaction
         (Transaction.objects.filter(
             user=self.user,
-            csv_upload=csv_upload,
-            transaction_type='expense'
+            csv_upload=csv_upload
         )
-         .filter(~Q(original_amount__startswith='-'))
+         .filter(Q(original_amount__isnull=True) & Q(category__isnull=False))
          .update(transaction_type='income', status='uncategorized'))
 
 
