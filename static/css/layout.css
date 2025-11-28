@@ -4,3 +4,24 @@
     margin-bottom: 30px;
     flex-wrap: wrap;
 }
+
+/* ADD THIS MOBILE SECTION */
+@media (max-width: 767px) {
+    .summary {
+        display: grid;
+        /* Create 2 equal columns */
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+
+    /* Optional: If you have 3 cards, make the last one span both columns */
+    .summary > :last-child:nth-child(odd) {
+        grid-column: span 2;
+    }
+
+    /* Logic: If screen is small, hide anything with this class */
+    .desktop-only {
+        display: none !important;
+    }
+
+}

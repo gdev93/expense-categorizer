@@ -1,9 +1,14 @@
+/* transactions.css */
+
+/* =========================================
+   1. CARDS & GENERAL CONTAINERS
+   ========================================= */
 
 .rule-card {
     border: 1px solid #e9ecef;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
-    overflow: hidden; /* Contains card content */
+    overflow: hidden;
 }
 
 .rule-card .card-header {
@@ -22,11 +27,14 @@
     padding: 20px;
 }
 
-/* Forms (Used in detail and list) */
+/* =========================================
+   2. FORMS & INPUTS
+   ========================================= */
+
 .form-control {
     width: 100%;
     padding: 10px;
-    border: 1px solid #ced4da; /* Standard gray border */
+    border: 1px solid #ced4da;
     border-radius: 4px;
     box-sizing: border-box;
     font-size: 15px;
@@ -35,8 +43,8 @@
 }
 
 .form-control:focus {
-    border-color: var(--primary-color); /* Use Gold variable */
-    box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.25); /* Adjusted shadow for gold */
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.25);
     outline: none;
 }
 
@@ -54,9 +62,22 @@
     display: block;
 }
 
+/* Search Group Specifics */
+.search-group {
+    min-width: 300px;
+    flex-grow: 1.5;
+    margin-bottom: 0;
+}
+
+/* =========================================
+   3. TRANSACTION LIST ITEMS
+   ========================================= */
+
 .transaction-main {
     flex: 1;
     margin-right: 15px;
+    /* Ensure text truncates properly within flex container */
+    min-width: 0;
 }
 
 .transaction-date {
@@ -77,10 +98,10 @@
     font-size: 13px;
     color: #868e96;
     margin-top: 5px;
-    max-width: 600px;
+    max-width: 100%; /* Changed from fixed 600px for responsiveness */
     overflow: hidden;
     white-space: nowrap;
-    text-overflow: ellipsis; /* Added ellipsis for truncated text */
+    text-overflow: ellipsis;
 }
 
 .transaction-meta {
@@ -95,24 +116,11 @@
     font-size: 17px;
     text-align: right;
     min-width: 90px;
-    /* Default to expense color (red) */
     color: var(--expense-color);
 }
 
 .is-income {
     color: var(--income-color);
-}
-
-/* Transaction Category Tag */
-.transaction-category {
-    display: inline-block;
-    padding: 4px 10px;
-    background-color: #ffecc0; /* Light gold background */
-    color: var(--primary-color); /* Gold text */
-    border-radius: 12px; /* Pill shape for tags */
-    font-size: 12px;
-    font-weight: 500;
-    white-space: nowrap;
 }
 
 /* Status Indicators */
@@ -125,21 +133,27 @@
     text-transform: uppercase;
 }
 
-.status-pending {
-    background: #fff3e0; /* Light Orange */
-    color: #e65100;
+.status-pending { background: #fff3e0; color: #e65100; }
+.status-categorized { background: #e8f5e9; color: #1a7e2b; }
+.status-reviewed { background: #e3f2fd; color: #1565c0; }
+
+/* =========================================
+   4. CATEGORIES & TAGS
+   ========================================= */
+
+/* Main Category Tag */
+.transaction-category {
+    display: inline-block;
+    padding: 4px 10px;
+    background-color: #ffecc0;
+    color: var(--primary-color);
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
 }
 
-.status-categorized {
-    background: #e8f5e9; /* Light Green */
-    color: #1a7e2b;
-}
-
-.status-reviewed {
-    background: #e3f2fd; /* Light Blue */
-    color: #1565c0;
-}
-/* Categories Section (Tags) - Updated for better hover/click */
+/* Category Filter List */
 .categories {
     display: flex;
     flex-wrap: wrap;
@@ -151,7 +165,7 @@
 
 .category-tag {
     padding: 6px 12px;
-    background: #e9ecef; /* Neutral tag background */
+    background: #e9ecef;
     color: #495057;
     border-radius: 4px;
     font-size: 13px;
@@ -166,8 +180,206 @@
     transform: translateY(-1px);
 }
 
+/* Non-Editable Category Pill */
+.category-pill {
+    display: inline-block;
+    padding: 4px 10px;
+    background-color: var(--nav-link-active-bg);
+    color: var(--nav-text-color);
+    border-radius: 50px;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+    border: 1px solid var(--primary-color);
+    cursor: default;
+}
 
-/* Empty State - subtle and clear */
+.category-pill.uncategorized {
+    background-color: #f8f9fa;
+    color: var(--secondary-color);
+    border: 1px solid #ced4da;
+}
+
+/* Editable Override */
+.category-tag-editable {
+    padding: 4px 10px;
+    background-color: var(--nav-link-active-bg) !important;
+    color: var(--nav-text-color) !important;
+    border-radius: 50px !important;
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    white-space: nowrap;
+    border: 1px solid var(--primary-color) !important;
+    cursor: default !important;
+}
+
+/* =========================================
+   5. EXPANDER & RULE BUILDER
+   ========================================= */
+
+/* Expander Card */
+.expander-card {
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+    margin-bottom: 20px;
+    background-color: #ffffff;
+    overflow: hidden;
+}
+
+.expander-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid transparent;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.expander-header:hover {
+    background-color: #e9ecef;
+}
+
+.expander-header h2 {
+    font-size: 18px;
+    color: var(--nav-text-color);
+    margin: 0;
+}
+
+.expander-toggle-btn {
+    background: none;
+    border: none;
+    color: var(--primary-color);
+    font-size: 16px;
+    cursor: pointer;
+    padding: 5px;
+    transition: transform 0.3s ease;
+    line-height: 1;
+}
+
+.expander-toggle-btn[aria-expanded="true"] .expander-icon {
+    transform: rotate(180deg);
+}
+
+.expander-body {
+    max-height: 500px;
+    overflow: hidden;
+    transition: max-height 0.3s ease-in-out, padding 0.3s ease-in-out, border-top 0.3s;
+    padding: 20px;
+}
+
+.expander-body:not(.collapsed) {
+    border-top: 1px solid #e9ecef;
+}
+
+.expander-body h5 {
+    font-size: 1.15em;
+    font-weight: 700;
+    color: var(--nav-text-color);
+    margin-bottom: 15px;
+}
+
+.expander-body .mb-4 {
+    margin-bottom: 0 !important;
+}
+
+.expander-body .mb-4.rule-list-container {
+    padding: 0 20px;
+    margin-bottom: 0 !important;
+}
+
+.expander-body.collapsed {
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
+/* Rules List */
+.rule-list {
+    list-style: none;
+    padding: 0;
+}
+
+.rule-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 10px;
+    background-color: #ffffff;
+    border: 1px solid #e9ecef;
+    border-radius: 4px;
+}
+
+/* Rule Builder Card (New) */
+.rule-builder-card {
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    background-color: var(--nav-bg-color);
+    margin-bottom: 30px !important;
+}
+
+.rule-card-header {
+    padding: 15px 25px;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #e9ecef;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+}
+
+.rule-card-header h3 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--nav-text-color);
+    margin: 0;
+}
+
+.rule-card-body {
+    padding: 25px;
+}
+
+/* Rule Builder Controls (Refined) */
+.rule-builder {
+    background: transparent !important;
+    padding: 0 !important;
+    border: none !important;
+}
+
+.rule-builder-controls {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    /* IMPORTANT: Allows wrapping on smaller screens */
+    flex-wrap: wrap;
+}
+
+.rule-input {
+    flex: 0 0 200px;
+    max-width: 250px;
+    margin: 0;
+}
+
+.rule-builder-text {
+    flex-shrink: 0;
+    margin: 0;
+}
+
+.btn-primary-gold {
+    flex-shrink: 0;
+    margin-left: auto;
+}
+
+.rule-tip {
+    margin-top: 20px !important;
+    border-top: 1px dashed #e9ecef;
+    padding-top: 15px;
+}
+
+/* =========================================
+   6. EMPTY STATES
+   ========================================= */
+
 .empty-state {
     text-align: center;
     padding: 80px 20px;
@@ -188,255 +400,77 @@
     color: #343a40;
 }
 
+/* =========================================
+   7. RESPONSIVE QUERIES
+   ========================================= */
 
-/* Specific styling for the Search Group and its buttons */
-.search-group {
-    min-width: 300px;
-    flex-grow: 1.5;
-    margin-bottom: 0;
-}
-
-/* -------------------------------------- */
-/* NEW: Non-Editable Category Pill Styling */
-/* -------------------------------------- */
-.category-pill {
-    display: inline-block;
-    padding: 4px 10px; /* Tighter padding for in-table use */
-    background-color: var(--nav-link-active-bg); /* Light Gold background */
-    color: var(--nav-text-color); /* Charcoal text */
-    border-radius: 50px; /* Pill shape */
-    font-size: 12px;
-    font-weight: 500;
-    white-space: nowrap; /* Prevents text wrap */
-    border: 1px solid var(--primary-color); /* Gold border for emphasis */
-    cursor: default; /* Show it is not clickable/editable */
-}
-
-.category-pill.uncategorized {
-    background-color: #f8f9fa; /* Light gray */
-    color: var(--secondary-color); /* Soft gray text */
-    border: 1px solid #ced4da; /* Standard gray border */
-}
-
-/* You may need to remove or adjust the HTML/JS that was responsible for making
-   categories editable (e.g., the element with class '.category-tag-editable').
-   I've included a style to override it to look like a pill, just in case. */
-.category-tag-editable {
-    padding: 4px 10px;
-    background-color: var(--nav-link-active-bg) !important;
-    color: var(--nav-text-color) !important;
-    border-radius: 50px !important;
-    font-size: 12px !important;
-    font-weight: 500 !important;
-    white-space: nowrap;
-    border: 1px solid var(--primary-color) !important;
-    cursor: default !important;
-}
-
-/* -------------------------------------- */
-/* NEW: Expander (Accordion) Styling */
-/* -------------------------------------- */
-
-.expander-card {
-    border: 1px solid #e9ecef;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
-    margin-bottom: 20px;
-    background-color: #ffffff;
-    overflow: hidden;
-}
-
-.expander-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 15px 20px;
-    background-color: #f8f9fa; /* Light gray background for contrast */
-    border-bottom: 1px solid transparent;
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-
-.expander-header:hover {
-    background-color: #e9ecef;
-}
-
-.expander-header h2 {
-    font-size: 18px;
-    color: var(--nav-text-color);
-    margin: 0;
-}
-
-.expander-toggle-btn {
-    background: none;
-    border: none;
-    color: var(--primary-color); /* Gold accent for the button */
-    font-size: 16px;
-    cursor: pointer;
-    padding: 5px;
-    transition: transform 0.3s ease;
-    line-height: 1;
-}
-
-/* Rotate icon when active (expanded) */
-.expander-toggle-btn[aria-expanded="true"] .expander-icon {
-    transform: rotate(180deg);
-}
-
-.expander-body {
-    max-height: 500px;
-    overflow: hidden;
-    transition: max-height 0.3s ease-in-out, padding 0.3s ease-in-out, border-top 0.3s;
-    padding: 20px;
-}
-
-/* Add a border to the body when it is expanded */
-.expander-body:not(.collapsed) {
-    border-top: 1px solid #e9ecef;
-}
-
-.expander-body h5 {
-    font-size: 1.15em; /* Slightly larger than a standard h5 */
-    font-weight: 700;
-    color: var(--nav-text-color); /* Charcoal color */
-    margin-bottom: 15px; /* Add some space below the heading */
-}
-
-/* 2) Remove dots in the list and add margin between the elements (Confirmation) */
-.rule-list {
-    list-style: none; /* Removes dots/bullets */
-    padding: 0; /* Removes default list padding */
-}
-
-.rule-item {
-    /* ... other styles ... */
-    display: flex;
-    justify-content: space-between; /* Pushes content to edges */
-    align-items: center;
-    /* Defines the card look: */
-    padding: 15px 10px;
-    background-color: #ffffff;
-    border: 1px solid #e9ecef;
-    border-radius: 4px;
-}
-
-/* Ensure the content inside the expander body doesn't have a large margin,
-   which could interfere with the max-height calculation for a clean collapse */
-.expander-body .mb-4 {
-    margin-bottom: 0 !important;
-}
-
-.rule-builder-controls {
-    /* Use flex to align all text, inputs, and button horizontally */
-    display: flex;
-    align-items: center;
-    gap: 15px; /* Consistent spacing between all elements */
-}
-
-/* Give inputs controlled, consistent size on desktop */
-.rule-input {
-    flex: 0 0 220px; /* Do not grow/shrink, set base size */
-    max-width: 250px;
-    margin: 0; /* Remove conflicting vertical margins */
-}
-
-.rule-builder-text {
-    flex-shrink: 0; /* Ensures the text doesn't wrap unnecessarily */
-    margin: 0;
-}
-
-/* The button is pushed to the far right end if space allows */
-.btn-primary-gold {
-    flex-shrink: 0;
-    margin-left: auto;
-}
-
-/* --- Rule Creation Card Styling (Renamed from .new-...) --- */
-
-.rule-builder-card {
-    border: 1px solid #e9ecef;
-    border-radius: 8px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05); /* Prominent shadow */
-    background-color: var(--nav-bg-color); /* White background */
-    margin-bottom: 30px !important;
-}
-
-.rule-card-header {
-    padding: 15px 25px;
-    background-color: #f8f9fa; /* Light gray header */
-    border-bottom: 1px solid #e9ecef;
-    border-top-left-radius: 8px;
-    border-top-right-radius: 8px;
-}
-
-.rule-card-header h3 {
-    font-size: 20px; /* Bolder, more important title */
-    font-weight: 700;
-    color: var(--nav-text-color);
-    margin: 0;
-}
-
-.rule-card-body {
-    padding: 25px; /* Generous padding for breathing room */
-}
-
-/* --- Rule Builder Controls Refinement --- */
-
-/* Remove background/border from the inner rule-builder div since the new card wraps it */
-.rule-builder {
-    background: transparent !important;
-    padding: 0 !important;
-    border: none !important;
-}
-
-.rule-builder-controls {
-    /* Use flex to align all text, inputs, and button horizontally */
-    display: flex;
-    align-items: center;
-    gap: 20px; /* Increased spacing between elements */
-}
-
-/* Give inputs controlled, consistent size on desktop */
-.rule-input {
-    flex: 0 0 200px; /* Do not grow, do not shrink, sets base size */
-    max-width: 250px;
-    margin: 0; /* Remove conflicting vertical margins */
-}
-
-.rule-builder-text {
-    flex-shrink: 0;
-    margin: 0;
-}
-
-.btn-primary-gold {
-    flex-shrink: 0;
-    margin-left: auto; /* Push button to the right end if space allows */
-}
-
-.rule-tip {
-    margin-top: 20px !important; /* More space above the tip */
-    border-top: 1px dashed #e9ecef;
-    padding-top: 15px;
-}
-
-
-/* Ensure the list content itself has proper padding inside the body */
-.expander-body .mb-4.rule-list-container {
-    padding: 0 20px; /* Add horizontal padding to the list */
-    margin-bottom: 0 !important;
-}
-
-.expander-body.collapsed {
-    padding-top: 0;
-    padding-bottom: 0;
-}
-
-
+/* Desktop Specific Adjustments */
 @media (min-width: 768px) {
     .transaction-category {
         font-size: 14px;
         font-weight: 500;
         white-space: nowrap;
     }
+}
 
+/* Mobile Specific Adjustments (The Fixes) */
+@media (max-width: 767px) {
+
+    /* 1. Stack the Rule Builder Form */
+    .rule-builder-controls {
+        flex-direction: column;
+        align-items: stretch; /* Make inputs fill the width */
+        gap: 10px;
+    }
+
+    .rule-input {
+        flex: 1 1 auto;
+        max-width: 100%;
+        width: 100%;
+    }
+
+    .rule-builder-text {
+        text-align: left;
+        font-size: 14px;
+        color: #6c757d;
+        margin-bottom: -5px; /* Pull label closer to input */
+    }
+
+    .btn-primary-gold {
+        width: 100%;
+        margin-left: 0;
+        margin-top: 10px;
+    }
+
+    /* 2. Transaction List Compact View */
+    .transaction-meta {
+        flex-direction: column; /* Stack amount under category */
+        align-items: flex-end;
+        gap: 5px;
+        min-width: auto;
+    }
+
+    .transaction-amount {
+        font-size: 15px;
+    }
+
+    .transaction-category {
+        max-width: 110px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-size: 11px;
+    }
+
+    /* 3. Existing Rules List */
+    .rule-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .rule-item form {
+        align-self: flex-end; /* Push delete button to right */
+        width: 100%;
+        text-align: right;
+    }
 }

@@ -3,25 +3,29 @@
 /* Fullscreen centering wrapper for vertical alignment */
 .fullscreen-center {
     min-height: 100vh;
+    width: 100%;
     display: flex;
     justify-content: center; /* Horizontal centering */
     align-items: center;   /* Vertical centering */
     padding: 20px; /* Safety padding for small mobile screens */
+    background-color: var(--background-color, #f8f9fa);
 }
 
 .login-container {
     /* Inherits font/color/background from main.css and body styles */
     background: white;
-    padding: 2rem; /* ADJUSTED: Reduced from 2.5rem */
+    padding: 2.5rem;
     border-radius: 12px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
     width: 100%;
     max-width: 400px;
+    /* Ensure it doesn't touch edges on very narrow screens */
+    margin: 0 auto;
 }
 
 .login-header {
     text-align: center;
-    margin-bottom: 2rem; /* ADJUSTED: Reduced from 2.5rem */
+    margin-bottom: 2rem;
 }
 
 .login-header h2 {
@@ -38,7 +42,7 @@
 }
 
 .form-group {
-    margin-bottom: 1.5rem; /* ADJUSTED: Reduced from 1.75rem */
+    margin-bottom: 1.5rem;
 }
 
 .form-group label {
@@ -56,6 +60,8 @@
     border-radius: 8px; /* More rounded input fields */
     font-size: 1rem;
     transition: all 0.3s ease;
+    /* Prevent zoom on mobile inputs (iOS requires 16px to prevent zoom) */
+    font-size: 16px;
 }
 
 .form-group input:focus {
@@ -103,8 +109,53 @@
     color: var(--primary-hover-color, #E0A800); /* Darker Gold on hover */
 }
 
+/* =========================================
+   MOBILE OPTIMIZATIONS
+   ========================================= */
 @media (max-width: 480px) {
+    /* 1. Handle Virtual Keyboard & Height Issues */
+    .fullscreen-center {
+        /* Switch from center to top-aligned with padding */
+        /* This prevents the top of the form from being cut off when keyboard opens */
+        align-items: flex-start;
+        padding-top: 40px;
+        padding-bottom: 40px;
+        height: auto; /* Allow growing */
+        min-height: 100vh;
+    }
+
+    /* 2. Container Adjustments */
     .login-container {
-        padding: 2rem; /* Aligned with new default padding */
+        padding: 1.5rem; /* Reduce padding to save space */
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05); /* Softer shadow */
+        border: 1px solid #e9ecef; /* Add border for definition since shadow is lighter */
+    }
+
+    /* 3. Typography Scaling */
+    .login-header h2 {
+        font-size: 1.75rem; /* Smaller heading */
+        margin-bottom: 0.25rem;
+    }
+
+    .login-header p {
+        font-size: 0.9rem;
+    }
+
+    .form-group {
+        margin-bottom: 1.25rem;
+    }
+
+    /* 4. Inputs & Buttons */
+    .form-group input {
+        padding: 12px; /* Standardize touch target */
+    }
+
+    .login-btn {
+        padding: 12px;
+    }
+
+    /* 5. Handle longer Register forms specifically */
+    .login-container.register-override {
+        margin-top: 0; /* Ensure it starts near the top */
     }
 }

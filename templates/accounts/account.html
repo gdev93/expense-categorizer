@@ -1,36 +1,46 @@
 {% load static %}
-<link rel="stylesheet" href="{% static 'css/login.css' %}">
-<link rel="stylesheet" href="{% static 'css/main.css' %}">
-<div class="fullscreen-center">
-    <div class="login-container">
-        <div class="login-header">
-            <h2>Bentornato</h2>
-            <p>Accedi al tuo account per gestire le tue finanze personali.</p>
-        </div>
-
-        <form method="POST" action="{% url 'authenticate_user' %}">
-            {% csrf_token %}
-
-            {% if request.GET.next %}
-                <input type="hidden" name="next" value="{{ request.GET.next }}">
-            {% endif %}
-
-            <div class="form-group">
-                <label for="username">Nome utente</label>
-                <input type="text" id="username" name="username" required>
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accedi - Contabilità</title>
+    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+    <link rel="stylesheet" href="{% static 'css/login.css' %}">
+</head>
+<body>
+    <div class="fullscreen-center">
+        <div class="login-container">
+            <div class="login-header">
+                <h2>Bentornato</h2>
+                <p>Accedi al tuo account per gestire le tue finanze personali.</p>
             </div>
 
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" required>
+            <form method="POST" action="{% url 'authenticate_user' %}">
+                {% csrf_token %}
+
+                {% if request.GET.next %}
+                    <input type="hidden" name="next" value="{{ request.GET.next }}">
+                {% endif %}
+
+                <div class="form-group">
+                    <label for="username">Nome utente</label>
+                    <input type="text" id="username" name="username" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+
+                <button type="submit" class="login-btn">Accedi</button>
+            </form>
+
+            <div class="auth-links-container">
+                <p><a href="{% url 'register_form' %}">Hai dimenticato la password?</a></p>
+                <p style="margin-top: 0.5rem;">Non hai un account? <a href="{% url 'create_user' %}">Registrati qui</a></p>
             </div>
-
-            <button type="submit" class="login-btn">Accedi</button>
-        </form>
-
-        <div class="auth-links-container">
-            <p><a href="{% url 'register_form' %}">Hai dimenticato la password?</a></p>
-            <p style="margin-top: 0.5rem;">Non hai un account? <a href="{% url 'create_user' %}">Registrati qui</a></p>
         </div>
     </div>
-</div>
+</body>
+</html>

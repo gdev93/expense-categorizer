@@ -1,4 +1,21 @@
-/* Refactored main.css */
+/* main.css */
+
+/* =========================================
+   1. VARIABLES & RESET
+   ========================================= */
+:root {
+    --primary-color: #FFC107;       /* Goldish/Amber */
+    --primary-hover-color: #E0A800; /* Darker Gold for hover */
+    --nav-bg-color: #ffffff;        /* White background for navigation */
+    --nav-text-color: #343a40;      /* Dark Charcoal for navigation text */
+    --nav-link-active-bg: #fff3e0;  /* Lightest Gold for active link */
+    --text-color: #212529;
+    --background-color: #f8f9fa;
+    --expense-color: #dc3545;       /* Red */
+    --income-color: #28a745;        /* Green */
+    --secondary-color: #6c757d;     /* Standard Gray */
+    --danger-color: #dc3545;
+}
 
 * {
     margin: 0;
@@ -6,61 +23,31 @@
     box-sizing: border-box;
 }
 
-/* Define CSS Variables */
-:root {
-    --primary-color: #FFC107; /* Goldish/Amber */
-    --primary-hover-color: #E0A800; /* Darker Gold for hover */
-    --nav-bg-color: #ffffff; /* NEW: White background for navigation surfaces */
-    --nav-text-color: #343a40; /* NEW: Dark Charcoal for navigation text */
-    --nav-link-active-bg: #fff3e0; /* NEW: Lightest Gold background for active link */
-    --text-color: #212529;
-    --background-color: #f8f9fa;
-    --expense-color: #dc3545; /* Red */
-    --income-color: #28a745; /* Green */
-    --secondary-color: #6c757d; /* Standard Gray */
-    --danger-color: #dc3545;
-}
-
-/* 1. Updated Font and Background */
 body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
     background-color: var(--background-color);
     color: var(--text-color);
+    /* Prevent horizontal scroll on mobile if something overflows slightly */
+    overflow-x: hidden;
 }
 
-.container {
-    width: 100%;
-    max-width: 90%;
-    margin: 0 auto;
-    background: white;
-    padding: 30px; /* Increased padding */
-    border-radius: 8px; /* Softer rounded corners */
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); /* Subtle shadow */
-}
-
+/* =========================================
+   2. TYPOGRAPHY
+   ========================================= */
 h1, h2, h3 {
     font-weight: 600;
-    color: var(--nav-text-color); /* Dark heading color */
+    color: var(--nav-text-color);
 }
 
-h1 {
-    font-size: 28px;
-}
+h1 { font-size: 28px; }
+h2 { font-size: 22px; }
+h3 { font-size: 18px; }
 
-h2 {
-    font-size: 22px;
-}
+/* =========================================
+   3. COMPONENTS
+   ========================================= */
 
-.header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 25px;
-    padding-bottom: 15px;
-    border-bottom: 1px solid #e9ecef; /* Lighter separator */
-}
-
-/* 2. Updated Buttons */
+/* --- Buttons (Standard) --- */
 .btn {
     padding: 10px 18px;
     border: none;
@@ -71,12 +58,13 @@ h2 {
     text-decoration: none;
     display: inline-block;
     transition: all 0.2s ease-in-out;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); /* Subtle lift */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    text-align: center;
 }
 
 .btn-primary {
-    background-color: var(--primary-color); /* Primary Gold */
-    color: var(--nav-text-color); /* Dark text on gold for contrast */
+    background-color: var(--primary-color);
+    color: var(--nav-text-color);
     font-weight: 700;
 }
 
@@ -87,9 +75,8 @@ h2 {
 }
 
 .btn-secondary {
-    background-color: var(--secondary-color); /* Secondary Gray */
+    background-color: var(--secondary-color);
     color: white;
-    text-align: center;
 }
 
 .btn-secondary:hover {
@@ -98,7 +85,7 @@ h2 {
 }
 
 .btn-danger {
-    background-color: var(--danger-color); /* Danger Red */
+    background-color: var(--danger-color);
     color: white;
 }
 
@@ -106,89 +93,180 @@ h2 {
     background-color: #c82333;
 }
 
-.btn.btn-disabled, .btn-primary.btn-disabled, .btn-secondary.btn-disabled, .btn-danger.btn-disabled {
-    background-color: var(--secondary-color) !important;
-    color: #f8f9fa !important;
-    cursor: not-allowed !important;
-    opacity: 0.65 !important;
-    transform: none !important; /* Override hover transform */
-    box-shadow: none !important;
-    pointer-events: none !important; /* Disable click/hover events */
-}
-
-/* Override :hover effects for all disabled buttons */
-.btn.btn-disabled:hover, .btn-primary.btn-disabled:hover, .btn-secondary.btn-disabled:hover, .btn-danger.btn-disabled:hover {
-    background-color: var(--secondary-color) !important;
-    transform: none !important;
-    box-shadow: none !important;
-}
-
-/* Utilities */
-.mt-5 {
-    margin-top: 40px;
-}
-
-.mt-2 {
-    margin-top: 10px;
-}
-
-.mb-3 {
-    margin-bottom: 20px;
-}
-
-.mb-5 {
-    margin-bottom: 50px;
-}
-
-/* Main Layout Styles */
-.main-content {
-    padding: 24px;
-    transition: margin-left 0.3s ease;
-    padding-top: 88px; /* Space for fixed app-bar (64px) + margin */
-    min-height: 100vh;
-}
-
-/* Desktop layout */
-@media (min-width: 768px) {
-    .main-content {
-        margin-left: 330px;
-        padding: 16px; /* Remove top padding on desktop */
-    }
-}
-
-/* Mobile layout */
-@media (max-width: 767px) {
-    .main-content {
-        margin-left: 0;
-        padding-top: 88px;
-    }
-    .container {
-        max-width: 100%;
-    }
-}
-
-/* -------------------------------------- */
-/* NEW: Small Button (.btn-sm) Styling */
-/* -------------------------------------- */
-
+/* --- Buttons (Small & Custom) --- */
 .btn-sm {
-    padding: 6px 12px; /* Small padding */
-    font-size: 14px; /* Small font size */
+    padding: 6px 12px;
+    font-size: 14px;
     line-height: 1.5;
     border-radius: 4px;
     font-weight: 500;
 }
 
-/* The .btn-danger-custom also confirms the small sizing: */
 .btn-danger-custom {
     background-color: #f8d7da; /* Light Red */
-    color: #721c24; /* Dark Red text */
+    color: #721c24;            /* Dark Red text */
     border: 1px solid #f5c6cb;
     font-weight: 500;
-    padding: 6px 12px; /* Small sizing */
+    padding: 6px 12px;
     border-radius: 4px;
 }
 
-.hidden {
-    display: none !important;
+/* --- Buttons (Disabled State) --- */
+.btn.btn-disabled,
+.btn-primary.btn-disabled,
+.btn-secondary.btn-disabled,
+.btn-danger.btn-disabled {
+    background-color: var(--secondary-color) !important;
+    color: #f8f9fa !important;
+    cursor: not-allowed !important;
+    opacity: 0.65 !important;
+    transform: none !important;
+    box-shadow: none !important;
+    pointer-events: none !important;
+}
+
+/* --- Hamburger Menu Icon (For Mobile Sidebar) --- */
+.menu-toggle {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 10px;
+    margin-right: 10px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    z-index: 1001; /* Ensure above overlay */
+}
+
+.hamburger,
+.hamburger::before,
+.hamburger::after {
+    display: block;
+    width: 24px;
+    height: 2px;
+    background-color: var(--nav-text-color);
+    transition: 0.3s;
+}
+
+.hamburger::before,
+.hamburger::after {
+    content: '';
+    position: absolute;
+}
+
+.hamburger::before { transform: translateY(-7px); }
+.hamburger::after { transform: translateY(7px); }
+
+
+/* =========================================
+   4. LAYOUT & UTILITIES
+   ========================================= */
+
+.container {
+    width: 100%;
+    margin: 0 auto;
+    background: white;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+/* Wrapper for content to respect Sidebar */
+.main-content {
+    min-height: 100vh;
+    transition: margin-left 0.3s ease;
+    /* Default spacing (will be overridden by media queries) */
+    padding: 24px;
+    padding-top: 88px;
+    margin-left: 0;
+}
+
+/* Utility Classes */
+.mt-5 { margin-top: 40px; }
+.mt-2 { margin-top: 10px; }
+.mb-3 { margin-bottom: 20px; }
+.mb-5 { margin-bottom: 50px; }
+.hidden { display: none !important; }
+
+
+/* =========================================
+   5. RESPONSIVE QUERIES
+   ========================================= */
+
+/* =========================================
+   5. RESPONSIVE QUERIES
+   ========================================= */
+
+/* MOBILE ONLY (max-width: 767px) */
+@media (max-width: 767px) {
+    /* 1. Wrapper flush with screen edges */
+    .main-content {
+        padding: 0;
+        padding-top: 80px;
+        overflow-x: hidden;
+    }
+
+    /* 2. Container full width, no rounded corners */
+    .container {
+        max-width: 100%;
+        width: 100%;
+        margin: 0;
+        border-radius: 0;
+        box-shadow: none;
+        border: none;
+        padding: 20px 15px;
+    }
+
+    /* 3. Typography adjustments */
+    h1 { font-size: 22px; }
+    h2 { font-size: 18px; }
+    h3 { font-size: 16px; }
+
+    /* 4. BUTTON FIXES */
+    .btn {
+        /* Revert to standard or slightly smaller padding */
+        padding: 8px 14px;
+        /* Do NOT force full width */
+        width: auto;
+        /* Ensure text isn't massive */
+        font-size: 14px;
+        /* Keep standard margins */
+        margin-bottom: 5px;
+    }
+
+    /* Exceptions: Only make the Login/Action buttons full width if desired,
+       otherwise keep them auto. If you specifically want the filter buttons
+       to fit in a row, this 'width: auto' fixes it. */
+
+    /* Optional: Ensure filter buttons stack nicely if they are too wide */
+    .filter-group .btn {
+        flex: 1;
+    }
+}
+
+/* DESKTOP / TABLET LANDSCAPE (min-width: 768px) */
+@media (min-width: 768px) {
+    .main-content {
+        margin-left: 330px;
+        padding: 30px;
+    }
+
+    .container {
+        max-width: 95%;
+        margin: 0 auto;
+    }
+
+    .menu-toggle {
+        display: none;
+    }
 }

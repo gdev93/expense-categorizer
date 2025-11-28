@@ -202,78 +202,76 @@ class ExpenseCategorizerAgent:
         self.available_categories = available_categories or []
         self.user_rules = user_rules or []
 
-        def detect_csv_structure(
-                self,
-                transactions: list[AgentTransactionUpload]
-        ) -> CsvStructure:
-            """
-            Analyze the CSV structure using Gemini to identify column mappings.
-            """
+    def detect_csv_structure(
+            self,
+            transactions: list[AgentTransactionUpload]
+    ) -> CsvStructure:
+        """
+        Analyze the CSV structure using Gemini to identify column mappings.
+        """
 
-            # Sample first few transactions
-            sample_size = min(5, len(transactions))
-            sample_transactions = transactions[:sample_size]
+        # Sample first few transactions
+        sample_size = min(5, len(transactions))
+        sample_transactions = transactions[:sample_size]
 
-            # Build the prompt
-            samples_text = ""
-            for i, tx in enumerate(sample_transactions, 1):
-                samples_text += f"Transazione {i}:\n"
-                samples_text += f"  ID: {tx.transaction_id}\n"
-                samples_text += "  Campi:\n"
-                for column, value in tx.raw_text.items():
-                    # Truncate long values for token efficiency
-                    display_value = str(value)[:100] + "..." if len(str(value)) > 100 else value
-                    samples_text += f"    - {column}: {display_value}\n"
-                samples_text += "\n"
+        # Build the prompt
+        samples_text = ""
+        for i, tx in enumerate(sample_transactions, 1):
+            samples_text += f"Transazione {i}:\n"
+            samples_text += f"  ID: {tx.transaction_id}\n"
+            samples_text += "  Campi:\n"
+            for column, value in tx.raw_text.items():
+                # Truncate long values for token efficiency
+                display_value = str(value)[:100] + "..." if len(str(value)) > 100 else value
+                samples_text += f"    - {column}: {display_value}\n"
+            samples_text += "\n"
 
-            prompt = f"""Sei un esperto nell'analisi di strutture CSV di transazioni bancarie italiane.
+        prompt = f"""Sei un esperto nell'analisi di strutture CSV di transazioni bancarie italiane.
 
-    Analizza i seguenti campioni di transazioni e identifica quali campi corrispondono a:
-    1. **description_field**: Il campo contenente la descrizione/dettagli della transazione
-    2. **merchant_field**: Il campo contenente il nome del commerciante/beneficiario
-    3. **transaction_date_field**: Il campo contenente la data della transazione
-    4. **amount_field**: Il campo contenente l'importo della transazione
-    5. **operation_type_field**: Il campo contenente il tipo di operazione
+Analizza i seguenti campioni di transazioni e identifica quali campi corrispondono a:
+1. **description_field**: Il campo contenente la descrizione/dettagli della transazione
+2. **merchant_field**: Il campo contenente il nome del commerciante/beneficiario
+3. **transaction_date_field**: Il campo contenente la data della transazione
+4. **amount_field**: Il campo contenente l'importo della transazione
+5. **operation_type_field**: Il campo contenente il tipo di operazione
 
-    CAMPIONI DI TRANSAZIONI:
-    {samples_text}
+CAMPIONI DI TRANSAZIONI:
+{samples_text}
 
-    ISTRUZIONI GENERALI:
-    - Restituisci SOLO i nomi dei campi esattamente come appaiono nei dati
-    - Se un campo non può essere determinato con sicurezza, restituisci null
-    - Fornisci un livello di confidenza: "high", "medium", o "low"
+ISTRUZIONI GENERALI:
+- Restituisci SOLO i nomi dei campi esattamente come appaiono nei dati
+- Se un campo non può essere determinato con sicurezza, restituisci null
+- Fornisci un livello di confidenza: "high", "medium", o "low"
 
-    ⚠️ ISTRUZIONI CRITICHE PER LA DATA TRANSAZIONE:
-    - Il campo transaction_date_field DEVE essere una colonna dedicata ESCLUSIVAMENTE alle date (es. "Data", "Data Valuta", "Data Contabile").
-    - **CRITERIO DI ESCLUSIONE:** Ignora qualsiasi colonna che contenga testo narrativo insieme alla data. Cerca formati puri (GG/MM/AAAA, AAAA-MM-GG, ecc.).
-    - **CRITERIO "DATA MAGGIORE":** Se nel CSV sono presenti più colonne valide di date (es. sia "Data Operazione" che "Data Valuta"):
-      1. Confronta i valori delle date nei campioni forniti.
-      2. Seleziona la colonna che contiene sistematicamente la data cronologicamente PIÙ RECENTE (la data maggiore).
-      3. NON basare la scelta sul nome della colonna (es. non preferire a priori "Data Contabile"), ma basa la scelta sui valori effettivi.
+⚠️ ISTRUZIONI CRITICHE PER LA DATA TRANSAZIONE:
+- Il campo transaction_date_field DEVE essere una colonna dedicata ESCLUSIVAMENTE alle date (es. "Data", "Data Valuta", "Data Contabile").
+- **CRITERIO DI ESCLUSIONE:** Ignora qualsiasi colonna che contenga testo narrativo insieme alla data. Cerca formati puri (GG/MM/AAAA, AAAA-MM-GG, ecc.).
+- **CRITERIO "DATA MAGGIORE":** Se nel CSV sono presenti più colonne valide di date (es. sia "Data Operazione" che "Data Valuta"):
+  1. Confronta i valori delle date nei campioni forniti.
+  2. Seleziona la colonna che contiene sistematicamente la data cronologicamente PIÙ RECENTE (la data maggiore).
+  3. NON basare la scelta sul nome della colonna (es. non preferire a priori "Data Contabile"), ma basa la scelta sui valori effettivi.
 
-    ⚠️ ISTRUZIONI CRITICHE PER L'IMPORTO:
-    - Il campo amount_field DEVE permettere di identificare le SPESE.
-    - Cerca colonne con importi negativi o indicatori di addebito.
-    - Se esistono colonne separate (es. "Dare"/"Avere"), scegli la colonna degli addebiti ("Dare", "Uscite").
-    - Se c'è una colonna unica ("Importo"), selezionala.
+⚠️ ISTRUZIONI CRITICHE PER L'IMPORTO:
+- Il campo amount_field DEVE permettere di identificare le SPESE.
+- Cerca colonne con importi negativi o indicatori di addebito.
+- Se esistono colonne separate (es. "Dare"/"Avere"), scegli la colonna degli addebiti ("Dare", "Uscite").
+- Se c'è una colonna unica ("Importo"), selezionala.
 
-    FORMATO OUTPUT (JSON):
-    {{
-      "description_field": "nome_colonna_esatto_o_null",
-      "merchant_field": "nome_colonna_esatto_o_null",
-      "transaction_date_field": "nome_colonna_esatto_o_null",
-      "amount_field": "nome_colonna_esatto_o_null",
-      "operation_type_field": "nome_colonna_esatto_o_null",
-      "confidence": "high|medium|low",
-      "notes": "string"
-    }}
+FORMATO OUTPUT (JSON):
+{{
+  "description_field": "nome_colonna_esatto_o_null",
+  "merchant_field": "nome_colonna_esatto_o_null",
+  "transaction_date_field": "nome_colonna_esatto_o_null",
+  "amount_field": "nome_colonna_esatto_o_null",
+  "operation_type_field": "nome_colonna_esatto_o_null",
+  "confidence": "high|medium|low",
+  "notes": "string"
+}}
 
-    Restituisci SOLO l'oggetto JSON, nient'altro."""
+Restituisci SOLO l'oggetto JSON, nient'altro."""
 
         try:
-
             response = call_gemini_api(prompt=prompt, client=self.client, temperature=1.0)
-
             # Parse the response
             result_dict = parse_llm_response_json(response)
 

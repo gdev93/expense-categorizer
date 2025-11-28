@@ -19,9 +19,11 @@
         <!-- Summary Cards -->
         {% if transactions %}
             <div class="summary">
-                {% include "components/summary-card.html" with label="Totale Spese" value=total_count %}
                 {% include "components/summary-card.html" with label="Importo Totale" value=total_amount|floatformat:2 currency="€" %}
-                {% include "components/summary-card.html" with label="Categorie" value=category_count %}
+                {% include "components/summary-card.html" with label="Totale Spese" value=total_count %}
+                <div class="desktop-only">
+                    {% include "components/summary-card.html" with label="Categorie" value=category_count %}
+                </div>
             </div>
         {% endif %}
 
@@ -63,7 +65,7 @@
                             </option>
                         {% endfor %}
                     </select>
-                    <small class="form-text text-muted" style="font-size: 0.75rem; margin-top: 4px;">
+                    <small class="form-text text-muted desktop-only" style="font-size: 0.75rem; margin-top: 4px;">
                         Tieni premuto Ctrl (Windows) o Cmd (Mac) per selezionare più mesi
                     </small>
                 </div>
@@ -81,111 +83,112 @@
             </form>
 
         <!-- Categories -->
-        {% if categories %}
-            <div class="categories">
-                {% for category in categories %}
-                    <td class="category-cell">
-                        <span class="category-pill" onclick="window.location.href='{% url 'transaction_list' %}'">
-                            {{ category.name|default:"Non Categorizzata" }}
-                        </span>
-                    </td>
-                {% endfor %}
-            </div>
-        {% endif %}
+{#        {% if categories %}#}
+{#            <div class="categories">#}
+{#                {% for category in categories %}#}
+{#                    <div class="category-tag-wrapper">#}
+{#                <span class="category-pill" onclick="window.location.href='{% url 'category_detail' category.id %}'">#}
+{#                    {{ category.name|default:"Non Categorizzata" }}#}
+{#                </span>#}
+{#                    </div>#}
+{#                {% endfor %}#}
+{#            </div>#}
+{#        {% endif %}#}
 
-        <!-- Categorization Rules Section -->
-        <div class="expander-card mb-4">
-            <div class="expander-header" id="ruleExpanderHeader" onclick="toggleExpander('ruleExpanderHeader')">
-                <div class="expander-title-group">
-                    <h2>🎯 Regole di Categorizzazione</h2>
-                    <p class="mb-0 text-muted rule-subtitle">Visualizza ed elimina le regole esistenti</p>
-                </div>
-                <button class="expander-toggle-btn" aria-expanded="false" aria-controls="ruleExpanderBody">
-                    <span class="expander-icon">▼</span>
-                </button>
-            </div>
-
-            <div class="expander-body collapsed" id="ruleExpanderBody">
-                <div class="mb-4 rule-list-container">
-                    <h5>Regole esistenti:</h5>
-                    {% if rules %}
-                        <ul class="list-group rule-list">
-                            {% for rule in rules %}
-                                <li class="list-group-item rule-item d-flex justify-content-between align-items-center">
-                            <span class="rule-text">
-                                Tutte le operazioni che riguardano <strong
-                                    class="rule-merchant-highlight">{{ rule.merchant.name }}</strong>
-                                vanno nella categoria <strong
-                                    class="rule-category-highlight">{{ rule.category.name }}</strong>
-                            </span>
-                                    <form method="post" action="{% url 'delete_rule' rule.id %}" style="display: inline; margin: 0;">
-                                        {% csrf_token %}
-                                        <button type="submit" class="btn btn-sm btn-danger-custom"
-                                                onclick="return confirm('Sei sicuro di voler eliminare questa regola?');">
-                                            🗑️ Elimina
-                                        </button>
-                                    </form>
-                                </li>
-                            {% endfor %}
-                        </ul>
-                    {% else %}
-                        <p class="text-muted empty-state-rule">
-                            📋 Nessuna regola definita.
-                        </p>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-
-        <div class="rule-builder-card mb-4">
-            <div class="rule-card-header">
-                <h3>✨ Nuova Regola di Automazione</h3>
-            </div>
-            <div class="rule-card-body">
-                <form method="post" action="{% url 'define_rule' %}" class="mt-3">
-                    {% csrf_token %}
-
-                    <div class="rule-builder">
-                        <div class="rule-builder-controls">
-                            <span class="rule-builder-text">Tutte le operazioni che riguardano</span>
-
-                            <input type="text"
-                                   name="merchant_name"
-                                   id="new_rule_merchant"
-                                   class="form-control rule-input"
-                                   placeholder="nome merchant"
-                                   required/>
-
-                            <span class="rule-builder-text">vanno nella categoria</span>
-
-                            <input type="text"
-                                   name="category_name"
-                                   id="new_rule_category"
-                                   class="form-control rule-input"
-                                   placeholder="categoria"
-                                   list="category_suggestions"
-                                   required/>
-
-                            <datalist id="category_suggestions">
-                                {% for cat in categories %}
-                                    <option value="{{ cat.name }}">
-                                {% endfor %}
-                            </datalist>
-
-                            <button type="submit" class="btn btn-primary-gold">
-                                ➕ Aggiungi Regola
-                            </button>
-                        </div>
-                    </div>
-                    <small class="form-text text-muted d-block mt-3 rule-tip">
-                        💡 <strong>Suggerimento:</strong> Puoi inserire un nome di categoria esistente dal menu a
-                        tendina, oppure digitare un nuovo nome per creare una nuova categoria.
-                    </small>
-                </form>
-            </div>
-        </div>
+        {#        <!-- Categorization Rules Section -->#}
+        {#        <div class="expander-card mb-4">#}
+        {#            <div class="expander-header" id="ruleExpanderHeader" onclick="toggleExpander('ruleExpanderHeader')">#}
+        {#                <div class="expander-title-group">#}
+        {#                    <h2>🎯 Regole di Categorizzazione</h2>#}
+        {#                    <p class="mb-0 text-muted rule-subtitle">Visualizza ed elimina le regole esistenti</p>#}
+        {#                </div>#}
+        {#                <button class="expander-toggle-btn" aria-expanded="false" aria-controls="ruleExpanderBody">#}
+        {#                    <span class="expander-icon">▼</span>#}
+        {#                </button>#}
+        {#            </div>#}
+        {##}
+        {#            <div class="expander-body collapsed" id="ruleExpanderBody">#}
+        {#                <div class="mb-4 rule-list-container">#}
+        {#                    <h5>Regole esistenti:</h5>#}
+        {#                    {% if rules %}#}
+        {#                        <ul class="list-group rule-list">#}
+        {#                            {% for rule in rules %}#}
+        {#                                <li class="list-group-item rule-item d-flex justify-content-between align-items-center">#}
+        {#                            <span class="rule-text">#}
+        {#                                Tutte le operazioni che riguardano <strong#}
+        {#                                    class="rule-merchant-highlight">{{ rule.merchant.name }}</strong>#}
+        {#                                vanno nella categoria <strong#}
+        {#                                    class="rule-category-highlight">{{ rule.category.name }}</strong>#}
+        {#                            </span>#}
+        {#                                    <form method="post" action="{% url 'delete_rule' rule.id %}" style="display: inline; margin: 0;">#}
+        {#                                        {% csrf_token %}#}
+        {#                                        <button type="submit" class="btn btn-sm btn-danger-custom"#}
+        {#                                                onclick="return confirm('Sei sicuro di voler eliminare questa regola?');">#}
+        {#                                            🗑️ Elimina#}
+        {#                                        </button>#}
+        {#                                    </form>#}
+        {#                                </li>#}
+        {#                            {% endfor %}#}
+        {#                        </ul>#}
+        {#                    {% else %}#}
+        {#                        <p class="text-muted empty-state-rule">#}
+        {#                            📋 Nessuna regola definita.#}
+        {#                        </p>#}
+        {#                    {% endif %}#}
+        {#                </div>#}
+        {#            </div>#}
+        {#        </div>#}
+        {##}
+        {#        <div class="rule-builder-card mb-4">#}
+        {#            <div class="rule-card-header">#}
+        {#                <h3>✨ Nuova Regola di Automazione</h3>#}
+        {#            </div>#}
+        {#            <div class="rule-card-body">#}
+        {#                <form method="post" action="{% url 'define_rule' %}" class="mt-3">#}
+        {#                    {% csrf_token %}#}
+        {##}
+        {#                    <div class="rule-builder">#}
+        {#                        <div class="rule-builder-controls">#}
+        {#                            <span class="rule-builder-text">Tutte le operazioni che riguardano</span>#}
+        {##}
+        {#                            <input type="text"#}
+        {#                                   name="merchant_name"#}
+        {#                                   id="new_rule_merchant"#}
+        {#                                   class="form-control rule-input"#}
+        {#                                   placeholder="nome merchant"#}
+        {#                                   required/>#}
+        {##}
+        {#                            <span class="rule-builder-text">vanno nella categoria</span>#}
+        {##}
+        {#                            <input type="text"#}
+        {#                                   name="category_name"#}
+        {#                                   id="new_rule_category"#}
+        {#                                   class="form-control rule-input"#}
+        {#                                   placeholder="categoria"#}
+        {#                                   list="category_suggestions"#}
+        {#                                   required/>#}
+        {##}
+        {#                            <datalist id="category_suggestions">#}
+        {#                                {% for cat in categories %}#}
+        {#                                    <option value="{{ cat.name }}">#}
+        {#                                {% endfor %}#}
+        {#                            </datalist>#}
+        {##}
+        {#                            <button type="submit" class="btn btn-primary-gold">#}
+        {#                                ➕ Aggiungi Regola#}
+        {#                            </button>#}
+        {#                        </div>#}
+        {#                    </div>#}
+        {#                    <small class="form-text text-muted d-block mt-3 rule-tip">#}
+        {#                        💡 <strong>Suggerimento:</strong> Puoi inserire un nome di categoria esistente dal menu a#}
+        {#                        tendina, oppure digitare un nuovo nome per creare una nuova categoria.#}
+        {#                    </small>#}
+        {#                </form>#}
+        {#            </div>#}
+        {#        </div>#}
 
         <!-- Uncategorized Transactions Section -->
+        {% if uncategorized_transaction %}
         <div class="uncategorized-section" style="margin-bottom: 40px;">
             <h2 style="margin-bottom: 20px;">
                 🏷️ Spese Non Categorizzate
@@ -236,12 +239,13 @@
                 {% endfor %}
             </div>
         </div>
+        {% endif %}
 
         <!-- Transaction List -->
         {% if transactions %}
             <h2 style="margin-bottom: 20px;">📊 Spese Categorizzate</h2>
 
-            <div class="data-list">
+            <div class="data-list" id="scroll-target">
                 {% for transaction in transactions %}
                     <div class="data-list-item" onclick="saveFiltersAndRedirect('{% url 'transaction_detail' transaction.id %}')">
                         <div class="transaction-main">
@@ -327,4 +331,5 @@
     </div>
 <script src="{% static 'js/expander.js' %}"></script>
 <script type="module" src="{% static 'js/filter-handler.js' %}"></script>
+    <script src="{% static 'js/scroll-handler.js' %}"></script>
 {% endblock %}

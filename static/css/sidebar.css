@@ -4,36 +4,42 @@
 .sidebar {
     position: fixed;
     top: 0;
-    left: -250px;
+    /* Hide off-screen by default */
+    left: -100%;
+    /* Default width is 330px, but never wider than 85% of screen on mobile */
     width: 330px;
+    max-width: 85vw;
     height: 100vh;
-    background-color: var(--nav-bg-color); /* White background */
-    box-shadow: 2px 0 6px rgba(0, 0, 0, 0.1); /* Light shadow */
+    background-color: var(--nav-bg-color);
+    box-shadow: 2px 0 6px rgba(0, 0, 0, 0.1);
     transition: left 0.3s ease;
-    z-index: 999;
+    /* Ensure it sits on top of the App Bar on mobile */
+    z-index: 1100;
     overflow-y: auto;
-    padding-top: 25px; /* Space for the App Bar */
+    padding-top: 25px;
 }
 
 .sidebar.active {
     left: 0;
 }
 
-/* NEW: User Info Section Styles (Minimal Padding) */
+/* User Info Section */
 .sidebar-user-info {
-    padding: 10px 15px; /* Reduced padding for a tighter fit */
-    border-bottom: 1px solid #e9ecef; /* Subtle separator */
-    margin-bottom: 5px; /* Reduced margin before navigation links */
+    padding: 10px 15px;
+    border-bottom: 1px solid #e9ecef;
+    margin-bottom: 5px;
 }
 
 .user-profile {
     display: flex;
     align-items: center;
-    margin-bottom: 10px; /* Reduced margin */
+    margin-bottom: 10px;
 }
 
 .user-avatar-placeholder {
-    width: 36px; /* Slightly smaller avatar */
+    /* Prevent avatar from shrinking on small screens */
+    flex-shrink: 0;
+    width: 36px;
     height: 36px;
     background-color: var(--nav-link-active-bg);
     color: var(--primary-color);
@@ -41,23 +47,34 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 18px; /* Adjusted icon size */
-    margin-right: 10px; /* Reduced margin */
+    font-size: 18px;
+    margin-right: 10px;
 }
 
 .user-details {
     display: flex;
     flex-direction: column;
+    /* Ensure text truncates if screen is too narrow */
+    overflow: hidden;
+}
+
+.user-name, .user-email {
+    /* Truncate text with ellipsis (...) if it's too long */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+    max-width: 100%;
 }
 
 .user-name {
     font-weight: 600;
-    font-size: 15px; /* Slightly smaller font */
+    font-size: 15px;
     color: var(--nav-text-color);
 }
 
 .user-email {
-    font-size: 11px; /* Slightly smaller font */
+    font-size: 11px;
     color: var(--secondary-color);
 }
 
@@ -65,24 +82,14 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 8px 10px; /* Minimal padding for the savings box */
+    padding: 8px 10px;
     background-color: var(--background-color);
     border-radius: 4px;
-    font-size: 13px; /* Slightly smaller font */
+    font-size: 13px;
     border: 1px solid #e9ecef;
 }
 
-.savings-label {
-    font-weight: 500;
-    color: var(--nav-text-color);
-}
-
-.savings-value {
-    font-weight: 700;
-    color: var(--primary-color);
-}
-
-/* Existing Navigation Styles */
+/* Navigation Styles */
 .sidebar-nav {
     padding: 10px 0;
 }
@@ -93,36 +100,31 @@
     margin: 0;
 }
 
-.nav-item {
-    margin: 0;
-}
-
 .nav-link {
     display: flex;
     align-items: center;
     padding: 14px 24px;
-    color: var(--nav-text-color); /* Charcoal text */
+    color: var(--nav-text-color);
     text-decoration: none;
     transition: background-color 0.2s, color 0.2s;
     font-size: 15px;
 }
 
 .nav-link:hover {
-    background-color: #f8f9fa; /* Very light gray hover */
+    background-color: #f8f9fa;
     color: var(--nav-text-color);
 }
 
-/* Active Class: Gold accent and light gold background */
 .nav-link.active {
-    background-color: var(--nav-link-active-bg); /* Lightest Gold background */
-    color: var(--nav-text-color); /* Charcoal text for active */
-    border-left: 4px solid var(--primary-color); /* Gold ACCENT border */
-    padding-left: 20px; /* Adjust padding due to border */
+    background-color: var(--nav-link-active-bg);
+    color: var(--nav-text-color);
+    border-left: 4px solid var(--primary-color);
+    padding-left: 20px;
     font-weight: 600;
 }
-/* Ensure the icon color also benefits from the accent */
+
 .nav-link.active .nav-icon {
-    color: var(--primary-color); /* Gold icon accent for active state */
+    color: var(--primary-color);
 }
 
 .nav-icon {
@@ -132,22 +134,19 @@
     text-align: center;
 }
 
-.nav-text {
-    font-weight: 500;
-}
-
 /* Overlay for mobile */
 .overlay {
     position: fixed;
-    top: 64px;
+    top: 0; /* Cover entire screen including header */
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(0, 0, 0, 0.6);
+    background-color: rgba(0, 0, 0, 0.5);
     opacity: 0;
     visibility: hidden;
     transition: opacity 0.3s, visibility 0.3s;
-    z-index: 998;
+    z-index: 1000; /* Behind sidebar, on top of content */
+    backdrop-filter: blur(2px); /* Optional: nice visual effect */
 }
 
 .overlay.active {
@@ -155,13 +154,24 @@
     visibility: visible;
 }
 
-/* Desktop: Sidebar is fixed and visible */
+/* DESKTOP STATE */
 @media (min-width: 768px) {
     .sidebar {
         left: 0;
+        /* Reset width logic for desktop if needed */
+        width: 330px;
+        max-width: none;
+        box-shadow: none; /* Usually flat on desktop or separate styling */
+        border-right: 1px solid #e9ecef; /* Optional: border instead of shadow */
+        z-index: 1; /* Push back to normal layer */
     }
 
     .overlay {
-        display: none;
+        display: none !important;
+    }
+
+    /* Hide the mobile overlay when on desktop */
+    .overlay.active {
+        display: none !important;
     }
 }

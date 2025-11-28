@@ -16,6 +16,8 @@
     color: #343a40;
     font-size: 14px;
     transition: background 0.2s, border-color 0.2s;
+    /* Ensure items don't shrink too much on desktop */
+    white-space: nowrap;
 }
 
 .pagination a:hover {
@@ -23,14 +25,53 @@
 }
 
 .pagination .current {
-    background: var(--primary-color); /* Use variable */
-    color: var(--nav-bg-color); /* Dark text on gold */
-    border-color: var(--primary-color); /* Use variable */
+    background: var(--primary-color); /* Gold */
+    color: var(--nav-bg-color); /* White/Light text */
+    border-color: var(--primary-color);
     font-weight: 700;
 }
 
 .pagination .disabled {
     color: #adb5bd;
-    border-color: #adb5bd;
+    border-color: #ced4da;
+    background-color: #f8f9fa;
     cursor: not-allowed;
+}
+
+/* =========================================
+   MOBILE FIX (max-width: 767px)
+   ========================================= */
+@media (max-width: 767px) {
+    .pagination {
+        flex-wrap: wrap; /* Allow items to wrap into multiple rows */
+        gap: 8px; /* Slightly larger gap for touch targets */
+    }
+
+    /* 1. Move "Page X of Y" to the top and make it a label */
+    .pagination .current {
+        width: 100%; /* Force full width */
+        order: -1;   /* Move to the visual top */
+        text-align: center;
+        background: transparent; /* Remove gold background on mobile */
+        color: #6c757d; /* Grey text */
+        border: none; /* Remove border */
+        padding: 5px 0;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    /* 2. Make Navigation Buttons share the row equally */
+    .pagination a,
+    .pagination span.disabled {
+        flex: 1; /* Grow to fill available space */
+        text-align: center;
+        padding: 12px 4px; /* Taller for touch, narrower padding */
+        font-size: 13px; /* Slightly smaller text */
+
+        /* Handle long text like "Precedente" gracefully */
+        overflow: hidden;
+        text-overflow: ellipsis;
+        min-width: 0; /* Allow shrinking below content size if needed */
+    }
 }

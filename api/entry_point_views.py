@@ -1,9 +1,11 @@
+import os
+
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_not_required
 from django.contrib.auth.models import User
 from django.shortcuts import render, redirect
 
-
+allowed_emails = os.getenv('ALLOWED_EMAILS').split(',')
 # Create your views here.
 @login_not_required
 def login_form(request):
@@ -27,6 +29,8 @@ def create_user(request):
         username = request.POST.get('username')
         password = request.POST.get('password')
         email = request.POST.get('email', '')
+        if email not in allowed_emails:
+            return redirect('register_form')
         first_name = request.POST.get('first_name', '')
         last_name = request.POST.get('last_name', '')
 
