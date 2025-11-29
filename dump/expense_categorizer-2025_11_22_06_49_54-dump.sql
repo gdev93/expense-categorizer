@@ -4,8 +4,8 @@
 
 \restrict nJhTMrVEZvmgoyYsv71L5vRH0zri8YQXVA23zUvPH13z7xOKjy5Ua2FKuAuGzGr
 
--- Dumped from database version 15.14 (Debian 15.14-1.pgdg13+1)
--- Dumped by pg_dump version 15.15 (Homebrew)
+-- Dumped from database VERSION 15.14 (Debian 15.14-1.pgdg13+1)
+-- Dumped by pg_dump VERSION 15.15 (Homebrew)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;

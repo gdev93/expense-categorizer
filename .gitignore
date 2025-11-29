@@ -177,3 +177,6 @@ config/local.yaml
 tmp/
 temp/
 *.tmp
+
+# Dev App
+docker-compose.dev.yaml

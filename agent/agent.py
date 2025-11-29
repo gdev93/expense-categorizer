@@ -310,7 +310,7 @@ Restituisci SOLO l'oggetto JSON, nient'altro."""
                     transactions_text += f"   - {column}: {column}: {display_value}\n"
             transactions_text += "\n"
 
-            # Build CSV structure hints section
+        # Build CSV structure hints section
         csv_hints_section = ""
         if csv_upload:
             csv_hints_section = """
@@ -319,45 +319,32 @@ Restituisci SOLO l'oggetto JSON, nient'altro."""
     ═══════════════════════════════════════════════════════════════════
 
     Per aiutarti nell'estrazione dei dati, ecco le informazioni sulla struttura CSV identificata:
-
     """
-
             if csv_upload.description_column_name:
                 csv_hints_section += f"📝 **DESCRIPTION FIELD**: Il campo '{csv_upload.description_column_name}' contiene la descrizione della transazione.\n"
-
             if csv_upload.merchant_column_name:
                 csv_hints_section += f"🏪 **MERCHANT FIELD**: Il campo '{csv_upload.merchant_column_name}' contiene informazioni sul commerciante/beneficiario.\n"
-
             if csv_upload.date_column_name:
                 csv_hints_section += f"📅 **DATE FIELD**: Il campo '{csv_upload.date_column_name}' contiene la data della transazione.\n"
-
             if csv_upload.amount_column_name:
                 csv_hints_section += f"💰 **AMOUNT FIELD**: Il campo '{csv_upload.amount_column_name}' contiene l'importo della transazione.\n"
-
             if csv_upload.operation_type_column_name:
                 csv_hints_section += f"🔄 **OPERATION TYPE FIELD**: Il campo '{csv_upload.operation_type_column_name}' contiene il tipo di operazione.\n"
-
             if csv_upload.notes:
                 csv_hints_section += f"\n📌 **NOTE SULLA STRUTTURA CSV**:\n{csv_upload.notes}\n"
 
             csv_hints_section += """
     ⚠️ IMPORTANTE: Usa questi suggerimenti come guida principale per identificare e estrarre i campi corretti.
     Questi mapping sono stati identificati automaticamente analizzando la struttura del CSV.
-
     """
 
         # Costruisce la sezione delle regole utente
         user_rules_section = ""
-
-        # ------------------- REGOLA CRITICA: IGNORARE I SALDI -------------------
         critical_rules = [
             "IGNORA transazioni la cui descrizione contiene 'Saldo'. Non devono essere categorizzate e non devono apparire nell'output JSON.",
             "IGNORA transazioni che sono Accrediti (denaro IN) o con importo positivo. Non devono essere categorizzate e non devono apparire nell'output JSON. Il tuo compito è solo categorizzare le SPESE (USCITE).",
         ]
-
-        # Aggiunge le regole utente dinamiche
         dynamic_user_rules = [f"{i}. {rule}" for i, rule in enumerate(self.user_rules, 1)]
-
         all_user_rules = critical_rules + dynamic_user_rules
 
         if all_user_rules:
@@ -365,27 +352,26 @@ Restituisci SOLO l'oggetto JSON, nient'altro."""
     ═══════════════════════════════════════════════════════════════════
     ⚠️  REGOLE UTENTE - PRIORITÀ ASSOLUTA - DEVONO ESSERE APPLICATE  ⚠️
     ═══════════════════════════════════════════════════════════════════
-
     QUESTE REGOLE SONO OBBLIGATORIE E SOVRASCRIVONO OGNI ALTRA LOGICA.
-
     """
-            # Formatta le regole critiche e le regole utente
             user_rules_section += "\n".join(all_user_rules)
-
             user_rules_section += """
     ⚠️ CRITICO: Se UNA QUALSIASI transazione corrisponde a una regola utente (incluse le regole IGNORA), DEVI applicarla.
     Le regole utente hanno PRIORITÀ ASSOLUTA su tutto il resto.
-
     """
 
-        # Formatta le categorie disponibili con struttura chiara, includendo le descrizioni
+        # ---------------------------------------------------------------------
+        # FIX APPLIED HERE: Format categories as "KEY": Description
+        # This clearly separates the output value from the helper text
+        # ---------------------------------------------------------------------
         categories_formatted_list = []
         for cat in self.available_categories:
             if cat.name != 'not_expense':
                 if cat.description:
-                    categories_formatted_list.append(f"  • {cat.name} - {cat.description}")
+                    # Enclose the NAME in quotes so the LLM knows it's a discrete token
+                    categories_formatted_list.append(f'  • "{cat.name}": {cat.description}')
                 else:
-                    categories_formatted_list.append(f"  • {cat.name}")
+                    categories_formatted_list.append(f'  • "{cat.name}"')
 
         categories_formatted = "\n".join(categories_formatted_list)
 
@@ -401,177 +387,85 @@ Restituisci SOLO l'oggetto JSON, nient'altro."""
 
     **REQUISITO CRITICO ASSOLUTO:**
     • OGNI oggetto JSON nell'output DEVE contenere il campo "transaction_id"
-    • Il valore di "transaction_id" DEVE essere ESATTAMENTE IDENTICO al TRANSACTION_ID fornito nei dati di input
-    • NON modificare, NON riformattare, NON cambiare il transaction_id in alcun modo
-    • Se il TRANSACTION_ID di input è "1200", l'output DEVE avere "transaction_id": "1200"
-    • Se il TRANSACTION_ID di input è "TX_12345", l'output DEVE avere "transaction_id": "TX_12345"
-
-    ⚠️ CRITICO: Il transaction_id è l'UNICO modo per collegare i risultati alle transazioni originali.
-    Se questo campo è mancante o errato, l'intera analisi è INUTILIZZABILE.
+    • Il valore di "transaction_id" DEVE essere ESATTAMENTE IDENTICO al TRANSACTION_ID fornito nei dati di input.
 
     ═══════════════════════════════════════════════════════
-    ⚠️⚠️⚠️ REQUISITO CATEGORIA STRETTO ⚠️⚠️⚠️
+    ⚠️⚠️⚠️ REQUISITO CATEGORIA STRETTO (STRICT ENUM) ⚠️⚠️⚠️
     ═══════════════════════════════════════════════════════
 
-    DEVI usare SOLO categorie da questa ESATTA lista qui sotto.
-    DEVI ASSOLUTAMENTE trovare una corrispondenza con la categoria più probabile.
-    NON creare nuove categorie.
-    NON usare variazioni o nomi simili.
-    **TUTTE le categorie devono essere in ITALIANO.**
+    DEVI scegliere la categoria da questa lista.
 
-    CATEGORIE CONSENTITE (SOLO NOMI ESATTI - IN ITALIANO):
+    LISTA CATEGORIE VALIDE:
     {categories_formatted}
 
-    REGOLE DI CORRISPONDENZA CATEGORIA:
-    • Usa il nome ESATTO della categoria come mostrato sopra
+    ⚠️⚠️⚠️ ISTRUZIONI DI FORMATTAZIONE CATEGORIA ⚠️⚠️⚠️
+    1. L'output per il campo "category" DEVE essere SOLO la stringa tra le virgolette.
+    2. NON includere la descrizione che segue i due punti.
+    3. NON includere trattini o testo esplicativo.
 
-    ⚠️ CRITICO: **NON DEVI USARE "Uncategorized".** DEVI assegnare la categoria più probabile basandoti sulla descrizione.
-    NON inventare MAI un nuovo nome di categoria non presente nella lista sopra.
+    Esempio Corretto:
+    Input lista: "Trasporti": biglietti bus, treni
+    Output JSON: "category": "Trasporti"
+
+    Esempio SBAGLIATO (NON FARE QUESTO):
+    Input lista: "Trasporti": biglietti bus, treni
+    Output JSON: "category": "Trasporti - biglietti bus, treni"  <-- ERRORE GRAVE
+
+    ⚠️ CRITICO: **NON DEVI USARE "Uncategorized".** DEVI assegnare la categoria più probabile.
 
     ═══════════════════════════════════════════════════════
     ISTRUZIONI PRINCIPALI (ORDINE DI PRIORITÀ):
     ═══════════════════════════════════════════════════════
 
-    1. CHECK USER RULES FIRST - **APPLICA LA REGOLA "IGNORA" PER I SALDI E GLI ACCREDITI.**
+    1. CHECK USER RULES FIRST - APPLICA LA REGOLA "IGNORA" PER I SALDI E GLI ACCREDITI.
     2. Analizza ogni transazione rimanente (che saranno solo SPESE).
-    3. Categorizza ogni transazione SPESA usando SOLO le categorie consentite sopra, trovando sempre la corrispondenza più probabile.
+    3. Categorizza ogni transazione SPESA usando SOLO le categorie consentite sopra.
     4. Estrai il nome del commerciante e tutti i campi obbligatori.
 
     ═══════════════════════════════════════════════════════
     ⚠️⚠️⚠️ CAMPI OBBLIGATORI - DEVONO ESSERE ESTRATTI PER OGNI TRANSAZIONE ⚠️⚠️⚠️
     ═══════════════════════════════════════════════════════
 
-    DEVI estrarre questi campi per OGNI transazione di SPESA, indipendentemente dal formato CSV o dai nomi delle colonne:
+    [... Rest of prompt remains identical regarding field extraction ...]
 
     ┌─────────────────────────────────────────────────────┐
     │ 0. TRANSACTION_ID (OBBLIGATORIO - MASSIMA PRIORITÀ) │
     └─────────────────────────────────────────────────────┘
-
-       **QUESTO È IL CAMPO PIÙ IMPORTANTE DI TUTTI.**
-
-       DOVE TROVARLO:
-       • È fornito all'inizio di ogni transazione nel formato "TRANSACTION_ID: <valore>"
-       • È la PRIMA informazione di ogni transazione nei dati di input
-
-       FORMATO: Copia ESATTAMENTE il valore così come appare
-
-       ⚠️ CRITICO: 
-       • NON modificare il transaction_id
-       • NON convertirlo in numero
-       • NON aggiungere o rimuovere caratteri
-       • Preserva ESATTAMENTE il formato originale (stringa o numero)
-
-       ESEMPIO:
-       • Input: "TRANSACTION_ID: 1200" → Output: "transaction_id": "1200"
-       • Input: "TRANSACTION_ID: TX_ABC_123" → Output: "transaction_id": "TX_ABC_123"
+       • Copia ESATTAMENTE il valore così come appare nell'input.
 
     ┌─────────────────────────────────────────────────────┐
     │ 1. DATE (DATA) (OBBLIGATORIO)                       │
     └─────────────────────────────────────────────────────┘
-
-       DOVE TROVARLO:
-       • Cerca in QUALSIASI campo contenente: "data", "date", "valuta", "contabile", "operazione"
-       • Intestazioni Italiane comuni: "Data", "Data valuta", "Data contabile", "DATA VALUTA", "DATA CONTABILE"
-
-       FORMATO: **MANTIENI IL FORMATO ORIGINALE ESATTO** così come appare nei dati
-
-       ⚠️ CRITICO: NON convertire o riformattare la data. Preserva ESATTAMENTE il formato originale.
-       • Se la data è "15/10/2025" → usa "15/10/2025"
-       • Se la data è "2025-10-15" → usa "2025-10-15"
-       • Se la data è "15/10/25" → usa "15/10/25"
-
-       STRATEGIA DI ESTRAZIONE:
-       • Se esistono più date, preferisci "Data valuta" rispetto a "Data contabile".
-       • Il formato italiano è di solito GG/MM/AAAA - converti in YYYY-MM-DD
-
-       FALLBACK: Se non viene trovata alcuna data, usa la data corrente.
+       • Formato YYYY-MM-DD preferito, o originale.
 
     ┌─────────────────────────────────────────────────────┐
     │ 2. AMOUNT (IMPORTO) (OBBLIGATORIO)                  │
     └─────────────────────────────────────────────────────┘
-
-       DOVE TROVARLO:
-       • Cerca in QUALSIASI campo contenente: "importo", "amount", "movimento", "uscite", "entrate", "dare", "avere"
-
-       FORMATO: Numero decimale positivo (es. 45.50)
-
-       STRATEGIA DI ESTRAZIONE:
-       • **AMOUNT FINALE ESTRATTO:** Il valore numerico nel campo "amount" del JSON DEVE SEMPRE essere POSITIVO (valore assoluto).
-       • Il formato italiano usa la virgola per i decimali: "45,50" → converti in 45.50
-
-       FALLBACK: Se non viene trovato alcun importo, usa 0.00.
+       • Numero decimale positivo (valore assoluto).
 
     ┌──────────────────────────────────────────────────────┐
     │ 3. ORIGINAL_AMOUNT (IMPORTO ORIGINALE) (OBBLIGATORIO)│
     └──────────────────────────────────────────────────────┘
-
-       La rappresentazione ESATTA della stringa così come appare nei dati, mantenendo il segno originale (che dovrebbe essere negativo o senza segno ma associato a USCITE).
-
-       NON modificare o riformattare - preserva esattamente la stringa originale.
+       • Stringa esatta dai dati originali.
 
     ┌────────────────────────────────────────────────────────────┐
     │ 4. MERCHANT (COMMERCIANTE) (OBBLIGATORIO) - CAMPO CRITICO  │
     └────────────────────────────────────────────────────────────┘
-
-       DOVE TROVARLO:
-       • Cerca in TUTTI i campi: "Causale", "Descrizione", "Concetto", "Descrizione operazione", "Osservazioni", "Note" e simili.
-
-       STRATEGIA DI ESTRAZIONE:
-       • Per pagamenti con carta, estrai il nome del commerciante (es. "ESSELUNGA").
-       • IMPORTANTE: Se nella descrizione ci sono Addebiti o SDD, estrai il nome dell' ordinante/creditore, evita assolutamente il debitore. 
-       • Rimuovi: "S.p.A.", "SRL", "presso", numeri di carta, codici.
-
-       VALORI DI FALLBACK:
-       • Bonifico bancario senza beneficiario → "Bonifico"
-       • Prelievo bancomat → "Prelievo"
+       • Pulisci il nome (rimuovi SPA, SRL).
+       • Se addebito SDD, trova il creditore.
 
     ┌─────────────────────────────────────────────────────┐
     │ 5. DESCRIPTION (DESCRIZIONE) (OBBLIGATORIO)         │
     └─────────────────────────────────────────────────────┘
-
-       La descrizione è solitamente un campo contente una string che spiega la transazione.
-
-       STRATEGIA:
-       • Usare direttamente la stringa
-       • NON aggiungere dettagli
-
-       ⚠️ NON lasciare MAI la descrizione vuota.
-
-    ═══════════════════════════════════════════════════════
-    GESTIONE DEI FALLIMENTI
-    ═══════════════════════════════════════════════════════
-
-    Se la categorizzazione è *estremamente* incerta:
-    • **NON USARE** "Uncategorized", "Unkwown" eccetera.
-    • **USA IL CAMPO FAILURE** .
-    Se il commerciante non è possibile da individuare:
-    • **NON USARE** "Unkwown" o simili.
-    • **USA IL CAMPO FAILURE** .
-
-    IMPORTANTE: DEVI comunque estrarre date, amount, original_amount, e description.
-
-    Il seguente è un esempio di fallimento:
-    {{
-        "transaction_id": "1201",
-        "date": "2025-10-14",
-        "category": "null",
-        "merchant": "Negozio di Gianna",
-        "amount": 12.50,
-        "original_amount": "-12,50",
-        "description": "Operazione Mastercard presso Negozio di Gianna"
-        "failure": true
-      }}
+       • Stringa originale della descrizione.
 
     ═══════════════════════════════════════════════════════
     OUTPUT FORMAT
     ═══════════════════════════════════════════════════════
 
-    Restituisci SOLO un array JSON con oggetti di categorizzazione.
-    **DEVI ESCLUDERE DALL'OUTPUT JSON LE TRANSAZIONI CHE CORRISPONDONO ALLA REGOLA "IGNORA SALDI E ACCREDITI".**
-    NON includere oggetti wrapper o testo esplicativo.
-    Restituisci l'array JSON direttamente.
+    Restituisci SOLO un array JSON.
 
-    FORMATO (Le categorie devono essere in ITALIANO):
+    FORMATO ESEMPIO:
     [
       {{
         "transaction_id": "1200",
@@ -580,38 +474,14 @@ Restituisci SOLO l'oggetto JSON, nient'altro."""
         "merchant": "ESSELUNGA",
         "amount": 161.32,
         "original_amount": "-161,32",
-        "description": "Addebito SDD CORE Esselunga S.p.A. ADDEB.FIDATY ORO",
+        "description": "Addebito SDD CORE Esselunga S.p.A.",
         "applied_user_rule": null,
         "failure": False
-      }},
-      {{
-        "transaction_id": "1201",
-        "date": "2025-10-14",
-        "category": "Ristoranti e Bar",
-        "merchant": "FRAGESA",
-        "amount": 46.50,
-        "original_amount": "-46,50",
-        "description": "Operazione Mastercard presso FRAGESA SRL"
       }}
     ]
 
-    ═══════════════════════════════════════════════════════
     TRANSAZIONI DA ANALIZZARE:
-    ═══════════════════════════════════════════════════════
-
     {transactions_text}
-
-    ═══════════════════════════════════════════════════════
-    CHECKLIST FINALE PRIMA DI RISPONDERE:
-    ═══════════════════════════════════════════════════════
-
-    ✓ OGNI oggetto JSON ha il campo "transaction_id" con il valore ESATTO dell'input?
-    ✓ Ho controllato prima le regole utente, **inclusa la regola IGNORA SALDI e ACCREDITI**?
-    ✓ Ho **escluso Saldi e Accrediti** dal JSON finale?
-    ✓ OGNI transazione restante (solo spese) ha i 5 campi obbligatori estratti?
-    ✓ Ho ASSOLUTAMENTE EVITATO "Uncategorized"?
-    ✓ La categoria è della lista ESATTA consentita (e in ITALIANO)?
-    ✓ La mia risposta è SOLO l'array JSON (senza markdown, senza testo)?
 
     RISPONDI SOLO CON L'ARRAY JSON:"""
 

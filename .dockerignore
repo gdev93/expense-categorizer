@@ -8,5 +8,5 @@ docker-compose*
 .env*
 generate_exams_csv.py
 build-and-push.sh
-version
+VERSION
 Dockerfile
