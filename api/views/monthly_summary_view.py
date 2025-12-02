@@ -119,7 +119,7 @@ class MonthlySummerView(View):
             "available_years": available_years,
             "selected_year": selected_year,
             "selected_month": selected_month,
-            "selected_month_number": next(month for month in months if month.is_current).month_number,
+            "selected_month_number": next((month.month_number for month in months if month.is_current), selected_month),
             "months": months,
         }
 

@@ -1,5 +1,7 @@
+
 # agent.py
 import json
+import logging
 import os
 import re
 from dataclasses import dataclass
@@ -7,6 +9,9 @@ from typing import Any
 from google import genai
 
 from api.models import CsvUpload, Category
+
+# Configure logger
+logger = logging.getLogger(__name__)
 
 
 def get_api_key() -> str:
@@ -21,7 +26,7 @@ def get_api_key() -> str:
     return api_key
 
 
-def call_gemini_api(prompt: str, client: genai.Client, temperature:float=0.1) -> str:
+def call_gemini_api(prompt: str, client: genai.Client, temperature: float = 0.1) -> str:
     """Make request to Gemini API using the new SDK"""
     try:
         config = genai.types.GenerateContentConfig(
@@ -103,7 +108,7 @@ def parse_llm_response_json(llm_response_text: str) -> dict[str, Any]:
     json_match = re.search(r"```json\s*(.*?)\s*```", llm_response_text, re.DOTALL)
 
     if not json_match:
-        print("Error: Could not find JSON content inside ```json ... ``` block.")
+        logger.error("Could not find JSON content inside ```json ... ``` block.")
         return {}
 
     # Extract the raw JSON string
@@ -118,9 +123,8 @@ def parse_llm_response_json(llm_response_text: str) -> dict[str, Any]:
         return parsed_data
 
     except json.JSONDecodeError as e:
-        print(f"Error: Failed to decode JSON. Check for malformed data.")
-        print(f"JSON Error: {e}")
-        print(f"Problematic string: {raw_json_string}")
+        logger.error(f"Failed to decode JSON. Check for malformed data. JSON Error: {e}")
+        logger.debug(f"Problematic string: {raw_json_string}")
         return {}
 
 
@@ -283,7 +287,7 @@ Restituisci SOLO l'oggetto JSON, nient'altro."""
             return CsvStructure.from_dict(result_dict)
 
         except Exception as e:
-            print(f"❌ Rilevamento struttura CSV fallito: {e}")
+            logger.error(f"CSV structure detection failed: {e}")
             # Return empty structure on failure
             return CsvStructure(
                 description_field=None,
@@ -314,12 +318,12 @@ Restituisci SOLO l'oggetto JSON, nient'altro."""
         csv_hints_section = ""
         if csv_upload:
             csv_hints_section = """
-    ═══════════════════════════════════════════════════════════════════
-    📋 INFORMAZIONI STRUTTURA CSV - SUGGERIMENTI PER L'ESTRAZIONE 📋
-    ═══════════════════════════════════════════════════════════════════
+═══════════════════════════════════════════════════════════════════
+📋 INFORMAZIONI STRUTTURA CSV - SUGGERIMENTI PER L'ESTRAZIONE 📋
+═══════════════════════════════════════════════════════════════════
 
-    Per aiutarti nell'estrazione dei dati, ecco le informazioni sulla struttura CSV identificata:
-    """
+Per aiutarti nell'estrazione dei dati, ecco le informazioni sulla struttura CSV identificata:
+"""
             if csv_upload.description_column_name:
                 csv_hints_section += f"📝 **DESCRIPTION FIELD**: Il campo '{csv_upload.description_column_name}' contiene la descrizione della transazione.\n"
             if csv_upload.merchant_column_name:
@@ -334,9 +338,9 @@ Restituisci SOLO l'oggetto JSON, nient'altro."""
                 csv_hints_section += f"\n📌 **NOTE SULLA STRUTTURA CSV**:\n{csv_upload.notes}\n"
 
             csv_hints_section += """
-    ⚠️ IMPORTANTE: Usa questi suggerimenti come guida principale per identificare e estrarre i campi corretti.
-    Questi mapping sono stati identificati automaticamente analizzando la struttura del CSV.
-    """
+⚠️ IMPORTANTE: Usa questi suggerimenti come guida principale per identificare e estrarre i campi corretti.
+Questi mapping sono stati identificati automaticamente analizzando la struttura del CSV.
+"""
 
         # Costruisce la sezione delle regole utente
         user_rules_section = ""
@@ -349,16 +353,16 @@ Restituisci SOLO l'oggetto JSON, nient'altro."""
 
         if all_user_rules:
             user_rules_section = """
-    ═══════════════════════════════════════════════════════════════════
-    ⚠️  REGOLE UTENTE - PRIORITÀ ASSOLUTA - DEVONO ESSERE APPLICATE  ⚠️
-    ═══════════════════════════════════════════════════════════════════
-    QUESTE REGOLE SONO OBBLIGATORIE E SOVRASCRIVONO OGNI ALTRA LOGICA.
-    """
+═══════════════════════════════════════════════════════════════════
+⚠️  REGOLE UTENTE - PRIORITÀ ASSOLUTA - DEVONO ESSERE APPLICATE  ⚠️
+═══════════════════════════════════════════════════════════════════
+QUESTE REGOLE SONO OBBLIGATORIE E SOVRASCRIVONO OGNI ALTRA LOGICA.
+"""
             user_rules_section += "\n".join(all_user_rules)
             user_rules_section += """
-    ⚠️ CRITICO: Se UNA QUALSIASI transazione corrisponde a una regola utente (incluse le regole IGNORA), DEVI applicarla.
-    Le regole utente hanno PRIORITÀ ASSOLUTA su tutto il resto.
-    """
+⚠️ CRITICO: Se UNA QUALSIASI transazione corrisponde a una regola utente (incluse le regole IGNORA), DEVI applicarla.
+Le regole utente hanno PRIORITÀ ASSOLUTA su tutto il resto.
+"""
 
         # ---------------------------------------------------------------------
         # FIX APPLIED HERE: Format categories as "KEY": Description
@@ -377,113 +381,111 @@ Restituisci SOLO l'oggetto JSON, nient'altro."""
 
         return f"""Sei un assistente IA specializzato nella categorizzazione delle **spese** bancarie italiane.
 
-    {csv_hints_section}
+{csv_hints_section}
 
-    {user_rules_section}
+{user_rules_section}
 
-    ═══════════════════════════════════════════════════════
-    ⚠️⚠️⚠️ REQUISITO TRANSACTION_ID OBBLIGATORIO ⚠️⚠️⚠️
-    ═══════════════════════════════════════════════════════
+═══════════════════════════════════════════════════════
+⚠️⚠️⚠️ REQUISITO TRANSACTION_ID OBBLIGATORIO ⚠️⚠️⚠️
+═══════════════════════════════════════════════════════
 
-    **REQUISITO CRITICO ASSOLUTO:**
-    • OGNI oggetto JSON nell'output DEVE contenere il campo "transaction_id"
-    • Il valore di "transaction_id" DEVE essere ESATTAMENTE IDENTICO al TRANSACTION_ID fornito nei dati di input.
+**REQUISITO CRITICO ASSOLUTO:**
+• OGNI oggetto JSON nell'output DEVE contenere il campo "transaction_id"
+• Il valore di "transaction_id" DEVE essere ESATTAMENTE IDENTICO al TRANSACTION_ID fornito nei dati di input.
 
-    ═══════════════════════════════════════════════════════
-    ⚠️⚠️⚠️ REQUISITO CATEGORIA STRETTO (STRICT ENUM) ⚠️⚠️⚠️
-    ═══════════════════════════════════════════════════════
+═══════════════════════════════════════════════════════
+⚠️⚠️⚠️ REQUISITO CATEGORIA STRETTO (STRICT ENUM) ⚠️⚠️⚠️
+═══════════════════════════════════════════════════════
 
-    DEVI scegliere la categoria da questa lista.
+DEVI scegliere la categoria da questa lista.
 
-    LISTA CATEGORIE VALIDE:
-    {categories_formatted}
+LISTA CATEGORIE VALIDE:
+{categories_formatted}
 
-    ⚠️⚠️⚠️ ISTRUZIONI DI FORMATTAZIONE CATEGORIA ⚠️⚠️⚠️
-    1. L'output per il campo "category" DEVE essere SOLO la stringa tra le virgolette.
-    2. NON includere la descrizione che segue i due punti.
-    3. NON includere trattini o testo esplicativo.
+⚠️⚠️⚠️ ISTRUZIONI DI FORMATTAZIONE CATEGORIA ⚠️⚠️⚠️
+1. L'output per il campo "category" DEVE essere SOLO la stringa tra le virgolette.
+2. NON includere la descrizione che segue i due punti.
+3. NON includere trattini o testo esplicativo.
 
-    Esempio Corretto:
-    Input lista: "Trasporti": biglietti bus, treni
-    Output JSON: "category": "Trasporti"
+Esempio Corretto:
+Input lista: "Trasporti": biglietti bus, treni
+Output JSON: "category": "Trasporti"
 
-    Esempio SBAGLIATO (NON FARE QUESTO):
-    Input lista: "Trasporti": biglietti bus, treni
-    Output JSON: "category": "Trasporti - biglietti bus, treni"  <-- ERRORE GRAVE
+Esempio SBAGLIATO (NON FARE QUESTO):
+Input lista: "Trasporti": biglietti bus, treni
+Output JSON: "category": "Trasporti - biglietti bus, treni"  <-- ERRORE GRAVE
 
-    ⚠️ CRITICO: **NON DEVI USARE "Uncategorized".** DEVI assegnare la categoria più probabile.
+⚠️ CRITICO: **NON DEVI USARE "Uncategorized".** DEVI assegnare la categoria più probabile.
 
-    ═══════════════════════════════════════════════════════
-    ISTRUZIONI PRINCIPALI (ORDINE DI PRIORITÀ):
-    ═══════════════════════════════════════════════════════
+═══════════════════════════════════════════════════════
+ISTRUZIONI PRINCIPALI (ORDINE DI PRIORITÀ):
+═══════════════════════════════════════════════════════
 
-    1. CHECK USER RULES FIRST - APPLICA LA REGOLA "IGNORA" PER I SALDI E GLI ACCREDITI.
-    2. Analizza ogni transazione rimanente (che saranno solo SPESE).
-    3. Categorizza ogni transazione SPESA usando SOLO le categorie consentite sopra.
-    4. Estrai il nome del commerciante e tutti i campi obbligatori.
+1. CHECK USER RULES FIRST - APPLICA LA REGOLA "IGNORA" PER I SALDI E GLI ACCREDITI.
+2. Analizza ogni transazione rimanente (che saranno solo SPESE).
+3. Categorizza ogni transazione SPESA usando SOLO le categorie consentite sopra.
+4. Estrai il nome del commerciante e tutti i campi obbligatori.
 
-    ═══════════════════════════════════════════════════════
-    ⚠️⚠️⚠️ CAMPI OBBLIGATORI - DEVONO ESSERE ESTRATTI PER OGNI TRANSAZIONE ⚠️⚠️⚠️
-    ═══════════════════════════════════════════════════════
+═══════════════════════════════════════════════════════
+⚠️⚠️⚠️ CAMPI OBBLIGATORI - DEVONO ESSERE ESTRATTI PER OGNI TRANSAZIONE ⚠️⚠️⚠️
+═══════════════════════════════════════════════════════
 
-    [... Rest of prompt remains identical regarding field extraction ...]
+┌─────────────────────────────────────────────────────┐
+│ 0. TRANSACTION_ID (OBBLIGATORIO - MASSIMA PRIORITÀ) │
+└─────────────────────────────────────────────────────┘
+   • Copia ESATTAMENTE il valore così come appare nell'input.
 
-    ┌─────────────────────────────────────────────────────┐
-    │ 0. TRANSACTION_ID (OBBLIGATORIO - MASSIMA PRIORITÀ) │
-    └─────────────────────────────────────────────────────┘
-       • Copia ESATTAMENTE il valore così come appare nell'input.
+┌─────────────────────────────────────────────────────┐
+│ 1. DATE (DATA) (OBBLIGATORIO)                       │
+└─────────────────────────────────────────────────────┘
+   • Formato YYYY-MM-DD preferito, o originale.
 
-    ┌─────────────────────────────────────────────────────┐
-    │ 1. DATE (DATA) (OBBLIGATORIO)                       │
-    └─────────────────────────────────────────────────────┘
-       • Formato YYYY-MM-DD preferito, o originale.
+┌─────────────────────────────────────────────────────┐
+│ 2. AMOUNT (IMPORTO) (OBBLIGATORIO)                  │
+└─────────────────────────────────────────────────────┘
+   • Numero decimale positivo (valore assoluto).
 
-    ┌─────────────────────────────────────────────────────┐
-    │ 2. AMOUNT (IMPORTO) (OBBLIGATORIO)                  │
-    └─────────────────────────────────────────────────────┘
-       • Numero decimale positivo (valore assoluto).
+┌──────────────────────────────────────────────────────┐
+│ 3. ORIGINAL_AMOUNT (IMPORTO ORIGINALE) (OBBLIGATORIO)│
+└──────────────────────────────────────────────────────┘
+   • Stringa esatta dai dati originali.
 
-    ┌──────────────────────────────────────────────────────┐
-    │ 3. ORIGINAL_AMOUNT (IMPORTO ORIGINALE) (OBBLIGATORIO)│
-    └──────────────────────────────────────────────────────┘
-       • Stringa esatta dai dati originali.
+┌────────────────────────────────────────────────────────────┐
+│ 4. MERCHANT (COMMERCIANTE) (OBBLIGATORIO) - CAMPO CRITICO  │
+└────────────────────────────────────────────────────────────┘
+   • Pulisci il nome (rimuovi SPA, SRL).
+   • Se addebito SDD, trova il creditore.
 
-    ┌────────────────────────────────────────────────────────────┐
-    │ 4. MERCHANT (COMMERCIANTE) (OBBLIGATORIO) - CAMPO CRITICO  │
-    └────────────────────────────────────────────────────────────┘
-       • Pulisci il nome (rimuovi SPA, SRL).
-       • Se addebito SDD, trova il creditore.
+┌─────────────────────────────────────────────────────┐
+│ 5. DESCRIPTION (DESCRIZIONE) (OBBLIGATORIO)         │
+└─────────────────────────────────────────────────────┘
+   • Stringa originale della descrizione.
 
-    ┌─────────────────────────────────────────────────────┐
-    │ 5. DESCRIPTION (DESCRIZIONE) (OBBLIGATORIO)         │
-    └─────────────────────────────────────────────────────┘
-       • Stringa originale della descrizione.
+═══════════════════════════════════════════════════════
+OUTPUT FORMAT
+═══════════════════════════════════════════════════════
 
-    ═══════════════════════════════════════════════════════
-    OUTPUT FORMAT
-    ═══════════════════════════════════════════════════════
+Restituisci SOLO un array JSON.
 
-    Restituisci SOLO un array JSON.
+FORMATO ESEMPIO:
+[
+  {{
+    "transaction_id": "1200",
+    "date": "2025-10-15",
+    "category": "Alimentari",
+    "merchant": "ESSELUNGA",
+    "amount": 161.32,
+    "original_amount": "-161,32",
+    "description": "Addebito SDD CORE Esselunga S.p.A.",
+    "applied_user_rule": null,
+    "failure": False
+  }}
+]
 
-    FORMATO ESEMPIO:
-    [
-      {{
-        "transaction_id": "1200",
-        "date": "2025-10-15",
-        "category": "Alimentari",
-        "merchant": "ESSELUNGA",
-        "amount": 161.32,
-        "original_amount": "-161,32",
-        "description": "Addebito SDD CORE Esselunga S.p.A.",
-        "applied_user_rule": null,
-        "failure": False
-      }}
-    ]
+TRANSAZIONI DA ANALIZZARE:
+{transactions_text}
 
-    TRANSAZIONI DA ANALIZZARE:
-    {transactions_text}
-
-    RISPONDI SOLO CON L'ARRAY JSON:"""
+RISPONDI SOLO CON L'ARRAY JSON:"""
 
     def process_batch(self, batch: list[AgentTransactionUpload], csv_upload: CsvUpload) -> list[
         TransactionCategorization]:
@@ -498,7 +500,7 @@ Restituisci SOLO l'oggetto JSON, nient'altro."""
             list[TransactionCategorization]: Array of categorization objects
         """
         try:
-            print(f"👀 Analyzing batch with length {len(batch)}...")
+            logger.info(f"Analyzing batch with {len(batch)} transactions...")
             # Build prompt with CSV column hints
             prompt = self.build_batch_prompt(batch, csv_upload)
 
@@ -516,10 +518,10 @@ Restituisci SOLO l'oggetto JSON, nient'altro."""
 
             # Log completion
             expense_count = len([c for c in categorizations if c.category != "not_expense"])
-            print(f"✅ Analysis completed: {expense_count}/{len(batch)} expenses categorized! 🔥🔥")
+            logger.info(f"Analysis completed: {expense_count}/{len(batch)} expenses categorized")
 
             return categorizations
 
         except Exception as e:
-            print(f"❌ Analysis failed: {str(e)}")
+            logger.error(f"Analysis failed: {str(e)}", exc_info=True)
             return []

@@ -155,7 +155,7 @@ def _find_reference_transaction_from_tx(
         precheck_confidence_threshold
     )
 
-
+# TODO Per gli addebiti, se c'è il nome del debitore, ma un merchant ha lo stesso nome (esempio giroconto verso un conto intensato all'utente) passa la query ilike
 def _find_reference_transaction_from_raw(
         user: User,
         transaction_parse_result: RawTransactionParseResult,
