@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_not_required
 from django.contrib.auth.models import User
 from django.shortcuts import render, redirect
 
-allowed_emails = os.getenv('ALLOWED_EMAILS').split(',')
+allowed_emails = os.getenv('ALLOWED_EMAILS','').split(',')
 # Create your views here.
 @login_not_required
 def login_form(request):

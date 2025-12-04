@@ -253,6 +253,7 @@ class TransactionListView(LoginRequiredMixin, ListView):
         str] = "Casa,Spesa,Auto,Carburante,Vita sociale,Pizza,Regali,Vacanze,Sport,Bollette,Scuola,Bambini,Shopping,Abbonamenti,Affitto,Baby-sitter,Trasporti,Spese mediche,Partita Iva, Bonifico".split(
         ',')
 
+
     def get_queryset(self):
         """Filter transactions based on user and query parameters"""
         queryset = Transaction.objects.filter(
@@ -266,10 +267,24 @@ class TransactionListView(LoginRequiredMixin, ListView):
         if category_id:
             queryset = queryset.filter(category_id=category_id)
 
-        # Filter by status
-        status = self.request.GET.get('status')
-        if status:
-            queryset = queryset.filter(status=status)
+        # Filter by amount
+        amount = self.request.GET.get('amount')
+        amount_operator = self.request.GET.get('amount_operator', 'eq')
+        if amount:
+            try:
+                amount_value = float(amount)
+                if amount_operator == 'eq':
+                    queryset = queryset.filter(amount=amount_value)
+                elif amount_operator == 'gt':
+                    queryset = queryset.filter(amount__gt=amount_value)
+                elif amount_operator == 'gte':
+                    queryset = queryset.filter(amount__gte=amount_value)
+                elif amount_operator == 'lt':
+                    queryset = queryset.filter(amount__lt=amount_value)
+                elif amount_operator == 'lte':
+                    queryset = queryset.filter(amount__lte=amount_value)
+            except (ValueError, TypeError):
+                pass
 
         # Filter by months
         selected_months = self.request.GET.getlist('months')
@@ -355,7 +370,8 @@ class TransactionListView(LoginRequiredMixin, ListView):
             categories=categories,
             selected_status=self.request.GET.get('status', ''),
             search_query=self.request.GET.get('search', ''),
-            uncategorized_transaction=Transaction.objects.filter(user=self.request.user, status='uncategorized', transaction_type='expense'),
+            uncategorized_transaction=Transaction.objects.filter(user=self.request.user, status='uncategorized',
+                                                                 transaction_type='expense'),
             total_count=user_transactions.count(),
             total_amount=user_transactions.filter(status="categorized").aggregate(
                 total=Sum('amount')
@@ -367,6 +383,10 @@ class TransactionListView(LoginRequiredMixin, ListView):
             selected_months=selected_months
         )
         context.update(transaction_list_context.to_context())
+
+        # Add amount filter context
+        context['selected_amount'] = self.request.GET.get('amount', '')
+        context['selected_amount_operator'] = self.request.GET.get('amount_operator', 'eq')
 
         return context
 

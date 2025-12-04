@@ -547,7 +547,7 @@ class ExpenseUploadProcessor:
 
 
 def persist_csv_file(csv_data: list[dict[str, str]], user: User, csv_file: UploadedFile) -> CsvUpload:
-    csv_upload = CsvUpload.objects.create(user=user, dimension=csv_file.size)
+    csv_upload = CsvUpload.objects.create(user=user, dimension=csv_file.size,file_name=csv_file.name)
     all_pending_transactions = [Transaction(
         csv_upload=csv_upload,
         user=user,

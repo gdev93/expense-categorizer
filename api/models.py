@@ -146,7 +146,16 @@ class CsvUpload(models.Model):
         blank=True,
         help_text="The time taken to process the associated CSV file (in milliseconds)."
     )
+
+    file_name = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text="The file name"
+    )
     notes = models.TextField(blank=True, help_text='Agent description of the csv structure')
+
+
 
 
     def __str__(self):

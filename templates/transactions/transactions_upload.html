@@ -1,9 +1,7 @@
-
-
-
 {% extends "main/index.html" %}
 
 {% load static %}
+{% load time_filters %}
 
 {% block title %}Caricamento dati{% endblock %}
 {% block extra_css %}
@@ -102,7 +100,8 @@
                     <div class="file-icon">📁</div>
                     <div class="file-text-content">
                         <div class="file-name">
-                            Estrazione_{{ upload.id }}_{{ upload.upload_date|date:"Ymd_His" }}.csv
+                            Estrazione_{% if upload.file_name %}{{ upload.file_name }}{% else %}upload.id_
+                            {{ upload.upload_date|date:"Ymd_His" }}.csv{% endif %}
                         </div>
                         <div class="file-date">
                             📅 Caricato il {{ upload.upload_date|date:"d/m/Y H:i" }}
@@ -112,7 +111,7 @@
                                 💾 {{ upload.file_size_display }}
                             {% endif %}
                             {% if upload.processing_time %}
-                                ⏱️ {{ upload.processing_time }}ms
+                                ⏱️ {{ upload.processing_time|format_processing_time }}
                             {% else %}
                                🔥 In corso
                             {% endif %}
