@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from datetime import date
 from collections import defaultdict
 
+from django.core.paginator import Paginator
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import render
 from django.utils import timezone
@@ -60,17 +61,18 @@ class MonthlySummerView(View):
         except (TypeError, ValueError):
             selected_month = None
 
-        # If no month is selected, use current month only if viewing current year
-        if selected_month is None and selected_year == today.year:
-            selected_month = today.month
-
+        last_transaction = Transaction.objects.filter(user=request.user, status='categorized').order_by('-transaction_date').first()
+        last_transaction_date = last_transaction.transaction_date if last_transaction else today
+        if selected_month is None:
+            selected_month = last_transaction_date.month
         # Fetch all categorized transactions for the selected year
         transactions = Transaction.objects.filter(
             user=request.user,
             status="categorized",
             transaction_date__isnull=False,
             transaction_date__year=selected_year,
-        ).select_related("category")
+            transaction_date__month=selected_month
+        ).select_related("category").order_by("-transaction_date")
 
         # Build month summaries by iterating through transactions
         month_data = defaultdict(lambda: {"spending": 0.0, "income": 0.0})
@@ -114,13 +116,43 @@ class MonthlySummerView(View):
             not m.is_current,  # Current month first
             -m.month_number  # Rest in descending order
         ))
+        if not months:
+            final_selected_month_number = None
+        else:
+            final_selected_month_number = next((month.month_number for month in months if month.is_current), selected_month)
+            if final_selected_month_number not in [month.month_number for month in months]:
+                final_selected_month_number = months[0].month_number if months else None
+                months[0].is_current = True
+
+        # Fetch and paginate transactions for the selected month
+        if final_selected_month_number:
+            month_transactions = transactions.filter(
+                transaction_date__month=final_selected_month_number
+            )
+
+            expenses = month_transactions.filter(transaction_type="expense")
+            income = month_transactions.filter(transaction_type="income")
+
+            # Pagination (10 items per page, adjustable)
+            expense_paginator = Paginator(expenses, 7)
+            income_paginator = Paginator(income, 7)
+
+            expense_page = request.GET.get('expense_page', 1)
+            income_page = request.GET.get('income_page', 1)
+
+            paginated_expenses = expense_paginator.get_page(expense_page)
+            paginated_income = income_paginator.get_page(income_page)
+        else:
+            paginated_expenses = None
+            paginated_income = None
 
         context = {
             "available_years": available_years,
             "selected_year": selected_year,
-            "selected_month": selected_month,
-            "selected_month_number": next((month.month_number for month in months if month.is_current), selected_month),
+            "selected_month_number": final_selected_month_number,
             "months": months,
+            "expenses": paginated_expenses,
+            "income": paginated_income,
         }
 
         return render(

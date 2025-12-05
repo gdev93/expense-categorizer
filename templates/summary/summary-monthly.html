@@ -1,4 +1,3 @@
-
 {% extends "main/index.html" %}
 {% load static %}
 
@@ -9,6 +8,7 @@
     <link rel="stylesheet" href="{% static 'css/filters.css' %}">
     <link rel="stylesheet" href="{% static 'css/summary.css' %}">
     <link rel="stylesheet" href="{% static 'css/summary-card.css' %}">
+    <link rel="stylesheet" href="{% static 'css/transactions.css' %}">
 {% endblock extra_css %}
 
 {% block content %}
@@ -56,10 +56,123 @@
                         </a>
                         <a href="{% url 'new_transaction_income' %}?selected_month={{ selected_month_number }}" class="btn btn-success"
                            style="flex: 1; min-width: 200px; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                            <span style="font-size: 1.2em;"💰</span>
+                            <span style="font-size: 1.2em;">💰</span>
                             <span>Nuova Entrata</span>
                         </a>
                     </div>
+
+                    <!-- Expenses Section -->
+                    <h2 class="mb-3">📊 Spese Categorizzate</h2>
+                    {% if expenses %}
+                        <div class="data-list">
+                            {% for transaction in expenses %}
+                                <div class="data-list-item">
+                                    <div class="transaction-main">
+                                        <div class="transaction-date">
+                                            📅 {{ transaction.transaction_date|date:"d/m/Y" }}
+                                        </div>
+                                        <div class="transaction-merchant">
+                                            {{ transaction.merchant.name|default:"Merchant Sconosciuto" }}
+                                        </div>
+                                        {% if transaction.description %}
+                                            <div class="transaction-description" title="{{ transaction.description }}">
+                                                {{ transaction.description|truncatewords:15 }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="transaction-meta">
+                                        {% if transaction.category %}
+                                            <span class="transaction-category">
+                                                    {{ transaction.category.name }}
+                                                </span>
+                                        {% endif %}
+
+                                        <div class="transaction-amount">
+                                            €{{ transaction.amount|floatformat:2 }}
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <!-- Pagination for Expenses -->
+                        <div class="pagination">
+                            {% if expenses.has_previous %}
+                                <a href="?selected_year={{ selected_year }}&selected_month={{ selected_month_number }}&expense_page=
+
+                                        {{ expenses.previous_page_number }}{% if income_page %}&income_page={{ income_page }}{% endif %}">Precedente</a>
+                            {% else %}
+                                <span class="disabled">Precedente</span>
+                            {% endif %}
+                            <span class="current">Pagina {{ expenses.number }} di {{ expenses.paginator.num_pages }}</span>
+                            {% if expenses.has_next %}
+                                <a href="?selected_year={{ selected_year }}&selected_month={{ selected_month_number }}&expense_page=
+
+                                        {{ expenses.next_page_number }}{% if income_page %}&income_page={{ income_page }}{% endif %}">Successiva</a>
+                            {% else %}
+                                <span class="disabled">Successiva</span>
+                            {% endif %}
+                        </div>
+                    {% else %}
+                        <p>Nessuna spesa per questo mese.</p>
+                    {% endif %}
+
+                    <!-- Income Section -->
+                    <h2 class="mb-3">💰 Entrate</h2>
+                    {% if income %}
+                        <div class="data-list">
+                            {% for transaction in income %}
+                                <div class="data-list-item">
+                                    <div class="transaction-main">
+                                        <div class="transaction-date">
+                                            📅 {{ transaction.transaction_date|date:"d/m/Y" }}
+                                        </div>
+                                        <div class="transaction-merchant">
+                                            {{ transaction.merchant.name|default:"Merchant Sconosciuto" }}
+                                        </div>
+                                        {% if transaction.description %}
+                                            <div class="transaction-description"
+                                                 title="{{ transaction.description }}">
+                                                {{ transaction.description|truncatewords:15 }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="transaction-meta">
+                                        {% if transaction.category %}
+                                            <span class="transaction-category">
+                                                    {{ transaction.category.name }}
+                                                </span>
+                                        {% endif %}
+
+                                        <div class="transaction-amount">
+                                            €{{ transaction.amount|floatformat:2 }}
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <!-- Pagination for Income -->
+                        <div class="pagination">
+                            {% if income.has_previous %}
+                                <a href="?selected_year={{ selected_year }}&selected_month={{ selected_month_number }}&income_page=
+
+                                        {{ income.previous_page_number }}{% if expense_page %}&expense_page={{ expense_page }}{% endif %}">Precedente</a>
+                            {% else %}
+                                <span class="disabled">Precedente</span>
+                            {% endif %}
+                            <span class="current">Pagina {{ income.number }} di {{ income.paginator.num_pages }}</span>
+                            {% if income.has_next %}
+                                <a href="?selected_year={{ selected_year }}&selected_month={{ selected_month_number }}&income_page=
+
+                                        {{ income.next_page_number }}{% if expense_page %}&expense_page={{ expense_page }}{% endif %}">Successiva</a>
+                            {% else %}
+                                <span class="disabled">Successiva</span>
+                            {% endif %}
+                        </div>
+                    {% else %}
+                        <p>Nessuna entrata per questo mese.</p>
+                    {% endif %}
                 {% endif %}
             {% endfor %}
 
