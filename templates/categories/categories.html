@@ -47,42 +47,29 @@
     </div>
     {% endif %}
 
-    <div class="category-layout-stacked">
-
-        <div class="category-form-section">
-            <div class="create-category-card">
-                <div class="card-header">
-                    <h3>✨ Nuova Categoria</h3>
-                </div>
-
-                <form method="post" class="category-form" action="{% url 'create_category' %}">
-                    {% csrf_token %}
-
-                    <div class="form-group">
-                        <label for="id_name">Nome Categoria</label>
-                        <input type="text" name="name" id="id_name" class="form-control" placeholder="es. Alimentari" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="id_description">Descrizione</label>
-                        <textarea name="description" id="id_description" class="form-control" rows="4" placeholder="es. Spese fatte al supermercato, panificio..."></textarea>
-                        <small class="form-text text-muted">
-                            Una breve descrizione per aiutarti a ricordare cosa includere qui.
-                        </small>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary btn-full-width">
-                        ➕ Crea Categoria
-                    </button>
-                </form>
-            </div>
+    <!-- Search Filter (Leveraged from transaction_list.html, but only the search part) -->
+    <form method="get" class="filters" action="{% url 'category_list' %}">
+        <div class="filter-group">
+            <label for="search">🔍 Ricerca</label>
+            <input type="text" name="search" id="search" placeholder="Cerca nome o descrizione..."
+                   value="{{ search_query }}"/>
         </div>
+
+        <div class="filter-group" style="align-self: flex-end;">
+            <button type="submit" class="btn btn-primary">Filtra</button>
+            <a href="{% url 'category_list' %}" class="btn btn-secondary" id="delete-category-search">Cancella</a>
+        </div>
+    </form>
+
+    <div class="category-layout-stacked">
 
         <div class="category-list-section">
             <h2 class="section-title">
                 Categorie Esistenti
                 <span class="badge-count">{{ categories.count }}</span>
             </h2>
+
+            <a href="{% url 'create_category' %}" class="btn btn-primary mb-3">➕ Crea Nuova Categoria</a>
 
             {% if categories %}
             <div class="data-list">
@@ -98,7 +85,7 @@
                         </div>
 
                         <div class="category-actions">
-                            </div>
+                        </div>
                     </div>
                 {% endfor %}
             </div>
@@ -111,4 +98,5 @@
 
     </div>
 </div>
+<script src="{% static 'js/reset-filter.js' %}"></script>
 {% endblock %}
