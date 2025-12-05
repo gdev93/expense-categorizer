@@ -1,5 +1,4 @@
 import logging
-from dataclasses import dataclass
 
 from django import forms
 from django.contrib import messages
@@ -49,6 +48,9 @@ class CategoryListView(ListView):
 
         # 1. Filter: Start with categories belonging to the current user
         user_categories = self.model.objects.filter(user=self.request.user)
+        name = self.request.GET.get("search",'')
+        if name:
+            user_categories = user_categories.filter(name__icontains=name)
 
         # 2. Annotate: Add the aggregated fields
         #    - Count('transactions'): Counts all related Transaction objects.
@@ -89,13 +91,14 @@ class CategoryListView(ListView):
         return context
 
 
+
 # 2. CREATION VIEW
 class CategoryCreateView(CreateView):
     model = Category
     form_class = CategoryForm
     # We don't need a specific template because this view handles the POST request
     # from the form on the List page. If it fails validation, it re-renders the list.
-    template_name = 'categories/categories.html'
+    template_name = 'categories/category-creation.html'
     success_url = reverse_lazy('category_list')
 
     def form_valid(self, form):
