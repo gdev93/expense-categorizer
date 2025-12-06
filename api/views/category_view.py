@@ -1,5 +1,4 @@
 import logging
-from dataclasses import dataclass
 
 from django import forms
 from django.contrib import messages
