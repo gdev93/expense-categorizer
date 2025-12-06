@@ -3,12 +3,13 @@ from datetime import date
 from collections import defaultdict
 
 from django.core.paginator import Paginator
+from django.db.models import Sum
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import render
 from django.utils import timezone
 from django.views import View
 
-from api.models import Transaction
+from api.models import Transaction, MonthlySummary, CategoryMonthlySummary
 
 
 @dataclass
@@ -65,31 +66,24 @@ class MonthlySummerView(View):
         last_transaction_date = last_transaction.transaction_date if last_transaction else today
         if selected_month is None:
             selected_month = last_transaction_date.month
-        # Fetch all categorized transactions for the selected year
-        transactions = Transaction.objects.filter(
-            user=request.user,
-            status="categorized",
-            transaction_date__isnull=False,
-            transaction_date__year=selected_year,
-            transaction_date__month=selected_month
-        ).select_related("category").order_by("-transaction_date")
 
+        monthly_summary_by_user = MonthlySummary.objects.filter(user_id=request.user.id, year=selected_year)
         # Build month summaries by iterating through transactions
         month_data = defaultdict(lambda: {"spending": 0.0, "income": 0.0})
 
-        for transaction in transactions:
-            month_number = transaction.transaction_date.month
-            amount = float(transaction.amount or 0)
+        for summary in monthly_summary_by_user:
+            month_number = summary.month
+            amount = float(summary.total_amount or 0)
 
-            if transaction.transaction_type == "expense":
+            if summary.transaction_type == "expense":
                 month_data[month_number]["spending"] += amount
-            elif transaction.transaction_type == "income":
+            elif summary.transaction_type == "income":
                 month_data[month_number]["income"] += amount
 
         # Convert to MonthSummary objects
         months: list[MonthSummary] = []
         for month_number, data in month_data.items():
-            month_date = date(selected_year, month_number, 1)
+            month_date = date(selected_year, int(month_number), 1)
             display_name = month_date.strftime("%B")
 
             spending = data["spending"]
@@ -124,35 +118,16 @@ class MonthlySummerView(View):
                 final_selected_month_number = months[0].month_number if months else None
                 months[0].is_current = True
 
-        # Fetch and paginate transactions for the selected month
+        category_monthly_summaries = CategoryMonthlySummary.objects.filter(user_id=request.user.id, year=selected_year)
         if final_selected_month_number:
-            month_transactions = transactions.filter(
-                transaction_date__month=final_selected_month_number
-            )
-
-            expenses = month_transactions.filter(transaction_type="expense")
-            income = month_transactions.filter(transaction_type="income")
-
-            # Pagination (10 items per page, adjustable)
-            expense_paginator = Paginator(expenses, 7)
-            income_paginator = Paginator(income, 7)
-
-            expense_page = request.GET.get('expense_page', 1)
-            income_page = request.GET.get('income_page', 1)
-
-            paginated_expenses = expense_paginator.get_page(expense_page)
-            paginated_income = income_paginator.get_page(income_page)
-        else:
-            paginated_expenses = None
-            paginated_income = None
+            category_monthly_summaries = category_monthly_summaries.filter(month=final_selected_month_number)
 
         context = {
             "available_years": available_years,
             "selected_year": selected_year,
             "selected_month_number": final_selected_month_number,
             "months": months,
-            "expenses": paginated_expenses,
-            "income": paginated_income,
+            "category_monthly_summaries": category_monthly_summaries
         }
 
         return render(

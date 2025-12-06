@@ -323,5 +323,76 @@ class UserFinancialSummary(models.Model):
     def __str__(self):
         return f"Financial Summary - {self.user.username}"
 
+
+class MonthlySummary(models.Model):
+    # This field links to the primary table's user, assuming a Foreign Key relationship
+    # If the view doesn't enforce a FK, use IntegerField or CharField as appropriate.
+    user_id = models.IntegerField(primary_key=True)
+
+    # The aggregated amount
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2)
+
+    # The month number (1-12)
+    month = models.SmallIntegerField()
+
+    year = models.SmallIntegerField()
+
+    # The type of transaction (e.g., 'income', 'expense')
+    transaction_type = models.CharField(max_length=50)
+
+    class Meta:
+        # 1. IMPORTANT: Set managed = False to tell Django NOT to create/manage this
+        #    'table' (which is actually your view) in the database.
+        managed = False
+
+        # 2. Specify the exact name of your database view.
+        db_table = 'monthly_financial_summary'
+
+        # 3. Define a unique combination of fields that makes a row distinct.
+        #    This is essential because Django expects a primary key.
+        #    The combination of user_id, month, and transaction_type is unique in your view.
+        unique_together = ('user_id', 'month', 'transaction_type')
+
+        # 4. (Optional) Define a verbose name for the Admin interface.
+        verbose_name = 'Monthly Financial Summary'
+
+    def __str__(self):
+        return f"{self.user_id} - {self.transaction_type} ({self.month}): {self.total_amount}"
+
+
+class CategoryMonthlySummary(models.Model):
+    pk = models.CompositePrimaryKey("user_id", "category_id", "year", "month")
+    # Foreign key field from the api_transaction table
+    user_id = models.IntegerField()
+
+    # Fields from the api_category table
+    category_id = models.IntegerField()
+    category_name = models.CharField(max_length=100)
+
+    # The aggregated amount (COALESCE(SUM(t.amount), 0))
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2)
+
+    # The time period fields
+    year = models.SmallIntegerField()
+    month = models.SmallIntegerField()
+
+    class Meta:
+        # 1. IMPORTANT: This tells Django not to manage the table/view schema.
+        #    The view must be created manually in the database.
+        managed = False
+
+        # 2. Set the exact name of the database view this model maps to.
+        #    (Assuming you named the view 'zero_filled_monthly_summary')
+        db_table = 'category_monthly_summary'
+
+        # 3. Define the combination of fields that makes each row unique in the view.
+        #    Django requires a primary key or a unique constraint.
+        unique_together = ('user_id', 'category_id', 'year', 'month')
+
+        # 4. (Optional) Define a verbose name for clarity.
+        verbose_name = 'Zero-Filled Monthly Summary'
+
+    def __str__(self):
+        return f"User {self.user_id} - {self.category_name} ({self.year}-{self.month}): {self.total_amount}"
 def normalize_string(input_data:str)->str:
     return re.sub(r'[^a-z0-9]', '', input_data.lower())

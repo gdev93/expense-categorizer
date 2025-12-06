@@ -16,7 +16,6 @@
         {% include "components/header-with-year-select.html" with icon="🗓️" title="Riepilogo Mensile" %}
 
         {% if months %}
-            <!-- Highlighted Section for Current Month -->
             {% for month in months %}
                 {% if month.is_current %}
                     <header class="month-header">
@@ -46,7 +45,6 @@
                         {% include "components/summary-card.html" with icon="📈" label="Risparmi" value=month.total_savings subtext="" change_class="neutral" %}
                     </div>
 
-                    <!-- Quick Actions -->
                     <div class="quick-actions"
                          style="display: flex; gap: 12px; margin-top: 24px; margin-bottom: 32px; flex-wrap: wrap;">
                         <a href="#" class="btn btn-primary"
@@ -61,122 +59,32 @@
                         </a>
                     </div>
 
-                    <!-- Expenses Section -->
-                    <h2 class="mb-3">📊 Spese Categorizzate</h2>
-                    {% if expenses %}
+                    <h2 class="mb-3">📊 Riepilogo per Categoria</h2>
+                    {% if category_monthly_summaries %}
                         <div class="data-list">
-                            {% for transaction in expenses %}
-                                <div class="data-list-item" onclick="window.location.href='{% url 'transaction_detail' transaction.id %}';" style="cursor: pointer;">
+                            {% for summary in category_monthly_summaries %}
+                                <div class="data-list-item" style="cursor: default;">
                                     <div class="transaction-main">
-                                        <div class="transaction-date">
-                                            📅 {{ transaction.transaction_date|date:"d/m/Y" }}
-                                        </div>
                                         <div class="transaction-merchant">
-                                            {{ transaction.merchant.name|default:"Merchant Sconosciuto" }}
+                                            {{ summary.category_name|default:"Categoria Sconosciuta" }}
                                         </div>
-                                        {% if transaction.description %}
-                                            <div class="transaction-description" title="{{ transaction.description }}">
-                                                {{ transaction.description|truncatewords:15 }}
-                                            </div>
-                                        {% endif %}
                                     </div>
 
                                     <div class="transaction-meta">
-                                        {% if transaction.category %}
-                                            <span class="transaction-category">
-                                                    {{ transaction.category.name }}
-                                                </span>
-                                        {% endif %}
-
                                         <div class="transaction-amount">
-                                            €{{ transaction.amount|floatformat:2 }}
+                                            €{{ summary.total_amount|floatformat:2 }}
                                         </div>
                                     </div>
                                 </div>
                             {% endfor %}
                         </div>
-                        <!-- Pagination for Expenses -->
-                        <div class="pagination">
-                            {% if expenses.has_previous %}
-                                <a href="?selected_year={{ selected_year }}&selected_month={{ selected_month_number }}&expense_page=
-
-                                        {{ expenses.previous_page_number }}{% if income_page %}&income_page={{ income_page }}{% endif %}">Precedente</a>
-                            {% else %}
-                                <span class="disabled">Precedente</span>
-                            {% endif %}
-                            <span class="current">Pagina {{ expenses.number }} di {{ expenses.paginator.num_pages }}</span>
-                            {% if expenses.has_next %}
-                                <a href="?selected_year={{ selected_year }}&selected_month={{ selected_month_number }}&expense_page=
-
-                                        {{ expenses.next_page_number }}{% if income_page %}&income_page={{ income_page }}{% endif %}">Successiva</a>
-                            {% else %}
-                                <span class="disabled">Successiva</span>
-                            {% endif %}
-                        </div>
-                    {% else %}
-                        <p>Nessuna spesa per questo mese.</p>
+                        {% else %}
+                        <p>Nessun riepilogo per categoria per questo mese.</p>
                     {% endif %}
 
-                    <!-- Income Section -->
-                    <h2 class="mb-3">💰 Entrate</h2>
-                    {% if income %}
-                        <div class="data-list">
-                            {% for transaction in income %}
-                                <div class="data-list-item" onclick="window.location.href='{% url 'transaction_detail' transaction.id %}';" style="cursor: pointer;">
-                                    <div class="transaction-main">
-                                        <div class="transaction-date">
-                                            📅 {{ transaction.transaction_date|date:"d/m/Y" }}
-                                        </div>
-                                        <div class="transaction-merchant">
-                                            {{ transaction.merchant.name|default:"Merchant Sconosciuto" }}
-                                        </div>
-                                        {% if transaction.description %}
-                                            <div class="transaction-description"
-                                                 title="{{ transaction.description }}">
-                                                {{ transaction.description|truncatewords:15 }}
-                                            </div>
-                                        {% endif %}
-                                    </div>
-
-                                    <div class="transaction-meta">
-                                        {% if transaction.category %}
-                                            <span class="transaction-category">
-                                                    {{ transaction.category.name }}
-                                                </span>
-                                        {% endif %}
-
-                                        <div class="transaction-amount">
-                                            €{{ transaction.amount|floatformat:2 }}
-                                        </div>
-                                    </div>
-                                </div>
-                            {% endfor %}
-                        </div>
-                        <!-- Pagination for Income -->
-                        <div class="pagination">
-                            {% if income.has_previous %}
-                                <a href="?selected_year={{ selected_year }}&selected_month={{ selected_month_number }}&income_page=
-
-                                        {{ income.previous_page_number }}{% if expense_page %}&expense_page={{ expense_page }}{% endif %}">Precedente</a>
-                            {% else %}
-                                <span class="disabled">Precedente</span>
-                            {% endif %}
-                            <span class="current">Pagina {{ income.number }} di {{ income.paginator.num_pages }}</span>
-                            {% if income.has_next %}
-                                <a href="?selected_year={{ selected_year }}&selected_month={{ selected_month_number }}&income_page=
-
-                                        {{ income.next_page_number }}{% if expense_page %}&expense_page={{ expense_page }}{% endif %}">Successiva</a>
-                            {% else %}
-                                <span class="disabled">Successiva</span>
-                            {% endif %}
-                        </div>
-                    {% else %}
-                        <p>Nessuna entrata per questo mese.</p>
                     {% endif %}
-                {% endif %}
             {% endfor %}
 
-            <!-- List of Other Months -->
             <section class="other-months">
                     <h2 class="mb-3">📊 Altri mesi</h2>
                     <div class="data-list">
