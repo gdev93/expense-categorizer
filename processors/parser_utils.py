@@ -40,13 +40,7 @@ def parse_amount_from_raw_data(raw_data: dict[str, str], csv_amount_columns:list
     for column_name in csv_amount_columns:
         if column_name not in raw_data:
             continue
-        value = raw_data.get(column_name)
-        matches = amount_pattern.findall(value)
-        if matches:
-            # Take the first match (usually the complete amount)
-            single_match = matches[0]
-            normalized = normalize_amount(single_match)
-            return normalized, column_name
+        return normalize_amount(raw_data[column_name]), column_name
 
     return None, None
 
