@@ -21,6 +21,7 @@ from django.views.generic import FormView, ListView, DeleteView
 from api.models import CsvUpload, Transaction, Merchant
 from api.models import Rule, Category
 from processors.expense_upload_processor import ExpenseUploadProcessor, persist_csv_file
+from processors.parsers import parse_uploaded_file, FileParserError
 
 
 # --- Data Classes ---
@@ -103,19 +104,19 @@ class CsvUploadDelete(DeleteView):
 
 
 class CsvUploadForm(forms.Form):
-    """Form for CSV file upload with validation"""
+    """Form for CSV/Excel file upload with validation"""
 
     MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB in bytes
 
     file = forms.FileField(
-        label='CSV File',
-        help_text='Upload a CSV file (max 10MB)',
+        label='Transaction File',
+        help_text='Upload a CSV or Excel file (max 10MB)',
         widget=forms.FileInput(attrs={
-            'accept': '.csv',
+            'accept': '.csv,.xlsx,.xls',
             'class': 'form-control'
         }),
         validators=[
-            FileExtensionValidator(allowed_extensions=['csv'])
+            FileExtensionValidator(allowed_extensions=['csv', 'xlsx', 'xls'])
         ]
     )
 
@@ -127,8 +128,9 @@ class CsvUploadForm(forms.Form):
             return file
 
         # Check file extension
-        if not file.name.endswith('.csv'):
-            raise forms.ValidationError('File must be a CSV file.')
+        allowed_extensions = ('.csv', '.xlsx', '.xls')
+        if not file.name.lower().endswith(allowed_extensions):
+            raise forms.ValidationError('File must be a CSV or Excel file.')
 
         # Check file size
         if file.size > self.MAX_FILE_SIZE:
@@ -136,28 +138,20 @@ class CsvUploadForm(forms.Form):
                 f'File size must not exceed {self.MAX_FILE_SIZE / (1024 * 1024):.0f}MB.'
             )
 
-        # Validate CSV structure
+        # Validate file content based on type
         try:
-            file.seek(0)
-            content = file.read().decode('utf-8-sig')
-            csv_reader = csv.DictReader(io.StringIO(content))
-
             # Validate that file has content
-            rows = list(csv_reader)
-            if len(rows) == 0:
-                raise forms.ValidationError('CSV file is empty.')
+            if len(file) == 0:
+                raise forms.ValidationError('File is empty.')
 
             file.seek(0)  # Reset file pointer
 
-        except UnicodeDecodeError:
-            raise forms.ValidationError('File encoding error. Please ensure the file is UTF-8 encoded.')
-        except csv.Error as e:
-            raise forms.ValidationError(f'Invalid CSV format: {str(e)}')
+        except FileParserError as e:
+            raise forms.ValidationError(str(e))
         except Exception as e:
             raise forms.ValidationError(f'Error reading file: {str(e)}')
 
         return file
-
 
 def _format_file_size(size_bytes: int) -> str:
     """Format file size in human-readable format"""
@@ -206,18 +200,23 @@ class CsvUploadView(ListView, FormView):
             ).values_list('text_content', flat=True)
         )
 
-    def _process_csv_upload(self, csv_file) -> CsvProcessingResult:
+    def _process_csv_upload(self, uploaded_file) -> CsvProcessingResult:
         """
-        Process CSV upload: parse, validate, and create transactions.
+        Process file upload: parse, validate, and create transactions.
+        Supports both CSV and Excel formats.
 
         Args:
-            csv_file: Uploaded CSV file
+            uploaded_file: Uploaded file (CSV or Excel)
 
         Returns:
             CsvProcessingResult with processing details
         """
-        csv_upload_query = CsvUpload.objects.filter(user=self.request.user, transactions__status='pending',
-                                                    processing_time__isnull=True).distinct()
+        csv_upload_query = CsvUpload.objects.filter(
+            user=self.request.user,
+            transactions__status='pending',
+            processing_time__isnull=True
+        ).distinct()
+
         if csv_upload_query.exists():
             return CsvProcessingResult(
                 csv_upload=None,
@@ -225,33 +224,34 @@ class CsvUploadView(ListView, FormView):
                 success=False,
                 error_message='There is already a pending upload'
             )
-        try:
-            # Parse CSV file
-            csv_data = _parse_csv(csv_file)
 
-            if not csv_data:
+        try:
+            # Parse file using unified parser (handles both CSV and Excel)
+            file_data = parse_uploaded_file(uploaded_file)
+
+            if not file_data:
                 return CsvProcessingResult(
                     csv_upload=None,
                     rows_processed=0,
                     success=False,
-                    error_message='The CSV file is empty.'
+                    error_message='The file is empty.'
                 )
-            with transaction.atomic():
-                csv_upload = persist_csv_file(csv_data, self.request.user, csv_file)
 
+            with transaction.atomic():
+                csv_upload = persist_csv_file(file_data, self.request.user, uploaded_file)
 
             return CsvProcessingResult(
                 csv_upload=csv_upload,
-                rows_processed=len(csv_data),
+                rows_processed=len(file_data),
                 success=True
             )
 
-        except csv.Error as e:
+        except FileParserError as e:
             return CsvProcessingResult(
                 csv_upload=None,
                 rows_processed=0,
                 success=False,
-                error_message=f'Error parsing CSV file: {str(e)}'
+                error_message=str(e)
             )
         except Exception as e:
             return CsvProcessingResult(
@@ -269,7 +269,7 @@ class CsvUploadView(ListView, FormView):
         # Add upload form configuration
         context['upload_context'] = UploadContext(
             max_file_size_mb=10,
-            allowed_formats=['CSV']
+            allowed_formats=['CSV', 'XLSX', 'XLS']
         )
 
         # Convert uploads to display dataclass

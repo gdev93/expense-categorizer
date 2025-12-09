@@ -2,10 +2,6 @@ import os
 import re
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
-from babel import numbers
-from babel.numbers import NumberFormatError
-
-from api.models import CsvUpload
 
 default_date_formats = [
     '%d/%m/%Y',  # DD/MM/YYYY
@@ -57,24 +53,58 @@ def parse_amount_from_raw_data(raw_data: dict[str, str], csv_amount_columns:list
     # Check if all found amounts are the same
 
 
-def normalize_amount(amount_value: str | float) -> Decimal:
+def normalize_amount(amount_value: str | float | int) -> Decimal:
     """
-        Parse amount to Decimal, handling various formats.
-        """
-    if isinstance(amount_value, float):
+    Parse amount to Decimal, handling various formats including Italian locale.
+    Supports both Italian (comma as decimal) and international (dot as decimal) formats.
+    """
+    # 1. Handle numeric types directly
+    if isinstance(amount_value, (float, int)):
+        # Convert float to string first to maintain precision before Decimal conversion
+        if isinstance(amount_value, float):
+            return Decimal(str(amount_value))
         return Decimal(amount_value)
 
     if isinstance(amount_value, str):
-        # italian
+        # 2. Cleanup
+        # Remove currency symbols and spaces first.
+        cleaned = amount_value.replace('€', '').replace('$', '').replace(' ', '').strip()
+
+        if not cleaned or cleaned.lower() in ('nan', 'none'):
+            raise ValueError(f"Invalid amount format: {amount_value}")
+
+        # 3. Standardize Format
+        if ',' in cleaned and '.' in cleaned:
+            # Case 1: Both comma and dot present (e.g., 1.234,56 or 1,234.56)
+
+            # **ITALIAN/EUROPEAN HEURISTIC:** Assume the last separator is the decimal point.
+            if cleaned.rfind(',') > cleaned.rfind('.'):
+                # Input is Italian: dot is thousands separator, comma is decimal
+                # Example: "1.234,56" -> remove dots, replace comma with dot -> "1234.56"
+                standardized = cleaned.replace('.', '').replace(',', '.')
+            else:
+                # Input is International: comma is thousands separator, dot is decimal
+                # Example: "1,234.56" -> remove commas -> "1234.56"
+                standardized = cleaned.replace(',', '')
+
+        elif ',' in cleaned:
+            # Case 2: Only comma present (e.g., 1234,56)
+            # Assume Italian/European decimal separator
+            standardized = cleaned.replace(',', '.')
+
+        else:
+            # Case 3: Only dot, or no separators (e.g., 1234.56 or 1234)
+            # Assume International decimal separator
+            standardized = cleaned
+
+        # 4. Attempt final conversion to Decimal
         try:
-            # Remove currency symbols and spaces
-            cleaned = amount_value.replace('€', '').replace(' ', '').strip()
-            return numbers.parse_decimal(cleaned, locale='it_IT')
-        except (ValueError, NumberFormatError):
-                return Decimal('0.00')
+            return Decimal(standardized)
+        except InvalidOperation:
+            # Catches malformed strings like "1.2.3,45" after standardization
+            raise ValueError(f"Invalid amount format: {amount_value}")
 
-    return Decimal('0.00')
-
+    raise ValueError(f"Invalid amount type: {type(amount_value)}")
 
 def parse_date_from_raw_data(raw_data: dict[str, str], csv_date_columns:list[str]) -> tuple[date | None, str | None]:
 

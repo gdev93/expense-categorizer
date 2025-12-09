@@ -14,37 +14,10 @@ from processors.data_prechecks import parse_raw_transaction, RawTransactionParse
 from processors.parser_utils import normalize_amount, parse_raw_date, parse_amount_from_raw_data_without_suggestion, \
     parse_date_from_raw_data_with_no_suggestions
 
-
-def _calculate_statistics(transactions: list[dict], results: list[dict]) -> dict:
-    """
-    Calculate processing statistics.
-
-    Args:
-        transactions: Original transaction list
-        results: Batch processing results
-
-    Returns:
-        dictionary with statistics
-    """
-    total = len(transactions)
-    successful_batches = sum(1 for r in results if r.get('success', False))
-    total_batches = len(results)
-    total_categorized = sum(len(r.get('categorizations', {})) for r in results)
-    total_persisted = sum(r.get('persisted_count', 0) for r in results)
-
-    return {
-        'total': total,
-        'successful_batches': successful_batches,
-        'total_batches': total_batches,
-        'total_categorized': total_categorized,
-        'total_persisted': total_persisted
-    }
-
-
 class BatchingHelper:
-    batch_size = os.environ.get('AGENT_BATCH_SIZE', 30)
-    batch_max_size = os.environ.get('AGENT_BATCH_MAX_SIZE', 40)
-    batch_min_size = os.environ.get('AGENT_BATCH_MIN_SIZE', 25)
+    batch_size = os.environ.get('AGENT_BATCH_SIZE', 15)
+    batch_max_size = os.environ.get('AGENT_BATCH_MAX_SIZE', 20)
+    batch_min_size = os.environ.get('AGENT_BATCH_MIN_SIZE', 12)
     def __init__(self, batch_size:int = batch_size, batch_max_size:int=batch_max_size, batch_min_size:int=batch_min_size):
         self.batch_size = batch_size
         self.batch_max_size = batch_max_size

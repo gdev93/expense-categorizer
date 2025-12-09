@@ -417,6 +417,7 @@ class EditTransactionCategory(View):
                                 status=403)
         # 4. Update and Save
         expense.category = new_category
+        expense.modified_by_user = True
         expense.save()  # ⬅️ MUST CALL .save() to write the change to the database
 
         # 5. Return success response (JSON for AJAX)

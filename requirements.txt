@@ -5,3 +5,5 @@ pytest
 babel
 google-genai
 gunicorn
+pandas
+openpyxl

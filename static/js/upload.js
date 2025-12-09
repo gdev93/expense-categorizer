@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Costanti
     const MAX_FILE_SIZE_MB = 10 * 1024 * 1024; // 10MB in bytes
-    const ALLOWED_TYPES = ['.csv'];
+    const ALLOWED_TYPES = ['.csv', '.xlsx', '.xls'];
 
     // --- Variabile di Stato per il Polling ---
     let processingComplete = false; // Flag per controllare lo stato di elaborazione
