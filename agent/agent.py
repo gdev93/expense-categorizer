@@ -242,12 +242,14 @@ ISTRUZIONI GENERALI:
 
 ⚠️ ISTRUZIONI CRITICHE PER LA DATA TRANSAZIONE:
 - Il campo transaction_date_field DEVE essere una colonna dedicata ESCLUSIVAMENTE alle date (es. "Data", "Data Valuta", "Data Contabile").
-- **CRITERIO DI ESCLUSIONE:** Ignora qualsiasi colonna che contenga testo narrativo insieme alla data. Cerca formati puri (GG/MM/AAAA, AAAA-MM-GG, ecc.).
-- **CRITERIO "DATA MAGGIORE":** Se nel CSV sono presenti più colonne valide di date (es. sia "Data Operazione" che "Data Valuta"):
-  1. Confronta i valori delle date nei campioni forniti.
-  2. Seleziona la colonna che contiene sistematicamente la data posticipata perchè è quella che conferma il pagamento.
-  3. Considera i pagamenti con la carta o i bonifici per decidere
-
+- CRITERIO DI ESCLUSIONE: Ignora qualsiasi colonna che contenga testo narrativo insieme alla data.
+- **CRITERIO DI SELEZIONE FINALE (Massima Priorità):**
+  1. Se è disponibile una sola colonna data valida: selezionala.
+  2. Se sono presenti più colonne data valide (es. "Data Operazione" e "Data Valuta"):
+     a. **DEVI selezionare la colonna che contiene sistematicamente la data posticipata.** Questa data (spesso chiamata 'Data Contabile' o 'Data di Addebito') è quella che conferma l'avvenuto pagamento o incasso.
+     b. Il modello deve esaminare i campioni per identificare quale colonna ha costantemente i valori temporali successivi.
+     c. **La data più recente è la data finale di riferimento per la transazione.**
+     
 ⚠️ ISTRUZIONI CRITICHE PER L'IMPORTO:
 - Il campo amount_field DEVE permettere di identificare le SPESE.
 - Cerca colonne con importi negativi o indicatori di addebito.

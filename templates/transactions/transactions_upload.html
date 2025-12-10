@@ -100,7 +100,7 @@
                     <div class="file-icon">📁</div>
                     <div class="file-text-content">
                         <div class="file-name">
-                            Estrazione_{% if upload.file_name %}{{ upload.file_name }}{% else %}upload.id_
+                            Estrazione_{% if upload.file_name %}{{ upload.file_name }}{% else %}{{ upload.id }}_
                             {{ upload.upload_date|date:"Ymd_His" }}.csv{% endif %}
                         </div>
                         <div class="file-date">
