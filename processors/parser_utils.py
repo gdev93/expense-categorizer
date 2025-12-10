@@ -47,7 +47,7 @@ def parse_amount_from_raw_data(raw_data: dict[str, str], csv_amount_columns:list
     # Check if all found amounts are the same
 
 
-def normalize_amount(amount_value: str | float | int) -> Decimal:
+def normalize_amount(amount_value: str | float | int) -> Decimal | None:
     """
     Parse amount to Decimal, handling various formats including Italian locale.
     Supports both Italian (comma as decimal) and international (dot as decimal) formats.
@@ -65,7 +65,7 @@ def normalize_amount(amount_value: str | float | int) -> Decimal:
         cleaned = amount_value.replace('€', '').replace('$', '').replace(' ', '').strip()
 
         if not cleaned or cleaned.lower() in ('nan', 'none'):
-            raise ValueError(f"Invalid amount format: {amount_value}")
+            return None
 
         # 3. Standardize Format
         if ',' in cleaned and '.' in cleaned:

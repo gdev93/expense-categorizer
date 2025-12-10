@@ -213,15 +213,11 @@ class ExpenseCategorizerAgent:
         """
         Analyze the CSV structure using Gemini to identify column mappings.
         """
-
-        # Sample first few transactions
-        sample_size = min(5, len(transactions))
-        sample_transactions = transactions[:sample_size]
-
         # Build the prompt
         samples_text = ""
-        for i, tx in enumerate(sample_transactions, 1):
-            samples_text += f"Transazione {i}:\n"
+        for i, tx in enumerate(transactions):
+            index = i + 1
+            samples_text += f"Transazione {index}:\n"
             samples_text += f"  ID: {tx.transaction_id}\n"
             samples_text += "  Campi:\n"
             for column, value in tx.raw_text.items():
@@ -239,9 +235,6 @@ Analizza i seguenti campioni di transazioni e identifica quali campi corrispondo
 4. **amount_field**: Il campo contenente l'importo della transazione
 5. **operation_type_field**: Il campo contenente il tipo di operazione
 
-CAMPIONI DI TRANSAZIONI:
-{samples_text}
-
 ISTRUZIONI GENERALI:
 - Restituisci SOLO i nomi dei campi esattamente come appaiono nei dati
 - Se un campo non può essere determinato con sicurezza, restituisci null
@@ -252,8 +245,8 @@ ISTRUZIONI GENERALI:
 - **CRITERIO DI ESCLUSIONE:** Ignora qualsiasi colonna che contenga testo narrativo insieme alla data. Cerca formati puri (GG/MM/AAAA, AAAA-MM-GG, ecc.).
 - **CRITERIO "DATA MAGGIORE":** Se nel CSV sono presenti più colonne valide di date (es. sia "Data Operazione" che "Data Valuta"):
   1. Confronta i valori delle date nei campioni forniti.
-  2. Seleziona la colonna che contiene sistematicamente la data cronologicamente PIÙ RECENTE (la data maggiore).
-  3. NON basare la scelta sul nome della colonna (es. non preferire a priori "Data Contabile"), ma basa la scelta sui valori effettivi.
+  2. Seleziona la colonna che contiene sistematicamente la data posticipata perchè è quella che conferma il pagamento.
+  3. Considera i pagamenti con la carta o i bonifici per decidere
 
 ⚠️ ISTRUZIONI CRITICHE PER L'IMPORTO:
 - Il campo amount_field DEVE permettere di identificare le SPESE.
@@ -271,6 +264,9 @@ FORMATO OUTPUT (JSON):
   "confidence": "high|medium|low",
   "notes": "string"
 }}
+
+CAMPIONI DI TRANSAZIONI:
+{samples_text}
 
 Restituisci SOLO l'oggetto JSON, nient'altro."""
 

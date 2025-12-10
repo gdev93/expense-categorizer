@@ -14,6 +14,7 @@ from processors.data_prechecks import parse_raw_transaction, RawTransactionParse
 from processors.parser_utils import normalize_amount, parse_raw_date, parse_amount_from_raw_data_without_suggestion, \
     parse_date_from_raw_data_with_no_suggestions
 
+
 class BatchingHelper:
     batch_size = os.environ.get('AGENT_BATCH_SIZE', 15)
     batch_max_size = os.environ.get('AGENT_BATCH_MAX_SIZE', 20)
@@ -167,6 +168,8 @@ class ExpenseUploadProcessor:
     - Progress tracking and logging
     """
     pre_check_confidence_threshold = os.environ.get('PRE_CHECK_CONFIDENCE_THRESHOLD', 0.7)
+    csv_structure_sample_size_percentage = os.environ.get('CSV_STRUCTURE_SAMPLE_SIZE_PERCENTAGE', 0.1)
+    csv_structure_min_threshold = os.environ.get('CSV_STRUCTURE_MIN_THRESHOLD', 30)
 
 
     def __init__(self, user: User, user_rules: list[str] = None, available_categories: list[Category] | None = None, batch_helper:BatchingHelper | None = None):
@@ -199,7 +202,7 @@ class ExpenseUploadProcessor:
                     print(f"Transaction from description {transaction_parse_result.description} already categorized")
                     all_transactions_to_delete.append(tx)
                     continue
-            if transaction_parse_result.merchant and merchant_with_category.get(transaction_parse_result.merchant):
+            if transaction_parse_result.merchant and merchant_with_category.get(transaction_parse_result.merchant.name):
                 merchant, category = merchant_with_category[transaction_parse_result.merchant]
                 categorized_transaction = _update_categorized_transaction_with_category_merchant(tx, category, merchant,
                                                                                                  transaction_parse_result)
@@ -309,7 +312,7 @@ class ExpenseUploadProcessor:
                 csv_upload_same_structure = csv_upload_candidate
                 break
         if not csv_upload_same_structure:
-            transaction_sample_size = min(30, floor(len(current_data) * 30 / 100))  # 30%
+            transaction_sample_size = min(len(current_data), max(self.csv_structure_min_threshold, floor(len(current_data) * self.csv_structure_sample_size_percentage)))  # 30%
             result_from_agent = self.agent.detect_csv_structure(
                 [AgentTransactionUpload(transaction_id=tx.id, raw_text=tx.raw_data) for tx in
                  current_data[:transaction_sample_size]])
