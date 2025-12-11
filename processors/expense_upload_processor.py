@@ -6,7 +6,6 @@ from django.contrib.postgres.search import TrigramWordSimilarity
 from django.core.files.uploadedfile import UploadedFile
 from django.db import transaction
 from django.db.models import Q
-from django.db.models.aggregates import Count
 
 from agent.agent import ExpenseCategorizerAgent, AgentTransactionUpload, TransactionCategorization
 from api.models import Transaction, Category, Merchant, CsvUpload, normalize_string
@@ -81,15 +80,41 @@ def _update_categorized_transaction(
     return tx
 
 
-def _find_similar_transaction_by_merchant(user: User, merchant_name: str,
-                                          similarity_threshold: float) -> Transaction | None:
-    """Search for a similar categorized transaction by merchant name."""
-    similar_merchants = Merchant.get_similar_merchants_by_names(merchant_name_candidate=merchant_name, user=user,
-                                                                similarity_threshold=similarity_threshold)
-    return Transaction.objects.filter(
-        user=user, merchant__in=similar_merchants, status='categorized', transaction_type='expense').annotate(
-        merchant_count=Count('merchant')).annotate(category_count=Count('category')).order_by('-merchant_count',
-                                                                                              '-category_count').first()
+def _find_similar_transaction_by_merchant(
+        user: User,
+        merchant_name: str,
+        threshold: float
+) -> Transaction | None:
+    """
+    Finds the best matching categorized transaction based on a merchant name candidate.
+    """
+    # 1. Try Strict/Normalized Match on the Merchant Relation first (High Confidence)
+    #    If we have a Transaction linked to a Merchant whose name matches our candidate.
+    normalized_candidate = normalize_string(merchant_name)
+
+    exact_match_tx = Transaction.objects.filter(
+        user=user,
+        category__isnull=False,
+        transaction_type='expense',
+        merchant__normalized_name=normalized_candidate
+    ).order_by('-transaction_date').first()
+
+    if exact_match_tx:
+        return exact_match_tx
+
+    # 2. Try Fuzzy Match on 'merchant_raw_name' (Medium Confidence)
+    #    Useful if the merchant wasn't linked to a Merchant object but the raw name is similar.
+    #    We use TrigramWordSimilarity on the RAW name (preserving spaces) for better word matching.
+    fuzzy_match_tx = Transaction.objects.annotate(
+        similarity=TrigramWordSimilarity(merchant_name, 'merchant_raw_name')
+    ).filter(
+        user=user,
+        category__isnull=False,
+        transaction_type='expense',
+        similarity__gte=threshold
+    ).order_by('-similarity', '-transaction_date').first()
+
+    return fuzzy_match_tx
 
 
 def _find_similar_transaction_by_description(
@@ -100,7 +125,7 @@ def _find_similar_transaction_by_description(
     """Search for a similar categorized transaction by description similarity."""
 
     return Transaction.objects.annotate(
-        description_similarity=TrigramWordSimilarity(normalize_string(description),'normalized_description')
+        description_similarity=TrigramWordSimilarity(description, 'description')
     ).filter(
         status='categorized',
         merchant_id__isnull=False,
@@ -147,7 +172,8 @@ def _find_reference_transaction_from_raw(
             return similar_transaction
     if transaction_parse_result.description:
         merchants_from_description = Merchant.get_merchants_by_transaction_description(
-            transaction_parse_result.description, user)
+            transaction_parse_result.description, user, precheck_confidence_threshold
+        )
         if merchants_from_description.count() == 1:
             return _find_similar_transaction_by_merchant(user, merchants_from_description[0].name,
                                                          precheck_confidence_threshold)
@@ -167,7 +193,7 @@ class ExpenseUploadProcessor:
     - Persistence of results
     - Progress tracking and logging
     """
-    pre_check_confidence_threshold = os.environ.get('PRE_CHECK_CONFIDENCE_THRESHOLD', 0.7)
+    pre_check_confidence_threshold = os.environ.get('PRE_CHECK_CONFIDENCE_THRESHOLD', 0.85)
     csv_structure_sample_size_percentage = os.environ.get('CSV_STRUCTURE_SAMPLE_SIZE_PERCENTAGE', 0.1)
     csv_structure_min_threshold = os.environ.get('CSV_STRUCTURE_MIN_THRESHOLD', 30)
 
@@ -197,12 +223,13 @@ class ExpenseUploadProcessor:
                 transaction_from_description = Transaction.objects.filter(
                     user=self.user,
                     normalized_description=normalize_string(transaction_parse_result.description),
+                    transaction_date=transaction_parse_result.date,
                 ).exists()
                 if transaction_from_description:
                     print(f"Transaction from description {transaction_parse_result.description} already categorized")
                     all_transactions_to_delete.append(tx)
                     continue
-            if transaction_parse_result.merchant and merchant_with_category.get(transaction_parse_result.merchant.name):
+            if transaction_parse_result.merchant and merchant_with_category.get(transaction_parse_result.merchant):
                 merchant, category = merchant_with_category[transaction_parse_result.merchant]
                 categorized_transaction = _update_categorized_transaction_with_category_merchant(tx, category, merchant,
                                                                                                  transaction_parse_result)
@@ -258,7 +285,7 @@ class ExpenseUploadProcessor:
                     continue
 
                 similar_transaction = _find_similar_transaction_by_merchant(user=self.user, merchant_name=merchant_name,
-                                                                            similarity_threshold=self.pre_check_confidence_threshold)
+                                                                            threshold=self.pre_check_confidence_threshold)
                 if not similar_transaction:
                     merchant = Merchant(name=merchant_name, user=self.user)
                     merchant.save()

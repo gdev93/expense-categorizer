@@ -59,22 +59,19 @@ class Merchant(models.Model):
         return self.name
 
     @staticmethod
-    def get_merchants_by_transaction_description(description: str, user: User) -> QuerySet:
+    def get_merchants_by_transaction_description(description: str, user: User, threshold:float) -> QuerySet:
+        """
+        Finds merchants where the merchant name is highly similar to words
+        found in the description.
+        """
+        # TrigramWordSimilarity splits the description into words and compares
+        # them against the merchant name.
         return Merchant.objects.annotate(
-            input_contains_normalized=RawSQL(
-                "%s ILIKE '%%' || normalized_name || '%%'",
-                (normalize_string(description),)
-            ),
-            normalized_contains_input=RawSQL(
-                "normalized_name ILIKE '%%' || %s || '%%'",
-                (normalize_string(description),)
-            )
+            similarity=RawSQL(sql="WORD_SIMILARITY(name, %s)", params=(description,))
         ).filter(
-            Q(input_contains_normalized=True) |
-            Q(normalized_contains_input=True)
-        ).filter(
-            user=user
-        ).distinct('normalized_name').order_by('normalized_name')
+            user=user,
+            similarity__gte=threshold  # Adjust threshold (0.6 is usually a strong match)
+        ).order_by('-similarity')
 
     @staticmethod
     def get_similar_merchants_by_names(merchant_name_candidate: str, user: User,

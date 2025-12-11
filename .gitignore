@@ -178,5 +178,6 @@ tmp/
 temp/
 *.tmp
 
-# Dev App
+# App
 docker-compose.dev.yaml
+dump
