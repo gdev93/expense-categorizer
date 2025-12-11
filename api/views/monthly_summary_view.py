@@ -9,6 +9,7 @@ from django.shortcuts import render
 from django.utils import timezone
 from django.views import View
 
+from api.context_processors import available_years_context
 from api.models import Transaction, MonthlySummary, CategoryMonthlySummary
 
 
@@ -27,19 +28,9 @@ class MonthlySummerView(View):
 
     def get(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
         # Get all years with categorized transactions for the current user
-        available_years = list(
-            Transaction.objects.filter(
-                user=request.user,
-                status="categorized",
-                transaction_date__isnull=False,
-            )
-            .values_list("transaction_date__year", flat=True)
-            .distinct()
-            .order_by("-transaction_date__year")
-        )
-
         # Default year: current year if it has data,
         # otherwise the latest year with data (or current year if none)
+        available_years = available_years_context(request)['available_years']
         today = timezone.now().date()
         default_year = (
             today.year
@@ -123,7 +114,6 @@ class MonthlySummerView(View):
             category_monthly_summaries = category_monthly_summaries.filter(month=final_selected_month_number)
 
         context = {
-            "available_years": available_years,
             "selected_year": selected_year,
             "selected_month_number": final_selected_month_number,
             "months": months,

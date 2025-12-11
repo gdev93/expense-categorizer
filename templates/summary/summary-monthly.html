@@ -63,7 +63,7 @@
                     {% if category_monthly_summaries %}
                         <div class="data-list">
                             {% for summary in category_monthly_summaries %}
-                                <div class="data-list-item" style="cursor: default;">
+                                <div class="data-list-item" onclick="window.location.href='{% url 'transaction_list' %}?category={{ summary.category_id }}&amount_operator=eq&amount=&months={{ summary.month }}&selected_year={{ summary.year }}'">
                                     <div class="transaction-main">
                                         <div class="transaction-merchant">
                                             {{ summary.category_name|default:"Categoria Sconosciuta" }}

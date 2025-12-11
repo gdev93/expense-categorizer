@@ -14,7 +14,7 @@
 {% block content %}
     <div class="container mt-2">
 
-        {% include "components/header-with-back-to-summary-button.html" with icon="💸" title="Spese Quotidiane" %}
+        {% include "components/header-with-year-select.html" with icon="💸" title="Spese Quotidiane" %}
 
         <!-- Summary Cards -->
         {% if transactions %}
@@ -68,8 +68,9 @@
                     <select name="months" id="months" multiple size="1" onchange="this.form.submit()">
                         <option value="">Tutti i Mesi</option>
                         {% for month in available_months %}
-                            <option value="{{ month.value }}"
-                                    {% if month.value in selected_months %}selected{% endif %}>
+
+                            <option value="{{ month.month_number }}"
+                                    {% if month.month_number|stringformat:"s" in selected_months %}selected{% endif %}>
                                 {{ month.label_it }}
                             </option>
                         {% endfor %}

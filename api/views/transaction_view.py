@@ -1,7 +1,8 @@
 # views.py (add to your existing views file)
+import datetime
 import os
 from calendar import monthrange
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 from typing import Any
 
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -235,9 +236,7 @@ class TransactionListContextData:
     total_amount: float
     category_count: int
     rules: QuerySet[Rule, Rule]  # QuerySet
-    available_months: list[dict[str, Any]]
-    selected_months: list[str]
-
+    selected_months: list[str] = field(default_factory=list)
     def to_context(self) -> dict[str, Any]:
         """Convert dataclass to context dictionary"""
         return asdict(self)
@@ -289,15 +288,21 @@ class TransactionListView(LoginRequiredMixin, ListView):
         # Filter by months
         selected_months = self.request.GET.getlist('months')
         if selected_months:
+            # Interpret months as numeric month values for the selected year
+            try:
+                selected_year_qs = int(self.request.GET.get('year') or datetime.datetime.now().year)
+            except (TypeError, ValueError):
+                selected_year_qs = datetime.datetime.now().year
+
             month_queries = Q()
             for month_str in selected_months:
                 try:
-                    year, month = map(int, month_str.split('-'))
+                    month = int(month_str)
                     month_queries |= Q(
-                        transaction_date__year=year,
+                        transaction_date__year=selected_year_qs,
                         transaction_date__month=month
                     )
-                except (ValueError, AttributeError):
+                except (ValueError, TypeError):
                     pass
             if month_queries:
                 queryset = queryset.filter(month_queries)
@@ -351,17 +356,24 @@ class TransactionListView(LoginRequiredMixin, ListView):
         user_transactions = self.get_queryset()
 
         # Apply month filter to summary data if months are selected
+        # 'months' values are month numbers (1..12); restrict by selected year from GET 'year'
         selected_months = self.request.GET.getlist('months')
+        try:
+            selected_year = int(self.request.GET.get('year',
+                                                     self.get_queryset().first().transaction_date.year or datetime.datetime.now().year))
+        except (TypeError, ValueError):
+            selected_year = datetime.datetime.now().year
+
         if selected_months:
             month_queries = Q()
             for month_str in selected_months:
                 try:
-                    year, month = map(int, month_str.split('-'))
+                    month = int(month_str)
                     month_queries |= Q(
-                        transaction_date__year=year,
+                        transaction_date__year=selected_year,
                         transaction_date__month=month
                     )
-                except (ValueError, AttributeError):
+                except (ValueError, TypeError):
                     pass
             if month_queries:
                 user_transactions = user_transactions.filter(month_queries)
@@ -379,7 +391,7 @@ class TransactionListView(LoginRequiredMixin, ListView):
             category_count=user_transactions.values('category').distinct().count(),
             rules=Rule.objects.filter(user=self.request.user, is_active=True),
             selected_category=self.request.GET.get('category', ''),
-            available_months=self.get_available_months(),
+            # available_months is now provided by a global context processor
             selected_months=selected_months
         )
         context.update(transaction_list_context.to_context())

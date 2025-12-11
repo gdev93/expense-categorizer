@@ -19,12 +19,10 @@ from django.views.generic import RedirectView
 
 from api.entry_point_views import login_form, authenticate_user, register_form, create_user
 from api.views.category_view import CategoryCreateView, CategoryListView, CategoryDetailView, CategoryDeleteView
-from api.views.csv_upload_view import CsvUploadView, CsvUploadDelete, CsvProcessView, CsvProgressView, \
-    CsvUploadCheckView
+from api.views.csv_upload_view import CsvUploadView, CsvUploadDelete, CsvProcessView, CsvProgressView, CsvUploadCheckView
 from api.views.rule_view import RuleDefineView, RuleDeleteView
 from api.views.monthly_summary_view import MonthlySummerView
-from api.views.transaction_view import TransactionListView, EditTransactionCategory, TransactionDetailUpdateView, \
-    TransactionIncomeCreateView
+from api.views.transaction_view import TransactionListView, EditTransactionCategory, TransactionDetailUpdateView, TransactionIncomeCreateView
 
 urlpatterns = [
     path("accounts/", login_form, name="login_form"),
