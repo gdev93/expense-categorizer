@@ -117,23 +117,6 @@ def _find_similar_transaction_by_merchant(
     return fuzzy_match_tx
 
 
-def _find_similar_transaction_by_description(
-        user: User,
-        description: str,
-        precheck_confidence_threshold: float,
-) -> Transaction | None:
-    """Search for a similar categorized transaction by description similarity."""
-
-    return Transaction.objects.annotate(
-        description_similarity=TrigramWordSimilarity(description, 'description')
-    ).filter(
-        status='categorized',
-        merchant_id__isnull=False,
-        user=user,
-        description_similarity__gte=precheck_confidence_threshold
-    ).order_by('-description_similarity', '-updated_at').first()
-
-
 def _find_reference_transaction_from_tx(
         user: User,
         tx: Transaction,
@@ -142,17 +125,9 @@ def _find_reference_transaction_from_tx(
     """Find reference transaction from an existing Transaction object."""
     # Check if tx has a merchant and search for similar transactions by merchant
     if tx.merchant:
-        similar_transaction = _find_similar_transaction_by_merchant(user, tx.merchant.name,
+        return _find_similar_transaction_by_merchant(user, tx.merchant.name,
                                                                     precheck_confidence_threshold)
-        if similar_transaction:
-            return similar_transaction
-
-    # Fall back to description similarity search
-    return _find_similar_transaction_by_description(
-        user,
-        tx.description,
-        precheck_confidence_threshold
-    )
+    return None
 
 # TODO Per gli addebiti, se c'è il nome del debitore, ma un merchant ha lo stesso nome (esempio giroconto verso un conto intensato all'utente) passa la query ilike
 def _find_reference_transaction_from_raw(
@@ -177,12 +152,7 @@ def _find_reference_transaction_from_raw(
         if merchants_from_description.count() == 1:
             return _find_similar_transaction_by_merchant(user, merchants_from_description[0].name,
                                                          precheck_confidence_threshold)
-    # Fall back to description similarity search
-    return _find_similar_transaction_by_description(
-        user,
-        transaction_parse_result.description,
-        precheck_confidence_threshold
-    )
+    return None
 
 class ExpenseUploadProcessor:
     """
