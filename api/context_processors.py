@@ -48,6 +48,7 @@ def available_years_context(request: HttpRequest):
         return {
             'available_years': []
         }
+    current_selected_year = request.GET.get('year')
     return {
         'available_years': list(
             Transaction.objects.filter(
@@ -58,7 +59,8 @@ def available_years_context(request: HttpRequest):
             .values_list("transaction_date__year", flat=True)
             .distinct()
             .order_by("-transaction_date__year")
-        ) or [datetime.now().year]
+        ) or [datetime.now().year] + [datetime.now().year+1],
+        'year': int(current_selected_year) if current_selected_year else datetime.now().year
     }
 
 
