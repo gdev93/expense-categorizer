@@ -2,7 +2,7 @@
 {% block header_content %}
     <form method="get" class="filters" style="padding: 0; box-shadow: none; border: none; background: transparent; margin: 0;">
         <div class="filter-group">
-            <label for="year-select">Anno</label>
+            <label for="year-select" class="desktop-only">Anno</label>
             <select id="year-select" name="year" class="form-select" onchange="this.form.submit()">
                 {% for year in available_years %}
                     <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>

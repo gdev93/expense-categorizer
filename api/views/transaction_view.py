@@ -359,8 +359,9 @@ class TransactionListView(LoginRequiredMixin, ListView):
         # 'months' values are month numbers (1..12); restrict by selected year from GET 'year'
         selected_months = self.request.GET.getlist('months')
         try:
+            first_transaction_date = user_transactions.first()
             selected_year = int(self.request.GET.get('year',
-                                                     self.get_queryset().first().transaction_date.year or datetime.datetime.now().year))
+                                                     first_transaction_date.transaction_date.year if first_transaction_date else datetime.datetime.now().year))
         except (TypeError, ValueError):
             selected_year = datetime.datetime.now().year
 
