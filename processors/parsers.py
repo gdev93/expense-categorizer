@@ -108,7 +108,7 @@ def read_excel(file_path) -> List[Dict[str, str]]:
         List of dictionaries representing rows (same format as parse_csv_file)
     """
     # 1. Define Universal Keywords (Case-Insensitive)
-    keyword_string = os.getenv('BANK_KEYWORDS', 'Importo,Valuta,Data,Descrizione,Concetto,Movimento')
+    keyword_string = os.getenv('BANK_KEYWORDS', 'Importo,Valuta,Descrizione,Concetto,Movimento')
 
     # Clean the string and create the list of keywords
     UNIVERSAL_KEYWORDS = [
@@ -146,11 +146,10 @@ def read_excel(file_path) -> List[Dict[str, str]]:
     # 4. Load the Full Data using the Detected Header Index
     df = pd.read_excel(file_path, header=header_index, dtype=str,engine='openpyxl')
 
-
     # 5. Clean up the DataFrame
 
     # Drop any unwanted 'Unnamed' columns
     df = df.drop(columns=[col for col in df.columns if 'Unnamed:' in col], errors='ignore')
-
+    df = df.where(pd.notna(df), None)
     # 6. Convert DataFrame to list of dictionaries (same format as CSV parser)
     return df.to_dict('records')

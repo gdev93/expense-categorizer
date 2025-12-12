@@ -1,5 +1,6 @@
 import os
 from math import floor
+from typing import Any
 
 from django.contrib.auth.models import User
 from django.contrib.postgres.search import TrigramWordSimilarity
@@ -15,20 +16,50 @@ from processors.parser_utils import normalize_amount, parse_raw_date, parse_amou
 
 
 class BatchingHelper:
-    batch_size = os.environ.get('AGENT_BATCH_SIZE', 15)
-    batch_max_size = os.environ.get('AGENT_BATCH_MAX_SIZE', 20)
-    batch_min_size = os.environ.get('AGENT_BATCH_MIN_SIZE', 12)
+    batch_size = os.environ.get('AGENT_BATCH_SIZE', 50)
+    batch_max_size = os.environ.get('AGENT_BATCH_MAX_SIZE', 80)
+    batch_min_size = os.environ.get('AGENT_BATCH_MIN_SIZE', 30)
     def __init__(self, batch_size:int = batch_size, batch_max_size:int=batch_max_size, batch_min_size:int=batch_min_size):
         self.batch_size = batch_size
         self.batch_max_size = batch_max_size
         self.batch_min_size = batch_min_size
 
-    def compute_batch_size(self, data_count:int) -> int:
-        if data_count < self.batch_min_size:
-            return self.batch_min_size
-        if self.batch_size < data_count < self.batch_max_size:
-            return self.batch_max_size
-        return self.batch_size
+    def compute_batches(self, data: list[Any]) -> list[list[Any]]:
+        """
+        Create "smart" batches:
+        - Use computed batch_size as the base size
+        - Do NOT create an extra smaller remainder batch
+        - Instead, append the remainder to the *last* batch
+          (so last batch may be larger than batch_size)
+        """
+        data_count = len(data)
+        if data_count == 0:
+            return []
+
+        batch_size = self.batch_size
+
+        # If everything fits in one batch, return it.
+        if data_count <= batch_size:
+            return [data]
+
+        full_batches = data_count // batch_size
+        remainder = data_count % batch_size
+
+        batches: list[list[Any]] = []
+
+        # Build full batches; if there's a remainder, extend the *last* batch to include it.
+        for batch_num in range(full_batches):
+            start_idx = batch_num * batch_size
+            end_idx = start_idx + batch_size
+
+            is_last_full_batch = (batch_num == full_batches - 1)
+            if is_last_full_batch and remainder:
+                end_idx += remainder  # absorb the remainder into the last batch
+
+            batch = data[start_idx:end_idx]
+            batches.append(batch)
+
+        return batches
 
 
 def _update_transaction_with_parse_result(tx: Transaction,
@@ -340,17 +371,13 @@ class ExpenseUploadProcessor:
         self._setup_csv_upload_structure(transactions, csv_upload)
 
         all_transactions_to_upload = self._process_prechecks(transactions, csv_upload)
+        transaction_batches = self.batch_helper.compute_batches(all_transactions_to_upload)
         data_count = len(all_transactions_to_upload)
-        batch_size = self.batch_helper.compute_batch_size(data_count)
-        total_batches = (data_count + batch_size - 1) // batch_size
 
         print(f"\n{'=' * 60}")
         print(f"🚀 Starting CSV Processing: {data_count} transactions")
         print(f"{'=' * 60}\n")
-        for batch_num in range(total_batches):
-            start_idx = batch_num * batch_size
-            end_idx = start_idx + batch_size
-            batch = all_transactions_to_upload[start_idx:end_idx]
+        for batch in transaction_batches:
             with transaction.atomic():
                 self._process_batch(batch, csv_upload)
 
