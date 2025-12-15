@@ -18,7 +18,7 @@ from django.urls import reverse_lazy
 from django.views import View
 from django.views.generic import FormView, ListView, DeleteView
 
-from api.models import CsvUpload, Transaction, Merchant
+from api.models import CsvUpload, Transaction, Merchant, DefaultCategory
 from api.models import Rule, Category
 from processors.expense_upload_processor import ExpenseUploadProcessor, persist_csv_file
 from processors.parsers import parse_uploaded_file, FileParserError
@@ -403,6 +403,11 @@ class CsvProcessView(View):
                 is_active=True
             ).values_list('text_content', flat=True)
         )
+        user_categories = Category.objects.filter(user=self.request.user)
+        if not user_categories.exists():
+            for default_category in DefaultCategory.objects.all():
+                category = Category(user=user, name=default_category.name, description=default_category.description, is_default=True)
+                category.save()
 
         # Process transactions using ExpenseUploadProcessor
         processor = ExpenseUploadProcessor(
@@ -412,6 +417,7 @@ class CsvProcessView(View):
                 Category.objects.filter(user=self.request.user)
             )
         )
+
 
         csv_upload = processor.process_transactions(list(transactions), csv_upload)
 

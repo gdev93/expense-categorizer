@@ -2,12 +2,29 @@
 import re
 
 from django.contrib.auth.models import User
-from django.contrib.postgres.lookups import TrigramWordSimilar
-from django.contrib.postgres.search import TrigramSimilarity, TrigramWordSimilarity
+from django.contrib.postgres.search import TrigramWordSimilarity
 from django.db import models
-from django.db.models import QuerySet, Q
+from django.db.models import QuerySet
 from django.db.models.expressions import RawSQL
 
+
+class DefaultCategory(models.Model):
+    """
+    System-level default categories (not tied to any user).
+
+    Intended as a stable catalog you can copy from when a user uploads data
+    without having created their own categories.
+    """
+    name = models.CharField(max_length=100, unique=True)
+    description = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name_plural = "Default Categories"
+        ordering = ["name"]
+
+    def __str__(self) -> str:
+        return self.name
 
 class Category(models.Model):
     """Expense categories (user-defined or default)"""
@@ -43,11 +60,6 @@ class Merchant(models.Model):
         User,
         on_delete=models.CASCADE,
         related_name='merchants'
-    )
-    default_categories = models.ManyToManyField(
-        Category,
-        blank=True,
-        related_name='default_merchants'
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
