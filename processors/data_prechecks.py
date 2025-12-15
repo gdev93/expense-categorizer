@@ -30,8 +30,8 @@ class RawTransactionParseResult:
         if not csv_uploads:
             return RawTransactionParseResult(raw_data=raw_data)
         amount, amount_column_name = parse_amount_from_raw_data(raw_data,
-                                                                [csv_upload.amount_column_name for csv_upload in
-                                                                 csv_uploads])
+                                                                [csv_upload.expense_amount_column_name for csv_upload in
+                                                                 csv_uploads]+[csv_upload.income_amount_column_name for csv_upload in csv_uploads])
         date, date_column_name = parse_date_from_raw_data(raw_data,
                                                           [csv_upload.date_column_name for csv_upload in csv_uploads])
         description, description_column_name = parse_unstructured_text(raw_data,

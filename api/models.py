@@ -116,7 +116,13 @@ class CsvUpload(models.Model):
         null=True,
         help_text="The header name in the CSV that corresponds to the transaction description."
     )
-    amount_column_name = models.CharField(
+    income_amount_column_name = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text="The header name in the CSV for the transaction amount."
+    )
+    expense_amount_column_name = models.CharField(
         max_length=255,
         blank=True,
         null=True,

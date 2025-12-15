@@ -217,6 +217,12 @@ class ExpenseUploadProcessor:
             if transaction_parse_result.amount > 0:
                 print(f"Only expenses are allowed, skipping transaction {transaction_parse_result.raw_data}")
                 tx.transaction_type = 'income'
+                tx.transaction_date = transaction_parse_result.date
+                tx.original_amount = transaction_parse_result.original_amount
+                tx.description = transaction_parse_result.description
+                tx.normalized_description = normalize_string(transaction_parse_result.description)
+                tx.original_date = transaction_parse_result.date_original
+                tx.amount = transaction_parse_result.amount
                 # income transactions are not categorized yet
                 all_transactions_categorized.append(tx)
                 continue
@@ -348,20 +354,23 @@ class ExpenseUploadProcessor:
             notes = result_from_agent.notes
             merchant_column_name = result_from_agent.merchant_field
             date_column_name = result_from_agent.transaction_date_field
-            amount_column_name = result_from_agent.amount_field
+            income_amount_column_name = result_from_agent.income_amount_field
+            expense_amount_column_name = result_from_agent.expense_amount_field
             operation_type_column_name = result_from_agent.operation_type_field
         else:
             description_column_name = csv_upload_same_structure.description_column_name
             notes = csv_upload_same_structure.notes
             merchant_column_name = csv_upload_same_structure.merchant_column_name
             date_column_name = csv_upload_same_structure.date_column_name
-            amount_column_name = csv_upload_same_structure.amount_column_name
+            income_amount_column_name = csv_upload_same_structure.income_amount_column_name
+            expense_amount_column_name = csv_upload_same_structure.expense_amount_column_name
             operation_type_column_name = csv_upload_same_structure.operation_type_column_name
 
         csv_upload.description_column_name = description_column_name
         csv_upload.merchant_column_name = merchant_column_name
         csv_upload.date_column_name = date_column_name
-        csv_upload.amount_column_name = amount_column_name
+        csv_upload.income_amount_column_name = income_amount_column_name
+        csv_upload.expense_amount_column_name = expense_amount_column_name
         csv_upload.operation_type_column_name = operation_type_column_name
         csv_upload.notes = notes
         csv_upload.save()
@@ -391,79 +400,18 @@ class ExpenseUploadProcessor:
         self._categorize_remaining_transactions(csv_upload)
         self._apply_transaction_type_corrections(csv_upload)
         #TODO sanity check for rules
-
-    def _identify_csv_column_mappings(self, csv_upload: CsvUpload) -> None:
-        """Identify and tag CSV column names by matching against completed categorized transactions."""
-
-        # Track which columns we still need to find
-        columns_to_find = {
-            'amount_column_name': csv_upload.amount_column_name is None,
-            'date_column_name': csv_upload.date_column_name is None,
-            'description_column_name': csv_upload.description_column_name is None,
-            'merchant_column_name': csv_upload.merchant_column_name is None
-        }
-
-        # If all columns are already identified, skip
-        if not any(columns_to_find.values()):
-            return
-
-        # Fetch transactions one at a time until all columns are identified
-        completed_transactions = Transaction.objects.filter(
-            user=self.user,
-            csv_upload=csv_upload,
-            status='categorized',
-            original_amount__isnull=False,
-            description__isnull=False,
-            transaction_type='expense',
-            original_date__isnull=False
-        ).iterator(chunk_size=10)
-
-        for tx in completed_transactions:
-            # Check if we've found all columns
-            if not any(columns_to_find.values()):
-                break
-
-            # Try to match each column we haven't found yet
-            for key, value in tx.raw_data.items():
-                # Check amount column
-                if columns_to_find['amount_column_name'] and value == tx.original_amount:
-                    csv_upload.amount_column_name = key
-                    columns_to_find['amount_column_name'] = False
-
-                # Check date column
-                elif columns_to_find['date_column_name'] and value == tx.original_date:
-                    csv_upload.date_column_name = key
-                    columns_to_find['date_column_name'] = False
-
-                # Check description column
-                elif columns_to_find['description_column_name'] and value == tx.description:
-                    csv_upload.description_column_name = key
-                    columns_to_find['description_column_name'] = False
-
-                # Check merchant column
-                elif columns_to_find['merchant_column_name'] and value == tx.merchant_raw_name:
-                    csv_upload.merchant_column_name = key
-                    columns_to_find['merchant_column_name'] = False
-
-        # Save if any columns were identified
-        if csv_upload.amount_column_name or csv_upload.date_column_name or \
-                csv_upload.description_column_name or csv_upload.merchant_column_name:
-            csv_upload.save()
-
     def _categorize_remaining_transactions(self, csv_upload: CsvUpload) -> None:
         """Process uncategorized transactions by parsing their data and attempting to categorize them using similar transactions."""
         uncategorized_transactions = Transaction.objects.filter(
             user=self.user,
             csv_upload=csv_upload,
             status__in=['uncategorized', 'pending'],
-            # The AI detects the correct columns, so income type of transaction have no amount
             original_amount__isnull=False
         )
 
         for tx in uncategorized_transactions:
             # Get values from raw_data, handling None column names
-            original_amount = tx.raw_data.get(csv_upload.amount_column_name,
-                                              '') if csv_upload.amount_column_name else ''
+            original_amount = tx.raw_data.get(csv_upload.expense_amount_column_name, '') if csv_upload.expense_amount_column_name else ''
             description = tx.raw_data.get(csv_upload.description_column_name,
                                           '') if csv_upload.description_column_name else ''
             merchant = tx.raw_data.get(csv_upload.merchant_column_name, '') if csv_upload.merchant_column_name else ''
@@ -542,7 +490,7 @@ class ExpenseUploadProcessor:
             user=self.user,
             csv_upload=csv_upload
         )
-         .filter(Q(original_amount__isnull=True) & Q(category__isnull=False))
+         .filter(category__isnull=True)
          .update(transaction_type='income', status='uncategorized'))
 
 

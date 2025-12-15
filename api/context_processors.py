@@ -59,7 +59,7 @@ def available_years_context(request: HttpRequest):
             .values_list("transaction_date__year", flat=True)
             .distinct()
             .order_by("-transaction_date__year")
-        ) or [datetime.now().year] + [datetime.now().year+1],
+        ) or [datetime.now().year],
         'year': int(current_selected_year) if current_selected_year else datetime.now().year
     }
 

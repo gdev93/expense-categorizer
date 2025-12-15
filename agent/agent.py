@@ -165,13 +165,15 @@ class AgentTransactionUpload:
     raw_text: dict[str, Any]
 
 
+
 @dataclass
 class CsvStructure:
     """Structured CSV structure detection result"""
     description_field: str | None
     merchant_field: str | None
     transaction_date_field: str | None
-    amount_field: str | None
+    expense_amount_field: str | None  # Updated: specific field for expenses
+    income_amount_field: str | None   # New: specific field for income
     operation_type_field: str | None
     confidence: str  # "high", "medium", "low"
     notes: str | None = None
@@ -183,7 +185,8 @@ class CsvStructure:
             description_field=data.get("description_field"),
             merchant_field=data.get("merchant_field"),
             transaction_date_field=data.get("transaction_date_field"),
-            amount_field=data.get("amount_field"),
+            expense_amount_field=data.get("expense_amount_field"),
+            income_amount_field=data.get("income_amount_field"),
             operation_type_field=data.get("operation_type_field"),
             confidence=data.get("confidence", "low"),
             notes=data.get("notes")
@@ -228,49 +231,71 @@ class ExpenseCategorizerAgent:
 
         prompt = f"""Sei un esperto nell'analisi di strutture CSV di transazioni bancarie italiane.
 
-Analizza i seguenti campioni di transazioni e identifica quali campi corrispondono a:
-1. **description_field**: Il campo contenente la descrizione/dettagli della transazione
-2. **merchant_field**: Il campo contenente il nome del commerciante/beneficiario
-3. **transaction_date_field**: Il campo contenente la data della transazione
-4. **amount_field**: Il campo contenente l'importo della transazione
-5. **operation_type_field**: Il campo contenente il tipo di operazione
+    Analizza i seguenti campioni di transazioni e identifica quali campi corrispondono a:
+    1. **description_field**: Il campo contenente la descrizione/dettagli della transazione
+    2. **merchant_field**: Il campo contenente SOLO il nome del commerciante/beneficiario (senza altra descrizione)
+    3. **transaction_date_field**: Il campo contenente la data della transazione
+    4. **expense_amount_field**: Il campo contenente SOLO gli importi delle SPESE (uscite, addebiti)
+    5. **income_amount_field**: Il campo contenente SOLO gli importi degli ACCREDITI (entrate)
+    6. **operation_type_field**: Il campo contenente il tipo di operazione
 
-ISTRUZIONI GENERALI:
-- Restituisci SOLO i nomi dei campi esattamente come appaiono nei dati
-- Se un campo non può essere determinato con sicurezza, restituisci null
-- Fornisci un livello di confidenza: "high", "medium", o "low"
+    ISTRUZIONI GENERALI:
+    - Restituisci SOLO i nomi dei campi esattamente come appaiono nei dati
+    - Se un campo non può essere determinato con sicurezza, restituisci null
+    - Fornisci un livello di confidenza: "high", "medium", o "low"
 
-⚠️ ISTRUZIONI CRITICHE PER LA DATA TRANSAZIONE:
-- Il campo transaction_date_field DEVE essere una colonna dedicata ESCLUSIVAMENTE alle date (es. "Data", "Data Valuta", "Data Contabile").
-- CRITERIO DI ESCLUSIONE: Ignora qualsiasi colonna che contenga testo narrativo insieme alla data.
-- **CRITERIO DI SELEZIONE FINALE (Massima Priorità):**
-  1. Se è disponibile una sola colonna data valida: selezionala.
-  2. Se sono presenti più colonne data valide (es. "Data Operazione" e "Data Valuta"):
-     a. **DEVI selezionare la colonna che contiene sistematicamente la data posticipata.** Questa data (spesso chiamata 'Data Contabile' o 'Data di Addebito') è quella che conferma l'avvenuto pagamento o incasso.
-     b. Il modello deve esaminare i campioni per identificare quale colonna ha costantemente i valori temporali successivi.
-     c. **La data più recente è la data finale di riferimento per la transazione.**
-     
-⚠️ ISTRUZIONI CRITICHE PER L'IMPORTO:
-- Il campo amount_field DEVE permettere di identificare le SPESE.
-- Cerca colonne con importi negativi o indicatori di addebito.
-- Se esistono colonne separate (es. "Dare"/"Avere"), scegli la colonna degli addebiti ("Dare", "Uscite").
-- Se c'è una colonna unica ("Importo"), selezionala.
+    ⚠️ ISTRUZIONI CRITICHE PER IL CAMPO MERCHANT:
+    - Il campo merchant_field DEVE contenere ESCLUSIVAMENTE il nome del commerciante/beneficiario
+    - Se il nome del commerciante è mescolato con altra descrizione (date, importi, dettagli tecnici), il merchant_field DEVE essere null
+    - NON selezionare campi che contengono solo tipi di operazione generici (es. "Pagamento Carta", "Addebito Diretto")
+    - NON selezionare campi che contengono descrizioni lunghe con il nome embedded (es. "Operazione Mastercard... presso ESSELUNGA")
+    - **REGOLA PRINCIPALE**: Se NON esiste una colonna dedicata solo ai nomi dei commercianti, restituisci merchant_field: null
+    - Esempi di campi NON validi:
+      * "CAUSALE" contenente solo "Pagamento Carta", "Bonifico In Uscita" → merchant_field: null
+      * "DESCRIZIONE OPERAZIONE" con testo lungo che include il merchant → merchant_field: null
+    - Esempi di campi validi:
+      * Una colonna "Commerciante", "Merchant", "Beneficiario" con solo nomi → merchant_field: valido
 
-FORMATO OUTPUT (JSON):
-{{
-  "description_field": "nome_colonna_esatto_o_null",
-  "merchant_field": "nome_colonna_esatto_o_null",
-  "transaction_date_field": "nome_colonna_esatto_o_null",
-  "amount_field": "nome_colonna_esatto_o_null",
-  "operation_type_field": "nome_colonna_esatto_o_null",
-  "confidence": "high|medium|low",
-  "notes": "string"
-}}
+    ⚠️ ISTRUZIONI CRITICHE PER LA DATA TRANSAZIONE:
+    - Il campo transaction_date_field DEVE essere una colonna dedicata ESCLUSIVAMENTE alle date (es. "Data", "Data Valuta", "Data Contabile").
+    - CRITERIO DI ESCLUSIONE: Ignora qualsiasi colonna che contenga testo narrativo insieme alla data.
+    - **CRITERIO DI SELEZIONE FINALE (Massima Priorità):**
+      1. Se è disponibile una sola colonna data valida: selezionala.
+      2. Se sono presenti più colonne data valide (es. "Data Operazione" e "Data Valuta"):
+         a. **DEVI selezionare la colonna che contiene sistematicamente la data posticipata.** Questa data (spesso chiamata 'Data Contabile' o 'Data di Addebito') è quella che conferma l'avvenuto pagamento o incasso.
+         b. Il modello deve esaminare i campioni per identificare quale colonna ha costantemente i valori temporali successivi.
+         c. **La data più recente è la data finale di riferimento per la transazione.**
 
-CAMPIONI DI TRANSAZIONI:
-{samples_text}
+    ⚠️ ISTRUZIONI CRITICHE PER GLI IMPORTI:
+    - **PRIORITÀ 1**: Cerca prima colonne SEPARATE per spese e entrate
+      * Cerca nomi come: "Uscite"/"Entrate", "Dare"/"Avere", "Addebiti"/"Accrediti", "Spese"/"Introiti"
+      * Se trovi colonne separate:
+        - expense_amount_field: la colonna con importi di USCITA (negativi o nella colonna "Uscite"/"Dare")
+        - income_amount_field: la colonna con importi di ENTRATA (positivi o nella colonna "Entrate"/"Avere")
 
-Restituisci SOLO l'oggetto JSON, nient'altro."""
+    - **PRIORITÀ 2**: Se NON ci sono colonne separate, cerca una SOLA colonna importo
+      * Se esiste una sola colonna "Importo" o "Amount" con valori sia positivi che negativi:
+        - expense_amount_field: usa questa colonna (l'utente filtrerà i negativi)
+        - income_amount_field: usa questa colonna (l'utente filtrerà i positivi)
+
+    - **NOTA**: Esamina TUTTI i campioni per capire la struttura corretta
+
+    FORMATO OUTPUT (JSON):
+    {{
+      "description_field": "nome_colonna_esatto_o_null",
+      "merchant_field": "nome_colonna_esatto_o_null",
+      "transaction_date_field": "nome_colonna_esatto_o_null",
+      "expense_amount_field": "nome_colonna_esatto_o_null",
+      "income_amount_field": "nome_colonna_esatto_o_null",
+      "operation_type_field": "nome_colonna_esatto_o_null",
+      "confidence": "high|medium|low",
+      "notes": "string con spiegazione dettagliata delle scelte fatte"
+    }}
+
+    CAMPIONI DI TRANSAZIONI:
+    {samples_text}
+
+    Restituisci SOLO l'oggetto JSON, nient'altro."""
 
         try:
             response = call_gemini_api(prompt=prompt, client=self.client, temperature=1.0)
@@ -291,7 +316,8 @@ Restituisci SOLO l'oggetto JSON, nient'altro."""
                 description_field=None,
                 merchant_field=None,
                 transaction_date_field=None,
-                amount_field=None,
+                expense_amount_field=None,
+                income_amount_field=None,
                 operation_type_field=None,
                 confidence="low",
                 notes=f"Rilevamento fallito: {str(e)}"
@@ -328,8 +354,8 @@ Per aiutarti nell'estrazione dei dati, ecco le informazioni sulla struttura CSV 
                 csv_hints_section += f"🏪 **MERCHANT FIELD**: Il campo '{csv_upload.merchant_column_name}' contiene informazioni sul commerciante/beneficiario.\n"
             if csv_upload.date_column_name:
                 csv_hints_section += f"📅 **DATE FIELD**: Il campo '{csv_upload.date_column_name}' contiene la data della transazione.\n"
-            if csv_upload.amount_column_name:
-                csv_hints_section += f"💰 **AMOUNT FIELD**: Il campo '{csv_upload.amount_column_name}' contiene l'importo della transazione.\n"
+            if csv_upload.income_amount_column_name or csv_upload.expense_amount_column_name:
+                csv_hints_section += f"💰 **AMOUNT FIELD**: Il campo '{csv_upload.income_amount_column_name} oppure {csv_upload.expense_amount_column_name}' contiene l'importo della transazione.\n"
             if csv_upload.operation_type_column_name:
                 csv_hints_section += f"🔄 **OPERATION TYPE FIELD**: Il campo '{csv_upload.operation_type_column_name}' contiene il tipo di operazione.\n"
             if csv_upload.notes:
