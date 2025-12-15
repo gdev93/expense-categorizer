@@ -403,6 +403,94 @@ class TransactionListView(LoginRequiredMixin, ListView):
 
         return context
 
+
+class IncomeListView(LoginRequiredMixin, ListView):
+    """Display list of income transactions with filtering and pagination"""
+    model = Transaction
+    template_name = 'transactions/income_list.html'
+    context_object_name = 'transactions'
+    paginate_by = 50
+
+    def get_queryset(self):
+        queryset = (Transaction.objects
+                    .filter(
+                        user=self.request.user,
+                        transaction_type='income'
+                    )
+                    .order_by('-transaction_date', '-created_at'))
+
+        # Filter by amount
+        amount = self.request.GET.get('amount')
+        amount_operator = self.request.GET.get('amount_operator', 'eq')
+        if amount:
+            try:
+                amount_value = float(amount)
+                if amount_operator == 'eq':
+                    queryset = queryset.filter(amount=amount_value)
+                elif amount_operator == 'gt':
+                    queryset = queryset.filter(amount__gt=amount_value)
+                elif amount_operator == 'gte':
+                    queryset = queryset.filter(amount__gte=amount_value)
+                elif amount_operator == 'lt':
+                    queryset = queryset.filter(amount__lt=amount_value)
+                elif amount_operator == 'lte':
+                    queryset = queryset.filter(amount__lte=amount_value)
+            except (ValueError, TypeError):
+                pass
+
+        # Filter by months (month numbers for selected year)
+        selected_months = self.request.GET.getlist('months')
+        if selected_months:
+            try:
+                selected_year_qs = int(self.request.GET.get('year') or datetime.datetime.now().year)
+            except (TypeError, ValueError):
+                selected_year_qs = datetime.datetime.now().year
+
+            month_queries = Q()
+            for month_str in selected_months:
+                try:
+                    month = int(month_str)
+                    month_queries |= Q(
+                        transaction_date__year=selected_year_qs,
+                        transaction_date__month=month
+                    )
+                except (ValueError, TypeError):
+                    pass
+            if month_queries:
+                queryset = queryset.filter(month_queries)
+
+        # Search filter (on description only, incomes typically lack merchant)
+        search_query = self.request.GET.get('search')
+        if search_query:
+            queryset = queryset.filter(
+                Q(description__icontains=search_query)
+            )
+
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Base queryset possibly filtered by months already
+        user_transactions = self.get_queryset()
+
+        # Selected months in context
+        selected_months = self.request.GET.getlist('months')
+
+        # Totals
+        context.update({
+            'total_count': user_transactions.count(),
+            'total_amount': user_transactions.filter(status="categorized").aggregate(total=Sum('amount'))['total'] or 0,
+            'selected_months': selected_months,
+            'search_query': self.request.GET.get('search', ''),
+        })
+
+        # Amount filter context
+        context['selected_amount'] = self.request.GET.get('amount', '')
+        context['selected_amount_operator'] = self.request.GET.get('amount_operator', 'eq')
+
+        return context
+
 class EditTransactionCategory(View):
 
     def post(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:

@@ -22,7 +22,7 @@ from api.views.category_view import CategoryCreateView, CategoryListView, Catego
 from api.views.csv_upload_view import CsvUploadView, CsvUploadDelete, CsvProcessView, CsvProgressView, CsvUploadCheckView
 from api.views.rule_view import RuleDefineView, RuleDeleteView
 from api.views.monthly_summary_view import MonthlySummerView
-from api.views.transaction_view import TransactionListView, EditTransactionCategory, TransactionDetailUpdateView, TransactionIncomeCreateView
+from api.views.transaction_view import TransactionListView, EditTransactionCategory, TransactionDetailUpdateView, TransactionIncomeCreateView, IncomeListView
 
 urlpatterns = [
     path("accounts/", login_form, name="login_form"),
@@ -37,6 +37,7 @@ urlpatterns = [
     path('transactions/upload/<int:pk>/process', CsvProcessView.as_view(), name='transactions_process_detail'),
     path('transactions/upload/<int:pk>/delete/', CsvUploadDelete.as_view(), name='transactions_upload_delete'),
     path('transactions/', TransactionListView.as_view(), name='transaction_list'),
+    path('transactions/income/', IncomeListView.as_view(), name='income_list'),
     path('transactions/income/new', TransactionIncomeCreateView.as_view(), name='new_transaction_income'),
     path('transactions/<int:pk>/', TransactionDetailUpdateView.as_view(), name='transaction_detail'),
     path('transactions/rules/<int:pk>/delete/', RuleDeleteView.as_view(), name='delete_rule'),
