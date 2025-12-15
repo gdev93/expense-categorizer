@@ -4,87 +4,58 @@
 from django.db import migrations
 
 
+
 DEFAULT_CATEGORIES = [
     # Casa e Abitazione
-    ("Affitto/Mutuo", "Canone di locazione o rata del mutuo"),
-    ("Bollette Energia", "Luce, gas, riscaldamento"),
-    ("Bollette Acqua", "Servizio idrico"),
-    ("Internet e Telefono", "Connessione internet, linea fissa, mobile"),
-    ("Condominio", "Spese condominiali, amministrazione"),
-    ("Manutenzione Casa", "Riparazioni, manutenzione ordinaria e straordinaria"),
-    ("Tasse Casa", "TARI, IMU e altre tasse immobiliari"),
+    ("Affitto/Mutuo", "Canone di locazione o rata del mutuo per l'abitazione principale o secondaria"),
+    ("Utenze", "Bollette di luce, gas, acqua, riscaldamento e servizio idrico"),
+    ("Internet e Telefono", "Connessione internet, linea fissa, abbonamenti mobile"),
+    ("Casa - Spese e Manutenzione", "Spese condominiali, TARI, IMU, tasse immobiliari, riparazioni, manutenzione ordinaria e straordinaria"),
 
     # Alimentari
-    ("Supermercato", "Spesa alimentare e prodotti per la casa"),
-    ("Frutta e Verdura", "Mercato, fruttivendolo"),
-    ("Panetteria", "Pane, prodotti da forno"),
-    ("Macelleria e Pescheria", "Carne e pesce freschi"),
-    ("Alimentari Specializzati", "Prodotti biologici, specialità, etnici"),
+    ("Spesa Alimentare", "Supermercato, frutta e verdura, pane, carne, pesce, mercato, prodotti biologici e specializzati"),
 
     # Mangiare Fuori
-    ("Bar e Colazioni", "Caffè, colazioni, pasticceria"),
-    ("Pranzi Veloci", "Panini, tavola calda, street food"),
-    ("Ristoranti", "Cene e pranzi al ristorante"),
-    ("Pizzeria", "Pizza da asporto o in pizzeria"),
-    ("Delivery", "JustEat, Glovo, Deliveroo, Uber Eats"),
-    ("Aperitivi", "Aperitivi e happy hour"),
+    ("Bar e Caffè", "Caffè, colazioni, pasticceria, aperitivi, happy hour"),
+    ("Ristoranti e Pranzi Fuori", "Ristoranti, pizzeria, pranzi veloci, panini, tavola calda, street food, delivery (JustEat, Glovo, Deliveroo, Uber Eats)"),
 
     # Trasporti
-    ("Carburante", "Benzina, diesel, GPL"),
-    ("Mezzi Pubblici", "Abbonamenti, biglietti bus/metro/tram"),
-    ("Treni", "Biglietti treno, abbonamenti ferroviari"),
-    ("Taxi e Ride-sharing", "Taxi, Uber, Bolt"),
-    ("Parcheggi e Pedaggi", "Sosta, parcheggi, autostrada"),
-    ("Auto - Manutenzione", "Tagliandi, riparazioni, pneumatici"),
-    ("Auto - Assicurazione", "RCA e altre polizze veicolo"),
-    ("Auto - Bollo", "Tassa automobilistica"),
+    ("Carburante", "Benzina, diesel, GPL, metano"),
+    ("Trasporti e Spostamenti", "Abbonamenti e biglietti bus, metro, tram, treni, ferrovie, taxi, Uber, Bolt, car sharing, ride-sharing"),
+    ("Auto - Gestione", "Assicurazione RCA, bollo auto, parcheggi, pedaggi autostradali, manutenzione, tagliandi, riparazioni, pneumatici"),
 
     # Shopping
-    ("Abbigliamento", "Vestiti, scarpe, accessori"),
-    ("Elettronica", "Smartphone, PC, tablet, accessori tech"),
-    ("Casa e Arredamento", "Mobili, complementi d'arredo, decorazioni"),
-    ("Libreria e Cartoleria", "Libri, quaderni, cancelleria"),
-    ("Regali", "Regali per altri"),
-    ("Shopping Online", "Acquisti online non categorizzati"),
+    ("Abbigliamento", "Vestiti, scarpe, accessori moda"),
+    ("Elettronica", "Smartphone, PC, tablet, accessori tecnologici, elettronica di consumo"),
+    ("Casa e Arredamento", "Mobili, complementi d'arredo, decorazioni, articoli per la casa"),
+    ("Libri e Cartoleria", "Libri, ebook, quaderni, cancelleria, materiale da scrittura"),
+    ("Shopping Online", "Acquisti online generici non categorizzati"),
+    ("Regali", "Regali per altri, occasioni speciali, compleanni, ricorrenze"),
 
     # Salute e Benessere
-    ("Farmacia", "Farmaci, parafarmaci, integratori"),
-    ("Visite Mediche", "Medico di base, specialisti"),
-    ("Dentista", "Cure odontoiatriche"),
-    ("Parrucchiere/Barbiere", "Taglio, piega, trattamenti capelli"),
-    ("Estetista", "Trattamenti estetici, manicure, pedicure"),
-    ("Palestra", "Abbonamenti, corsi fitness"),
-    ("Sport", "Attrezzatura sportiva, corsi, attività"),
-    ("Benessere", "Massaggi, spa, wellness"),
+    ("Salute", "Farmaci, parafarmaci, integratori, visite mediche, specialisti, dentista, cure odontoiatriche"),
+    ("Cura Personale", "Parrucchiere, barbiere, estetista, trattamenti estetici, manicure, pedicure"),
+    ("Sport e Fitness", "Palestra, abbonamenti fitness, corsi sportivi, attrezzatura sportiva, attività sportive, massaggi, spa, wellness"),
 
     # Tempo Libero
-    ("Cinema e Teatro", "Biglietti, spettacoli"),
-    ("Concerti ed Eventi", "Concerti, festival, eventi live"),
-    ("Streaming", "Netflix, Prime Video, Disney+, etc."),
-    ("Musica", "Spotify, Apple Music, etc."),
-    ("Vacanze", "Viaggi, hotel, voli"),
-    ("Weekend", "Gite fuori porta, escursioni"),
-    ("Hobby", "Materiali e attività per hobby"),
-    ("Animali Domestici", "Pet food, veterinario, toelettatura"),
+    ("Intrattenimento Fuori Casa", "Cinema, teatro, concerti, festival, eventi live, spettacoli"),
+    ("Abbonamenti Digitali", "Netflix, Prime Video, Disney+, Spotify, Apple Music, servizi streaming"),
+    ("Viaggi e Vacanze", "Viaggi, hotel, voli, gite fuori porta, weekend, escursioni"),
+    ("Hobby e Passioni", "Materiali e attività per hobby personali"),
+    ("Animali Domestici", "Pet food, veterinario, toelettatura, accessori e cure per animali"),
 
     # Famiglia e Istruzione
-    ("Scuola", "Rette scolastiche, tasse"),
-    ("Asilo/Nido", "Rette asilo nido o scuola dell'infanzia"),
-    ("Università", "Tasse universitarie, libri accademici"),
-    ("Corsi e Formazione", "Corsi professionali, lingue, aggiornamento"),
-    ("Baby-sitter", "Servizi di assistenza bambini"),
-    ("Assistenza Anziani", "Badanti, servizi per anziani"),
-    ("Materiale Scolastico", "Libri di testo, zaini, materiale didattico"),
+    ("Istruzione", "Rette scolastiche, asilo nido, scuola dell'infanzia, tasse universitarie, libri accademici, materiale scolastico, libri di testo, zaini"),
+    ("Corsi e Formazione", "Corsi professionali, lingue straniere, formazione, aggiornamento professionale"),
+    ("Assistenza Familiare", "Baby-sitter, badanti, servizi di assistenza bambini e anziani"),
 
     # Finanza e Servizi
-    ("Commissioni Bancarie", "Costi conto corrente, operazioni bancarie"),
-    ("Assicurazioni Vita/Casa", "Polizze vita, casa, infortuni"),
-    ("Bolli e Tasse", "Bolli statali, tasse varie"),
-    ("Professionisti", "Commercialista, avvocato, notaio"),
-    ("Prestiti Personali", "Rate finanziamenti, prestiti"),
+    ("Servizi Bancari e Assicurativi", "Commissioni bancarie, costi conto corrente, assicurazioni vita, casa, infortuni"),
+    ("Tasse e Professionisti", "Bolli statali, tasse varie, commercialista, avvocato, notaio, consulenti"),
+    ("Finanziamenti", "Rate finanziamenti, prestiti personali, rate acquisti"),
 
     # Altro
-    ("Beneficenza", "Donazioni, ONLUS, beneficenza"),
+    ("Beneficenza", "Donazioni, ONLUS, contributi benefici, charity"),
 ]
 
 
