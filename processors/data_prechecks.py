@@ -7,12 +7,6 @@ from processors.parser_utils import parse_amount_from_raw_data, parse_date_from_
 
 
 @dataclass
-class RawTransactionCsvHeaderNames:
-    amount: str
-    date: str
-    description: str
-    merchant: str | None = None
-@dataclass
 class RawTransactionParseResult:
     raw_data: dict[str, str]
     amount: Decimal | None = None
@@ -21,7 +15,7 @@ class RawTransactionParseResult:
     date_original: str | None = None
     description: str | None = None
     merchant: str | None = None
-    header_names: RawTransactionCsvHeaderNames | None = None
+    operation_type: str | None = None
     def is_valid(self) -> bool:
         return self.amount is not None and self.date is not None and self.description is not None
 
@@ -34,12 +28,16 @@ class RawTransactionParseResult:
                                                                  csv_uploads]+[csv_upload.income_amount_column_name for csv_upload in csv_uploads])
         date, date_column_name = parse_date_from_raw_data(raw_data,
                                                           [csv_upload.date_column_name for csv_upload in csv_uploads])
-        description, description_column_name = parse_unstructured_text(raw_data,
+        description, _ = parse_unstructured_text(raw_data,
                                                                        [csv_upload.description_column_name for
                                                                         csv_upload in csv_uploads])
-        merchant, merchant_column_name = parse_unstructured_text(raw_data,
+        merchant, _ = parse_unstructured_text(raw_data,
                                                                  [csv_upload.merchant_column_name for csv_upload in
                                                                   csv_uploads])
+        operation_type, _ = parse_unstructured_text(raw_data,
+                                                                             [csv_upload.operation_type_column_name for
+                                                                              csv_upload in
+                                                                              csv_uploads])
 
         raw_transaction_result = RawTransactionParseResult(
             raw_data=raw_data,
@@ -48,15 +46,9 @@ class RawTransactionParseResult:
             date=date,
             date_original=raw_data.get(date_column_name, ''),
             description=description,
-            merchant=merchant
+            merchant=merchant,
+            operation_type=operation_type
         )
-        if raw_transaction_result.is_valid():
-            raw_transaction_result.header_names = RawTransactionCsvHeaderNames(
-                amount=amount_column_name,
-                date=date_column_name,
-                description=description_column_name,
-                merchant=merchant_column_name
-            )
         return raw_transaction_result
 
 

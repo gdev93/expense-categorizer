@@ -219,8 +219,9 @@ class Transaction(models.Model):
         related_name='transactions'
     )
     transaction_type = models.CharField(max_length=20, choices=TRANSACTION_TYPE_CHOICES, default='expense')
+    operation_type = models.CharField(max_length=255, blank=True, null=True)
     # Processing metadata
-    merchant_raw_name = models.CharField(max_length=255, blank=True)  # Original from CSV
+    merchant_raw_name = models.CharField(max_length=255, blank=True, null=True)  # Original from CSV
     # Core transaction data
     transaction_date = models.DateField(null=True)
     original_date = models.CharField(max_length=255, blank=True, null=True)

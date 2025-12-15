@@ -223,6 +223,7 @@ class ExpenseUploadProcessor:
                 tx.normalized_description = normalize_string(transaction_parse_result.description)
                 tx.original_date = transaction_parse_result.date_original
                 tx.amount = transaction_parse_result.amount
+                tx.operation_type = transaction_parse_result.operation_type
                 # income transactions are not categorized yet
                 all_transactions_categorized.append(tx)
                 continue
@@ -260,7 +261,7 @@ class ExpenseUploadProcessor:
         Transaction.objects.bulk_update(all_transactions_categorized + all_transactions_to_upload,
                                         ['status', 'merchant', 'merchant_raw_name', 'category', 'transaction_date',
                                          'original_date', 'description', 'amount', 'original_amount',
-                                         'transaction_type', 'normalized_description'])
+                                         'transaction_type', 'normalized_description','operation_type'])
         Transaction.objects.filter(user=self.user, id__in=[tx.id for tx in all_transactions_to_delete]).delete()
         print(
             f"Found {len(all_transactions_categorized)} {"👌" if len(all_transactions_categorized) > 0 else "😩"} transactions that have similar merchant names"

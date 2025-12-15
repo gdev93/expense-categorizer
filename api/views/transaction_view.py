@@ -407,7 +407,7 @@ class TransactionListView(LoginRequiredMixin, ListView):
 class IncomeListView(LoginRequiredMixin, ListView):
     """Display list of income transactions with filtering and pagination"""
     model = Transaction
-    template_name = 'transactions/income_list.html'
+    template_name = 'transactions/transaction_income_list.html'
     context_object_name = 'transactions'
     paginate_by = 50
 

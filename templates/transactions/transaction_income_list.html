@@ -85,6 +85,9 @@
                             <div class="transaction-date">
                                 📅 {{ transaction.transaction_date|date:"d/m/Y" }}
                             </div>
+                        <div class="transaction-merchant">
+                                {{ transaction.operation_type }}
+                            </div>
                             {% if transaction.description %}
                                 <div class="transaction-description" title="{{ transaction.description }}">
                                     {{ transaction.description|truncatewords:15 }}
