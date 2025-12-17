@@ -17,12 +17,9 @@ from processors.parser_utils import normalize_amount, parse_raw_date, parse_amou
 
 class BatchingHelper:
     batch_size = os.environ.get('AGENT_BATCH_SIZE', 50)
-    batch_max_size = os.environ.get('AGENT_BATCH_MAX_SIZE', 80)
-    batch_min_size = os.environ.get('AGENT_BATCH_MIN_SIZE', 30)
-    def __init__(self, batch_size:int = batch_size, batch_max_size:int=batch_max_size, batch_min_size:int=batch_min_size):
+
+    def __init__(self, batch_size:int = batch_size):
         self.batch_size = batch_size
-        self.batch_max_size = batch_max_size
-        self.batch_min_size = batch_min_size
 
     def compute_batches(self, data: list[Any]) -> list[list[Any]]:
         """
@@ -214,8 +211,7 @@ class ExpenseUploadProcessor:
             if not transaction_parse_result.is_valid():
                 all_transactions_to_upload.append(tx)
                 continue
-            if transaction_parse_result.amount > 0:
-                print(f"Only expenses are allowed, skipping transaction {transaction_parse_result.raw_data}")
+            if transaction_parse_result.is_income:
                 tx.transaction_type = 'income'
                 tx.transaction_date = transaction_parse_result.date
                 tx.original_amount = transaction_parse_result.original_amount
@@ -288,7 +284,6 @@ class ExpenseUploadProcessor:
                 merchant_name = tx_data.merchant
                 category_name = tx_data.category
                 if failure == 'true' or not merchant_name or not category_name:
-                    print(f"Transaction from agent {tx_data} has failed")
                     Transaction.objects.filter(id=tx_id).update(status='uncategorized', failure_code=1)
                     continue
 
@@ -299,9 +294,7 @@ class ExpenseUploadProcessor:
                     merchant.save()
                     category = Category.objects.filter(name__icontains=category_name.strip(), user=self.user).first()
                     if not category:
-                        print(
-                            f"Agent response {tx_data} did not use the list of categories given by the user. Set transaction uncategorized.")
-                        Transaction.objects.filter(id=tx_id).update(status='uncategorized', failure_code=1)
+                        Transaction.objects.filter(id=tx_id).update(status='uncategorized', failure_code=1, merchant=merchant)
                         continue
                 else:
                     merchant = similar_transaction.merchant
@@ -325,6 +318,7 @@ class ExpenseUploadProcessor:
                 transaction_from_agent.description = tx_data.description if not transaction_from_agent.description else transaction_from_agent.description
                 transaction_from_agent.normalized_description = normalize_string(transaction_from_agent.description)
                 transaction_from_agent.categorized_by_agent = True
+                transaction_from_agent.reasoning = tx_data.reasoning
                 transaction_from_agent.save()
 
             except Exception as e:
@@ -406,29 +400,16 @@ class ExpenseUploadProcessor:
         uncategorized_transactions = Transaction.objects.filter(
             user=self.user,
             csv_upload=csv_upload,
-            status__in=['uncategorized', 'pending'],
-            original_amount__isnull=False
+            status__in=['uncategorized', 'pending']
         )
 
         for tx in uncategorized_transactions:
             # Get values from raw_data, handling None column names
-            original_amount = tx.raw_data.get(csv_upload.expense_amount_column_name, '') if csv_upload.expense_amount_column_name else ''
+            original_amount = tx.raw_data.get(csv_upload.expense_amount_column_name, '') if csv_upload.expense_amount_column_name else '' or tx.raw_data.get(csv_upload.income_amount_column_name, '') if csv_upload.income_amount_column_name else ''
             description = tx.raw_data.get(csv_upload.description_column_name,
                                           '') if csv_upload.description_column_name else ''
             merchant = tx.raw_data.get(csv_upload.merchant_column_name, '') if csv_upload.merchant_column_name else ''
             original_date = tx.raw_data.get(csv_upload.date_column_name, '') if csv_upload.date_column_name else ''
-
-            if not original_amount:
-                parsed_amount_result = parse_amount_from_raw_data_without_suggestion(tx.raw_data)
-                if parsed_amount_result.is_valid():
-                    for column_name, amount_finding in parsed_amount_result.fields.items():
-                        if column_name in tx.raw_data:
-                            original_amount = tx.raw_data[column_name]
-                            if original_amount != amount_finding.original_value:
-                                continue
-
-                            break
-
             # If description is still empty, try to infer it from raw_data
             if not description:
                 # Look for a description-like field in raw_data

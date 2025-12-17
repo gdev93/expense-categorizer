@@ -21,7 +21,7 @@ from django.views.generic import FormView, ListView, DeleteView
 from api.models import CsvUpload, Transaction, Merchant, DefaultCategory
 from api.models import Rule, Category
 from processors.expense_upload_processor import ExpenseUploadProcessor, persist_csv_file
-from processors.parsers import parse_uploaded_file, FileParserError
+from processors.file_parsers import parse_uploaded_file, FileParserError
 
 
 # --- Data Classes ---

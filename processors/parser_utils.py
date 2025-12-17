@@ -30,28 +30,25 @@ amount_pattern = os.getenv('PARSE_AMOUNT_PATTERN', default_amount_pattern)
 
 # Common word separators
 separators = [' ', ';', ',', '\t', '|', '\n']
+
 def parse_amount_from_raw_data(raw_data: dict[str, str], csv_amount_columns:list[str]) -> tuple[Decimal | None, str | None]:
 
     # Regex pattern to match decimal numbers with various formats
     # Order matters: match longer patterns (with thousands) before shorter ones
     # Matches: -4,42 | +4.42 | 1.234,56 | 1,234.56 | 4.42 | 4,42
 
-    # Scan all values in the dictionary
-    for column_name in csv_amount_columns:
-        if column_name not in raw_data:
-            continue
-        return normalize_amount(raw_data[column_name]), column_name
-
-    return None, None
+    return next(((amount, col) for col in csv_amount_columns if (amount := normalize_amount(raw_data.get(col))) is not None), (None, None))
 
     # Check if all found amounts are the same
 
 
-def normalize_amount(amount_value: str | float | int) -> Decimal | None:
+def normalize_amount(amount_value: str | float | int | None) -> Decimal | None:
     """
     Parse amount to Decimal, handling various formats including Italian locale.
     Supports both Italian (comma as decimal) and international (dot as decimal) formats.
     """
+    if not amount_value:
+        return None
     # 1. Handle numeric types directly
     if isinstance(amount_value, (float, int)):
         # Convert float to string first to maintain precision before Decimal conversion

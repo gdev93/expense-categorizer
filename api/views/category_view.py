@@ -126,7 +126,7 @@ class CategoryDetailView(UpdateView):
 
         # 1. Fetch Aggregated Summary Data for the Summary Card
         # This re-calculates the enrichment for the single category object
-        summary = Category.objects.filter(pk=category.pk).annotate(
+        summary = Category.objects.filter(id=category.pk).annotate(
             transaction_count=Count('transactions'),
             transaction_amount=Coalesce(
                 Sum('transactions__amount'),
@@ -170,7 +170,7 @@ class CategoryDeleteView(DeleteView):
 
     def get_queryset(self):
         # Security: Only allow the user to delete their own categories that are NOT default/system categories
-        return Category.objects.filter(user=self.request.user, is_default=False)
+        return Category.objects.filter(user=self.request.user)
 
     def form_valid(self, form):
         # Add a success message after deletion

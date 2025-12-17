@@ -216,9 +216,9 @@
                             <div class="transaction-date">
                                 📅 {{ transaction.transaction_date|date:"d/m/Y" }}
                             </div>
-                        {% if transaction.merchant_raw_name %}
+                        {% if transaction.merchant %}
                             <div class="transaction-merchant">
-                                {{ transaction.merchant_raw_name }}
+                                {{ transaction.merchant.name }}
                             </div>
                         {% endif %}
                             {% if transaction.description %}

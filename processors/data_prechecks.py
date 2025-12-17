@@ -16,6 +16,8 @@ class RawTransactionParseResult:
     description: str | None = None
     merchant: str | None = None
     operation_type: str | None = None
+    is_income: bool = False
+
     def is_valid(self) -> bool:
         return self.amount is not None and self.date is not None and self.description is not None
 
@@ -28,6 +30,14 @@ class RawTransactionParseResult:
                                                                  csv_uploads]+[csv_upload.income_amount_column_name for csv_upload in csv_uploads])
         date, date_column_name = parse_date_from_raw_data(raw_data,
                                                           [csv_upload.date_column_name for csv_upload in csv_uploads])
+        target_csv_upload = next((csv_upload for csv_upload in csv_uploads if
+                                  (csv_upload.income_amount_column_name == amount_column_name or csv_upload.expense_amount_column_name == amount_column_name) and csv_upload.date_column_name == date_column_name),
+                                 None)
+        is_income = False
+        if target_csv_upload:
+            is_income = target_csv_upload.income_amount_column_name == amount_column_name
+
+
         description, _ = parse_unstructured_text(raw_data,
                                                                        [csv_upload.description_column_name for
                                                                         csv_upload in csv_uploads])
@@ -47,7 +57,8 @@ class RawTransactionParseResult:
             date_original=raw_data.get(date_column_name, ''),
             description=description,
             merchant=merchant,
-            operation_type=operation_type
+            operation_type=operation_type,
+            is_income=is_income
         )
         return raw_transaction_result
 

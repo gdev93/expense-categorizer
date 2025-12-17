@@ -143,13 +143,30 @@ def read_excel(file_path) -> List[Dict[str, str]]:
         # If no header is found, raise an error to stop processing
         raise ValueError(f"Could not find the transaction header based on universal keywords: {UNIVERSAL_KEYWORDS}.")
 
-    # 4. Load the Full Data using the Detected Header Index
-    df = pd.read_excel(file_path, header=header_index, dtype=str,engine='openpyxl')
+    # 4. Load the Full Data using the Detected Header Index (without dtype=str)
+    df = pd.read_excel(file_path, header=header_index, engine='openpyxl')
 
     # 5. Clean up the DataFrame
 
     # Drop any unwanted 'Unnamed' columns
     df = df.drop(columns=[col for col in df.columns if 'Unnamed:' in col], errors='ignore')
-    df = df.where(pd.notna(df), None)
-    # 6. Convert DataFrame to list of dictionaries (same format as CSV parser)
-    return df.to_dict('records')
+
+    # Strip whitespace from column names
+    df.columns = df.columns.str.strip()
+
+    # 6. Convert datetime columns to dd/mm/yyyy format and strip all values in one loop
+    for col in df.columns:
+        if pd.api.types.is_datetime64_any_dtype(df[col]):
+            df[col] = df[col].dt.strftime('%d/%m/%Y')
+        else:
+            # Convert to string
+            df[col] = df[col].astype(str)
+
+        # Strip whitespace from all string values
+        df[col] = df[col].apply(lambda x: x.strip() if isinstance(x, str) else x)
+
+    df = df.where(pd.notna(df))
+
+    # 7. Convert DataFrame to list of dictionaries (same format as CSV parser)
+    records: List[Dict[str, str]] = df.to_dict('records')  # type: ignore[assignment]
+    return records

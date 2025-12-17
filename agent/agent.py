@@ -133,6 +133,7 @@ class TransactionCategorization:
     """Structured result for a single transaction categorization"""
     transaction_id: str
     date: str
+    reasoning: str | None  # <--- NEW FIELD
     category: str
     merchant: str
     amount: float
@@ -148,6 +149,7 @@ class TransactionCategorization:
         return cls(
             transaction_id=data.get("transaction_id", ""),
             date=data.get("date", ""),
+            reasoning=data.get("reasoning", None),  # <--- Extract reasoning
             category=data.get("category", ""),
             merchant=data.get("merchant", ""),
             amount=data.get("amount", 0.0),
@@ -262,9 +264,12 @@ class ExpenseCategorizerAgent:
     - **CRITERIO DI SELEZIONE FINALE (Massima Priorità):**
       1. Se è disponibile una sola colonna data valida: selezionala.
       2. Se sono presenti più colonne data valide (es. "Data Operazione" e "Data Valuta"):
-         a. **DEVI selezionare la colonna che contiene sistematicamente la data posticipata.** Questa data (spesso chiamata 'Data Contabile' o 'Data di Addebito') è quella che conferma l'avvenuto pagamento o incasso.
-         b. Il modello deve esaminare i campioni per identificare quale colonna ha costantemente i valori temporali successivi.
-         c. **La data più recente è la data finale di riferimento per la transazione.**
+         a. **DEVI comparare le date tra le colonne per OGNI transazione del campione.**
+         b. **Conta quante volte ciascuna colonna contiene la data più recente (posteriore).**
+         c. **Seleziona la colonna che ha il maggior numero di date posteriori/più recenti.**
+         d. **REGOLA ASSOLUTA: Anche se una sola transazione ha una data più recente in una colonna rispetto all'altra, quella colonna DEVE essere considerata come candidata primaria.**
+         e. La data più recente rappresenta tipicamente la data contabile/di addebito effettivo (quando il pagamento è stato realmente processato dalla banca).
+         f. **In caso di parità (uguale numero di date più recenti), preferisci la colonna con nomi come "Data Contabile", "Data Valuta", "Data Addebito" rispetto a "Data Operazione".**
 
     ⚠️ ISTRUZIONI CRITICHE PER GLI IMPORTI:
     - **PRIORITÀ 1**: Cerca prima colonne SEPARATE per spese e entrate
@@ -324,192 +329,224 @@ class ExpenseCategorizerAgent:
             )
 
     def build_batch_prompt(self, batch: list[AgentTransactionUpload], csv_upload: CsvUpload) -> str:
-        """Costruisce il prompt per un batch di transazioni"""
+            """Costruisce il prompt per un batch di transazioni"""
 
-        # Formatta le transazioni
-        transactions_text = ""
-        for i, tx in enumerate(batch, 1):
-            transactions_text += f"{i}. TRANSACTION_ID: {tx.transaction_id}\n"
-            transactions_text += "   RAW DATA:\n"
-            for column, value in tx.raw_text.items():
-                if column != 'id':
-                    # Tronca i valori molto lunghi
-                    display_value = str(value)[:200] + "..." if len(str(value)) > 200 else value
-                    transactions_text += f"   - {column}: {column}: {display_value}\n"
-            transactions_text += "\n"
+            logic_constraints = """
+    ══════════════════════════════════════════════════════
+    ⚠️ REGOLE UNIVERSALI DI CLASSIFICAZIONE
+    ═══════════════════════════════════════════════════════
+    1. **Identificazione del Circuito vs Esercente**:
+       - Molte descrizioni contengono nomi di carte di credito, circuiti locali o programmi fedeltà (es. nomi che finiscono in 'Card', 'Pay', 'Azzurra', 'SMAC').
+       - Questi termini indicano COME il cliente ha pagato, NON COSA ha comprato. 
+       - IGNORA i termini legati ai circuiti per la scelta della categoria; focalizzati esclusivamente sul nome del negozio o dell'azienda.
 
-        # Build CSV structure hints section
-        csv_hints_section = ""
-        if csv_upload:
-            csv_hints_section = """
-═══════════════════════════════════════════════════════════════════
-📋 INFORMAZIONI STRUTTURA CSV - SUGGERIMENTI PER L'ESTRAZIONE 📋
-═══════════════════════════════════════════════════════════════════
+    2. **Evitare Correlazioni Deboli**:
+       - Non assumere che un pagamento POS generico indichi "Abbigliamento" o "Ristorazione" solo perché è frequente.
+       - Se il Merchant è un nome proprio di persona o un codice alfanumerico senza indizi di settore, usa la categoria 'Altro' o 'Da Categorizzare'.
+    """
 
-Per aiutarti nell'estrazione dei dati, ecco le informazioni sulla struttura CSV identificata:
-"""
-            if csv_upload.description_column_name:
-                csv_hints_section += f"📝 **DESCRIPTION FIELD**: Il campo '{csv_upload.description_column_name}' contiene la descrizione della transazione.\n"
-            if csv_upload.merchant_column_name:
-                csv_hints_section += f"🏪 **MERCHANT FIELD**: Il campo '{csv_upload.merchant_column_name}' contiene informazioni sul commerciante/beneficiario.\n"
-            if csv_upload.date_column_name:
-                csv_hints_section += f"📅 **DATE FIELD**: Il campo '{csv_upload.date_column_name}' contiene la data della transazione.\n"
-            if csv_upload.income_amount_column_name or csv_upload.expense_amount_column_name:
-                csv_hints_section += f"💰 **AMOUNT FIELD**: Il campo '{csv_upload.income_amount_column_name} oppure {csv_upload.expense_amount_column_name}' contiene l'importo della transazione.\n"
-            if csv_upload.operation_type_column_name:
-                csv_hints_section += f"🔄 **OPERATION TYPE FIELD**: Il campo '{csv_upload.operation_type_column_name}' contiene il tipo di operazione.\n"
-            if csv_upload.notes:
-                csv_hints_section += f"\n📌 **NOTE SULLA STRUTTURA CSV**:\n{csv_upload.notes}\n"
+            # Formatta le transazioni
+            transactions_text = ""
+            for i, tx in enumerate(batch, 1):
+                transactions_text += f"{i}. TRANSACTION_ID: {tx.transaction_id}\n"
+                transactions_text += "   RAW DATA:\n"
+                for column, value in tx.raw_text.items():
+                    if column != 'id':
+                        # Tronca i valori molto lunghi
+                        display_value = str(value)[:200] + "..." if len(str(value)) > 200 else value
+                        transactions_text += f"   - {column}: {column}: {display_value}\n"
+                transactions_text += "\n"
 
-            csv_hints_section += """
-⚠️ IMPORTANTE: Usa questi suggerimenti come guida principale per identificare e estrarre i campi corretti.
-Questi mapping sono stati identificati automaticamente analizzando la struttura del CSV.
-"""
+            # Build CSV structure hints section
+            csv_hints_section = ""
+            if csv_upload:
+                csv_hints_section = """
+        ═══════════════════════════════════════════════════════════════════
+        📋 INFORMAZIONI STRUTTURA CSV - SUGGERIMENTI PER L'ESTRAZIONE 📋
+        ═══════════════════════════════════════════════════════════════════
 
-        # Costruisce la sezione delle regole utente
-        user_rules_section = ""
-        critical_rules = [
-            "IGNORA transazioni la cui descrizione contiene 'Saldo'. Non devono essere categorizzate e non devono apparire nell'output JSON.",
-            "IGNORA transazioni che sono Accrediti (denaro IN) o con importo positivo. Non devono essere categorizzate e non devono apparire nell'output JSON. Il tuo compito è solo categorizzare le SPESE (USCITE).",
+        Per aiutarti nell'estrazione dei dati, ecco le informazioni sulla struttura CSV identificata:
+        """
+                if csv_upload.description_column_name:
+                    csv_hints_section += f"📝 **DESCRIPTION FIELD**: Il campo '{csv_upload.description_column_name}' contiene la descrizione della transazione.\n"
+                if csv_upload.merchant_column_name:
+                    csv_hints_section += f"🏪 **MERCHANT FIELD**: Il campo '{csv_upload.merchant_column_name}' contiene informazioni sul commerciante/beneficiario.\n"
+                if csv_upload.date_column_name:
+                    csv_hints_section += f"📅 **DATE FIELD**: Il campo '{csv_upload.date_column_name}' contiene la data della transazione.\n"
+                if csv_upload.income_amount_column_name or csv_upload.expense_amount_column_name:
+                    csv_hints_section += f"💰 **AMOUNT FIELD**: Il campo '{csv_upload.income_amount_column_name} oppure {csv_upload.expense_amount_column_name}' contiene l'importo della transazione.\n"
+                if csv_upload.operation_type_column_name:
+                    csv_hints_section += f"🔄 **OPERATION TYPE FIELD**: Il campo '{csv_upload.operation_type_column_name}' contiene il tipo di operazione.\n"
+                if csv_upload.notes:
+                    csv_hints_section += f"\n📌 **NOTE SULLA STRUTTURA CSV**:\n{csv_upload.notes}\n"
+
+                csv_hints_section += """
+        ⚠️ IMPORTANTE: Usa questi suggerimenti come guida principale per identificare e estrarre i campi corretti.
+        Questi mapping sono stati identificati automaticamente analizzando la struttura del CSV.
+        """
+
+            # Costruisce la sezione delle regole utente
+            user_rules_section = ""
+            critical_rules = [
+                "IGNORA transazioni la cui descrizione contiene 'Saldo'. Non devono essere categorizzate e non devono apparire nell'output JSON.",
+                "IGNORA transazioni che sono Accrediti (denaro IN) o con importo positivo. Non devono essere categorizzate e non devono apparire nell'output JSON. Il tuo compito è solo categorizzare le SPESE (USCITE).",
+                "IGNORA transazioni di cui non sei sicuro della categoria. Se il merchant è ambiguo o mancano informazioni per una categorizzazione precisa, NON includerle nell'output JSON.",
+            ]
+            dynamic_user_rules = [f"{i}. {rule}" for i, rule in enumerate(self.user_rules, 1)]
+            all_user_rules = critical_rules + dynamic_user_rules
+
+            if all_user_rules:
+                user_rules_section = """
+        ═══════════════════════════════════════════════════════════════════
+        ⚠️  REGOLE UTENTE - PRIORITÀ ASSOLUTA - DEVONO ESSERE APPLICATE  ⚠️
+        ═══════════════════════════════════════════════════════════════════
+        QUESTE REGOLE SONO OBBLIGATORIE E SOVRASCRIVONO OGNI ALTRA LOGICA.
+        """
+                user_rules_section += "\n".join(all_user_rules)
+                user_rules_section += """
+        ⚠️ CRITICO: Se UNA QUALSIASI transazione corrisponde a una regola utente (incluse le regole IGNORA), DEVI applicarla.
+        Le regole utente hanno PRIORITÀ ASSOLUTA su tutto il resto.
+
+        ⚠️ IMPORTANTE: È MEGLIO IGNORARE una transazione piuttosto che categorizzarla in modo errato.
+        Se hai dubbi, NON includerla nell'output JSON.
+        """
+
+            # ---------------------------------------------------------------------
+            # FIX APPLIED HERE: Format categories as "KEY": Description
+            # This clearly separates the output value from the helper text
+            # ---------------------------------------------------------------------
+            categories_formatted_list = []
+            for cat in self.available_categories:
+                if cat.name != 'not_expense':
+                    if cat.description:
+                        # Enclose the NAME in quotes so the LLM knows it's a discrete token
+                        categories_formatted_list.append(f'  • "{cat.name}": {cat.description}')
+                    else:
+                        categories_formatted_list.append(f'  • "{cat.name}"')
+
+            categories_formatted = "\n".join(categories_formatted_list)
+
+            return f"""Sei un assistente IA specializzato nella categorizzazione delle **spese** bancarie italiane.
+
+        {csv_hints_section}
+
+        {user_rules_section}
+
+        {logic_constraints}
+
+        ═══════════════════════════════════════════════════════
+        ⚠️⚠️⚠️ REQUISITO TRANSACTION_ID OBBLIGATORIO ⚠️⚠️⚠️
+        ═══════════════════════════════════════════════════════
+
+        **REQUISITO CRITICO ASSOLUTO:**
+        • OGNI oggetto JSON nell'output DEVE contenere il campo "transaction_id"
+        • Il valore di "transaction_id" DEVE essere ESATTAMENTE IDENTICO al TRANSACTION_ID fornito nei dati di input.
+
+        ═══════════════════════════════════════════════════════
+        ⚠️⚠️⚠️ REQUISITO CATEGORIA STRETTO (STRICT ENUM) ⚠️⚠️⚠️
+        ═══════════════════════════════════════════════════════
+
+        DEVI scegliere la categoria da questa lista.
+
+        LISTA CATEGORIE VALIDE:
+        {categories_formatted}
+
+        ⚠️⚠️⚠️ ISTRUZIONI DI FORMATTAZIONE CATEGORIA ⚠️⚠️⚠️
+        1. L'output per il campo "category" DEVE essere SOLO la stringa tra le virgolette.
+        2. NON includere la descrizione che segue i due punti.
+        3. NON includere trattini o testo esplicativo.
+
+        Esempio Corretto:
+        Input lista: "Trasporti": biglietti bus, treni
+        Output JSON: "category": "Trasporti"
+
+        Esempio SBAGLIATO (NON FARE QUESTO):
+        Input lista: "Trasporti": biglietti bus, treni
+        Output JSON: "category": "Trasporti - biglietti bus, treni"  <-- ERRORE GRAVE
+
+        ⚠️ CRITICO: **NON DEVI USARE "Uncategorized".** DEVI assegnare la categoria più probabile.
+
+        ═══════════════════════════════════════════════════════
+        ISTRUZIONI PRINCIPALI (ORDINE DI PRIORITÀ):
+        ═══════════════════════════════════════════════════════
+
+        1. CHECK USER RULES FIRST - APPLICA LA REGOLA "IGNORA" PER I SALDI E GLI ACCREDITI.
+        2. Analizza ogni transazione rimanente (che saranno solo SPESE).
+        3. Categorizza ogni transazione SPESA usando SOLO le categorie consentite sopra.
+        4. Estrai il nome del commerciante e tutti i campi obbligatori.
+
+        ═══════════════════════════════════════════════════════
+        ⚠️⚠️⚠️ CAMPI OBBLIGATORI - DEVONO ESSERE ESTRATTI PER OGNI TRANSAZIONE ⚠️⚠️⚠️
+        ═══════════════════════════════════════════════════════
+
+        ┌─────────────────────────────────────────────────────┐
+        │ 0. TRANSACTION_ID (OBBLIGATORIO - MASSIMA PRIORITÀ) │
+        └─────────────────────────────────────────────────────┘
+           • Copia ESATTAMENTE il valore così come appare nell'input.
+
+        ┌─────────────────────────────────────────────────────┐
+        │ 1. DATE (DATA) (OBBLIGATORIO)                       │
+        └─────────────────────────────────────────────────────┘
+           • Formato YYYY-MM-DD preferito, o originale.
+
+        ┌─────────────────────────────────────────────────────┐
+        │ 2. AMOUNT (IMPORTO) (OBBLIGATORIO)                  │
+        └─────────────────────────────────────────────────────┘
+           • Numero decimale positivo (valore assoluto).
+
+        ┌──────────────────────────────────────────────────────┐
+        │ 3. ORIGINAL_AMOUNT (IMPORTO ORIGINALE) (OBBLIGATORIO)│
+        └──────────────────────────────────────────────────────┘
+           • Stringa esatta dai dati originali.
+
+        ┌────────────────────────────────────────────────────────────┐
+        │ 4. MERCHANT (COMMERCIANTE) (OBBLIGATORIO) - CAMPO CRITICO  │
+        └────────────────────────────────────────────────────────────┘
+           • Pulisci il nome (rimuovi SPA, SRL).
+           • Se addebito SDD, trova il creditore.
+
+        ┌─────────────────────────────────────────────────────┐
+        │ 5. DESCRIPTION (DESCRIZIONE) (OBBLIGATORIO)         │
+        └─────────────────────────────────────────────────────┘
+           • Stringa originale della descrizione.
+
+        ┌─────────────────────────────────────────────────────┐
+        │ 6. REASONING (RAGIONAMENTO) (OBBLIGATORIO)          │
+        └─────────────────────────────────────────────────────┘
+           • Spiega in 1-2 frasi perché hai scelto questa categoria.
+           • Menziona gli elementi chiave che hanno guidato la decisione.
+           • Se hai applicato una regola utente, indicalo.
+           • Esempi:
+             * "Categoria Alimentari scelta per merchant ESSELUNGA, tipico supermercato italiano"
+             * "Categoria Trasporti assegnata per pagamento biglietto ATM Milano"
+             * "Categoria Bollette per addebito SDD da ENEL ENERGIA S.P.A."
+
+        ═══════════════════════════════════════════════════════
+        OUTPUT FORMAT
+        ═══════════════════════════════════════════════════════
+
+        Restituisci SOLO un array JSON.
+
+        FORMATO ESEMPIO:
+        [
+          {{
+            "transaction_id": "1200",
+            "date": "2025-10-15",
+            "category": "Alimentari",
+            "merchant": "ESSELUNGA",
+            "amount": 161.32,
+            "original_amount": "-161,32",
+            "description": "Addebito SDD CORE Esselunga S.p.A.",
+            "reasoning": "Categoria Alimentari scelta per merchant ESSELUNGA, noto supermercato italiano. Il pagamento SDD indica un addebito ricorrente per spese alimentari.",
+            "applied_user_rule": null,
+            "failure": False
+          }}
         ]
-        dynamic_user_rules = [f"{i}. {rule}" for i, rule in enumerate(self.user_rules, 1)]
-        all_user_rules = critical_rules + dynamic_user_rules
 
-        if all_user_rules:
-            user_rules_section = """
-═══════════════════════════════════════════════════════════════════
-⚠️  REGOLE UTENTE - PRIORITÀ ASSOLUTA - DEVONO ESSERE APPLICATE  ⚠️
-═══════════════════════════════════════════════════════════════════
-QUESTE REGOLE SONO OBBLIGATORIE E SOVRASCRIVONO OGNI ALTRA LOGICA.
-"""
-            user_rules_section += "\n".join(all_user_rules)
-            user_rules_section += """
-⚠️ CRITICO: Se UNA QUALSIASI transazione corrisponde a una regola utente (incluse le regole IGNORA), DEVI applicarla.
-Le regole utente hanno PRIORITÀ ASSOLUTA su tutto il resto.
-"""
+        TRANSAZIONI DA ANALIZZARE:
+        {transactions_text}
 
-        # ---------------------------------------------------------------------
-        # FIX APPLIED HERE: Format categories as "KEY": Description
-        # This clearly separates the output value from the helper text
-        # ---------------------------------------------------------------------
-        categories_formatted_list = []
-        for cat in self.available_categories:
-            if cat.name != 'not_expense':
-                if cat.description:
-                    # Enclose the NAME in quotes so the LLM knows it's a discrete token
-                    categories_formatted_list.append(f'  • "{cat.name}": {cat.description}')
-                else:
-                    categories_formatted_list.append(f'  • "{cat.name}"')
-
-        categories_formatted = "\n".join(categories_formatted_list)
-
-        return f"""Sei un assistente IA specializzato nella categorizzazione delle **spese** bancarie italiane.
-
-{csv_hints_section}
-
-{user_rules_section}
-
-═══════════════════════════════════════════════════════
-⚠️⚠️⚠️ REQUISITO TRANSACTION_ID OBBLIGATORIO ⚠️⚠️⚠️
-═══════════════════════════════════════════════════════
-
-**REQUISITO CRITICO ASSOLUTO:**
-• OGNI oggetto JSON nell'output DEVE contenere il campo "transaction_id"
-• Il valore di "transaction_id" DEVE essere ESATTAMENTE IDENTICO al TRANSACTION_ID fornito nei dati di input.
-
-═══════════════════════════════════════════════════════
-⚠️⚠️⚠️ REQUISITO CATEGORIA STRETTO (STRICT ENUM) ⚠️⚠️⚠️
-═══════════════════════════════════════════════════════
-
-DEVI scegliere la categoria da questa lista.
-
-LISTA CATEGORIE VALIDE:
-{categories_formatted}
-
-⚠️⚠️⚠️ ISTRUZIONI DI FORMATTAZIONE CATEGORIA ⚠️⚠️⚠️
-1. L'output per il campo "category" DEVE essere SOLO la stringa tra le virgolette.
-2. NON includere la descrizione che segue i due punti.
-3. NON includere trattini o testo esplicativo.
-
-Esempio Corretto:
-Input lista: "Trasporti": biglietti bus, treni
-Output JSON: "category": "Trasporti"
-
-Esempio SBAGLIATO (NON FARE QUESTO):
-Input lista: "Trasporti": biglietti bus, treni
-Output JSON: "category": "Trasporti - biglietti bus, treni"  <-- ERRORE GRAVE
-
-⚠️ CRITICO: **NON DEVI USARE "Uncategorized".** DEVI assegnare la categoria più probabile.
-
-═══════════════════════════════════════════════════════
-ISTRUZIONI PRINCIPALI (ORDINE DI PRIORITÀ):
-═══════════════════════════════════════════════════════
-
-1. CHECK USER RULES FIRST - APPLICA LA REGOLA "IGNORA" PER I SALDI E GLI ACCREDITI.
-2. Analizza ogni transazione rimanente (che saranno solo SPESE).
-3. Categorizza ogni transazione SPESA usando SOLO le categorie consentite sopra.
-4. Estrai il nome del commerciante e tutti i campi obbligatori.
-
-═══════════════════════════════════════════════════════
-⚠️⚠️⚠️ CAMPI OBBLIGATORI - DEVONO ESSERE ESTRATTI PER OGNI TRANSAZIONE ⚠️⚠️⚠️
-═══════════════════════════════════════════════════════
-
-┌─────────────────────────────────────────────────────┐
-│ 0. TRANSACTION_ID (OBBLIGATORIO - MASSIMA PRIORITÀ) │
-└─────────────────────────────────────────────────────┘
-   • Copia ESATTAMENTE il valore così come appare nell'input.
-
-┌─────────────────────────────────────────────────────┐
-│ 1. DATE (DATA) (OBBLIGATORIO)                       │
-└─────────────────────────────────────────────────────┘
-   • Formato YYYY-MM-DD preferito, o originale.
-
-┌─────────────────────────────────────────────────────┐
-│ 2. AMOUNT (IMPORTO) (OBBLIGATORIO)                  │
-└─────────────────────────────────────────────────────┘
-   • Numero decimale positivo (valore assoluto).
-
-┌──────────────────────────────────────────────────────┐
-│ 3. ORIGINAL_AMOUNT (IMPORTO ORIGINALE) (OBBLIGATORIO)│
-└──────────────────────────────────────────────────────┘
-   • Stringa esatta dai dati originali.
-
-┌────────────────────────────────────────────────────────────┐
-│ 4. MERCHANT (COMMERCIANTE) (OBBLIGATORIO) - CAMPO CRITICO  │
-└────────────────────────────────────────────────────────────┘
-   • Pulisci il nome (rimuovi SPA, SRL).
-   • Se addebito SDD, trova il creditore.
-
-┌─────────────────────────────────────────────────────┐
-│ 5. DESCRIPTION (DESCRIZIONE) (OBBLIGATORIO)         │
-└─────────────────────────────────────────────────────┘
-   • Stringa originale della descrizione.
-
-═══════════════════════════════════════════════════════
-OUTPUT FORMAT
-═══════════════════════════════════════════════════════
-
-Restituisci SOLO un array JSON.
-
-FORMATO ESEMPIO:
-[
-  {{
-    "transaction_id": "1200",
-    "date": "2025-10-15",
-    "category": "Alimentari",
-    "merchant": "ESSELUNGA",
-    "amount": 161.32,
-    "original_amount": "-161,32",
-    "description": "Addebito SDD CORE Esselunga S.p.A.",
-    "applied_user_rule": null,
-    "failure": False
-  }}
-]
-
-TRANSAZIONI DA ANALIZZARE:
-{transactions_text}
-
-RISPONDI SOLO CON L'ARRAY JSON:"""
+        RISPONDI SOLO CON L'ARRAY JSON:"""
 
     def process_batch(self, batch: list[AgentTransactionUpload], csv_upload: CsvUpload) -> list[
         TransactionCategorization]:

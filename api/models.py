@@ -238,7 +238,7 @@ class Transaction(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     raw_data = models.JSONField(default=dict)
     categorized_by_agent = models.BooleanField(default=False)
-
+    reasoning = models.TextField(blank=True)
 
     def save(self, *args, **kwargs):
         # Auto-normalize name for fuzzy matching
