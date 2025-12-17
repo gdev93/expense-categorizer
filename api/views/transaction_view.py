@@ -258,6 +258,7 @@ class TransactionListView(LoginRequiredMixin, ListView):
         queryset = Transaction.objects.filter(
             user=self.request.user,
             transaction_type='expense',
+            category__isnull=False,
             merchant_id__isnull=False  # Filtra per escludere i valori NULL
         ).select_related('category', 'merchant').order_by('-transaction_date', '-created_at')
 
