@@ -55,22 +55,20 @@
 
             <div class="data-list" id="scroll-target">
                 {% for item in merchant_summary %}
-                    <div class="data-list-item" style="cursor: default;">
+                    <div class="data-list-item">
                         <div class="transaction-main">
                             <div class="transaction-merchant">
-                                {{ item.merchant__name|default:"Merchant Sconosciuto" }}
+                                {{ item.merchant__name|default:"Sconosciuto" }}
                             </div>
                             <div class="transaction-description">
-                                <form method="post" style="display: inline-flex; align-items: center; gap: 10px;">
+                                <form method="post" class="quick-category-form">
                                     {% csrf_token %}
-                                    <input type="hidden" name="merchant_name" value="{{ item.merchant__name }}">
+                                    <input type="hidden" name="merchant_id" value="{{ item.merchant__id }}">
                                     <label style="font-size: 12px; font-weight: bold; margin:0;"
                                            for="group_category_select">Cambia
                                         Categoria:</label>
-                                    <select name="new_category_id" onchange="this.form.submit()"
-                                            style="padding: 2px 5px; font-size: 13px; border-radius: 4px; border: 1px solid #ccc;"
-                                            id="group_category_select">
-                                        <option>{{ categories_list }}</option>
+                                    <select name="new_category_id" onchange="this.form.submit()">
+                                        <option value="">Cambia categoria...</option>
                                         {% for cat in categories %}
                                             <option value="{{ cat.id }}"
                                                     {% if cat.name in item.categories_list %}selected{% endif %}>
@@ -81,50 +79,39 @@
                                 </form>
                             </div>
                         </div>
-
                         <div class="transaction-meta">
-            <span class="category-pill">
-                {{ item.number_of_transactions }} transazioni
-            </span>
-                            <div class="transaction-amount {% if item.total_spent > 0 %}is-income{% endif %}">
-                                €{{ item.total_spent|floatformat:2 }}
-                            </div>
+                            <span class="category-pill">{{ item.number_of_transactions }} transazioni</span>
+                            <div class="transaction-amount">€{{ item.total_spent|floatformat:2 }}</div>
                         </div>
                     </div>
                 {% endfor %}
             </div>
+
+            {% if merchant_summary.has_other_pages %}
+                <div class="pagination">
+                    {% if merchant_summary.has_previous %}
+                        <a href="?page=
+
+                                {{ merchant_summary.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">&laquo;
+                            Precedente</a>
         {% else %}
-        {% endif %}
-    </div>
+                        <span class="disabled">&laquo; Precedente</span>
+                    {% endif %}
 
-    {% if transactions.has_other_pages %}
-        <div class="pagination">
-            {% if transactions.has_previous %}
-                <a href="?page=
-
-                        {{ transactions.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">&laquo;
-                    Precedente</a>
-            {% else %}
-                <span class="disabled">&laquo; Precedente</span>
-            {% endif %}
-
-            <span class="current">
-            Pagina {{ transactions.number }} di {{ transactions.paginator.num_pages }}
+                    <span class="current">
+            Pagina {{ merchant_summary.number }} di {{ merchant_summary.paginator.num_pages }}
         </span>
 
-            {% if transactions.has_next %}
-                <a href="?page=
+                    {% if merchant_summary.has_next %}
+                        <a href="?page=
 
-
-
-                        {{ transactions.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">Successivo
-                    &raquo;</a>
-            {% else %}
-                <span class="disabled">Successivo &raquo;</span>
+                                {{ merchant_summary.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">Successivo
+                            &raquo;</a>
+                    {% else %}
+                        <span class="disabled">Successivo &raquo;</span>
+                    {% endif %}
+                </div>
             {% endif %}
-        </div>
-    {% endif %}
-
+        {% endif %}
     </div>
-
 {% endblock %}
