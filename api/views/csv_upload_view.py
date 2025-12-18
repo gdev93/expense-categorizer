@@ -23,6 +23,7 @@ from django.views.generic import FormView, ListView, DeleteView, DetailView
 
 from api.models import CsvUpload, Transaction, Merchant, DefaultCategory
 from api.models import Rule, Category
+from api.views.rule_view import create_rule
 from processors.expense_upload_processor import ExpenseUploadProcessor, persist_csv_file
 from processors.file_parsers import parse_uploaded_file, FileParserError
 
@@ -468,6 +469,8 @@ class CsvUploadClean(DetailView):
             csv_upload=csv_file,
             merchant=merchant
         ).update(category=new_category)
+
+        create_rule(merchant, new_category, self.request.user)
 
         # Redirect alla stessa pagina mantenendo eventuali parametri GET (come la pagina corrente)
         return redirect(request.META.get('HTTP_REFERER', 'transactions_upload_detail'))

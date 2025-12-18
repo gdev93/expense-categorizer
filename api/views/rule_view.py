@@ -1,5 +1,6 @@
 import logging
 
+from django.contrib.auth.models import User
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect
 from django.urls import reverse, reverse_lazy
@@ -26,15 +27,19 @@ class RuleDefineView(View):
         # Get or create the category with user
         category, _ = Category.objects.get_or_create(name=category_name, user=request.user)
 
-        # Create the rule text
-        rule_text = f"Tutte le operazioni che riguardano {merchant_name}, o che compare in qualunque forma il {merchant_name}, verranno categorizzate in {category_name}"
-
-        # Create the rule
-        Rule.objects.create(
-            user=request.user,
-            text_content=rule_text,
-            category=category,
-            merchant=merchant
-        )
+        create_rule(merchant, category, request.user)
 
         return redirect(reverse('transaction_list'))
+
+
+def create_rule(merchant: Merchant, category: Category, user: User):
+    Rule.objects.filter(user=user, merchant=merchant).delete()
+    rule_text = f"Tutte le operazioni che riguardano {merchant.name}, o che compare in qualunque forma il {merchant.name}, verranno categorizzate in {category.name}"
+
+    # Create the rule
+    Rule.objects.create(
+        user=user,
+        text_content=rule_text,
+        category=category,
+        merchant=merchant
+    )
