@@ -1,0 +1,130 @@
+{% extends "main/index.html" %}
+{% load static %}
+{% block title %}Pulizia Dati{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/transactions.css' %}">
+    <link rel="stylesheet" href="{% static 'css/list.css' %}">
+    <link rel="stylesheet" href="{% static 'css/pagination.css' %}">
+    <link rel="stylesheet" href="{% static 'css/layout.css' %}">
+    <link rel="stylesheet" href="{% static 'css/filters.css' %}">
+{% endblock %}
+{% block content %}
+
+    <div class="container">
+
+        <div class="header">
+            <div>
+                <h1>{{ csv_file.filename }}</h1>
+                <p class="text-muted">Caricato il: {{ csv_file.upload_date|date:"d M Y" }}</p>
+            </div>
+            <div>
+                <a href="{% url 'transactions_upload' %}" class="btn btn-secondary">
+                    &larr; Torna agli Upload
+                </a>
+            </div>
+        </div>
+        <form method="get" class="filters">
+            <div class="filter-group">
+                <label for="search">🔍 Ricerca</label>
+                <input type="text" name="search" id="search" placeholder="Cerca merchant o descrizione..."
+                       value="{{ search_query }}"/>
+            </div>
+
+            <div class="filter-group">
+                <label for="category">📁 Categoria</label>
+                <select name="category" id="category" onchange="this.form.submit()">
+                    <option value="">Tutte le Categorie</option>
+                    {% for cat in categories %}
+                        <option value="{{ cat.id }}"
+                                {% if selected_category == cat.id|stringformat:"s" %}selected{% endif %}>
+                            {{ cat.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="filter-group" style="justify-content: flex-end;">
+                <button type="submit" class="btn btn-primary">Filtra</button>
+                <a href="{% url 'transactions_upload_detail' csv_file.id %}" class="btn btn-secondary">Reset</a>
+            </div>
+        </form>
+
+        {% if merchant_summary %}
+            <h2 class="mb-3">📊 Analisi per Commerciante (Merchant)</h2>
+
+            <div class="data-list" id="scroll-target">
+                {% for item in merchant_summary %}
+                    <div class="data-list-item" style="cursor: default;">
+                        <div class="transaction-main">
+                            <div class="transaction-merchant">
+                                {{ item.merchant__name|default:"Merchant Sconosciuto" }}
+                            </div>
+                            <div class="transaction-description">
+                                <form method="post" style="display: inline-flex; align-items: center; gap: 10px;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="merchant_name" value="{{ item.merchant__name }}">
+                                    <label style="font-size: 12px; font-weight: bold; margin:0;"
+                                           for="group_category_select">Cambia
+                                        Categoria:</label>
+                                    <select name="new_category_id" onchange="this.form.submit()"
+                                            style="padding: 2px 5px; font-size: 13px; border-radius: 4px; border: 1px solid #ccc;"
+                                            id="group_category_select">
+                                        <option>{{ categories_list }}</option>
+                                        {% for cat in categories %}
+                                            <option value="{{ cat.id }}"
+                                                    {% if cat.name in item.categories_list %}selected{% endif %}>
+                                                {{ cat.name }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </form>
+                            </div>
+                        </div>
+
+                        <div class="transaction-meta">
+            <span class="category-pill">
+                {{ item.number_of_transactions }} transazioni
+            </span>
+                            <div class="transaction-amount {% if item.total_spent > 0 %}is-income{% endif %}">
+                                €{{ item.total_spent|floatformat:2 }}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+        {% endif %}
+    </div>
+
+    {% if transactions.has_other_pages %}
+        <div class="pagination">
+            {% if transactions.has_previous %}
+                <a href="?page=
+
+                        {{ transactions.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">&laquo;
+                    Precedente</a>
+            {% else %}
+                <span class="disabled">&laquo; Precedente</span>
+            {% endif %}
+
+            <span class="current">
+            Pagina {{ transactions.number }} di {{ transactions.paginator.num_pages }}
+        </span>
+
+            {% if transactions.has_next %}
+                <a href="?page=
+
+
+
+                        {{ transactions.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">Successivo
+                    &raquo;</a>
+            {% else %}
+                <span class="disabled">Successivo &raquo;</span>
+            {% endif %}
+        </div>
+    {% endif %}
+
+    </div>
+
+{% endblock %}

@@ -10,13 +10,16 @@ from typing import List, Dict
 from django import forms
 from django.contrib import messages
 from django.contrib.auth.models import User
+from django.contrib.postgres.aggregates import StringAgg
+from django.core.paginator import Paginator
 from django.core.validators import FileExtensionValidator
 from django.db import transaction
-from django.db.models import Sum, Count, Case, When, Value, CharField, Exists, OuterRef
+from django.db.models import Sum, Count, Case, When, Value, CharField, Exists, OuterRef, Q
 from django.http import HttpResponse, JsonResponse
+from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.views import View
-from django.views.generic import FormView, ListView, DeleteView
+from django.views.generic import FormView, ListView, DeleteView, DetailView
 
 from api.models import CsvUpload, Transaction, Merchant, DefaultCategory
 from api.models import Rule, Category
@@ -440,3 +443,54 @@ class CsvUploadCheckView(View):
             "current_pending": Transaction.objects.filter(csv_upload=csv_upload, user=request.user, status='pending').count(),
             "current_categorized": Transaction.objects.filter(csv_upload=csv_upload, user=request.user, status='categorized').count(),
         })
+
+
+class CsvUploadClean(DetailView):
+    model = CsvUpload
+    template_name = 'transactions/csv_upload_clean.html'
+    context_object_name = 'csv_file'
+
+    def get_queryset(self):
+        # Garantisce che l'utente veda solo i propri file
+        return CsvUpload.objects.filter(user=self.request.user)
+
+    def post(self, request, *args, **kwargs):
+        csv_file = self.get_object()
+        merchant_name = request.POST.get('merchant_name')
+        new_category_id = request.POST.get('new_category_id')
+
+        if merchant_name and new_category_id:
+            # Aggiorna tutte le transazioni di questo merchant nel CSV corrente
+            Transaction.objects.filter(
+                csv_upload=csv_file,
+                merchant__name=merchant_name
+            ).update(category_id=new_category_id)
+
+        return redirect('transactions_upload_detail', pk=csv_file.id)
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        csv_file = self.object
+
+        # 1. Base Queryset filtrato per questo CSV
+        transactions_qs = csv_file.transactions.all().filter(status='categorized', transaction_type='expense')
+
+        # 2. Applicazione Filtri di ricerca se presenti
+        search_query = self.request.GET.get('search', '')
+        if search_query:
+            transactions_qs = transactions_qs.filter(
+                Q(description__icontains=search_query) |
+                Q(merchant__name__icontains=search_query)
+            )
+
+
+        merchant_group = transactions_qs.values('merchant__name').annotate(
+            number_of_transactions=Count('id'),
+            total_spent=Sum('amount'),
+            categories_list=StringAgg('category__name', delimiter=', ', distinct=True)
+        ).order_by('-number_of_transactions')
+
+
+        context['merchant_summary'] = merchant_group
+        context['search_query'] = search_query
+
+        return context

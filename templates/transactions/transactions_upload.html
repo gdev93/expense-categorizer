@@ -94,7 +94,7 @@
         <div class="data-list uploaded-list-padding">
     {% if uploads %}
         {% for upload in uploads %}
-            <div class="data-list-item">
+            <div class="data-list-item" onclick="window.location.href='{% url 'transactions_upload_detail' upload.id %}'">
 
                 <div class="file-main-info">
                     <div class="file-icon">📁</div>

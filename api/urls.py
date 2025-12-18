@@ -19,7 +19,8 @@ from django.views.generic import RedirectView
 
 from api.entry_point_views import login_form, authenticate_user, register_form, create_user
 from api.views.category_view import CategoryCreateView, CategoryListView, CategoryDetailView, CategoryDeleteView
-from api.views.csv_upload_view import CsvUploadView, CsvUploadDelete, CsvProcessView, CsvProgressView, CsvUploadCheckView
+from api.views.csv_upload_view import CsvUploadView, CsvUploadDelete, CsvProcessView, CsvProgressView, \
+    CsvUploadCheckView, CsvUploadClean
 from api.views.rule_view import RuleDefineView, RuleDeleteView
 from api.views.monthly_summary_view import MonthlySummerView
 from api.views.transaction_view import TransactionListView, EditTransactionCategory, TransactionDetailUpdateView, TransactionIncomeCreateView, IncomeListView
@@ -34,6 +35,7 @@ urlpatterns = [
     path('transactions/upload/process', CsvProcessView.as_view(), name='transactions_process'),
     path('transactions/upload/progress/', CsvProgressView.as_view(), name='transactions_progress'),
     path('transactions/upload/check', CsvUploadCheckView.as_view(), name='transactions_upload_check'),
+    path('transactions/upload/<int:pk>/', CsvUploadClean.as_view(), name='transactions_upload_detail'),
     path('transactions/upload/<int:pk>/process', CsvProcessView.as_view(), name='transactions_process_detail'),
     path('transactions/upload/<int:pk>/delete/', CsvUploadDelete.as_view(), name='transactions_upload_delete'),
     path('transactions/', TransactionListView.as_view(), name='transaction_list'),
