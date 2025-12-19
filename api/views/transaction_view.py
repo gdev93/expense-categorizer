@@ -530,3 +530,46 @@ class EditTransactionCategory(View):
             'new_category_name': new_category.name,  # Return updated data for client-side update
             'new_category_id': new_category.id
         }, status=200)  # Use 200 OK for a successful update
+
+
+class TransactionByCsvUploadAndMerchant(View):
+    def get(self, request: HttpRequest, **kwargs):
+        merchant_id = request.GET.get('merchant_id')
+        csv_upload_id = request.GET.get('csv_upload_id')
+
+        # Security: Ensure objects belong to the requesting user
+        merchant = get_object_or_404(Merchant, user=request.user, id=merchant_id)
+        csv_upload = get_object_or_404(CsvUpload, user=request.user, id=csv_upload_id)
+
+        # Filter transactions
+        transactions_qs = Transaction.objects.filter(
+            merchant=merchant,
+            csv_upload=csv_upload,
+            user=request.user
+        ).order_by('-transaction_date')
+
+        # Get date range for the UI
+        first_date = None
+        last_date = None
+        if transactions_qs.exists():
+            first_date = transactions_qs.last().transaction_date
+            last_date = transactions_qs.first().transaction_date
+
+        # Convert QuerySet to list of dicts for JSON serialization
+        # Add or remove fields here based on what you want to show in the UI
+        transactions_data = list(transactions_qs.values(
+            'id',
+            'transaction_date',
+            'amount',
+            'description'
+        ))
+
+        return JsonResponse(
+            data={
+                'transactions': transactions_data,
+                'first_date': first_date,
+                'last_date': last_date,
+                'merchant_name': merchant.name
+            },
+            safe=False
+        )

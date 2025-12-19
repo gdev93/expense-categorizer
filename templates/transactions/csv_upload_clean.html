@@ -8,11 +8,11 @@
     <link rel="stylesheet" href="{% static 'css/pagination.css' %}">
     <link rel="stylesheet" href="{% static 'css/layout.css' %}">
     <link rel="stylesheet" href="{% static 'css/filters.css' %}">
+    <link rel="stylesheet" href="{% static 'css/merchant-details.css' %}">
 {% endblock %}
+
 {% block content %}
-
     <div class="container">
-
         <div class="header">
             <div>
                 <h1>{{ csv_file.filename }}</h1>
@@ -24,6 +24,7 @@
                 </a>
             </div>
         </div>
+
         <form method="get" class="filters">
             <div class="filter-group">
                 <label for="search">🔍 Ricerca</label>
@@ -32,7 +33,7 @@
             </div>
 
             <div class="filter-group">
-                <label for="category">📁 Categoria</label>
+                <label for="category">🏷️ Categoria</label>
                 <select name="category" id="category" onchange="this.form.submit()">
                     <option value="">Tutte le Categorie</option>
                     {% for cat in categories %}
@@ -55,19 +56,23 @@
 
             <div class="data-list" id="scroll-target">
                 {% for item in merchant_summary %}
-                    <div class="data-list-item">
+
+                    <div class="data-list-item merchant-clickable"
+                         data-merchant-id="{{ item.merchant__id }}"
+                         data-csv-id="{{ csv_file.id }}"
+                         style="cursor: pointer;">
+
                         <div class="transaction-main">
                             <div class="transaction-merchant">
                                 {{ item.merchant__name|default:"Sconosciuto" }}
                             </div>
                             <div class="transaction-description">
-                                <form method="post" class="quick-category-form">
+                                <form method="post" class="quick-category-form" onclick="event.stopPropagation();">
                                     {% csrf_token %}
                                     <input type="hidden" name="merchant_id" value="{{ item.merchant__id }}">
                                     <label style="font-size: 12px; font-weight: bold; margin:0;"
-                                           for="group_category_select">Cambia
-                                        Categoria:</label>
-                                    <select name="new_category_id" onchange="this.form.submit()">
+                                           for="group_category_select">Cambia Categoria:</label>
+                                    <select name="new_category_id" onchange="this.form.submit()" id="group_category_select">
                                         <option value="">Cambia categoria...</option>
                                         {% for cat in categories %}
                                             <option value="{{ cat.id }}"
@@ -91,20 +96,18 @@
                 <div class="pagination">
                     {% if merchant_summary.has_previous %}
                         <a href="?page=
-
                                 {{ merchant_summary.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">&laquo;
                             Precedente</a>
-        {% else %}
+                    {% else %}
                         <span class="disabled">&laquo; Precedente</span>
                     {% endif %}
 
                     <span class="current">
-            Pagina {{ merchant_summary.number }} di {{ merchant_summary.paginator.num_pages }}
-        </span>
+                        Pagina {{ merchant_summary.number }} di {{ merchant_summary.paginator.num_pages }}
+                    </span>
 
                     {% if merchant_summary.has_next %}
                         <a href="?page=
-
                                 {{ merchant_summary.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">Successivo
                             &raquo;</a>
                     {% else %}
@@ -114,4 +117,18 @@
             {% endif %}
         {% endif %}
     </div>
+
+    <div id="merchant-drawer" class="drawer">
+        <div class="drawer-header">
+            <h3 id="drawer-title">Dettagli Transazioni</h3>
+            <button id="close-drawer" class="btn-close">&times;</button>
+        </div>
+        <div id="drawer-body" class="drawer-body">
+            <p class="text-center">Caricamento...</p>
+        </div>
+    </div>
+    <script>
+    const TRANSACTION_BY_MERCHANT_BY_CSV = "{% url 'transactions_by_csv_by_merchant' %}"
+    </script>
+    <script src="{% static 'js/merchant-fetch.js' %}"></script>
 {% endblock %}
