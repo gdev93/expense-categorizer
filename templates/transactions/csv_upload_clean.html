@@ -56,39 +56,41 @@
 
             <div class="data-list" id="scroll-target">
                 {% for item in merchant_summary %}
+                   <div class="merchant-group">
+    <div class="data-list-item merchant-clickable"
+         data-merchant-id="{{ item.merchant__id }}"
+         data-csv-id="{{ csv_file.id }}"
+         style="cursor: pointer;">
 
-                    <div class="data-list-item merchant-clickable"
-                         data-merchant-id="{{ item.merchant__id }}"
-                         data-csv-id="{{ csv_file.id }}"
-                         style="cursor: pointer;">
+        <div class="transaction-main">
+            <div class="transaction-merchant">
+                {{ item.merchant__name|default:"Sconosciuto" }}
+            </div>
+            <div class="transaction-description">
+                <form method="post" class="quick-category-form" onclick="event.stopPropagation();">
+                    {% csrf_token %}
+                    <input type="hidden" name="merchant_id" value="{{ item.merchant__id }}">
+                    <select name="new_category_id" onchange="this.form.submit()">
+                        {% for cat in categories %}
+                            <option value="{{ cat.id }}" {% if cat.name in item.categories_list %}selected{% endif %}>
+                                {{ cat.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </form>
+            </div>
+        </div>
+        <div class="transaction-meta">
+            <span class="category-pill">{{ item.number_of_transactions }} transazioni</span>
+            <div class="transaction-amount">€{{ item.total_spent|floatformat:2 }}</div>
+        </div>
+    </div>
 
-                        <div class="transaction-main">
-                            <div class="transaction-merchant">
-                                {{ item.merchant__name|default:"Sconosciuto" }}
-                            </div>
-                            <div class="transaction-description">
-                                <form method="post" class="quick-category-form" onclick="event.stopPropagation();">
-                                    {% csrf_token %}
-                                    <input type="hidden" name="merchant_id" value="{{ item.merchant__id }}">
-                                    <label style="font-size: 12px; font-weight: bold; margin:0;"
-                                           for="group_category_select">Cambia Categoria:</label>
-                                    <select name="new_category_id" onchange="this.form.submit()" id="group_category_select">
-                                        <option value="">Cambia categoria...</option>
-                                        {% for cat in categories %}
-                                            <option value="{{ cat.id }}"
-                                                    {% if cat.name in item.categories_list %}selected{% endif %}>
-                                                {{ cat.name }}
-                                            </option>
-                                        {% endfor %}
-                                    </select>
-                                </form>
-                            </div>
-                        </div>
-                        <div class="transaction-meta">
-                            <span class="category-pill">{{ item.number_of_transactions }} transazioni</span>
-                            <div class="transaction-amount">€{{ item.total_spent|floatformat:2 }}</div>
-                        </div>
-                    </div>
+    <div class="merchant-details-expansion" id="details-{{ item.merchant__id }}">
+        <div class="expansion-content">
+            </div>
+    </div>
+</div>
                 {% endfor %}
             </div>
 
@@ -118,15 +120,7 @@
         {% endif %}
     </div>
 
-    <div id="merchant-drawer" class="drawer">
-        <div class="drawer-header">
-            <h3 id="drawer-title">Dettagli Transazioni</h3>
-            <button id="close-drawer" class="btn-close">&times;</button>
-        </div>
-        <div id="drawer-body" class="drawer-body">
-            <p class="text-center">Caricamento...</p>
-        </div>
-    </div>
+
     <script>
     const TRANSACTION_BY_MERCHANT_BY_CSV = "{% url 'transactions_by_csv_by_merchant' %}"
     </script>

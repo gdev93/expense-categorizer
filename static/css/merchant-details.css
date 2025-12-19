@@ -1,37 +1,37 @@
-.drawer {
-    position: fixed;
-    top: 0;
-    right: 0;
-    width: 400px;
-    height: 100%;
-    background: white;
-    box-shadow: -5px 0 15px rgba(0,0,0,0.1);
-    transform: translateX(100%); /* Start off-screen */
-    transition: transform 0.3s ease-in-out;
-    z-index: 1050;
-    display: flex;
-    flex-direction: column;
-}
-
-.drawer.open {
-    transform: translateX(0); /* Slide in */
-}
-
-.drawer-header {
-    padding: 20px;
+/* Container for both the row and its expansion */
+.merchant-group {
     border-bottom: 1px solid #eee;
+    background: #fff;
+}
+
+/* Expansion panel: hidden by default */
+.merchant-details-expansion {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease-out, background-color 0.3s;
+    background-color: #fcfcfc;
+}
+
+.merchant-details-expansion.is-open {
+    max-height: 1000px; /* Large enough to fit content */
+    border-top: 1px solid #f0f0f0;
+}
+
+.expansion-content {
+    padding: 15px 25px;
+}
+
+.mini-transaction-row {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px dashed #e0e0e0;
+    font-size: 0.9rem;
 }
 
-.drawer-body {
-    padding: 20px;
-    overflow-y: auto;
-    flex-grow: 1;
+.mini-transaction-row:last-child {
+    border-bottom: none;
 }
 
-.transaction-item-mini {
-    padding: 10px 0;
-    border-bottom: 1px solid #f9f9f9;
-}
+.mini-date { color: #888; }
+.mini-amount { font-weight: 600; }
