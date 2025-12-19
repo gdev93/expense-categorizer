@@ -186,7 +186,7 @@ class TransactionDetailUpdateView(LoginRequiredMixin, UpdateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['categories'] = Category.objects.filter(
-            Q(user=self.request.user) | Q(is_default=True)
+            Q(user=self.request.user)
         ).distinct()
         return context
 

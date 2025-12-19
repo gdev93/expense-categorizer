@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // 3. Load data if empty or refresh
             contentArea.innerHTML = '<p class="text-muted">Caricamento transazioni...</p>';
-            expansionPanel.classList.add('is-open');
+
 
             try {
                 const response = await fetch(`${TRANSACTION_BY_MERCHANT_BY_CSV}?merchant_id=${mId}&csv_upload_id=${cId}`);
@@ -38,6 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>`;
                 });
                 contentArea.innerHTML = html;
+                expansionPanel.classList.add('is-open');
 
             } catch (error) {
                 contentArea.innerHTML = '<p class="text-danger">Errore nel caricamento.</p>';
