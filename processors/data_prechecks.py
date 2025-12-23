@@ -35,7 +35,10 @@ class RawTransactionParseResult:
                                  None)
         is_income = False
         if target_csv_upload:
-            is_income = target_csv_upload.income_amount_column_name == amount_column_name
+            if target_csv_upload.income_amount_column_name != target_csv_upload.expense_amount_column_name:
+                is_income = target_csv_upload.income_amount_column_name == amount_column_name
+            else:
+                is_income = amount > Decimal(0)
 
 
         description, _ = parse_unstructured_text(raw_data,

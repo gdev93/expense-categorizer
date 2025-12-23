@@ -6,13 +6,11 @@ from django.contrib.auth.models import User
 from django.contrib.postgres.search import TrigramWordSimilarity
 from django.core.files.uploadedfile import UploadedFile
 from django.db import transaction
-from django.db.models import Q
 
 from agent.agent import ExpenseCategorizerAgent, AgentTransactionUpload, TransactionCategorization
 from api.models import Transaction, Category, Merchant, CsvUpload, normalize_string
 from processors.data_prechecks import parse_raw_transaction, RawTransactionParseResult
-from processors.parser_utils import normalize_amount, parse_raw_date, parse_amount_from_raw_data_without_suggestion, \
-    parse_date_from_raw_data_with_no_suggestions
+from processors.parser_utils import normalize_amount, parse_raw_date, parse_date_from_raw_data_with_no_suggestions
 
 
 class BatchingHelper:
@@ -290,8 +288,7 @@ class ExpenseUploadProcessor:
                 similar_transaction = _find_similar_transaction_by_merchant(user=self.user, merchant_name=merchant_name,
                                                                             threshold=self.pre_check_confidence_threshold)
                 if not similar_transaction:
-                    merchant = Merchant(name=merchant_name, user=self.user)
-                    merchant.save()
+                    merchant, _ = Merchant.objects.get_or_create(name=merchant_name, user=self.user)
                     category = Category.objects.filter(name__icontains=category_name.strip(), user=self.user).first()
                     if not category:
                         Transaction.objects.filter(id=tx_id).update(status='uncategorized', failure_code=1, merchant=merchant)
@@ -393,8 +390,7 @@ class ExpenseUploadProcessor:
     def _post_process_transactions(self, csv_upload: CsvUpload) -> None:
         """Post-process transactions after batch processing to identify column mappings and categorize uncategorized transactions."""
         self._categorize_remaining_transactions(csv_upload)
-        self._apply_transaction_type_corrections(csv_upload)
-        #TODO sanity check for rules
+
     def _categorize_remaining_transactions(self, csv_upload: CsvUpload) -> None:
         """Process uncategorized transactions by parsing their data and attempting to categorize them using similar transactions."""
         uncategorized_transactions = Transaction.objects.filter(
@@ -470,7 +466,8 @@ class ExpenseUploadProcessor:
         # Find all transactions that are categorized and marked as expense but actually they are income transaction
         (Transaction.objects.filter(
             user=self.user,
-            csv_upload=csv_upload
+            csv_upload=csv_upload,
+            status='categorized',
         )
          .filter(category__isnull=True)
          .update(transaction_type='income', status='uncategorized'))

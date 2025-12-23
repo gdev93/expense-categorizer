@@ -14,7 +14,7 @@ from django.contrib.postgres.aggregates import StringAgg
 from django.core.paginator import Paginator
 from django.core.validators import FileExtensionValidator
 from django.db import transaction
-from django.db.models import Sum, Count, Case, When, Value, CharField, Exists, OuterRef, Q
+from django.db.models import Sum, Count, Case, When, Value, CharField, Exists, OuterRef, Q, Max, IntegerField
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect, get_object_or_404
 from django.urls import reverse_lazy
@@ -467,8 +467,8 @@ class CsvUploadClean(DetailView):
 
         Transaction.objects.filter(
             csv_upload=csv_file,
-            merchant=merchant
-        ).update(category=new_category)
+            merchant=merchant,
+        ).update(category=new_category, status='categorized', modified_by_user=True)
 
         create_rule(merchant, new_category, self.request.user)
 
@@ -481,7 +481,6 @@ class CsvUploadClean(DetailView):
 
         # 1. Base Queryset
         transactions_qs = csv_file.transactions.all().filter(
-            status='categorized',
             transaction_type='expense'
         )
 
@@ -494,12 +493,22 @@ class CsvUploadClean(DetailView):
             )
 
         # 3. Aggregazione (Merchant Summary)
-        merchant_group = transactions_qs.values('merchant__id', 'merchant__name').annotate(
+        merchant_group = transactions_qs.values(
+            'merchant__id',
+            'merchant__name'
+        ).annotate(
             number_of_transactions=Count('id'),
             total_spent=Sum('amount'),
+            # Use Max to find if any 'uncategorized' exists (1 = True, 0 = False)
+            is_uncategorized=Max(
+                Case(
+                    When(status='uncategorized', then=Value(1)),
+                    default=Value(0),
+                    output_field=IntegerField(),
+                )
+            ),
             categories_list=StringAgg('category__name', delimiter=', ', distinct=True)
-        ).order_by('-number_of_transactions')
-
+        ).order_by('-is_uncategorized', '-number_of_transactions', 'merchant__name')
         # 4. Paginazione del Merchant Summary
         paginator = Paginator(merchant_group, self.paginate_by_merchant)
         page_number = self.request.GET.get('page')

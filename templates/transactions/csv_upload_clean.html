@@ -57,28 +57,29 @@
             <div class="data-list" id="scroll-target">
                 {% for item in merchant_summary %}
                    <div class="merchant-group">
-    <div class="data-list-item merchant-clickable"
-         data-merchant-id="{{ item.merchant__id }}"
-         data-csv-id="{{ csv_file.id }}"
-         style="cursor: pointer;">
+                       <div class="data-list-item merchant-clickable"
+                            data-merchant-id="{{ item.merchant__id }}"
+                            data-csv-id="{{ csv_file.id }}"
+                            style="cursor: pointer;">
 
-        <div class="transaction-main">
-            <div class="transaction-merchant">
-                {{ item.merchant__name|default:"Sconosciuto" }}
-            </div>
-            <div class="transaction-description">
-                <form method="post" class="quick-category-form" onclick="event.stopPropagation();">
-                    {% csrf_token %}
-                    <input type="hidden" name="merchant_id" value="{{ item.merchant__id }}">
-                    <select name="new_category_id" onchange="this.form.submit()">
-                        {% for cat in categories %}
-                            <option value="{{ cat.id }}" {% if cat.name in item.categories_list %}selected{% endif %}>
-                                {{ cat.name }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                </form>
-            </div>
+                           <div class="transaction-main">
+                               <div class="transaction-merchant">
+                                   {{ item.merchant__name|default:"Sconosciuto" }}
+                               </div>
+                               <div class="transaction-description">
+                                   <form method="post" class="quick-category-form">
+                                       {% csrf_token %}
+                                       <input type="hidden" name="merchant_id" value="{{ item.merchant__id }}">
+                                       <select name="new_category_id" onchange="this.form.submit()">
+                                            <option selected>{{ item.categories_list }}</option>
+                                           {% for cat in categories %}
+                                               <option value="{{ cat.id }}">
+                                                   {{ cat.name }}
+                                               </option>
+                                           {% endfor %}
+                                       </select>
+                                   </form>
+                               </div>
         </div>
         <div class="transaction-meta">
             <span class="category-pill">{{ item.number_of_transactions }} transazioni</span>
@@ -122,7 +123,8 @@
 
 
     <script>
-    const TRANSACTION_BY_MERCHANT_BY_CSV = "{% url 'transactions_by_csv_by_merchant' %}"
+    const TRANSACTION_BY_MERCHANT_BY_CSV_URL = "{% url 'transactions_by_csv_by_merchant' %}"
+    const TRANSACTION_DETAIL_URL = "{% url 'transaction_detail' pk=0 %}";
     </script>
     <script src="{% static 'js/merchant-fetch.js' %}"></script>
 {% endblock %}
