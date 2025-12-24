@@ -410,5 +410,43 @@ class CategoryMonthlySummary(models.Model):
 
     def __str__(self):
         return f"User {self.user_id} - {self.category_name} ({self.year}-{self.month}): {self.total_amount}"
+
+class InternalBankTransfer(models.Model):
+    user = models.ForeignKey(User, on_delete=models.DO_NOTHING,
+                             related_name='internal_transfers',
+                             db_column='user_id')
+
+    income_transaction = models.OneToOneField(
+        'Transaction',
+        on_delete=models.DO_NOTHING,
+        db_column='income_id',
+        primary_key=True,
+        related_name='internal_transfer_in'
+    )
+
+    # The best matching expense found by the scoring logic
+    expense_transaction = models.ForeignKey(
+        'Transaction',
+        on_delete=models.DO_NOTHING,
+        db_column='expense_id',
+        related_name='internal_transfer_out'
+    )
+
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    raw_score = models.IntegerField()
+
+    # Keep track of the dates for easy UI sorting
+    expense_date = models.DateField()
+    income_date = models.DateField()
+
+    class Meta:
+        managed = False  # Django will not attempt to create a table
+        db_table = 'internal_bank_transfer'
+        verbose_name = "Internal Bank Transfer"
+        verbose_name_plural = "Internal Bank Transfers"
+
+    def __str__(self):
+        return f"Transfer Match: {self.amount} (Score: {self.raw_score})"
+
 def normalize_string(input_data:str)->str:
     return re.sub(r'[^a-z0-9]', '', input_data.lower())

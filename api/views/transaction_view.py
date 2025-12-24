@@ -16,7 +16,7 @@ from django.views import View
 from django.views.generic import ListView, CreateView
 from django.views.generic import UpdateView
 
-from api.models import Transaction, Category, Rule, Merchant, CsvUpload
+from api.models import Transaction, Category, Rule, Merchant, CsvUpload, InternalBankTransfer
 
 pre_check_confidence_threshold = os.environ.get('PRE_CHECK_CONFIDENCE_THRESHOLD', 0.8)
 
@@ -260,7 +260,7 @@ class TransactionListView(LoginRequiredMixin, ListView):
             transaction_type='expense',
             category__isnull=False,
             merchant_id__isnull=False  # Filtra per escludere i valori NULL
-        ).select_related('category', 'merchant').order_by('-transaction_date', '-created_at')
+        ).exclude(id__in=InternalBankTransfer.objects.filter(user=self.request.user).values_list('expense_transaction__id', flat=True)).select_related('category', 'merchant').order_by('-transaction_date', '-created_at')
 
         # Filter by category
         category_id = self.request.GET.get('category')
@@ -379,7 +379,6 @@ class TransactionListView(LoginRequiredMixin, ListView):
                     pass
             if month_queries:
                 user_transactions = user_transactions.filter(month_queries)
-
         transaction_list_context = TransactionListContextData(
             categories=categories,
             selected_status=self.request.GET.get('status', ''),
