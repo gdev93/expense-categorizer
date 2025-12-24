@@ -346,8 +346,8 @@ class ExpenseUploadProcessor:
             notes = result_from_agent.notes
             merchant_column_name = result_from_agent.merchant_field
             date_column_name = result_from_agent.transaction_date_field
-            income_amount_column_name = result_from_agent.income_amount_field
-            expense_amount_column_name = result_from_agent.expense_amount_field
+            income_amount_column_name = result_from_agent.income_amount_field or result_from_agent.expense_amount_field
+            expense_amount_column_name = result_from_agent.expense_amount_field or result_from_agent.income_amount_field
             operation_type_column_name = result_from_agent.operation_type_field
         else:
             description_column_name = csv_upload_same_structure.description_column_name
