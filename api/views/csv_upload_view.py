@@ -508,7 +508,7 @@ class CsvUploadClean(DetailView):
                 )
             ),
             categories_list=StringAgg('category__name', delimiter=', ', distinct=True)
-        ).order_by('-number_of_transactions', '-is_uncategorized', 'merchant__name')
+        ).order_by('-is_uncategorized', '-number_of_transactions', 'merchant__name')
         # 4. Paginazione del Merchant Summary
         paginator = Paginator(merchant_group, self.paginate_by_merchant)
         page_number = self.request.GET.get('page')

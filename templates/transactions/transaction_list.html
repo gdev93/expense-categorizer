@@ -257,7 +257,7 @@
 
             <div class="data-list" id="scroll-target">
                 {% for transaction in transactions %}
-                    <div class="data-list-item" onclick="saveFiltersAndRedirect('{% url 'transaction_detail' transaction.id %}')">
+                    <div class="data-list-item {% if transaction.is_internal_bank_transfer %}internal-transfer{% endif %}" onclick="saveFiltersAndRedirect('{% url 'transaction_detail' transaction.id %}')">
                         <div class="transaction-main">
                             <div class="transaction-date">
                                 📅 {{ transaction.transaction_date|date:"d/m/Y" }}

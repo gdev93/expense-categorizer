@@ -400,6 +400,15 @@
     color: #343a40;
 }
 
+/* Grey background for internal bank transfers */
+.internal-transfer {
+    background-color: #f5f5f5;
+    opacity: 0.75;
+}
+
+.internal-transfer:hover {
+    background-color: #ececec;
+}
 /* =========================================
    7. RESPONSIVE QUERIES
    ========================================= */

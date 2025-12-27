@@ -7,7 +7,7 @@ from typing import Any
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import transaction
-from django.db.models import Q, QuerySet  # Import Q for complex lookups
+from django.db.models import Q, QuerySet, Exists, OuterRef  # Import Q for complex lookups
 from django.db.models import Sum
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
@@ -260,7 +260,11 @@ class TransactionListView(LoginRequiredMixin, ListView):
             transaction_type='expense',
             category__isnull=False,
             merchant_id__isnull=False  # Filtra per escludere i valori NULL
-        ).exclude(id__in=InternalBankTransfer.objects.filter(user=self.request.user).values_list('expense_transaction__id', flat=True)).select_related('category', 'merchant').order_by('-transaction_date', '-created_at')
+        ).annotate(is_internal_bank_transfer=Exists(
+            InternalBankTransfer.objects.filter(
+                expense_transaction_id=OuterRef('pk')
+            )
+        )).select_related('category', 'merchant').order_by('-transaction_date', '-created_at')
 
         # Filter by category
         category_id = self.request.GET.get('category')
@@ -386,7 +390,9 @@ class TransactionListView(LoginRequiredMixin, ListView):
             uncategorized_transaction=Transaction.objects.filter(user=self.request.user, status='uncategorized',
                                                                  transaction_type='expense'),
             total_count=user_transactions.count(),
-            total_amount=user_transactions.filter(status="categorized").aggregate(
+            total_amount=user_transactions.filter(status="categorized").exclude(
+                id__in=InternalBankTransfer.objects.filter(user=self.request.user).values_list(
+                    'expense_transaction__id', flat=True)).aggregate(
                 total=Sum('amount')
             )['total'] or 0,
             category_count=user_transactions.values('category').distinct().count(),
@@ -416,7 +422,9 @@ class IncomeListView(LoginRequiredMixin, ListView):
                     .filter(
                         user=self.request.user,
                         transaction_type='income'
-                    )
+        ).exclude(
+            id__in=InternalBankTransfer.objects.filter(user=self.request.user).values_list('income_transaction__id',
+                                                                                           flat=True))
                     .order_by('-transaction_date', '-created_at'))
 
         # Filter by amount

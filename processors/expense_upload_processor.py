@@ -1,11 +1,12 @@
 import os
+from concurrent.futures import ThreadPoolExecutor
 from math import floor
 from typing import Any
 
 from django.contrib.auth.models import User
 from django.contrib.postgres.search import TrigramWordSimilarity
 from django.core.files.uploadedfile import UploadedFile
-from django.db import transaction
+from django.db import transaction, connections
 
 from agent.agent import ExpenseCategorizerAgent, AgentTransactionUpload, TransactionCategorization
 from api.models import Transaction, Category, Merchant, CsvUpload, normalize_string
@@ -14,7 +15,7 @@ from processors.parser_utils import normalize_amount, parse_raw_date, parse_date
 
 
 class BatchingHelper:
-    batch_size = os.environ.get('AGENT_BATCH_SIZE', 50)
+    batch_size = os.environ.get('AGENT_BATCH_SIZE', 30)
 
     def __init__(self, batch_size:int = batch_size):
         self.batch_size = batch_size
@@ -262,12 +263,18 @@ class ExpenseUploadProcessor:
         )
         return all_transactions_to_upload
 
-    def _process_batch(self, batch: list[Transaction], csv_upload: CsvUpload):
+    def process_with_agent(self, batch: list[Transaction], csv_upload: CsvUpload) -> list[TransactionCategorization]:
         agent_upload_transaction = [AgentTransactionUpload(transaction_id=tx.id, raw_text=tx.raw_data) for tx in
                                     batch]
         if agent_upload_transaction:
-            batch_result = self.agent.process_batch(agent_upload_transaction, csv_upload)
-            self._persist_batch_results(batch_result)
+            try:
+                return self.agent.process_batch(agent_upload_transaction, csv_upload)
+            except Exception as e:
+                print(f"⚠️  Agent failed to process batch: {str(e)}")
+                return []
+            finally:
+                connections.close_all()
+        return []
 
     def _persist_batch_results(self, batch: list[TransactionCategorization]):
         for tx_data in batch:
@@ -378,9 +385,16 @@ class ExpenseUploadProcessor:
         print(f"\n{'=' * 60}")
         print(f"🚀 Starting CSV Processing: {data_count} transactions")
         print(f"{'=' * 60}\n")
-        for batch in transaction_batches:
-            with transaction.atomic():
-                self._process_batch(batch, csv_upload)
+
+        with ThreadPoolExecutor() as executor:
+            # Parallelize the agent calls only
+            results = list(executor.map(lambda batch: self.process_with_agent(batch, csv_upload), transaction_batches))
+
+        # Process each batch's results synchronously
+        for batch_result in results:
+            if batch_result:
+                with transaction.atomic():
+                    self._persist_batch_results(batch_result)
 
         with transaction.atomic():
             self._post_process_transactions(csv_upload)

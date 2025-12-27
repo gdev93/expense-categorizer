@@ -2,6 +2,7 @@
 import re
 
 from django.contrib.auth.models import User
+from django.contrib.postgres.indexes import GinIndex
 from django.contrib.postgres.search import TrigramWordSimilarity
 from django.db import models
 from django.db.models import QuerySet
@@ -66,6 +67,12 @@ class Merchant(models.Model):
 
     class Meta:
         ordering = ['name']
+        indexes = [
+            models.Index(fields=['user', 'name']),
+            models.Index(fields=['user', 'normalized_name']),
+            GinIndex(fields=['name'], name='merchant_name_trgm_idx', opclasses=['gin_trgm_ops']),
+            GinIndex(fields=['normalized_name'], name='merchant_norm_name_trgm_idx', opclasses=['gin_trgm_ops']),
+        ]
 
     def __str__(self):
         return self.name
@@ -247,9 +254,14 @@ class Transaction(models.Model):
     class Meta:
         ordering = ['-transaction_date', '-created_at']
         indexes = [
-            models.Index(fields=['user', 'transaction_date']),
-            models.Index(fields=['merchant', 'category']),
+            models.Index(fields=['user', 'transaction_type', '-transaction_date', '-created_at']),
+            models.Index(fields=['user', 'category']),
+            models.Index(fields=['user', 'merchant']),
+            models.Index(fields=['user', 'amount']),
             models.Index(fields=['status']),
+            models.Index(fields=['user', 'status']),
+            GinIndex(fields=['merchant_raw_name'], name='trans_merch_raw_trgm_idx', opclasses=['gin_trgm_ops']),
+            GinIndex(fields=['description'], name='trans_desc_trgm_idx', opclasses=['gin_trgm_ops']),
         ]
 
     def __str__(self):
@@ -433,7 +445,6 @@ class InternalBankTransfer(models.Model):
     )
 
     amount = models.DecimalField(max_digits=10, decimal_places=2)
-    raw_score = models.IntegerField()
 
     # Keep track of the dates for easy UI sorting
     expense_date = models.DateField()
@@ -446,7 +457,7 @@ class InternalBankTransfer(models.Model):
         verbose_name_plural = "Internal Bank Transfers"
 
     def __str__(self):
-        return f"Transfer Match: {self.amount} (Score: {self.raw_score})"
+        return f"Transfer Match: {self.amount}"
 
 def normalize_string(input_data:str)->str:
     return re.sub(r'[^a-z0-9]', '', input_data.lower())
