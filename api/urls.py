@@ -23,8 +23,10 @@ from api.views.csv_upload_view import CsvUploadView, CsvUploadDelete, CsvProcess
     CsvUploadCheckView, CsvUploadClean
 from api.views.rule_view import RuleDefineView, RuleDeleteView
 from api.views.monthly_summary_view import MonthlySummerView
-from api.views.transaction_view import TransactionListView, EditTransactionCategory, TransactionDetailUpdateView, \
-    TransactionIncomeCreateView, IncomeListView, TransactionByCsvUploadAndMerchant
+from api.views.transactions.list_views import TransactionListView, IncomeListView
+from api.views.transactions.update_views import EditTransactionCategory, TransactionDetailUpdateView
+from api.views.transactions.create_views import TransactionIncomeCreateView
+from api.views.transactions.query_views import TransactionByCsvUploadAndMerchant
 
 urlpatterns = [
     path("accounts/", login_form, name="login_form"),
