@@ -10,7 +10,7 @@ from django.core.files.uploadedfile import UploadedFile
 from django.db import transaction, connections
 
 from agent.agent import ExpenseCategorizerAgent, AgentTransactionUpload, TransactionCategorization
-from api.models import Transaction, Category, Merchant, CsvUpload, normalize_string
+from api.models import Transaction, Category, Merchant, CsvUpload, normalize_string, InternalBankTransfer
 from processors.data_prechecks import parse_raw_transaction, RawTransactionParseResult
 from processors.parser_utils import normalize_amount, parse_raw_date, parse_date_from_raw_data_with_no_suggestions
 
@@ -405,6 +405,87 @@ class ExpenseUploadProcessor:
     def _post_process_transactions(self, csv_upload: CsvUpload) -> None:
         """Post-process transactions after batch processing to identify column mappings and categorize uncategorized transactions."""
         self._categorize_remaining_transactions(csv_upload)
+        self._identify_internal_bank_transfers()
+
+    def _identify_internal_bank_transfers(self) -> None:
+        """
+        Find and save internal bank transfers (matching pairs of income and expense).
+        Criteria: same amount, transaction dates within 4 days.
+        """
+        logger.info(f"🔍 Identifying internal bank transfers for user {self.user.id}")
+
+        # Get all transactions for the user that are NOT already part of an internal transfer
+        # We look at ALL transactions because an upload might match with previous transactions
+        # However, the requirement says "unique pairs", and usually we want to find them after upload.
+
+        # First, find all income and expenses that are not already matched
+        matched_income_ids = InternalBankTransfer.objects.filter(user=self.user).values_list('income_transaction_id', flat=True)
+        matched_expense_ids = InternalBankTransfer.objects.filter(user=self.user).values_list('expense_transaction_id', flat=True)
+
+        available_incomes = Transaction.objects.filter(
+            user=self.user,
+            transaction_type='income'
+        ).exclude(id__in=matched_income_ids).order_by('transaction_date')
+
+        available_expenses = Transaction.objects.filter(
+            user=self.user,
+            transaction_type='expense'
+        ).exclude(id__in=matched_expense_ids).order_by('transaction_date')
+
+        transfers_to_create = []
+        used_income_ids = set()
+        used_expense_ids = set()
+
+        # To be efficient, we can group by amount
+        from collections import defaultdict
+        income_by_amount = defaultdict(list)
+        for inc in available_incomes:
+            income_by_amount[inc.amount].append(inc)
+
+        expense_by_amount = defaultdict(list)
+        for exp in available_expenses:
+            expense_by_amount[exp.amount].append(exp)
+
+        from datetime import timedelta
+
+        for amount, expenses in expense_by_amount.items():
+            if amount in income_by_amount:
+                incomes = income_by_amount[amount]
+
+                for exp in expenses:
+                    if exp.id in used_expense_ids:
+                        continue
+
+                    # Find matching income within 4 days
+                    # Date criteria: |exp.transaction_date - inc.transaction_date| <= 4
+                    best_match = None
+                    min_date_diff = timedelta(days=5)
+
+                    for inc in incomes:
+                        if inc.id in used_income_ids:
+                            continue
+
+                        date_diff = abs(inc.transaction_date - exp.transaction_date)
+                        if date_diff <= timedelta(days=4):
+                            if date_diff < min_date_diff:
+                                min_date_diff = date_diff
+                                best_match = inc
+
+                    if best_match:
+                        transfers_to_create.append(InternalBankTransfer(
+                            user=self.user,
+                            income_transaction=best_match,
+                            expense_transaction=exp,
+                            amount=amount,
+                            expense_date=exp.transaction_date,
+                            income_date=best_match.transaction_date
+                        ))
+                        used_income_ids.add(best_match.id)
+                        used_expense_ids.add(exp.id)
+
+        if transfers_to_create:
+            InternalBankTransfer.objects.bulk_create(transfers_to_create)
+            logger.info(f"✅ Created {len(transfers_to_create)} internal bank transfers")
 
     def _categorize_remaining_transactions(self, csv_upload: CsvUpload) -> None:
         """Process uncategorized transactions by parsing their data and attempting to categorize them using similar transactions."""

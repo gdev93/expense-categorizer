@@ -451,8 +451,6 @@ class InternalBankTransfer(models.Model):
     income_date = models.DateField()
 
     class Meta:
-        managed = False  # Django will not attempt to create a table
-        db_table = 'internal_bank_transfer'
         verbose_name = "Internal Bank Transfer"
         verbose_name_plural = "Internal Bank Transfers"
 
@@ -460,4 +458,6 @@ class InternalBankTransfer(models.Model):
         return f"Transfer Match: {self.amount}"
 
 def normalize_string(input_data:str)->str:
+    if not input_data:
+        return ''
     return re.sub(r'[^a-z0-9]', '', input_data.lower())
