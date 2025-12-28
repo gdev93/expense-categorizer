@@ -438,7 +438,11 @@ class ExpenseUploadProcessor:
             amount__in=csv_upload_transactions.values_list('amount').distinct())).exclude(
             id__in=matched_income_ids.union(matched_expense_ids))
 
-        amount_with_internal_bank_transfer: dict[Decimal, InternalBankTransfer] = {}
+        matched_tx_ids = set(matched_income_ids) | set(matched_expense_ids)
+
+        # Use a list instead of a dict to allow multiple pairs with the same amount
+        internal_transfers_to_create: list[InternalBankTransfer] = []
+
         for csv_upload_transaction in csv_upload_transactions:
             for tx in all_transaction_in_range:
                 if tx.id == csv_upload_transaction.id:
@@ -446,15 +450,9 @@ class ExpenseUploadProcessor:
                 if tx.transaction_type == csv_upload_transaction.transaction_type:
                     continue
                 if tx.amount == csv_upload_transaction.amount:
-                    # Skip if this transaction is already part of an existing pair for this amount
-                    if tx.amount in amount_with_internal_bank_transfer:
-                        internal_bank_transfer = amount_with_internal_bank_transfer[tx.amount]
-                        # Check if either transaction is already matched
-                        if (tx.id == internal_bank_transfer.expense_transaction.id or
-                                tx.id == internal_bank_transfer.income_transaction.id or
-                                csv_upload_transaction.id == internal_bank_transfer.expense_transaction.id or
-                                csv_upload_transaction.id == internal_bank_transfer.income_transaction.id):
-                            continue
+                    # Skip if this transaction is already matched
+                    if tx.id in matched_tx_ids or csv_upload_transaction.id in matched_tx_ids:
+                        continue
 
                     date_diff = abs((tx.transaction_date - csv_upload_transaction.transaction_date).days)
                     if date_diff <= 4:
@@ -465,12 +463,20 @@ class ExpenseUploadProcessor:
                             expense_transaction = tx
                             income_transaction = csv_upload_transaction
 
-                        amount_with_internal_bank_transfer[tx.amount] = InternalBankTransfer(user=self.user,
-                                                                                             income_transaction=income_transaction,
-                                                                                             expense_transaction=expense_transaction,
-                                                                                             amount=csv_upload_transaction.amount)
+                        internal_transfer = InternalBankTransfer(
+                            user=self.user,
+                            income_transaction=income_transaction,
+                            expense_transaction=expense_transaction,
+                            amount=csv_upload_transaction.amount
+                        )
+                        internal_transfers_to_create.append(internal_transfer)
+
+                        # Mark both transactions as matched for the rest of this iteration
+                        matched_tx_ids.add(tx.id)
+                        matched_tx_ids.add(csv_upload_transaction.id)
                         break
-        InternalBankTransfer.objects.bulk_create(list(amount_with_internal_bank_transfer.values()))
+
+        InternalBankTransfer.objects.bulk_create(internal_transfers_to_create)
 
     def _categorize_remaining_transactions(self, csv_upload: CsvUpload) -> None:
         """Process uncategorized transactions by parsing their data and attempting to categorize them using similar transactions."""
@@ -541,18 +547,6 @@ class ExpenseUploadProcessor:
         Transaction.objects.filter(user=self.user, csv_upload=csv_upload, status__in=['pending', 'uncategorized'],
                                    original_amount__isnull=True).update(status='uncategorized',
                                                                         transaction_type='income')
-
-    def _apply_transaction_type_corrections(self, csv_upload: CsvUpload) -> None:
-        """Correct transaction types for transactions marked as expense but are actually income (positive amounts)."""
-        # Find all transactions that are categorized and marked as expense but actually they are income transaction
-        (Transaction.objects.filter(
-            user=self.user,
-            csv_upload=csv_upload,
-            status='categorized',
-        )
-         .filter(category__isnull=True)
-         .update(transaction_type='income', status='uncategorized'))
-
 
 def persist_csv_file(csv_data: list[dict[str, str]], user: User, csv_file: UploadedFile) -> CsvUpload:
     csv_upload = CsvUpload.objects.create(user=user, dimension=csv_file.size,file_name=csv_file.name)
