@@ -424,31 +424,27 @@ class CategoryMonthlySummary(models.Model):
         return f"User {self.user_id} - {self.category_name} ({self.year}-{self.month}): {self.total_amount}"
 
 class InternalBankTransfer(models.Model):
-    user = models.ForeignKey(User, on_delete=models.DO_NOTHING,
+    user = models.ForeignKey(User, on_delete=models.CASCADE,
                              related_name='internal_transfers',
                              db_column='user_id')
 
     income_transaction = models.OneToOneField(
         'Transaction',
-        on_delete=models.DO_NOTHING,
+        on_delete=models.CASCADE,
         db_column='income_id',
         primary_key=True,
         related_name='internal_transfer_in'
     )
 
     # The best matching expense found by the scoring logic
-    expense_transaction = models.ForeignKey(
+    expense_transaction = models.OneToOneField(
         'Transaction',
-        on_delete=models.DO_NOTHING,
+        on_delete=models.CASCADE,
         db_column='expense_id',
         related_name='internal_transfer_out'
     )
 
     amount = models.DecimalField(max_digits=10, decimal_places=2)
-
-    # Keep track of the dates for easy UI sorting
-    expense_date = models.DateField()
-    income_date = models.DateField()
 
     class Meta:
         verbose_name = "Internal Bank Transfer"
