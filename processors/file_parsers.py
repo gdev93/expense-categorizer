@@ -5,8 +5,11 @@ Handles CSV and Excel file parsing with automatic format detection.
 import csv
 import io
 import os
+import logging
 from typing import List, Dict
 import pandas as pd
+
+logger = logging.getLogger(__name__)
 
 
 class FileParserError(Exception):
@@ -135,7 +138,7 @@ def read_excel(file_path) -> List[Dict[str, str]]:
         # Check if any keyword is present in this row
         if any(keyword.lower() in row_string for keyword in UNIVERSAL_KEYWORDS):
             header_index = index
-            print(
+            logger.info(
                 f"✅ Success: Header dynamically detected at row index: {header_index} using keywords: {UNIVERSAL_KEYWORDS}")
             break
 

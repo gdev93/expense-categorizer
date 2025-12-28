@@ -1,4 +1,5 @@
 import os
+import logging
 from concurrent.futures import ThreadPoolExecutor
 from math import floor
 from typing import Any
@@ -12,6 +13,8 @@ from agent.agent import ExpenseCategorizerAgent, AgentTransactionUpload, Transac
 from api.models import Transaction, Category, Merchant, CsvUpload, normalize_string
 from processors.data_prechecks import parse_raw_transaction, RawTransactionParseResult
 from processors.parser_utils import normalize_amount, parse_raw_date, parse_date_from_raw_data_with_no_suggestions
+
+logger = logging.getLogger(__name__)
 
 
 class BatchingHelper:
@@ -229,7 +232,7 @@ class ExpenseUploadProcessor:
                     transaction_date=transaction_parse_result.date,
                 ).exists()
                 if transaction_from_description:
-                    print(f"Transaction from description {transaction_parse_result.description} already categorized")
+                    logger.info(f"Transaction from description {transaction_parse_result.description} already categorized")
                     all_transactions_to_delete.append(tx)
                     continue
             if transaction_parse_result.merchant and merchant_with_category.get(transaction_parse_result.merchant):
@@ -258,8 +261,8 @@ class ExpenseUploadProcessor:
                                          'original_date', 'description', 'amount', 'original_amount',
                                          'transaction_type', 'normalized_description','operation_type'])
         Transaction.objects.filter(user=self.user, id__in=[tx.id for tx in all_transactions_to_delete]).delete()
-        print(
-            f"Found {len(all_transactions_categorized)} {"👌" if len(all_transactions_categorized) > 0 else "😩"} transactions that have similar merchant names"
+        logger.info(
+            f"Found {len(all_transactions_categorized)} {'👌' if len(all_transactions_categorized) > 0 else '😩'} transactions that have similar merchant names"
         )
         return all_transactions_to_upload
 
@@ -270,7 +273,7 @@ class ExpenseUploadProcessor:
             try:
                 return self.agent.process_batch(agent_upload_transaction, csv_upload)
             except Exception as e:
-                print(f"⚠️  Agent failed to process batch: {str(e)}")
+                logger.error(f"⚠️  Agent failed to process batch: {str(e)}")
                 return []
             finally:
                 connections.close_all()
@@ -326,7 +329,7 @@ class ExpenseUploadProcessor:
                 transaction_from_agent.save()
 
             except Exception as e:
-                print(f"⚠️  Failed to persist transaction {tx_id}: {str(e)}")
+                logger.error(f"⚠️  Failed to persist transaction {tx_id}: {str(e)}")
                 continue
     def _setup_csv_upload_structure(self, current_data:list[Transaction], csv_upload: CsvUpload):
         csv_upload_same_structure = None
@@ -382,9 +385,7 @@ class ExpenseUploadProcessor:
         transaction_batches = self.batch_helper.compute_batches(all_transactions_to_upload)
         data_count = len(all_transactions_to_upload)
 
-        print(f"\n{'=' * 60}")
-        print(f"🚀 Starting CSV Processing: {data_count} transactions")
-        print(f"{'=' * 60}\n")
+        logger.info(f"🚀 Starting CSV Processing: {data_count} transactions")
 
         with ThreadPoolExecutor() as executor:
             # Parallelize the agent calls only
@@ -436,7 +437,7 @@ class ExpenseUploadProcessor:
                         tx.transaction_date = date
                         tx.original_date = original_date
                 except Exception:
-                    print(f"Failed to parse date from transaction {tx.id} with raw data: {tx.raw_data}")
+                    logger.warning(f"Failed to parse date from transaction {tx.id} with raw data: {tx.raw_data}")
 
             if original_amount:
                 amount = normalize_amount(original_amount)
