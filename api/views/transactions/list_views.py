@@ -6,7 +6,7 @@ from dataclasses import dataclass, asdict, field
 from typing import Any
 from django.db.models import QuerySet
 
-from api.models import Transaction, Category, Rule, InternalBankTransfer
+from api.models import Transaction, Category, Rule
 
 @dataclass
 class TransactionListContextData:
@@ -42,11 +42,7 @@ class TransactionListView(LoginRequiredMixin, ListView):
             transaction_type='expense',
             category__isnull=False,
             merchant_id__isnull=False  # Filtra per escludere i valori NULL
-        ).annotate(is_internal_bank_transfer=Exists(
-            InternalBankTransfer.objects.filter(
-                expense_transaction_id=OuterRef('pk')
-            )
-        )).select_related('category', 'merchant').order_by('-transaction_date', '-created_at')
+        ).select_related('category', 'merchant').order_by('-transaction_date', '-created_at')
 
         # Filter by category
         category_id = self.request.GET.get('category')
@@ -172,9 +168,7 @@ class TransactionListView(LoginRequiredMixin, ListView):
             uncategorized_transaction=Transaction.objects.filter(user=self.request.user, status='uncategorized',
                                                                  transaction_type='expense'),
             total_count=user_transactions.count(),
-            total_amount=user_transactions.filter(status="categorized").exclude(
-                id__in=InternalBankTransfer.objects.filter(user=self.request.user).values_list(
-                    'expense_transaction__id', flat=True)).aggregate(
+            total_amount=user_transactions.filter(status="categorized").aggregate(
                 total=Sum('amount')
             )['total'] or 0,
             category_count=user_transactions.values('category').distinct().count(),
@@ -203,10 +197,7 @@ class IncomeListView(LoginRequiredMixin, ListView):
                     .filter(
                         user=self.request.user,
                         transaction_type='income'
-        ).exclude(
-            id__in=InternalBankTransfer.objects.filter(user=self.request.user).values_list('income_transaction__id',
-                                                                                           flat=True))
-                    .order_by('-transaction_date', '-created_at'))
+        ).order_by('-transaction_date', '-created_at'))
 
         # Filter by amount
         amount = self.request.GET.get('amount')

@@ -423,35 +423,6 @@ class CategoryMonthlySummary(models.Model):
     def __str__(self):
         return f"User {self.user_id} - {self.category_name} ({self.year}-{self.month}): {self.total_amount}"
 
-class InternalBankTransfer(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE,
-                             related_name='internal_transfers',
-                             db_column='user_id')
-
-    income_transaction = models.OneToOneField(
-        'Transaction',
-        on_delete=models.CASCADE,
-        db_column='income_id',
-        primary_key=True,
-        related_name='internal_transfer_in'
-    )
-
-    # The best matching expense found by the scoring logic
-    expense_transaction = models.OneToOneField(
-        'Transaction',
-        on_delete=models.CASCADE,
-        db_column='expense_id',
-        related_name='internal_transfer_out'
-    )
-
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
-
-    class Meta:
-        verbose_name = "Internal Bank Transfer"
-        verbose_name_plural = "Internal Bank Transfers"
-
-    def __str__(self):
-        return f"Transfer Match: {self.amount}"
 
 def normalize_string(input_data:str)->str:
     if not input_data:
