@@ -1,8 +1,6 @@
 {% extends "components/header.html" %}
 {% block header_content %}
-    {% if not back_url %}
-        <a href="{% url 'monthly_summary' %}" class="btn btn-secondary">Riepilogo</a>
-    {% else %}
-        <a href="{{ back_url }}" class="btn btn-secondary">Riepilogo</a>
-    {% endif %}
+    <a href="#" onclick="history.back(); return false;" class="btn btn-secondary">
+        {% if back_label %}{{ back_label }}{% else %}Riepilogo{% endif %}
+    </a>
 {% endblock %}

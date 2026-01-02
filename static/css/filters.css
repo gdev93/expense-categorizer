@@ -10,6 +10,14 @@
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
 }
 
+.filters.filters-clean {
+    padding: 0;
+    box-shadow: none;
+    border: none;
+    background: transparent;
+    margin: 0;
+}
+
 .filter-group {
     display: flex;
     flex-direction: column;

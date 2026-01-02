@@ -48,7 +48,7 @@
     {% endif %}
 
     <!-- Search Filter (Leveraged from transaction_list.html, but only the search part) -->
-    <form method="get" class="filters" action="{% url 'category_list' %}">
+    <form method="get" class="filters" action="{% url 'category_list' %}" id="main-filter-form">
         <div class="filter-group">
             <label for="search">🔍 Ricerca</label>
             <input type="text" name="search" id="search" placeholder="Cerca nome o descrizione..."

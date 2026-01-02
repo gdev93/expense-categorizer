@@ -68,21 +68,22 @@ class TransactionListView(LoginRequiredMixin, ListView):
             except (ValueError, TypeError):
                 pass
 
+        try:
+            selected_year_qs = int(self.request.GET.get('year') or datetime.datetime.now().year)
+        except (TypeError, ValueError):
+            selected_year_qs = datetime.datetime.now().year
+
+        queryset = queryset.filter(transaction_date__year=selected_year_qs)
+
         # Filter by months
         selected_months = self.request.GET.getlist('months')
         if selected_months:
             # Interpret months as numeric month values for the selected year
-            try:
-                selected_year_qs = int(self.request.GET.get('year') or datetime.datetime.now().year)
-            except (TypeError, ValueError):
-                selected_year_qs = datetime.datetime.now().year
-
             month_queries = Q()
             for month_str in selected_months:
                 try:
                     month = int(month_str)
                     month_queries |= Q(
-                        transaction_date__year=selected_year_qs,
                         transaction_date__month=month
                     )
                 except (ValueError, TypeError):
@@ -182,6 +183,7 @@ class TransactionListView(LoginRequiredMixin, ListView):
         # Add amount filter context
         context['selected_amount'] = self.request.GET.get('amount', '')
         context['selected_amount_operator'] = self.request.GET.get('amount_operator', 'eq')
+        context['year']=selected_year
 
         return context
 

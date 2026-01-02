@@ -9,12 +9,7 @@
 
 {% block content %}
     <div class="container mt-2">
-        <div class="header">
-            <a href="{% url 'transaction_list' %}" class="btn btn-secondary" id="back-button-list">
-                < Torna alle Transazioni
-            </a>
-            <h1>📝 Dettaglio Transazione</h1>
-        </div>
+        {% include "components/header-with-back-to-summary-button.html" with icon="📝" title="Dettaglio Transazione" back_label="< Torna alle Transazioni" %}
 
         <div class="rule-card card mb-4">
             <div class="card-header">
@@ -95,8 +90,4 @@
             </div>
         </div>
     </div>
-<script>
-const BASE_BACK_URL = "{% url 'transaction_list' %}";
-</script>
-    <script type="module" src="{% static 'js/handle-filter-when-back-transaction-detail.js' %}"></script>
 {% endblock %}

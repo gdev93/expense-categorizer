@@ -1,9 +1,13 @@
 {% extends "components/header.html" %}
 {% block header_content %}
-    <form method="get" class="filters" style="padding: 0; box-shadow: none; border: none; background: transparent; margin: 0;">
+    <div class="filters filters-clean">
         <div class="filter-group">
             <label for="year-select" class="desktop-only">Anno</label>
-            <select id="year-select" name="year" class="form-select" onchange="this.form.submit()">
+            <select id="year-select"
+                    name="year"
+                    class="form-select"
+                    form="main-filter-form"
+                    onchange="this.form.submit()">
                 {% for available_year in available_years %}
                     <option value="{{ available_year }}" {% if available_year == year %}selected{% endif %}>
                         {{ available_year }}
@@ -11,5 +15,5 @@
                 {% endfor %}
             </select>
         </div>
-    </form>
+    </div>
 {% endblock %}

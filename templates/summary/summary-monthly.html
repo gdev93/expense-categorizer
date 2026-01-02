@@ -15,6 +15,12 @@
     <div class="container mt-2">
         {% include "components/header-with-year-select.html" with icon="🗓️" title="Riepilogo Mensile" %}
 
+        <form method="get" id="main-filter-form" style="display: none;">
+            {% if selected_month_number %}
+                <input type="hidden" name="selected_month" value="{{ selected_month_number }}">
+            {% endif %}
+        </form>
+
         {% if months %}
             {% for month in months %}
                 {% if month.is_current %}
