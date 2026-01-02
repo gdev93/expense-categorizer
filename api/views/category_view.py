@@ -1,9 +1,10 @@
+import datetime
 import logging
 
 from django import forms
 from django.contrib import messages
 from django.core.paginator import Paginator
-from django.db.models import Count, Sum, DecimalField
+from django.db.models import Count, Sum, DecimalField, Q
 from django.db.models.functions import Coalesce
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
@@ -52,14 +53,21 @@ class CategoryListView(ListView):
         if name:
             user_categories = user_categories.filter(name__icontains=name)
 
-        # 2. Annotate: Add the aggregated fields
-        #    - Count('transactions'): Counts all related Transaction objects.
-        #    - Sum('transactions__amount'): Sums the 'amount' field of related transactions.
-        #    - Coalesce: Ensures the result is 0 instead of None if no transactions exist.
+        try:
+            selected_year_qs = int(self.request.GET.get('year') or datetime.datetime.now().year)
+        except (TypeError, ValueError):
+            selected_year_qs = datetime.datetime.now().year
+
         enriched_categories = user_categories.annotate(
-            transaction_count=Count('transactions'),
+            transaction_count=Count(
+                'transactions',
+                filter=Q(transactions__transaction_date__year=selected_year_qs)
+            ),
             transaction_amount=Coalesce(
-                Sum('transactions__amount'),
+                Sum(
+                    'transactions__amount',
+                    filter=Q(transactions__transaction_date__year=selected_year_qs)
+                ),
                 0.0,
                 output_field=DecimalField()
             )
@@ -78,6 +86,7 @@ class CategoryListView(ListView):
         if categories:
             default_category = max(categories, key=lambda cat: cat.transaction_amount)
             context['default_category'] = default_category
+        context['search_query']=self.request.GET.get('search', '')
         return context
 
 
