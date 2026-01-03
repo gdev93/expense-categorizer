@@ -1,6 +1,6 @@
 import os
 
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_not_required
 from django.contrib.auth.models import User
 from django.shortcuts import render, redirect
@@ -60,6 +60,11 @@ def authenticate_user(request):
         login(request, user)
     next_redirect_target = request.POST.get('next', '/')
     return redirect(next_redirect_target)
+
+
+def logout_user(request):
+    logout(request)
+    return redirect('login_form')
 
 
 # Create your views here.

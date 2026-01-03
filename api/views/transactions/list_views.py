@@ -1,12 +1,14 @@
 import datetime
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Q, Sum, Exists, OuterRef
-from django.views.generic import ListView
 from dataclasses import dataclass, asdict, field
 from typing import Any
+
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db.models import Q, Sum
 from django.db.models import QuerySet
+from django.views.generic import ListView
 
 from api.models import Transaction, Category, Rule
+
 
 @dataclass
 class TransactionListContextData:
@@ -70,6 +72,9 @@ class TransactionListView(LoginRequiredMixin, ListView):
 
         try:
             selected_year_qs = int(self.request.GET.get('year') or datetime.datetime.now().year)
+            eligible_queryset = queryset.filter(transaction_date__year=selected_year_qs)
+            if eligible_queryset.count() == 0:
+                selected_year_qs = queryset.first().transaction_date.year
         except (TypeError, ValueError):
             selected_year_qs = datetime.datetime.now().year
 

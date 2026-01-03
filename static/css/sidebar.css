@@ -15,12 +15,34 @@
     transition: left 0.3s ease;
     /* Ensure it sits on top of the App Bar on mobile */
     z-index: 1100;
-    overflow-y: auto;
     padding-top: 25px;
+    display: flex;
+    flex-direction: column;
 }
 
 .sidebar.active {
     left: 0;
+}
+
+.sidebar-nav {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.sidebar-footer {
+    border-top: 1px solid #e9ecef;
+    padding: 20px 15px;
+}
+
+.logout-button {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.logout-button .nav-icon {
+    margin-right: 10px;
 }
 
 /* User Info Section */
@@ -111,7 +133,7 @@
 }
 
 .nav-link:hover {
-    background-color: #f8f9fa;
+    background-color: var(--background-color);
     color: var(--nav-text-color);
 }
 

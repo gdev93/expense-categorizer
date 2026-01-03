@@ -17,7 +17,7 @@ Including another URLconf
 from django.urls import path
 from django.views.generic import RedirectView
 
-from api.entry_point_views import login_form, authenticate_user, register_form, create_user
+from api.entry_point_views import login_form, authenticate_user, register_form, create_user, logout_user
 from api.views.category_view import CategoryCreateView, CategoryListView, CategoryDetailView, CategoryDeleteView
 from api.views.csv_upload_view import CsvUploadView, CsvUploadDelete, CsvProcessView, CsvProgressView, \
     CsvUploadCheckView, CsvUploadClean
@@ -31,6 +31,7 @@ from api.views.transactions.query_views import TransactionByCsvUploadAndMerchant
 urlpatterns = [
     path("accounts/", login_form, name="login_form"),
     path("accounts/authenticate/", authenticate_user, name="authenticate_user"),
+    path("accounts/logout/", logout_user, name="logout_user"),
     path('accounts/register/', register_form, name='register_form'),
     path('accounts/create/', create_user, name='create_user'),
     path('summary/monthly', MonthlySummerView.as_view(), name='monthly_summary'),
