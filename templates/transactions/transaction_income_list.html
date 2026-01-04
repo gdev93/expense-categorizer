@@ -108,8 +108,8 @@
             {% if is_paginated %}
                 <div class="pagination">
                     {% if page_obj.has_previous %}
-                        <a href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% for month in selected_months %}&months={{ month }}{% endfor %}">« Prima</a>
-                        <a href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% for month in selected_months %}&months={{ month }}{% endfor %}">‹ Precedente</a>
+                        <a href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% for month in selected_months %}&months={{ month }}{% endfor %}{% if year %}&year={{ year }}{% endif %}{% if selected_amount %}&amount={{ selected_amount }}&amount_operator={{ selected_amount_operator }}{% endif %}">« Prima</a>
+                        <a href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% for month in selected_months %}&months={{ month }}{% endfor %}{% if year %}&year={{ year }}{% endif %}{% if selected_amount %}&amount={{ selected_amount }}&amount_operator={{ selected_amount_operator }}{% endif %}">‹ Precedente</a>
                     {% else %}
                         <span class="disabled">« Prima</span>
                         <span class="disabled">‹ Precedente</span>
@@ -120,8 +120,8 @@
                     </span>
 
                     {% if page_obj.has_next %}
-                        <a href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% for month in selected_months %}&months={{ month }}{% endfor %}">Successiva ›</a>
-                        <a href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% for month in selected_months %}&months={{ month }}{% endfor %}">Ultima »</a>
+                        <a href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% for month in selected_months %}&months={{ month }}{% endfor %}{% if year %}&year={{ year }}{% endif %}{% if selected_amount %}&amount={{ selected_amount }}&amount_operator={{ selected_amount_operator }}{% endif %}">Successiva ›</a>
+                        <a href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% for month in selected_months %}&months={{ month }}{% endfor %}{% if year %}&year={{ year }}{% endif %}{% if selected_amount %}&amount={{ selected_amount }}&amount_operator={{ selected_amount_operator }}{% endif %}">Ultima »</a>
                     {% else %}
                         <span class="disabled">Successiva ›</span>
                         <span class="disabled">Ultima »</span>

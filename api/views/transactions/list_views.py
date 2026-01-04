@@ -33,9 +33,6 @@ class TransactionListView(LoginRequiredMixin, ListView):
     template_name = 'transactions/transaction_list.html'
     context_object_name = 'transactions'
     paginate_by = 50
-    default_categories: list[
-        str] = "Casa,Spesa,Auto,Carburante,Vita sociale,Pizza,Regali,Vacanze,Sport,Bollette,Scuola,Bambini,Shopping,Abbonamenti,Affitto,Baby-sitter,Trasporti,Spese mediche,Partita Iva, Bonifico".split(
-        ',')
 
     def get_queryset(self):
         """Filter transactions based on user and query parameters"""
@@ -73,9 +70,9 @@ class TransactionListView(LoginRequiredMixin, ListView):
         try:
             selected_year_qs = int(self.request.GET.get('year') or datetime.datetime.now().year)
             eligible_queryset = queryset.filter(transaction_date__year=selected_year_qs)
-            if eligible_queryset.count() == 0:
+            if eligible_queryset.count() == 0 and queryset.exists():
                 selected_year_qs = queryset.first().transaction_date.year
-        except (TypeError, ValueError):
+        except (TypeError, ValueError, AttributeError):
             selected_year_qs = datetime.datetime.now().year
 
         queryset = queryset.filter(transaction_date__year=selected_year_qs)
@@ -225,20 +222,25 @@ class IncomeListView(LoginRequiredMixin, ListView):
             except (ValueError, TypeError):
                 pass
 
+        # Filter by year
+        try:
+            selected_year_qs = int(self.request.GET.get('year') or datetime.datetime.now().year)
+            eligible_queryset = queryset.filter(transaction_date__year=selected_year_qs)
+            if eligible_queryset.count() == 0 and queryset.exists():
+                selected_year_qs = queryset.first().transaction_date.year
+        except (TypeError, ValueError, AttributeError):
+            selected_year_qs = datetime.datetime.now().year
+
+        queryset = queryset.filter(transaction_date__year=selected_year_qs)
+
         # Filter by months (month numbers for selected year)
         selected_months = self.request.GET.getlist('months')
         if selected_months:
-            try:
-                selected_year_qs = int(self.request.GET.get('year') or datetime.datetime.now().year)
-            except (TypeError, ValueError):
-                selected_year_qs = datetime.datetime.now().year
-
             month_queries = Q()
             for month_str in selected_months:
                 try:
                     month = int(month_str)
                     month_queries |= Q(
-                        transaction_date__year=selected_year_qs,
                         transaction_date__month=month
                     )
                 except (ValueError, TypeError):
@@ -265,11 +267,19 @@ class IncomeListView(LoginRequiredMixin, ListView):
         selected_months = self.request.GET.getlist('months')
 
         # Totals
+        try:
+            first_transaction_date = user_transactions.first()
+            selected_year = int(self.request.GET.get('year',
+                                                     first_transaction_date.transaction_date.year if first_transaction_date else datetime.datetime.now().year))
+        except (TypeError, ValueError):
+            selected_year = datetime.datetime.now().year
+
         context.update({
             'total_count': user_transactions.count(),
             'total_amount': user_transactions.filter(status="categorized").aggregate(total=Sum('amount'))['total'] or 0,
             'selected_months': selected_months,
             'search_query': self.request.GET.get('search', ''),
+            'year': selected_year,
         })
 
         # Amount filter context
