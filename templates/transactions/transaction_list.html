@@ -15,6 +15,7 @@
     <div class="container mt-2">
 
         {% include "components/header-with-year-select.html" with icon="💸" title="Spese Quotidiane" %}
+        {% csrf_token %}
 
         <!-- Summary Cards -->
         {% if transactions %}
@@ -29,6 +30,7 @@
 
                     <!-- Filters -->
         <form method="get" class="filters" id="main-filter-form">
+                <input type="hidden" name="transaction_type" value="expense">
                 <div class="filter-group">
                     <label for="category">📁 Categoria</label>
                     <select name="category" id="category" onchange="this.form.submit()">
@@ -86,9 +88,10 @@
                            value="{{ search_query }}"/>
                 </div>
 
-                <div class="filter-group" style="align-self: flex-end;">
+                <div class="filter-group" style="align-self: flex-end; display: flex; gap: 8px;">
                     <button type="submit" class="btn btn-primary">Filtra</button>
                     <a href="{% url 'transaction_list' %}" class="btn btn-secondary">Cancella</a>
+                    <button type="button" class="btn btn-outline-success" onclick="exportToCsv()">📥 Esporta</button>
                 </div>
             </form>
         <!-- Uncategorized Transactions Section -->
@@ -236,4 +239,5 @@
     </div>
 <script src="{% static 'js/expander.js' %}"></script>
 <script src="{% static 'js/scroll-handler.js' %}"></script>
+<script src="{% static 'js/export.js' %}"></script>
 {% endblock %}

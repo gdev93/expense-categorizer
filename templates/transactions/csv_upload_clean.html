@@ -13,12 +13,16 @@
 
 {% block content %}
     <div class="container">
+        {% csrf_token %}
         <div class="header">
             <div>
                 <h1>{{ csv_file.filename }}</h1>
                 <p class="text-muted">Caricato il: {{ csv_file.upload_date|date:"d M Y" }}</p>
             </div>
-            <div>
+            <div style="display: flex; gap: 8px;">
+                <button type="button" class="btn btn-outline-success" onclick="exportToCsv()">
+                    📥 Esporta CSV
+                </button>
                 <a href="{% url 'transactions_upload' %}" class="btn btn-secondary">
                     &larr; Torna agli Upload
                 </a>
@@ -26,6 +30,7 @@
         </div>
 
         <form method="get" class="filters">
+            <input type="hidden" name="upload_ids" value="[{{ csv_file.id }}]">
             <div class="filter-group">
                 <label for="search">🔍 Ricerca</label>
                 <input type="text" name="search" id="search" placeholder="Cerca merchant o descrizione..."
@@ -127,4 +132,5 @@
     const TRANSACTION_DETAIL_URL = "{% url 'transaction_detail' pk=0 %}";
     </script>
     <script src="{% static 'js/merchant-fetch.js' %}"></script>
+    <script src="{% static 'js/export.js' %}"></script>
 {% endblock %}

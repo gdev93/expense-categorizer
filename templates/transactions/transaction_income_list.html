@@ -15,6 +15,7 @@
     <div class="container mt-2">
 
         {% include "components/header-with-year-select.html" with icon="💰" title="Entrate" %}
+        {% csrf_token %}
 
         {% if transactions %}
             <div class="summary">
@@ -25,6 +26,7 @@
 
         <!-- Filters (no category filter for incomes) -->
         <form method="get" class="filters" id="main-filter-form">
+            <input type="hidden" name="transaction_type" value="income">
             <div class="filter-group">
                 <label for="amount">💰 Importo</label>
                 <div class="amount-filter-wrapper">
@@ -68,9 +70,10 @@
                        value="{{ search_query }}"/>
             </div>
 
-            <div class="filter-group" style="align-self: flex-end;">
+            <div class="filter-group" style="align-self: flex-end; display: flex; gap: 8px;">
                 <button type="submit" class="btn btn-primary">Filtra</button>
                 <a href="{% url 'income_list' %}" class="btn btn-secondary">Cancella</a>
+                <button type="button" class="btn btn-outline-success" onclick="exportToCsv()">📥 Esporta</button>
             </div>
         </form>
 
@@ -134,5 +137,5 @@
         {% endif %}
 
     </div>
-
+    <script src="{% static 'js/export.js' %}"></script>
 {% endblock %}

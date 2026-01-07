@@ -26,6 +26,7 @@ from api.views.monthly_summary_view import MonthlySummerView
 from api.views.transactions.list_views import TransactionListView, IncomeListView
 from api.views.transactions.update_views import EditTransactionCategory, TransactionDetailUpdateView
 from api.views.transactions.create_views import TransactionIncomeCreateView
+from api.views.transactions.export_views import TransactionExportView
 from api.views.transactions.query_views import TransactionByCsvUploadAndMerchant
 
 urlpatterns = [
@@ -46,6 +47,7 @@ urlpatterns = [
     path('transactions/by_csv_by_merchant/', TransactionByCsvUploadAndMerchant.as_view(), name='transactions_by_csv_by_merchant'),
     path('transactions/income/', IncomeListView.as_view(), name='income_list'),
     path('transactions/income/new', TransactionIncomeCreateView.as_view(), name='new_transaction_income'),
+    path('transactions/export/', TransactionExportView.as_view(), name='transaction_export'),
     path('transactions/<int:pk>/', TransactionDetailUpdateView.as_view(), name='transaction_detail'),
     path('transactions/rules/<int:pk>/delete/', RuleDeleteView.as_view(), name='delete_rule'),
     path('transactions/rules/', RuleDefineView.as_view(), name='define_rule'),

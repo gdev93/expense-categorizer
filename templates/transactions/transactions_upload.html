@@ -131,12 +131,17 @@
                     <div class="expense-count">
                         <span class="count-number">{{ upload.transactions_count }}</span> Spese trovate
                     </div>
-                    <form action="{% url 'transactions_upload_delete' upload.id %}" method="post">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-danger btn-sm">
-                            Elimina
+                    <div style="display: flex; gap: 8px;">
+                        <button type="button" class="btn btn-outline-success btn-sm" onclick="exportUpload({{ upload.id }}, event)">
+                            Esporta
                         </button>
-                    </form>
+                        <form action="{% url 'transactions_upload_delete' upload.id %}" method="post">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger btn-sm">
+                                Elimina
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </div>
         {% endfor %}
@@ -175,4 +180,5 @@
         const CSV_UPLOAD_CHECK = "{% url 'transactions_upload_check' %}"
     </script>
     <script src="{% static 'js/upload.js' %}"></script>
+    <script src="{% static 'js/export.js' %}"></script>
 {% endblock %}
