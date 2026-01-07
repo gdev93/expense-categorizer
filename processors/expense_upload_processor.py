@@ -7,7 +7,7 @@ from django.contrib.auth.models import User
 from django.core.files.uploadedfile import UploadedFile
 from django.db import transaction, connections
 
-from agent.agent import ExpenseCategorizerAgent, AgentTransactionUpload, TransactionCategorization
+from agent.agent import ExpenseCategorizerAgent, AgentTransactionUpload, TransactionCategorization, GeminiResponse
 from api.models import Transaction, Category, Merchant, CsvUpload, normalize_string
 from processors.data_prechecks import parse_raw_transaction, RawTransactionParseResult
 from processors.parser_utils import normalize_amount, parse_raw_date, parse_date_from_raw_data_with_no_suggestions
@@ -15,6 +15,7 @@ from processors.similarity_matcher import SimilarityMatcher
 from processors.transaction_updater import TransactionUpdater
 from processors.csv_structure_detector import CsvStructureDetector
 from processors.batching_helper import BatchingHelper
+from costs.services import CostService
 
 logger = logging.getLogger(__name__)
 
@@ -108,7 +109,7 @@ class ExpenseUploadProcessor:
         )
         return all_transactions_to_upload
 
-    def process_with_agent(self, batch: list[Transaction], csv_upload: CsvUpload) -> list[TransactionCategorization]:
+    def process_with_agent(self, batch: list[Transaction], csv_upload: CsvUpload) -> tuple[list[TransactionCategorization], GeminiResponse | None]:
         agent_upload_transaction = [AgentTransactionUpload(transaction_id=tx.id, raw_text=tx.raw_data) for tx in
                                     batch]
         if agent_upload_transaction:
@@ -116,10 +117,10 @@ class ExpenseUploadProcessor:
                 return self.agent.process_batch(agent_upload_transaction, csv_upload)
             except Exception as e:
                 logger.error(f"⚠️  Agent failed to process batch: {str(e)}")
-                return []
+                return [], None
             finally:
                 connections.close_all()
-        return []
+        return [], None
 
     def _persist_batch_results(self, batch: list[TransactionCategorization]):
         for tx_data in batch:
@@ -187,7 +188,15 @@ class ExpenseUploadProcessor:
             results = list(executor.map(lambda batch: self.process_with_agent(batch, csv_upload), transaction_batches))
 
         # Process each batch's results synchronously
-        for batch_result in results:
+        for batch_result, response in results:
+            if response:
+                CostService.log_api_usage(
+                    user=self.user,
+                    model_name=response.model_name,
+                    input_tokens=response.prompt_tokens,
+                    output_tokens=response.candidate_tokens,
+                    csv_upload=csv_upload
+                )
             if batch_result:
                 with transaction.atomic():
                     self._persist_batch_results(batch_result)

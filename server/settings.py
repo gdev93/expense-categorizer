@@ -31,7 +31,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.postgres',
-    'api.apps.ApiConfig'
+    'api.apps.ApiConfig',
+    'costs.apps.CostsConfig'
 ]
 
 MIDDLEWARE = [

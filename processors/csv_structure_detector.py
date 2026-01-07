@@ -3,6 +3,7 @@ from math import floor
 from django.contrib.auth.models import User
 from agent.agent import ExpenseCategorizerAgent, AgentTransactionUpload
 from api.models import Transaction, CsvUpload
+from costs.services import CostService
 
 logger = logging.getLogger(__name__)
 
@@ -32,9 +33,19 @@ class CsvStructureDetector:
         
         if not csv_upload_same_structure:
             transaction_sample_size = min(len(current_data), max(self.min_threshold, floor(len(current_data) * self.sample_size_percentage)))
-            result_from_agent = self.agent.detect_csv_structure(
+            result_from_agent, response = self.agent.detect_csv_structure(
                 [AgentTransactionUpload(transaction_id=tx.id, raw_text=tx.raw_data) for tx in
                  current_data[:transaction_sample_size]])
+            
+            if response:
+                CostService.log_api_usage(
+                    user=self.user,
+                    model_name=response.model_name,
+                    input_tokens=response.prompt_tokens,
+                    output_tokens=response.candidate_tokens,
+                    csv_upload=csv_upload
+                )
+
             description_column_name = result_from_agent.description_field
             notes = result_from_agent.notes
             merchant_column_name = result_from_agent.merchant_field

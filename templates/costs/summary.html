@@ -1,0 +1,44 @@
+{% extends "main/index.html" %}
+{% load static %}
+
+{% block title %}Costi API Gemini{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/transactions.css' %}">
+    <link rel="stylesheet" href="{% static 'css/list.css' %}">
+{% endblock %}
+
+{% block content %}
+    <div class="container mt-2">
+        {% include "components/header-with-year-select.html" with icon="💰" title="Costi API Gemini" %}
+
+        <div class="summary">
+            <div class="card" style="background: #eef2ff; border-radius: 12px; padding: 20px; flex: 1; text-align: center; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+                <div style="font-size: 0.9rem; color: #4b5563; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em;">Costo Totale Stimato</div>
+                <div style="font-size: 2rem; font-weight: 700; color: #1f2937;">${{ total_cost|floatformat:4 }}</div>
+            </div>
+        </div>
+
+        <div class="mt-4">
+            <h2>Riepilogo per Caricamento</h2>
+            <div class="data-list mt-2">
+                {% for upload in upload_summary %}
+                    <div class="data-list-item" style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background: white; border-radius: 8px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                        <div>
+                            <div style="font-weight: 600; font-size: 1.1rem;">{{ upload.csv_upload__file_name|default:"Caricamento Manuale" }}</div>
+                            <div style="font-size: 0.85rem; color: #6b7280;">{{ upload.csv_upload__upload_date|date:"d/m/Y H:i" }}</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-weight: 600; color: #059669;">${{ upload.total_cost|floatformat:4 }}</div>
+                            <div style="font-size: 0.8rem; color: #6b7280;">
+                                {{ upload.total_input_tokens }} in / {{ upload.total_output_tokens }} out
+                            </div>
+                        </div>
+                    </div>
+                {% empty %}
+                    <p>Nessun log di utilizzo API trovato.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+{% endblock %}

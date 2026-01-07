@@ -27,19 +27,33 @@ def get_api_key() -> str:
     return api_key
 
 
-def call_gemini_api(prompt: str, client: genai.Client, temperature: float = 0.1) -> str:
+@dataclass
+class GeminiResponse:
+    text: str
+    prompt_tokens: int
+    candidate_tokens: int
+    model_name: str
+
+
+def call_gemini_api(prompt: str, client: genai.Client, temperature: float = 0.1) -> GeminiResponse:
     """Make request to Gemini API using the new SDK"""
+    model_id = 'gemini-2.5-flash-lite'
     try:
         config = genai.types.GenerateContentConfig(
             temperature=temperature,
         )
         response = client.models.generate_content(
-            model='gemini-2.5-flash-lite',
+            model=model_id,
             contents=prompt,
             config=config
         )
 
-        return response.text
+        return GeminiResponse(
+            text=response.text,
+            prompt_tokens=response.usage_metadata.prompt_token_count,
+            candidate_tokens=response.usage_metadata.candidates_token_count,
+            model_name=model_id
+        )
 
     except Exception as e:
         raise Exception(f"API request failed: {e}")
@@ -215,7 +229,7 @@ class ExpenseCategorizerAgent:
     def detect_csv_structure(
             self,
             transactions: list[AgentTransactionUpload]
-    ) -> CsvStructure:
+    ) -> tuple[CsvStructure, GeminiResponse | None]:
         """
         Analyze the CSV structure using Gemini to identify column mappings.
         """
@@ -347,14 +361,14 @@ class ExpenseCategorizerAgent:
         try:
             response = call_gemini_api(prompt=prompt, client=self.client, temperature=1.0)
             # Parse the response
-            result_dict = parse_llm_response_json(response)
+            result_dict = parse_llm_response_json(response.text)
 
             if not result_dict:
                 # Fallback: try direct JSON parsing
                 import json
-                result_dict = json.loads(response.strip())
+                result_dict = json.loads(response.text.strip())
 
-            return CsvStructure.from_dict(result_dict)
+            return CsvStructure.from_dict(result_dict), response
 
         except Exception as e:
             logger.error(f"CSV structure detection failed: {e}")
@@ -368,7 +382,7 @@ class ExpenseCategorizerAgent:
                 operation_type_field=None,
                 confidence="low",
                 notes=f"Rilevamento fallito: {str(e)}"
-            )
+            ), None
 
     def build_batch_prompt(self, batch: list[AgentTransactionUpload], csv_upload: CsvUpload) -> str:
         """Costruisce il prompt per un batch di transazioni"""
@@ -695,8 +709,8 @@ class ExpenseCategorizerAgent:
 
     RISPONDI SOLO CON L'ARRAY JSON:"""
 
-    def process_batch(self, batch: list[AgentTransactionUpload], csv_upload: CsvUpload) -> list[
-        TransactionCategorization]:
+    def process_batch(self, batch: list[AgentTransactionUpload], csv_upload: CsvUpload) -> tuple[list[
+        TransactionCategorization], GeminiResponse | None]:
         """
         Process a single batch through LLM and deserialize into structured objects.
 
@@ -713,10 +727,10 @@ class ExpenseCategorizerAgent:
             prompt = self.build_batch_prompt(batch, csv_upload)
 
             # Send to API using new SDK
-            response_text = call_gemini_api(prompt, self.client)
+            response = call_gemini_api(prompt, self.client)
 
             # Parse JSON array response
-            categorizations_data = parse_json_array(response_text)
+            categorizations_data = parse_json_array(response.text)
 
             # Deserialize into structured objects
             categorizations = [
@@ -728,8 +742,8 @@ class ExpenseCategorizerAgent:
             expense_count = len([c for c in categorizations if c.category != "not_expense"])
             logger.info(f"Analysis completed: {expense_count}/{len(batch)} expenses categorized")
 
-            return categorizations
+            return categorizations, response
 
         except Exception as e:
             logger.error(f"Analysis failed: {str(e)}", exc_info=True)
-            return []
+            return [], None
