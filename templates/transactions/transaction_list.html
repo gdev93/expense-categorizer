@@ -237,6 +237,9 @@
             </div>
         {% endif %}
     </div>
+<script>
+const EXPORT_DOWNLOAD_ENDPOINT = "{% url 'transaction_export' %}"
+</script>
 <script src="{% static 'js/expander.js' %}"></script>
 <script src="{% static 'js/scroll-handler.js' %}"></script>
 <script src="{% static 'js/export.js' %}"></script>

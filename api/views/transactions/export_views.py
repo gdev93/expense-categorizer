@@ -5,7 +5,7 @@ from django.db.models import Q
 from django.http import StreamingHttpResponse
 from django.views import View
 from api.models import Transaction
-from exporters.transactions import generate_transaction_csv
+from exporters.exporters import generate_transaction_csv
 
 class TransactionExportView(LoginRequiredMixin, View):
     """
@@ -93,7 +93,9 @@ class TransactionExportView(LoginRequiredMixin, View):
                     queryset = queryset.filter(amount__lte=amount_value)
             except (ValueError, TypeError):
                 pass
-
+        only_expense = data.get('only_expense', True)
+        if only_expense:
+            queryset = queryset.filter(transaction_type='expense')
         # Optimize query: select_related for file metadata and .iterator() for memory efficiency
         iterator = queryset.select_related('csv_upload').order_by('-transaction_date', '-created_at').iterator()
 

@@ -20,15 +20,30 @@ function downloadExport(payload, csrfToken, button) {
         if (!response.ok) {
             throw new Error('Export failed with status ' + response.status);
         }
-        return response.blob();
+        
+        let filename = null;
+        const disposition = response.headers.get('Content-Disposition');
+        if (disposition && disposition.indexOf('attachment') !== -1) {
+            const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+            const matches = filenameRegex.exec(disposition);
+            if (matches != null && matches[1]) {
+                filename = matches[1].replace(/['"]/g, '');
+            }
+        }
+        
+        return response.blob().then(blob => ({ blob, filename }));
     })
-    .then(blob => {
+    .then(({ blob, filename }) => {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
-        const timestamp = new Date().toISOString().split('T')[0];
+        
+        if (!filename) {
+            const timestamp = new Date().toISOString().split('T')[0];
+            filename = `esportazione_spese_${timestamp}.csv`;
+        }
         
         a.href = url;
-        a.download = `esportazione_spese_${timestamp}.csv`;
+        a.download = filename;
         document.body.appendChild(a);
         a.click();
         

@@ -22,7 +22,7 @@ def generate_transaction_csv(transactions_iterator: Iterator[Transaction]):
     # Transaction Type -> Tipo di Transazione
     # Bank Description -> Descrizione Bancaria
     # Original CSV Source -> File Sorgente
-    headers = ['Data', 'Importo', 'Tipo di Transazione', 'Descrizione Bancaria', 'File Sorgente']
+    headers = ['Data', 'Importo', 'Categoria', 'Descrizione Bancaria', 'Tipo di Transazione', 'File Sorgente']
     writer.writerow(headers)
     yield output.getvalue()
     output.truncate(0)
@@ -32,8 +32,9 @@ def generate_transaction_csv(transactions_iterator: Iterator[Transaction]):
         row = [
             tx.transaction_date.isoformat() if tx.transaction_date else '',
             tx.amount,
-            tx.transaction_type,
+            tx.category.name if tx.category else '',
             tx.description,
+            tx.transaction_type,
             tx.csv_upload.file_name if tx.csv_upload else ''
         ]
         writer.writerow(row)
