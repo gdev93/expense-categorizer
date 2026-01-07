@@ -8,7 +8,7 @@ function downloadExport(payload, csrfToken, button) {
         button.innerHTML = '⏳...';
     }
 
-    fetch('/api/transactions/export/', {
+    fetch(EXPORT_DOWNLOAD_ENDPOINT, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

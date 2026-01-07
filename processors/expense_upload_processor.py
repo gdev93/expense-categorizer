@@ -1,190 +1,23 @@
 import logging
 import os
 from concurrent.futures import ThreadPoolExecutor
-from decimal import Decimal
-from math import floor
 from typing import Any
 
 from django.contrib.auth.models import User
-from django.contrib.postgres.search import TrigramWordSimilarity
 from django.core.files.uploadedfile import UploadedFile
 from django.db import transaction, connections
-from django.db.models import Q
 
 from agent.agent import ExpenseCategorizerAgent, AgentTransactionUpload, TransactionCategorization
 from api.models import Transaction, Category, Merchant, CsvUpload, normalize_string
 from processors.data_prechecks import parse_raw_transaction, RawTransactionParseResult
 from processors.parser_utils import normalize_amount, parse_raw_date, parse_date_from_raw_data_with_no_suggestions
+from processors.similarity_matcher import SimilarityMatcher
+from processors.transaction_updater import TransactionUpdater
+from processors.csv_structure_detector import CsvStructureDetector
+from processors.batching_helper import BatchingHelper
 
 logger = logging.getLogger(__name__)
 
-
-class BatchingHelper:
-    batch_size = os.environ.get('AGENT_BATCH_SIZE', 30)
-
-    def __init__(self, batch_size:int = batch_size):
-        self.batch_size = batch_size
-
-    def compute_batches(self, data: list[Any]) -> list[list[Any]]:
-        """
-        Create "smart" batches:
-        - Use computed batch_size as the base size
-        - Do NOT create an extra smaller remainder batch
-        - Instead, append the remainder to the *last* batch
-          (so last batch may be larger than batch_size)
-        """
-        data_count = len(data)
-        if data_count == 0:
-            return []
-
-        batch_size = self.batch_size
-
-        # If everything fits in one batch, return it.
-        if data_count <= batch_size:
-            return [data]
-
-        full_batches = data_count // batch_size
-        remainder = data_count % batch_size
-
-        batches: list[list[Any]] = []
-
-        # Build full batches; if there's a remainder, extend the *last* batch to include it.
-        for batch_num in range(full_batches):
-            start_idx = batch_num * batch_size
-            end_idx = start_idx + batch_size
-
-            is_last_full_batch = (batch_num == full_batches - 1)
-            if is_last_full_batch and remainder:
-                end_idx += remainder  # absorb the remainder into the last batch
-
-            batch = data[start_idx:end_idx]
-            batches.append(batch)
-
-        return batches
-
-
-def _update_transaction_with_parse_result(tx: Transaction,
-                                          transaction_parse_result: RawTransactionParseResult) -> Transaction:
-    """
-    Create an uncategorized transaction.
-    """
-    tx.amount = abs(transaction_parse_result.amount)
-    tx.original_amount = transaction_parse_result.original_amount
-    tx.transaction_date = transaction_parse_result.date
-    tx.original_date = transaction_parse_result.date_original
-    tx.description = transaction_parse_result.description
-    tx.normalized_description = normalize_string(transaction_parse_result.description)
-    return tx
-
-
-def _update_categorized_transaction_with_category_merchant(tx: Transaction, category: Category, merchant: Merchant,
-                                                           transaction_parse_result: RawTransactionParseResult) -> Transaction:
-    tx.status = 'categorized'
-    tx.merchant = merchant
-    tx.merchant_raw_name = merchant.normalized_name
-    tx.category = category
-    tx.transaction_date = transaction_parse_result.date
-    tx.original_date = transaction_parse_result.date_original
-    tx.description = transaction_parse_result.description
-    tx.normalized_description = normalize_string(transaction_parse_result.description)
-    tx.amount = abs(transaction_parse_result.amount)
-    tx.original_amount = transaction_parse_result.original_amount
-    return tx
-
-def _update_categorized_transaction(
-        tx: Transaction,
-        transaction_parse_result: RawTransactionParseResult,
-        reference_transaction: Transaction
-) -> Transaction:
-    """
-    Create a categorized transaction based on a reference transaction.
-    """
-    tx.status = 'categorized'
-    tx.merchant = reference_transaction.merchant
-    tx.merchant_raw_name = reference_transaction.merchant.normalized_name
-    tx.category = reference_transaction.category
-    tx.transaction_date = transaction_parse_result.date
-    tx.original_date = transaction_parse_result.date_original
-    tx.description = transaction_parse_result.description
-    tx.normalized_description = normalize_string(transaction_parse_result.description)
-    tx.amount = abs(transaction_parse_result.amount)
-    tx.original_amount = transaction_parse_result.original_amount
-    return tx
-
-
-def _find_similar_transaction_by_merchant(
-        user: User,
-        merchant_name: str,
-        threshold: float
-) -> Transaction | None:
-    """
-    Finds the best matching categorized transaction based on a merchant name candidate.
-    """
-    # 1. Try Strict/Normalized Match on the Merchant Relation first (High Confidence)
-    #    If we have a Transaction linked to a Merchant whose name matches our candidate.
-    normalized_candidate = normalize_string(merchant_name)
-
-    exact_match_tx = Transaction.objects.filter(
-        user=user,
-        category__isnull=False,
-        transaction_type='expense',
-        merchant__normalized_name=normalized_candidate
-    ).order_by('-transaction_date').first()
-
-    if exact_match_tx:
-        return exact_match_tx
-
-    # 2. Try Fuzzy Match on 'merchant_raw_name' (Medium Confidence)
-    #    Useful if the merchant wasn't linked to a Merchant object but the raw name is similar.
-    #    We use TrigramWordSimilarity on the RAW name (preserving spaces) for better word matching.
-    fuzzy_match_tx = Transaction.objects.annotate(
-        similarity=TrigramWordSimilarity(merchant_name, 'merchant_raw_name')
-    ).filter(
-        user=user,
-        category__isnull=False,
-        transaction_type='expense',
-        similarity__gte=threshold
-    ).order_by('-similarity', '-transaction_date').first()
-
-    return fuzzy_match_tx
-
-
-def _find_reference_transaction_from_tx(
-        user: User,
-        tx: Transaction,
-        precheck_confidence_threshold: float
-) -> Transaction | None:
-    """Find reference transaction from an existing Transaction object."""
-    # Check if tx has a merchant and search for similar transactions by merchant
-    if tx.merchant:
-        return _find_similar_transaction_by_merchant(user, tx.merchant.name,
-                                                                    precheck_confidence_threshold)
-    return None
-
-# TODO Per gli addebiti, se c'è il nome del debitore, ma un merchant ha lo stesso nome (esempio giroconto verso un conto intensato all'utente) passa la query ilike
-def _find_reference_transaction_from_raw(
-        user: User,
-        transaction_parse_result: RawTransactionParseResult,
-        precheck_confidence_threshold: float
-) -> Transaction | None:
-    """Find reference transaction from a raw transaction parse result."""
-    # Check if parse result has a merchant and search for similar transactions
-    if transaction_parse_result.merchant:
-        similar_transaction = _find_similar_transaction_by_merchant(
-            user,
-            transaction_parse_result.merchant,
-            precheck_confidence_threshold
-        )
-        if similar_transaction:
-            return similar_transaction
-    if transaction_parse_result.description:
-        merchants_from_description = Merchant.get_merchants_by_transaction_description(
-            transaction_parse_result.description, user, precheck_confidence_threshold
-        )
-        if merchants_from_description.count() == 1:
-            return _find_similar_transaction_by_merchant(user, merchants_from_description[0].name,
-                                                         precheck_confidence_threshold)
-    return None
 
 class ExpenseUploadProcessor:
     """
@@ -204,6 +37,13 @@ class ExpenseUploadProcessor:
         self.user = user
         self.batch_helper = batch_helper or BatchingHelper()
         self.agent = ExpenseCategorizerAgent(user_rules=user_rules, available_categories=available_categories)
+        self.similarity_matcher = SimilarityMatcher(user, float(self.pre_check_confidence_threshold))
+        self.csv_structure_detector = CsvStructureDetector(
+            user,
+            self.agent,
+            int(self.csv_structure_min_threshold),
+            float(self.csv_structure_sample_size_percentage)
+        )
 
     def _process_prechecks(self, batch: list[Transaction], csv_upload: CsvUpload) -> list[Transaction]:
         all_transactions_to_upload: list[Transaction] = []
@@ -240,15 +80,14 @@ class ExpenseUploadProcessor:
                     continue
             if transaction_parse_result.merchant and merchant_with_category.get(transaction_parse_result.merchant):
                 merchant, category = merchant_with_category[transaction_parse_result.merchant]
-                categorized_transaction = _update_categorized_transaction_with_category_merchant(tx, category, merchant,
+                categorized_transaction = TransactionUpdater.update_categorized_transaction_with_category_merchant(tx, category, merchant,
                                                                                                  transaction_parse_result)
                 all_transactions_categorized.append(categorized_transaction)
             else:
-                reference_transaction = _find_reference_transaction_from_raw(self.user,
-                                                                             transaction_parse_result,
-                                                                             self.pre_check_confidence_threshold)
+                reference_transaction = self.similarity_matcher.find_reference_transaction_from_raw(
+                                                                             transaction_parse_result)
                 if reference_transaction:
-                    categorized_transaction = _update_categorized_transaction(
+                    categorized_transaction = TransactionUpdater.update_categorized_transaction(
                         tx,
                         transaction_parse_result,
                         reference_transaction
@@ -256,7 +95,7 @@ class ExpenseUploadProcessor:
                     all_transactions_categorized.append(categorized_transaction)
                     merchant_with_category[categorized_transaction.merchant.name] = categorized_transaction.merchant, categorized_transaction.category
                 else:
-                    uncategorized_transaction = _update_transaction_with_parse_result(tx, transaction_parse_result)
+                    uncategorized_transaction = TransactionUpdater.update_transaction_with_parse_result(tx, transaction_parse_result)
                     all_transactions_to_upload.append(uncategorized_transaction)
 
         Transaction.objects.bulk_update(all_transactions_categorized + all_transactions_to_upload,
@@ -298,8 +137,7 @@ class ExpenseUploadProcessor:
                     Transaction.objects.filter(id=tx_id).update(status='uncategorized', failure_code=1)
                     continue
 
-                similar_transaction = _find_similar_transaction_by_merchant(user=self.user, merchant_name=merchant_name,
-                                                                            threshold=self.pre_check_confidence_threshold)
+                similar_transaction = self.similarity_matcher.find_similar_transaction_by_merchant(merchant_name=merchant_name)
                 if not similar_transaction:
                     merchant, _ = Merchant.objects.get_or_create(name=merchant_name, user=self.user)
                     category = Category.objects.filter(name__icontains=category_name.strip(), user=self.user).first()
@@ -334,55 +172,9 @@ class ExpenseUploadProcessor:
             except Exception as e:
                 logger.error(f"⚠️  Failed to persist transaction {tx_id}: {str(e)}")
                 continue
-    def _setup_csv_upload_structure(self, current_data:list[Transaction], csv_upload: CsvUpload):
-        csv_upload_same_structure = None
-        all_csv_uploads = list(CsvUpload.objects.filter(user=self.user).exclude(id=csv_upload.id))
-        for csv_upload_candidate in all_csv_uploads:
-            first_transaction_candidate = Transaction.objects.filter(user=self.user, csv_upload=csv_upload_candidate,
-                                                                     original_amount__isnull=False,
-                                                                     category__isnull=False).first()
-            if not first_transaction_candidate:
-                continue
-            first_transaction_raw_data = first_transaction_candidate.raw_data
-            first_transaction_raw_data_keys = set(first_transaction_raw_data.keys())
-            new_transaction_raw_data_keys = set(current_data[0].raw_data.keys())
-            # the idea is to check that each element in the set in the other set
-            if first_transaction_raw_data_keys == new_transaction_raw_data_keys:
-                csv_upload_same_structure = csv_upload_candidate
-                break
-        if not csv_upload_same_structure:
-            transaction_sample_size = min(len(current_data), max(self.csv_structure_min_threshold, floor(len(current_data) * self.csv_structure_sample_size_percentage)))  # 30%
-            result_from_agent = self.agent.detect_csv_structure(
-                [AgentTransactionUpload(transaction_id=tx.id, raw_text=tx.raw_data) for tx in
-                 current_data[:transaction_sample_size]])
-            description_column_name = result_from_agent.description_field
-            notes = result_from_agent.notes
-            merchant_column_name = result_from_agent.merchant_field
-            date_column_name = result_from_agent.transaction_date_field
-            income_amount_column_name = result_from_agent.income_amount_field or result_from_agent.expense_amount_field
-            expense_amount_column_name = result_from_agent.expense_amount_field or result_from_agent.income_amount_field
-            operation_type_column_name = result_from_agent.operation_type_field
-        else:
-            description_column_name = csv_upload_same_structure.description_column_name
-            notes = csv_upload_same_structure.notes
-            merchant_column_name = csv_upload_same_structure.merchant_column_name
-            date_column_name = csv_upload_same_structure.date_column_name
-            income_amount_column_name = csv_upload_same_structure.income_amount_column_name
-            expense_amount_column_name = csv_upload_same_structure.expense_amount_column_name
-            operation_type_column_name = csv_upload_same_structure.operation_type_column_name
-
-        csv_upload.description_column_name = description_column_name
-        csv_upload.merchant_column_name = merchant_column_name
-        csv_upload.date_column_name = date_column_name
-        csv_upload.income_amount_column_name = income_amount_column_name
-        csv_upload.expense_amount_column_name = expense_amount_column_name
-        csv_upload.operation_type_column_name = operation_type_column_name
-        csv_upload.notes = notes
-        csv_upload.save()
-
     def process_transactions(self, transactions: list[Transaction], csv_upload: CsvUpload) -> CsvUpload:
 
-        self._setup_csv_upload_structure(transactions, csv_upload)
+        self.csv_structure_detector.setup_csv_upload_structure(transactions, csv_upload)
 
         all_transactions_to_upload = self._process_prechecks(transactions, csv_upload)
         transaction_batches = self.batch_helper.compute_batches(all_transactions_to_upload)
@@ -458,8 +250,7 @@ class ExpenseUploadProcessor:
 
             # Only try to find similar transactions if we have a description
             if description:
-                similar_tx = _find_reference_transaction_from_tx(csv_upload.user, tx,
-                                                                 self.pre_check_confidence_threshold)
+                similar_tx = self.similarity_matcher.find_reference_transaction_from_tx(tx)
                 if similar_tx:
                     tx.category = similar_tx.category
                     tx.merchant_raw_name = similar_tx.merchant_raw_name
