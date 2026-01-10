@@ -4,27 +4,35 @@ from .models import ApiUsageLog, CostConfiguration
 
 class CostService:
     @staticmethod
-    def log_api_usage(user, model_name, input_tokens, output_tokens, csv_upload=None):
+    def log_api_usage(user, llm_model, input_tokens, output_tokens, csv_upload=None):
         """
         Logs API usage and computes cost based on current configuration.
         """
         # Try to find an active configuration for this model
-        config = CostConfiguration.objects.filter(model_name=model_name, is_active=True).first()
+        config = CostConfiguration.objects.filter(llm_model=llm_model, is_active=True).first()
         
         computed_cost = Decimal('0.0')
+        input_cost = Decimal('0.0')
+        output_cost = Decimal('0.0')
+        final_earning = Decimal('0.0')
+
         if config:
             input_cost = (Decimal(str(input_tokens)) * config.input_token_price_per_million) / Decimal('1000000')
             output_cost = (Decimal(str(output_tokens)) * config.output_token_price_per_million) / Decimal('1000000')
             computed_cost = input_cost + output_cost
+            final_earning = computed_cost * (Decimal('1') + (config.earning_multiplier_percentage / Decimal('100')))
         
         usage_log = ApiUsageLog.objects.create(
             user=user,
             csv_upload=csv_upload,
-            model_name=model_name,
+            cost_configuration=config,
             input_tokens=input_tokens,
             output_tokens=output_tokens,
             total_tokens=input_tokens + output_tokens,
-            computed_cost=computed_cost
+            computed_cost=computed_cost,
+            input_cost=input_cost,
+            output_cost=output_cost,
+            final_earning=final_earning
         )
         return usage_log
 

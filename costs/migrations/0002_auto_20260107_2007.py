@@ -8,8 +8,8 @@ def add_default_cost_config(apps, schema_editor):
     CostConfiguration.objects.get_or_create(
         model_name='gemini-2.5-flash-lite',
         defaults={
-            'input_token_price_per_million': 0.075,
-            'output_token_price_per_million': 0.30,
+            'input_token_price_per_million': 0.10,
+            'output_token_price_per_million': 0.40,
             'is_active': True
         }
     )

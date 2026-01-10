@@ -14,7 +14,8 @@ class CostSummaryView(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['total_cost'] = CostService.get_user_total_cost(self.request.user)
+        total_cost = CostService.get_user_total_cost(self.request.user)
+        context['total_cost'] = total_cost
         # Summary per CSV upload
         context['upload_summary'] = ApiUsageLog.objects.filter(user=self.request.user).values(
             'csv_upload__id', 'csv_upload__file_name', 'csv_upload__upload_date'

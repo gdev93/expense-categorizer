@@ -192,7 +192,7 @@ class ExpenseUploadProcessor:
             if response:
                 CostService.log_api_usage(
                     user=self.user,
-                    model_name=response.model_name,
+                    llm_model=response.model_name,
                     input_tokens=response.prompt_tokens,
                     output_tokens=response.candidate_tokens,
                     csv_upload=csv_upload
