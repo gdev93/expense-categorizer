@@ -59,12 +59,14 @@
                         <span class="nav-text">Categorie di spesa</span>
                     </a>
                 </li>
+                {% if not is_free_trial %}
                 <li class="nav-item">
                     <a href="{% url 'costs:summary' %}" class="nav-link" data-page="/costs/summary/">
                         <span class="nav-icon">📊</span>
                         <span class="nav-text">Centro di costo</span>
                     </a>
                 </li>
+                {% endif %}
 
             </ul>
             {% endblock %}

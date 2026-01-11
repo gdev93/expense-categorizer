@@ -3,7 +3,7 @@ from datetime import datetime
 from django.db.models import Sum
 from django.http import HttpRequest
 
-from api.models import Transaction
+from api.models import Transaction, Profile
 
 
 def savings_context(request):
@@ -104,4 +104,10 @@ def available_months_context(request):
     ]
     return {
         'available_months': available_months
+    }
+
+def is_free_trial(request:HttpRequest):
+    user_profile = Profile.objects.filter(user=request.user).first()
+    return {
+        'is_free_trial': 'free_trial' == user_profile.subscription_type if user_profile else False
     }

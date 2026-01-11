@@ -300,6 +300,17 @@ class Rule(models.Model):
             models.Index(fields=['user', 'is_active']),
         ]
 
+class Profile(models.Model):
+    user = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        related_name='profile'
+    )
+    subscription_type = models.CharField(max_length=50, default='free_trial')
+
+    def __str__(self):
+        return f"{self.user.username}'s profile"
+
 class UserFinancialSummary(models.Model):
     """
     Database view that provides a financial summary for each user.
