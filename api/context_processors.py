@@ -107,6 +107,10 @@ def available_months_context(request):
     }
 
 def is_free_trial(request:HttpRequest):
+    if not request.user.is_authenticated:
+        return {
+            'is_free_trial': False
+        }
     user_profile = Profile.objects.filter(user=request.user).first()
     return {
         'is_free_trial': 'free_trial' == user_profile.subscription_type if user_profile else False
