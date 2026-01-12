@@ -93,7 +93,9 @@ class TransactionListView(LoginRequiredMixin, ListView):
         except (TypeError, ValueError, AttributeError):
             selected_year = datetime.datetime.now().year
 
-        queryset = queryset.filter(transaction_date__year=selected_year)
+        self.selected_year = selected_year
+        if not csv_upload_id:
+            queryset = queryset.filter(transaction_date__year=selected_year)
 
         # Filter by months
         selected_months = self.request.GET.getlist('months')

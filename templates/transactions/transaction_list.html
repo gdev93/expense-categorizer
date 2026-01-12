@@ -45,7 +45,7 @@
                 </div>
 
                 <div class="filter-group">
-                    <label for="csv_upload">📄 CSV Upload</label>
+                    <label for="csv_upload">📄 File</label>
                     <select name="csv_upload" id="csv_upload" onchange="debounceFormSubmit(this.form)">
                         <option value="">Tutti i caricamenti</option>
                         {% for upload in user_uploads %}
@@ -139,7 +139,7 @@
                                 </div>
                             {% endif %}
                             {% if transaction.csv_upload %}
-                                <div class="transaction-csv-name" style="font-size: 0.75rem; color: #666; margin-top: 4px;">
+                                <div class="transaction-csv-name">
                                     📄 {{ transaction.csv_upload.file_name }}
                                 </div>
                             {% endif %}
@@ -183,13 +183,8 @@
                             <div class="transaction-merchant">
                                 {{ transaction.merchant.name|default:"Merchant Sconosciuto" }}
                             </div>
-                            {% if transaction.description %}
-                                <div class="transaction-description" title="{{ transaction.description }}">
-                                    {{ transaction.description|truncatewords:15 }}
-                                </div>
-                            {% endif %}
                             {% if transaction.csv_upload %}
-                                <div class="transaction-csv-name" style="font-size: 0.75rem; color: #666; margin-top: 4px;">
+                                <div class="transaction-csv-name">
                                     📄 {{ transaction.csv_upload.file_name }}
                                 </div>
                             {% endif %}
