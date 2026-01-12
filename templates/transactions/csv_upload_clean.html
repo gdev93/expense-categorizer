@@ -34,12 +34,12 @@
             <div class="filter-group">
                 <label for="search">🔍 Ricerca</label>
                 <input type="text" name="search" id="search" placeholder="Cerca merchant o descrizione..."
-                       value="{{ search_query }}"/>
+                       value="{{ search_query }}" onchange="debounceFormSubmit(this.form)"/>
             </div>
 
             <div class="filter-group">
                 <label for="category">🏷️ Categoria</label>
-                <select name="category" id="category" onchange="this.form.submit()">
+                <select name="category" id="category" onchange="debounceFormSubmit(this.form)">
                     <option value="">Tutte le Categorie</option>
                     {% for cat in categories %}
                         <option value="{{ cat.id }}"
@@ -75,7 +75,7 @@
                                    <form method="post" class="quick-category-form">
                                        {% csrf_token %}
                                        <input type="hidden" name="merchant_id" value="{{ item.merchant__id }}">
-                                       <select name="new_category_id" onchange="this.form.submit()">
+                                       <select name="new_category_id" onchange="debounceFormSubmit(this.form)">
                                             <option selected>{{ item.categories_list }}</option>
                                            {% for cat in categories %}
                                                <option value="{{ cat.id }}">

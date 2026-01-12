@@ -7,7 +7,7 @@
                     name="year"
                     class="form-select"
                     form="main-filter-form"
-                    onchange="this.form.submit()">
+                    onchange="debounceFormSubmit(this.form)">
                 {% for available_year in available_years %}
                     <option value="{{ available_year }}" {% if available_year == year %}selected{% endif %}>
                         {{ available_year }}

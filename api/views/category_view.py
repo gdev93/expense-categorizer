@@ -54,19 +54,27 @@ class CategoryListView(ListView):
             user_categories = user_categories.filter(name__icontains=name)
 
         try:
-            selected_year_qs = int(self.request.GET.get('year') or datetime.datetime.now().year)
-        except (TypeError, ValueError):
-            selected_year_qs = datetime.datetime.now().year
+            get_year = self.request.GET.get('year')
+            if get_year:
+                selected_year = int(get_year)
+            else:
+                # Fallback logic consistent with other views
+                last_t = Transaction.objects.filter(user=self.request.user, status='categorized').order_by('-transaction_date').first()
+                selected_year = last_t.transaction_date.year if last_t else datetime.datetime.now().year
+        except (TypeError, ValueError, AttributeError):
+            selected_year = datetime.datetime.now().year
+
+        self.selected_year = selected_year
 
         enriched_categories = user_categories.annotate(
             transaction_count=Count(
                 'transactions',
-                filter=Q(transactions__transaction_date__year=selected_year_qs)
+                filter=Q(transactions__transaction_date__year=selected_year)
             ),
             transaction_amount=Coalesce(
                 Sum(
                     'transactions__amount',
-                    filter=Q(transactions__transaction_date__year=selected_year_qs)
+                    filter=Q(transactions__transaction_date__year=selected_year)
                 ),
                 0.0,
                 output_field=DecimalField()
@@ -84,9 +92,12 @@ class CategoryListView(ListView):
         # Get the queryset used by the list
         categories = context['categories']
         if categories:
+            # Avoid re-running complex aggregation by using the already annotated results
             default_category = max(categories, key=lambda cat: cat.transaction_amount)
             context['default_category'] = default_category
-        context['search_query']=self.request.GET.get('search', '')
+
+        context['search_query'] = self.request.GET.get('search', '')
+        context['year'] = getattr(self, 'selected_year', datetime.datetime.now().year)
         return context
 
 

@@ -27,10 +27,11 @@
         <!-- Filters (no category filter for incomes) -->
         <form method="get" class="filters" id="main-filter-form">
             <input type="hidden" name="transaction_type" value="income">
+
             <div class="filter-group">
                 <label for="amount">💰 Importo</label>
                 <div class="amount-filter-wrapper">
-                    <select name="amount_operator" id="amount_operator" class="amount-operator">
+                    <select name="amount_operator" id="amount_operator" class="amount-operator" onchange="debounceFormSubmit(this.form)">
                         <option value="eq" {% if selected_amount_operator == "eq" %}selected{% endif %}>=</option>
                         <option value="gt" {% if selected_amount_operator == "gt" %}selected{% endif %}>&gt;</option>
                         <option value="gte" {% if selected_amount_operator == "gte" %}selected{% endif %}>&gt;=</option>
@@ -44,13 +45,14 @@
                            placeholder="0.00"
                            step="0.01"
                            min="0"
-                           value="{{ selected_amount }}"/>
+                           value="{{ selected_amount }}"
+                           onchange="debounceFormSubmit(this.form)"/>
                 </div>
             </div>
 
             <div class="filter-group">
                 <label for="months">📅 Mese/i</label>
-                <select name="months" id="months" multiple size="1" onchange="this.form.submit()">
+                <select name="months" id="months" multiple size="1" onchange="debounceFormSubmit(this.form)">
                     <option value="">Tutti i Mesi</option>
                     {% for month in available_months %}
                         <option value="{{ month.month_number }}"
@@ -67,7 +69,7 @@
             <div class="filter-group">
                 <label for="search">🔍 Ricerca</label>
                 <input type="text" name="search" id="search" placeholder="Cerca descrizione..."
-                       value="{{ search_query }}"/>
+                       value="{{ search_query }}" onchange="debounceFormSubmit(this.form)"/>
             </div>
 
             <div class="filter-group" style="align-self: flex-end; display: flex; gap: 8px;">

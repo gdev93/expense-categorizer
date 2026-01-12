@@ -27,6 +27,12 @@ class TransactionExportView(LoginRequiredMixin, View):
 
         # 2. Apply filters from Design Document
         upload_ids = data.get('upload_ids', [])
+        csv_upload_id = data.get('csv_upload')
+        
+        # Support both 'upload_ids' (list/json) and 'csv_upload' (single ID from form)
+        if csv_upload_id and not upload_ids:
+            upload_ids = [csv_upload_id]
+
         if upload_ids:
             if isinstance(upload_ids, str):
                 try:
@@ -53,7 +59,7 @@ class TransactionExportView(LoginRequiredMixin, View):
             queryset = queryset.filter(category_id=category_id)
 
         year = data.get('year')
-        if year:
+        if year and not upload_ids:
             queryset = queryset.filter(transaction_date__year=year)
 
         months = data.get('months')

@@ -114,7 +114,7 @@ class MonthlySummerView(View):
             category_monthly_summaries = category_monthly_summaries.filter(month=final_selected_month_number)
 
         context = {
-            "selected_year": selected_year,
+            "year": selected_year,
             "selected_month_number": final_selected_month_number,
             "months": months,
             "category_monthly_summaries": category_monthly_summaries
