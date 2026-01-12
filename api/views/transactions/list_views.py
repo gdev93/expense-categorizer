@@ -16,6 +16,7 @@ class TransactionListContextData:
     categories: list[dict[str, Any]]
     selected_category: str
     selected_status: str
+    selected_csv_upload: str
     search_query: str
     uncategorized_transaction: QuerySet[Transaction, Transaction]  # QuerySet
     total_count: int
@@ -41,12 +42,17 @@ class TransactionListView(LoginRequiredMixin, ListView):
             transaction_type='expense',
             category__isnull=False,
             merchant_id__isnull=False
-        ).select_related('category', 'merchant').order_by('-transaction_date', '-created_at')
+        ).select_related('category', 'merchant', 'csv_upload').order_by('-transaction_date', '-created_at')
 
         # Filter by category
         category_id = self.request.GET.get('category')
         if category_id:
             queryset = queryset.filter(category_id=category_id)
+
+        # Filter by csv_upload
+        csv_upload_id = self.request.GET.get('csv_upload')
+        if csv_upload_id:
+            queryset = queryset.filter(csv_upload_id=csv_upload_id)
 
         # Filter by amount
         amount = self.request.GET.get('amount')
@@ -87,7 +93,6 @@ class TransactionListView(LoginRequiredMixin, ListView):
         except (TypeError, ValueError, AttributeError):
             selected_year = datetime.datetime.now().year
 
-        self.selected_year = selected_year
         queryset = queryset.filter(transaction_date__year=selected_year)
 
         # Filter by months
@@ -121,11 +126,16 @@ class TransactionListView(LoginRequiredMixin, ListView):
             user=self.request.user,
             status='uncategorized',
             transaction_type='expense'
-        )
+        ).select_related('csv_upload')
+
+        csv_upload_id = self.request.GET.get('csv_upload', '')
+        if csv_upload_id:
+            uncategorized_transaction = uncategorized_transaction.filter(csv_upload_id=csv_upload_id)
 
         transaction_list_context = TransactionListContextData(
             categories=categories,
             selected_status=self.request.GET.get('status', ''),
+            selected_csv_upload=csv_upload_id,
             search_query=self.request.GET.get('search', ''),
             uncategorized_transaction=uncategorized_transaction,
             total_count=user_transactions.count(),

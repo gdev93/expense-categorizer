@@ -34,7 +34,7 @@
             <div class="filter-group">
                 <label for="search">🔍 Ricerca</label>
                 <input type="text" name="search" id="search" placeholder="Cerca merchant o descrizione..."
-                       value="{{ search_query }}"/>
+                       value="{{ search_query }}" onchange="debounceFormSubmit(this.form)"/>
             </div>
 
             <div class="filter-group">

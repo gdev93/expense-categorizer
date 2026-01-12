@@ -44,11 +44,24 @@
                     </select>
                 </div>
 
+                <div class="filter-group">
+                    <label for="csv_upload">📄 CSV Upload</label>
+                    <select name="csv_upload" id="csv_upload" onchange="debounceFormSubmit(this.form)">
+                        <option value="">Tutti i caricamenti</option>
+                        {% for upload in user_uploads %}
+                            <option value="{{ upload.id }}"
+                                    {% if selected_csv_upload == upload.id|stringformat:"s" %}selected{% endif %}>
+                                {{ upload.file_name }} ({{ upload.upload_date|date:"d/m/Y" }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
 
                 <div class="filter-group">
                         <label for="amount">💰 Importo</label>
                         <div class="amount-filter-wrapper">
-                            <select name="amount_operator" id="amount_operator" class="amount-operator">
+                            <select name="amount_operator" id="amount_operator" class="amount-operator" onchange="debounceFormSubmit(this.form)">
                                 <option value="eq" {% if selected_amount_operator == "eq" %}selected{% endif %}>=</option>
                                 <option value="gt" {% if selected_amount_operator == "gt" %}selected{% endif %}>&gt;</option>
                                 <option value="gte" {% if selected_amount_operator == "gte" %}selected{% endif %}>&gt;=</option>
@@ -62,7 +75,8 @@
                                    placeholder="0.00"
                                    step="0.01"
                                    min="0"
-                                   value="{{ selected_amount }}"/>
+                                   value="{{ selected_amount }}"
+                                   onchange="debounceFormSubmit(this.form)"/>
                         </div>
                     </div>
 
@@ -86,7 +100,7 @@
                 <div class="filter-group">
                     <label for="search">🔍 Ricerca</label>
                     <input type="text" name="search" id="search" placeholder="Cerca merchant o descrizione..."
-                           value="{{ search_query }}"/>
+                           value="{{ search_query }}" onchange="debounceFormSubmit(this.form)"/>
                 </div>
 
                 <div class="filter-group" style="align-self: flex-end; display: flex; gap: 8px;">
@@ -122,6 +136,11 @@
                             {% if transaction.description %}
                                 <div class="transaction-description" title="{{ transaction.description }}">
                                     {{ transaction.description|truncatewords:15 }}
+                                </div>
+                            {% endif %}
+                            {% if transaction.csv_upload %}
+                                <div class="transaction-csv-name" style="font-size: 0.75rem; color: #666; margin-top: 4px;">
+                                    📄 {{ transaction.csv_upload.file_name }}
                                 </div>
                             {% endif %}
                         </div>
@@ -169,6 +188,11 @@
                                     {{ transaction.description|truncatewords:15 }}
                                 </div>
                             {% endif %}
+                            {% if transaction.csv_upload %}
+                                <div class="transaction-csv-name" style="font-size: 0.75rem; color: #666; margin-top: 4px;">
+                                    📄 {{ transaction.csv_upload.file_name }}
+                                </div>
+                            {% endif %}
                         </div>
 
                         <div class="transaction-meta">
@@ -193,9 +217,9 @@
             {% if is_paginated %}
     <div class="pagination">
         {% if page_obj.has_previous %}
-            <a href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}{% for month in selected_months %}&months={{ month }}{% endfor %}{% if year %}&year={{ year }}{% endif %}{% if selected_amount %}&amount={{ selected_amount }}&amount_operator={{ selected_amount_operator }}{% endif %}">«
+            <a href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_csv_upload %}&csv_upload={{ selected_csv_upload }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}{% for month in selected_months %}&months={{ month }}{% endfor %}{% if year %}&year={{ year }}{% endif %}{% if selected_amount %}&amount={{ selected_amount }}&amount_operator={{ selected_amount_operator }}{% endif %}">«
                 Prima</a>
-            <a href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}{% for month in selected_months %}&months={{ month }}{% endfor %}{% if year %}&year={{ year }}{% endif %}{% if selected_amount %}&amount={{ selected_amount }}&amount_operator={{ selected_amount_operator }}{% endif %}">‹
+            <a href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_csv_upload %}&csv_upload={{ selected_csv_upload }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}{% for month in selected_months %}&months={{ month }}{% endfor %}{% if year %}&year={{ year }}{% endif %}{% if selected_amount %}&amount={{ selected_amount }}&amount_operator={{ selected_amount_operator }}{% endif %}">‹
                 Precedente</a>
         {% else %}
             <span class="disabled">« Prima</span>
@@ -207,9 +231,9 @@
         </span>
 
         {% if page_obj.has_next %}
-            <a href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}{% for month in selected_months %}&months={{ month }}{% endfor %}{% if year %}&year={{ year }}{% endif %}{% if selected_amount %}&amount={{ selected_amount }}&amount_operator={{ selected_amount_operator }}{% endif %}">Successiva
+            <a href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_csv_upload %}&csv_upload={{ selected_csv_upload }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}{% for month in selected_months %}&months={{ month }}{% endfor %}{% if year %}&year={{ year }}{% endif %}{% if selected_amount %}&amount={{ selected_amount }}&amount_operator={{ selected_amount_operator }}{% endif %}">Successiva
                 ›</a>
-            <a href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}{% for month in selected_months %}&months={{ month }}{% endfor %}{% if year %}&year={{ year }}{% endif %}{% if selected_amount %}&amount={{ selected_amount }}&amount_operator={{ selected_amount_operator }}{% endif %}">Ultima
+            <a href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_csv_upload %}&csv_upload={{ selected_csv_upload }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}{% for month in selected_months %}&months={{ month }}{% endfor %}{% if year %}&year={{ year }}{% endif %}{% if selected_amount %}&amount={{ selected_amount }}&amount_operator={{ selected_amount_operator }}{% endif %}">Ultima
                 »</a>
         {% else %}
             <span class="disabled">Successiva ›</span>
