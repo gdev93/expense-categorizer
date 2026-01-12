@@ -33,7 +33,7 @@
                 <input type="hidden" name="transaction_type" value="expense">
                 <div class="filter-group">
                     <label for="category">📁 Categoria</label>
-                    <select name="category" id="category" onchange="this.form.submit()">
+                    <select name="category" id="category" onchange="debounceFormSubmit(this.form)">
                         <option value="">Tutte le Categorie</option>
                         {% for cat in categories %}
                             <option value="{{ cat.id }}"
@@ -43,6 +43,7 @@
                         {% endfor %}
                     </select>
                 </div>
+
 
                 <div class="filter-group">
                         <label for="amount">💰 Importo</label>
@@ -67,7 +68,7 @@
 
                 <div class="filter-group">
                     <label for="months">📅 Mese/i</label>
-                    <select name="months" id="months" multiple size="1" onchange="this.form.submit()">
+                    <select name="months" id="months" multiple size="1" onchange="debounceFormSubmit(this.form)">
                         <option value="">Tutti i Mesi</option>
                         {% for month in available_months %}
 
@@ -113,11 +114,11 @@
                             <div class="transaction-date">
                                 📅 {{ transaction.transaction_date|date:"d/m/Y" }}
                             </div>
-                        {% if transaction.merchant %}
-                            <div class="transaction-merchant">
-                                {{ transaction.merchant.name }}
-                            </div>
-                        {% endif %}
+                            {% if transaction.merchant %}
+                                <div class="transaction-merchant">
+                                    {{ transaction.merchant.name }}
+                                </div>
+                            {% endif %}
                             {% if transaction.description %}
                                 <div class="transaction-description" title="{{ transaction.description }}">
                                     {{ transaction.description|truncatewords:15 }}

@@ -7,7 +7,7 @@ from django.db.models import Q, Sum
 from django.db.models import QuerySet
 from django.views.generic import ListView
 
-from api.models import Transaction, Category, Rule
+from api.models import Transaction, Category, Rule, CsvUpload
 
 
 @dataclass
@@ -40,7 +40,7 @@ class TransactionListView(LoginRequiredMixin, ListView):
             user=self.request.user,
             transaction_type='expense',
             category__isnull=False,
-            merchant_id__isnull=False  # Filtra per escludere i valori NULL
+            merchant_id__isnull=False
         ).select_related('category', 'merchant').order_by('-transaction_date', '-created_at')
 
         # Filter by category
@@ -67,32 +67,6 @@ class TransactionListView(LoginRequiredMixin, ListView):
             except (ValueError, TypeError):
                 pass
 
-        try:
-            selected_year_qs = int(self.request.GET.get('year') or datetime.datetime.now().year)
-            eligible_queryset = queryset.filter(transaction_date__year=selected_year_qs)
-            if eligible_queryset.count() == 0 and queryset.exists():
-                selected_year_qs = queryset.first().transaction_date.year
-        except (TypeError, ValueError, AttributeError):
-            selected_year_qs = datetime.datetime.now().year
-
-        queryset = queryset.filter(transaction_date__year=selected_year_qs)
-
-        # Filter by months
-        selected_months = self.request.GET.getlist('months')
-        if selected_months:
-            # Interpret months as numeric month values for the selected year
-            month_queries = Q()
-            for month_str in selected_months:
-                try:
-                    month = int(month_str)
-                    month_queries |= Q(
-                        transaction_date__month=month
-                    )
-                except (ValueError, TypeError):
-                    pass
-            if month_queries:
-                queryset = queryset.filter(month_queries)
-
         # Search filter
         search_query = self.request.GET.get('search')
         if search_query:
@@ -101,75 +75,59 @@ class TransactionListView(LoginRequiredMixin, ListView):
                 Q(description__icontains=search_query)
             )
 
+        # Year logic
+        try:
+            get_year = self.request.GET.get('year')
+            if get_year:
+                selected_year = int(get_year)
+            else:
+                # Fallback to most recent transaction year if no year provided
+                first_t = queryset.first()
+                selected_year = first_t.transaction_date.year if first_t else datetime.datetime.now().year
+        except (TypeError, ValueError, AttributeError):
+            selected_year = datetime.datetime.now().year
+
+        self.selected_year = selected_year
+        queryset = queryset.filter(transaction_date__year=selected_year)
+
+        # Filter by months
+        selected_months = self.request.GET.getlist('months')
+        if selected_months:
+            month_queries = Q()
+            for month_str in selected_months:
+                try:
+                    month = int(month_str)
+                    month_queries |= Q(transaction_date__month=month)
+                except (ValueError, TypeError):
+                    pass
+            if month_queries:
+                queryset = queryset.filter(month_queries)
+
         return queryset
-
-    def get_available_months(self):
-        """Get list of available months from transactions"""
-        transactions = Transaction.objects.filter(
-            user=self.request.user,
-            transaction_type='expense'
-        ).dates('transaction_date', 'month', order='DESC')
-
-        months = []
-        for date in transactions:
-            months.append({
-                'value': date.strftime('%Y-%m'),
-                'label': date.strftime('%B %Y'),
-                'label_it': self.get_italian_month_name(date)
-            })
-        return months
-
-    @staticmethod
-    def get_italian_month_name(date):
-        """Convert date to Italian month name format"""
-        italian_months = {
-            1: 'Gennaio', 2: 'Febbraio', 3: 'Marzo', 4: 'Aprile',
-            5: 'Maggio', 6: 'Giugno', 7: 'Luglio', 8: 'Agosto',
-            9: 'Settembre', 10: 'Ottobre', 11: 'Novembre', 12: 'Dicembre'
-        }
-        return f"{italian_months[date.month]} {date.year}"
 
     def get_context_data(self, **kwargs):
         """Add extra context data"""
         context = super().get_context_data(**kwargs)
+
+        # Use the unpaginated queryset for summary statistics
+        user_transactions = self.object_list
 
         # Get all categories for filter dropdown
         categories = list(Category.objects.filter(
             Q(user=self.request.user) | Q(user__isnull=True)
         ).order_by('name').values('id', 'name'))
 
-        # Base queryset for user transactions
-        user_transactions = self.get_queryset()
+        uncategorized_transaction = Transaction.objects.filter(
+            user=self.request.user,
+            status='uncategorized',
+            transaction_type='expense'
+        )
 
-        # Apply month filter to summary data if months are selected
-        # 'months' values are month numbers (1..12); restrict by selected year from GET 'year'
-        selected_months = self.request.GET.getlist('months')
-        try:
-            first_transaction_date = user_transactions.first()
-            selected_year = int(self.request.GET.get('year',
-                                                     first_transaction_date.transaction_date.year if first_transaction_date else datetime.datetime.now().year))
-        except (TypeError, ValueError):
-            selected_year = datetime.datetime.now().year
-
-        if selected_months:
-            month_queries = Q()
-            for month_str in selected_months:
-                try:
-                    month = int(month_str)
-                    month_queries |= Q(
-                        transaction_date__year=selected_year,
-                        transaction_date__month=month
-                    )
-                except (ValueError, TypeError):
-                    pass
-            if month_queries:
-                user_transactions = user_transactions.filter(month_queries)
         transaction_list_context = TransactionListContextData(
             categories=categories,
             selected_status=self.request.GET.get('status', ''),
             search_query=self.request.GET.get('search', ''),
-            uncategorized_transaction=Transaction.objects.filter(user=self.request.user, status='uncategorized',
-                                                                 transaction_type='expense'),
+            uncategorized_transaction=uncategorized_transaction,
             total_count=user_transactions.count(),
             total_amount=user_transactions.filter(status="categorized").aggregate(
                 total=Sum('amount')
@@ -177,15 +135,14 @@ class TransactionListView(LoginRequiredMixin, ListView):
             category_count=user_transactions.values('category').distinct().count(),
             rules=Rule.objects.filter(user=self.request.user, is_active=True),
             selected_category=self.request.GET.get('category', ''),
-            # available_months is now provided by a global context processor
-            selected_months=selected_months
+            selected_months=self.request.GET.getlist('months')
         )
         context.update(transaction_list_context.to_context())
 
         # Add amount filter context
         context['selected_amount'] = self.request.GET.get('amount', '')
         context['selected_amount_operator'] = self.request.GET.get('amount_operator', 'eq')
-        context['year']=selected_year
+        context['year'] = getattr(self, 'selected_year', datetime.datetime.now().year)
 
         return context
 
@@ -222,64 +179,51 @@ class IncomeListView(LoginRequiredMixin, ListView):
             except (ValueError, TypeError):
                 pass
 
-        # Filter by year
+        # Year logic
         try:
-            selected_year_qs = int(self.request.GET.get('year') or datetime.datetime.now().year)
-            eligible_queryset = queryset.filter(transaction_date__year=selected_year_qs)
-            if eligible_queryset.count() == 0 and queryset.exists():
-                selected_year_qs = queryset.first().transaction_date.year
+            get_year = self.request.GET.get('year')
+            if get_year:
+                selected_year = int(get_year)
+            else:
+                # Fallback to most recent transaction year if no year provided
+                first_t = queryset.first()
+                selected_year = first_t.transaction_date.year if first_t else datetime.datetime.now().year
         except (TypeError, ValueError, AttributeError):
-            selected_year_qs = datetime.datetime.now().year
+            selected_year = datetime.datetime.now().year
 
-        queryset = queryset.filter(transaction_date__year=selected_year_qs)
+        self.selected_year = selected_year
+        queryset = queryset.filter(transaction_date__year=selected_year)
 
-        # Filter by months (month numbers for selected year)
+        # Filter by months
         selected_months = self.request.GET.getlist('months')
         if selected_months:
             month_queries = Q()
             for month_str in selected_months:
                 try:
                     month = int(month_str)
-                    month_queries |= Q(
-                        transaction_date__month=month
-                    )
+                    month_queries |= Q(transaction_date__month=month)
                 except (ValueError, TypeError):
                     pass
             if month_queries:
                 queryset = queryset.filter(month_queries)
 
-        # Search filter (on description only, incomes typically lack merchant)
+        # Search filter
         search_query = self.request.GET.get('search')
         if search_query:
-            queryset = queryset.filter(
-                Q(description__icontains=search_query)
-            )
+            queryset = queryset.filter(Q(description__icontains=search_query))
 
         return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-
-        # Base queryset possibly filtered by months already
-        user_transactions = self.get_queryset()
-
-        # Selected months in context
-        selected_months = self.request.GET.getlist('months')
-
-        # Totals
-        try:
-            first_transaction_date = user_transactions.first()
-            selected_year = int(self.request.GET.get('year',
-                                                     first_transaction_date.transaction_date.year if first_transaction_date else datetime.datetime.now().year))
-        except (TypeError, ValueError):
-            selected_year = datetime.datetime.now().year
+        user_transactions = self.object_list
 
         context.update({
             'total_count': user_transactions.count(),
             'total_amount': user_transactions.filter(status="categorized").aggregate(total=Sum('amount'))['total'] or 0,
-            'selected_months': selected_months,
+            'selected_months': self.request.GET.getlist('months'),
             'search_query': self.request.GET.get('search', ''),
-            'year': selected_year,
+            'year': getattr(self, 'selected_year', datetime.datetime.now().year),
         })
 
         # Amount filter context

@@ -84,3 +84,18 @@ document.querySelectorAll('.nav-link').forEach(link => {
 
 // Set active item on page load
 setActiveNavItem();
+
+/**
+ * Debounced form submission to prevent double invocation.
+ */
+let isFormSubmitting = false;
+function debounceFormSubmit(form) {
+    if (isFormSubmitting || !form) return;
+    isFormSubmitting = true;
+    form.submit();
+
+    // Reset after a timeout just in case the navigation doesn't happen
+    setTimeout(() => {
+        isFormSubmitting = false;
+    }, 2000);
+}

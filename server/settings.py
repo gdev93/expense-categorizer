@@ -61,7 +61,8 @@ TEMPLATES = [
                 'api.context_processors.savings_context',
                 'api.context_processors.available_months_context',
                 'api.context_processors.available_years_context',
-                'api.context_processors.is_free_trial'
+                'api.context_processors.is_free_trial',
+                'api.context_processors.user_uploads',
             ],
         },
     },

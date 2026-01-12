@@ -25,7 +25,7 @@
 <form method="get" class="filters">
     <div class="filter-group">
         <label for="year-select">{% trans "Year:" %}</label>
-        <select name="year" id="year-select" class="input-field" onchange="this.form.submit()">
+        <select name="year" id="year-select" class="input-field" onchange="debounceFormSubmit(this.form)">
             <option value="">{% trans "All Years" %}</option>
             {% for year in data.available_years %}
                 <option value="{{ year }}"
@@ -36,7 +36,7 @@
 
     <div class="filter-group">
         <label for="category-select">{% trans "Category:" %}</label>
-        <select name="category" id="category-select" class="input-field" onchange="this.form.submit()">
+        <select name="category" id="category-select" class="input-field" onchange="debounceFormSubmit(this.form)">
             <option value="">{% trans "All Categories" %}</option>
             {% for cat in data.available_categories %}
                 <option value="{{ cat.id }}"

@@ -40,7 +40,7 @@
                             </span>
                         {% else %}
                             <span class="subtitle">
-                                {{ selected_year }}
+                                {{ year }}
                             </span>
                         {% endif %}
                     </header>
@@ -69,7 +69,7 @@
                     {% if category_monthly_summaries %}
                         <div class="data-list">
                             {% for summary in category_monthly_summaries %}
-                                <div class="data-list-item" onclick="window.location.href='{% url 'transaction_list' %}?category={{ summary.category_id }}&amount_operator=eq&amount=&months={{ summary.month }}&selected_year={{ summary.year }}'">
+                                <div class="data-list-item" onclick="window.location.href='{% url 'transaction_list' %}?category={{ summary.category_id }}&amount_operator=eq&amount=&months={{ summary.month }}&year={{ summary.year }}'">
                                     <div class="transaction-main">
                                         <div class="transaction-merchant">
                                             {{ summary.category_name|default:"Categoria Sconosciuta" }}
@@ -96,7 +96,7 @@
                     <div class="data-list">
                         {% for month in months %}
                             {% if not month.is_current %}
-                                <div class="data-list-item" onclick="window.location.href='{% url 'monthly_summary' %}?selected_month={{ month.month_number }}&selected_year={{ selected_year }}';" style="cursor: pointer;">
+                                <div class="data-list-item" onclick="window.location.href='{% url 'monthly_summary' %}?selected_month={{ month.month_number }}&year={{ year }}';" style="cursor: pointer;">
                                     {% include "summary/components/month-info-list-item.html" %}
                                 </div>
                             {% endif %}
