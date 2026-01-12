@@ -1,5 +1,6 @@
 import logging
 from django.contrib.auth.models import User
+from django.db.models import Count, Max
 from django.contrib.postgres.search import TrigramWordSimilarity
 from api.models import Transaction, Merchant, normalize_string
 from processors.data_prechecks import RawTransactionParseResult
@@ -18,27 +19,41 @@ class SimilarityMatcher:
         # 1. Try Strict/Normalized Match on the Merchant Relation first (High Confidence)
         normalized_candidate = normalize_string(merchant_name)
 
-        exact_match_tx = Transaction.objects.filter(
+        exact_matches = Transaction.objects.filter(
             user=self.user,
             category__isnull=False,
             transaction_type='expense',
             merchant__normalized_name=normalized_candidate
-        ).order_by('-transaction_date').first()
+        )
 
-        if exact_match_tx:
-            return exact_match_tx
+        best_category_exact = exact_matches.values('category').annotate(
+            count=Count('category'),
+            latest_date=Max('transaction_date')
+        ).order_by('-count', '-latest_date').first()
+
+        if best_category_exact:
+            return exact_matches.filter(category_id=best_category_exact['category']).order_by('-transaction_date').first()
 
         # 2. Try Fuzzy Match on 'merchant_raw_name' (Medium Confidence)
-        fuzzy_match_tx = Transaction.objects.annotate(
+        fuzzy_matches = Transaction.objects.annotate(
             similarity=TrigramWordSimilarity(merchant_name, 'merchant_raw_name')
         ).filter(
             user=self.user,
             category__isnull=False,
             transaction_type='expense',
             similarity__gte=self.threshold
-        ).order_by('-similarity', '-transaction_date').first()
+        )
 
-        return fuzzy_match_tx
+        best_category_fuzzy = fuzzy_matches.values('category').annotate(
+            count=Count('category'),
+            max_similarity=Max('similarity'),
+            latest_date=Max('transaction_date')
+        ).order_by('-count', '-max_similarity', '-latest_date').first()
+
+        if best_category_fuzzy:
+            return fuzzy_matches.filter(category_id=best_category_fuzzy['category']).order_by('-similarity', '-transaction_date').first()
+
+        return None
 
     def find_reference_transaction_from_tx(self, tx: Transaction) -> Transaction | None:
         """Find reference transaction from an existing Transaction object."""

@@ -181,3 +181,6 @@ temp/
 # App
 docker-compose.dev.yaml
 dump
+
+# AI outputs
+*output*
