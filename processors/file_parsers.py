@@ -70,7 +70,8 @@ def parse_csv_file(file) -> List[Dict[str, str]]:
         file.seek(0)
         decoded_file = file.read().decode('utf-8-sig')
         io_string = io.StringIO(decoded_file)
-        reader = csv.DictReader(io_string)
+        dialect = csv.Sniffer().sniff(decoded_file)
+        reader = csv.DictReader(io_string, dialect=dialect)
         return list(reader)
     except Exception as e:
         raise FileParserError(f'Error parsing CSV file: {str(e)}')
