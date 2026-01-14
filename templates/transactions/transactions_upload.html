@@ -96,31 +96,31 @@
         {% for upload in uploads %}
             <div class="data-list-item" onclick="window.location.href='{% url 'transactions_upload_detail' upload.id %}'">
 
-                <div class="file-main-info">
-                    <div class="file-icon">📁</div>
-                    <div class="file-text-content">
-                        <div class="file-name">
-                            Estrazione_{% if upload.file_name %}{{ upload.file_name }}{% else %}{{ upload.id }}_
-                            {{ upload.upload_date|date:"Ymd_His" }}.csv{% endif %}
-                        </div>
-                        <div class="file-date">
-                            📅 Caricato il {{ upload.upload_date|date:"d/m/Y H:i" }}
-                        </div>
-                        <div class="file-size text-muted">
-                            {% if upload.dimension %}
-                                💾 {{ upload.file_size_display }}
-                            {% endif %}
-                            {% if upload.processing_time %}
-                                ⏱️ {{ upload.processing_time|format_processing_time }}
-                            {% else %}
-                               🔥 In corso
-                            {% endif %}
+                <div class="list-item-info">
+                    <div class="file-info-container">
+                        <div class="file-text-content">
+                            <div class="file-name">
+                                {% if upload.file_name %}{{ upload.file_name }}{% else %}{{ upload.id }}_{{ upload.upload_date|date:"Ymd_His" }}.csv{% endif %}
+                            </div>
+                            <div class="file-date">
+                                📅 Caricato il {{ upload.upload_date|date:"d/m/Y H:i" }}
+                            </div>
+                            <div class="file-size text-muted">
+                                {% if upload.dimension %}
+                                    💾 {{ upload.file_size_display }}
+                                {% endif %}
+                                {% if upload.processing_time %}
+                                    ⏱️ {{ upload.processing_time|format_processing_time }}
+                                {% else %}
+                                   🔥 In corso
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="file-meta-info">
-                    <span class="upload-status status-completato">
+                <div class="list-item-stats">
+                    <span class="upload-status {% if upload.status != 'categorized' %}status-pending{% else %}status-completato{% endif %}">
                         {% if upload.status != 'categorized' %}
                         In corso
                         {% else %}
@@ -131,7 +131,7 @@
                     <div class="expense-count">
                         <span class="count-number">{{ upload.transactions_count }}</span> Spese trovate
                     </div>
-                    <div style="display: flex; gap: 8px;">
+                    <div class="list-item-actions">
                         <button type="button" class="btn btn-outline-success btn-sm" onclick="exportUpload({{ upload.id }}, event)">
                             Esporta
                         </button>

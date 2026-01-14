@@ -70,14 +70,14 @@
                         <div class="data-list">
                             {% for summary in category_monthly_summaries %}
                                 <div class="data-list-item" onclick="window.location.href='{% url 'transaction_list' %}?category={{ summary.category_id }}&amount_operator=eq&amount=&months={{ summary.month }}&year={{ summary.year }}'">
-                                    <div class="transaction-main">
+                                    <div class="list-item-info">
                                         <div class="transaction-merchant">
                                             {{ summary.category_name|default:"Categoria Sconosciuta" }}
                                         </div>
                                     </div>
 
-                                    <div class="transaction-meta">
-                                        <div class="transaction-amount">
+                                    <div class="list-item-stats">
+                                        <div class="list-amount">
                                             €{{ summary.total_amount|floatformat:2 }}
                                         </div>
                                     </div>

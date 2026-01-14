@@ -87,8 +87,8 @@
             {% if categories %}
             <div class="data-list">
                 {% for category in categories %}
-                    <div class="data-list-item category-item" onclick="window.location.href='{% url 'category_detail' category.id %}'">
-                        <div class="category-info">
+                    <div class="data-list-item" onclick="window.location.href='{% url 'category_detail' category.id %}'">
+                        <div class="list-item-info">
                             <span class="category-name">{{ category.name }}</span>
                             {% if category.description %}
                                 <p class="category-description">{{ category.description|truncatechars:100 }}</p>
@@ -97,11 +97,9 @@
                             {% endif %}
                         </div>
 
-                        <div class="category-stats-inline">
-                            <span class="stat-amount">€ {{ category.transaction_amount|floatformat:2|default:"0,00" }}</span>
-                            <span class="badge-count">
-                                {{ category.transaction_count|default:"0" }} transazioni
-                            </span>
+                        <div class="list-item-stats">
+                            <span class="list-amount">€ {{ category.transaction_amount|floatformat:2|default:"0,00" }}</span>
+                            <span class="badge-count">{{ category.transaction_count|default:"0" }} transazioni</span>
                         </div>
                     </div>
                 {% endfor %}

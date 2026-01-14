@@ -124,7 +124,7 @@
                 {% for transaction in uncategorized_transaction %}
                     <div class="data-list-item"
                          onclick="window.location.href='{% url 'transaction_detail' transaction.id %}'">
-                        <div class="transaction-main">
+                        <div class="list-item-info">
                             <div class="transaction-date">
                                 📅 {{ transaction.transaction_date|date:"d/m/Y" }}
                             </div>
@@ -145,10 +145,8 @@
                             {% endif %}
                         </div>
 
-                        <div class="transaction-meta">
-
-
-                            <div class="transaction-amount">
+                        <div class="list-item-stats">
+                            <div class="list-amount">
                                 €{% if transaction.original_amount|slice:":1" == '+' %}
                                 {{ transaction.original_amount|slice:"1:" }}
                             {% else %}
@@ -176,7 +174,7 @@
                 {% for transaction in transactions %}
                     <div class="data-list-item"
                          onclick="window.location.href='{% url 'transaction_detail' transaction.id %}'">
-                        <div class="transaction-main">
+                        <div class="list-item-info">
                             <div class="transaction-date">
                                 📅 {{ transaction.transaction_date|date:"d/m/Y" }}
                             </div>
@@ -190,7 +188,7 @@
                             {% endif %}
                         </div>
 
-                        <div class="transaction-meta">
+                        <div class="list-item-stats">
                             {% if transaction.category %}
                                 <span class="transaction-category"
                                       data-transaction-id="{{ transaction.id }}"
@@ -200,7 +198,7 @@
                 </span>
                             {% endif %}
 
-                            <div class="transaction-amount">
+                            <div class="list-amount">
                                 €{{ transaction.amount|floatformat:2 }}
                             </div>
                         </div>

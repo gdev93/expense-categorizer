@@ -73,13 +73,6 @@
    3. TRANSACTION LIST ITEMS
    ========================================= */
 
-.transaction-main {
-    flex: 1;
-    margin-right: 15px;
-    /* Ensure text truncates properly within flex container */
-    min-width: 0;
-}
-
 .transaction-date {
     font-weight: 500;
     color: #6c757d;
@@ -110,12 +103,6 @@
     text-overflow: ellipsis;
 }
 
-
-.transaction-meta {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-}
 
 /* Financial Amount Styling */
 .transaction-amount {
@@ -447,14 +434,6 @@
         width: 100%;
         margin-left: 0;
         margin-top: 10px;
-    }
-
-    /* 2. Transaction List Compact View */
-    .transaction-meta {
-        flex-direction: column; /* Stack amount under category */
-        align-items: flex-end;
-        gap: 5px;
-        min-width: auto;
     }
 
     .transaction-amount {

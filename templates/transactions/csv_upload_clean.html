@@ -67,7 +67,7 @@
                             data-csv-id="{{ csv_file.id }}"
                             style="cursor: pointer;">
 
-                           <div class="transaction-main">
+                           <div class="list-item-info">
                                <div class="transaction-merchant">
                                    {{ item.merchant__name|default:"Sconosciuto" }}
                                </div>
@@ -86,9 +86,9 @@
                                    </form>
                                </div>
         </div>
-        <div class="transaction-meta">
-            <span class="category-pill">{{ item.number_of_transactions }} transazioni</span>
-            <div class="transaction-amount">€{{ item.total_spent|floatformat:2 }}</div>
+        <div class="list-item-stats">
+            <span class="badge-count">{{ item.number_of_transactions }} transazioni</span>
+            <div class="list-amount">€{{ item.total_spent|floatformat:2 }}</div>
         </div>
     </div>
 

@@ -86,7 +86,7 @@
             <div class="data-list" id="scroll-target">
                 {% for transaction in transactions %}
                     <div class="data-list-item">
-                        <div class="transaction-main">
+                        <div class="list-item-info">
                             <div class="transaction-date">
                                 📅 {{ transaction.transaction_date|date:"d/m/Y" }}
                             </div>
@@ -100,8 +100,8 @@
                             {% endif %}
                         </div>
 
-                        <div class="transaction-meta">
-                            <div class="transaction-amount">
+                        <div class="list-item-stats">
+                            <div class="list-amount is-income">
                                 €{{ transaction.amount|floatformat:2 }}
                             </div>
                         </div>

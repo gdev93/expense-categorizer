@@ -1,25 +1,88 @@
+.data-list {
+    border: none;
+    background: transparent;
+    max-height: none;
+    overflow: visible;
+}
+
 .data-list-item {
-    padding: 15px 20px;
-    border-bottom: 1px solid #e9ecef;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    margin: 12px 0;
+    border: 1px solid #edf2f7 !important;
+    border-radius: 12px;
+    background: #ffffff;
+    transition: all 0.25s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+    padding: 18px 24px;
     cursor: pointer;
-    transition: background 0.2s;
 }
 
 .data-list-item:hover {
-    background: #f0f0f0;
+    transform: translateX(5px);
+    border-color: var(--primary-color) !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    background: #ffffff !important;
 }
 
 .data-list-item:last-child {
-    border-bottom: none;
+    border-bottom: 1px solid #edf2f7 !important;
 }
 
-.data-list {
-    max-height: 70vh;
-    overflow-y: auto;
-    border: 1px solid #dee2e6; /* Lighter border */
-    border-radius: 8px; /* Softer rounded corners */
-    background: #ffffff;
+/* Structural classes for unified list items */
+.list-item-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.list-item-stats {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-left: auto;
+    text-align: right;
+}
+
+/* Shared components within list items */
+.list-amount {
+    font-weight: 700;
+    font-size: 17px;
+    text-align: right;
+    min-width: 90px;
+    color: var(--expense-color);
+    white-space: nowrap;
+}
+
+.is-income {
+    color: var(--income-color);
+}
+
+.badge-count {
+    background-color: #f8f9fa;
+    color: var(--secondary-color);
+    font-size: 0.8rem;
+    padding: 2px 12px;
+    border-radius: 20px;
+    font-weight: 600;
+    border: 1px solid #e9ecef;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+    .data-list-item {
+        padding: 15px 18px;
+        margin: 8px 0;
+    }
+
+    .list-item-stats {
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 4px;
+        min-width: auto;
+    }
 }
