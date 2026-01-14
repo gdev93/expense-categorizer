@@ -12,6 +12,10 @@ if "DOCKER_HOST" not in os.environ:
 
 @pytest.fixture(scope="session", autouse=True)
 def postgres_container():
+    if os.environ.get("USE_TESTCONTAINERS", "true").lower() == "false":
+        yield None
+        return
+
     postgres = PostgresContainer("postgres:16-alpine")
     postgres.start()
     
@@ -20,6 +24,13 @@ def postgres_container():
     os.environ["DB_USER"] = str(postgres.username)
     os.environ["DB_PASSWORD"] = str(postgres.password)
     os.environ["DB_NAME"] = str(postgres.dbname)
+    
+    from django.conf import settings
+    settings.DATABASES['default']['HOST'] = os.environ["DB_HOST"]
+    settings.DATABASES['default']['PORT'] = os.environ["DB_PORT"]
+    settings.DATABASES['default']['USER'] = os.environ["DB_USER"]
+    settings.DATABASES['default']['PASSWORD'] = os.environ["DB_PASSWORD"]
+    settings.DATABASES['default']['NAME'] = os.environ["DB_NAME"]
     
     yield postgres
     
