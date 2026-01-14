@@ -2,6 +2,8 @@ Django>=5.2.5
 requests>=2.31.0
 psycopg2-binary
 pytest
+testcontainers[postgres]
+pytest-django
 babel
 google-genai
 gunicorn

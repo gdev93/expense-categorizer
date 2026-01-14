@@ -79,8 +79,8 @@ class ExpenseUploadProcessor:
                     logger.info(f"Transaction from description {transaction_parse_result.description} already categorized")
                     all_transactions_to_delete.append(tx)
                     continue
-            if transaction_parse_result.merchant and merchant_with_category.get(transaction_parse_result.merchant):
-                merchant, category = merchant_with_category[transaction_parse_result.merchant]
+            if transaction_parse_result.merchant and merchant_with_category.get(transaction_parse_result.merchant.name):
+                merchant, category = merchant_with_category[transaction_parse_result.merchant.name]
                 categorized_transaction = TransactionUpdater.update_categorized_transaction_with_category_merchant(tx, category, merchant,
                                                                                                  transaction_parse_result)
                 all_transactions_categorized.append(categorized_transaction)
@@ -225,23 +225,6 @@ class ExpenseUploadProcessor:
                                           '') if csv_upload.description_column_name else ''
             merchant = tx.raw_data.get(csv_upload.merchant_column_name, '') if csv_upload.merchant_column_name else ''
             original_date = tx.raw_data.get(csv_upload.date_column_name, '') if csv_upload.date_column_name else ''
-            # If description is still empty, try to infer it from raw_data
-            if not description:
-                # Look for a description-like field in raw_data
-                for key, value in tx.raw_data.items():
-                    if value and isinstance(value, str) and len(
-                            value) > 20:  # Heuristic: descriptions are usually longer
-                        description = value
-                        break
-
-            if not original_date:
-                try:
-                    date, _ = parse_date_from_raw_data_with_no_suggestions(tx.raw_data)
-                    if date:
-                        tx.transaction_date = date
-                        tx.original_date = original_date
-                except Exception:
-                    logger.warning(f"Failed to parse date from transaction {tx.id} with raw data: {tx.raw_data}")
 
             if original_amount:
                 amount = normalize_amount(original_amount)
