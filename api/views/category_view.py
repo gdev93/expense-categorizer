@@ -40,6 +40,26 @@ class CategoryListView(ListView):
     template_name = 'categories/categories.html'
     context_object_name = 'categories'
 
+    def _get_year_and_month(self):
+        try:
+            get_year = self.request.GET.get('year')
+            if get_year:
+                selected_year = int(get_year)
+            else:
+                # Fallback logic consistent with other views
+                last_t = Transaction.objects.filter(user=self.request.user, status='categorized').order_by('-transaction_date').first()
+                selected_year = last_t.transaction_date.year if last_t else datetime.datetime.now().year
+        except (TypeError, ValueError, AttributeError):
+            selected_year = datetime.datetime.now().year
+
+        try:
+            get_month = self.request.GET.get('month')
+            selected_month = int(get_month) if get_month else None
+        except (TypeError, ValueError):
+            selected_month = None
+
+        return selected_year, selected_month
+
     def get_queryset(self):
         """
         Returns categories belonging to the logged-in user, annotated with:
@@ -53,28 +73,21 @@ class CategoryListView(ListView):
         if name:
             user_categories = user_categories.filter(name__icontains=name)
 
-        try:
-            get_year = self.request.GET.get('year')
-            if get_year:
-                selected_year = int(get_year)
-            else:
-                # Fallback logic consistent with other views
-                last_t = Transaction.objects.filter(user=self.request.user, status='categorized').order_by('-transaction_date').first()
-                selected_year = last_t.transaction_date.year if last_t else datetime.datetime.now().year
-        except (TypeError, ValueError, AttributeError):
-            selected_year = datetime.datetime.now().year
+        selected_year, selected_month = self._get_year_and_month()
 
-        self.selected_year = selected_year
+        filter_q = Q(transactions__transaction_date__year=selected_year)
+        if selected_month:
+            filter_q &= Q(transactions__transaction_date__month=selected_month)
 
         enriched_categories = user_categories.annotate(
             transaction_count=Count(
                 'transactions',
-                filter=Q(transactions__transaction_date__year=selected_year)
+                filter=filter_q
             ),
             transaction_amount=Coalesce(
                 Sum(
                     'transactions__amount',
-                    filter=Q(transactions__transaction_date__year=selected_year)
+                    filter=filter_q
                 ),
                 0.0,
                 output_field=DecimalField()
@@ -96,8 +109,10 @@ class CategoryListView(ListView):
             default_category = max(categories, key=lambda cat: cat.transaction_amount)
             context['default_category'] = default_category
 
+        selected_year, selected_month = self._get_year_and_month()
         context['search_query'] = self.request.GET.get('search', '')
-        context['year'] = getattr(self, 'selected_year', datetime.datetime.now().year)
+        context['year'] = selected_year
+        context['month'] = selected_month
         return context
 
 
@@ -114,11 +129,11 @@ class CategoryCreateView(CreateView):
     def form_valid(self, form):
         # Automatically assign the current user to the category
         form.instance.user = self.request.user
-        messages.success(self.request, "✅ Categoria creata con successo!")
+        messages.success(self.request, "Categoria creata con successo!")
         return super().form_valid(form)
 
     def form_invalid(self, form):
-        messages.error(self.request, "⚠️ Errore durante la creazione. Controlla i dati.")
+        messages.error(self.request, "Errore durante la creazione. Controlla i dati.")
         # If invalid, we must re-render the list context so the page doesn't break
         return self.render_to_response(self.get_context_data(form=form))
 
@@ -176,7 +191,7 @@ class CategoryDetailView(UpdateView):
     def form_valid(self, form):
         # The form_valid method handles the update. The success message is shown
         # after the redirect to the success_url (or in this case, the same page).
-        messages.success(self.request, "📝 Categoria aggiornata correttamente.")
+        messages.success(self.request, "Categoria aggiornata correttamente.")
         return super().form_valid(form)
 
 class CategoryDeleteView(DeleteView):
@@ -194,7 +209,7 @@ class CategoryDeleteView(DeleteView):
 
     def form_valid(self, form):
         # Add a success message after deletion
-        messages.success(self.request, f"🗑️ Categoria '{self.object.name}' eliminata con successo.")
+        messages.success(self.request, f"Categoria '{self.object.name}' eliminata con successo.")
         # Important: The model's Foreign Key (Category to Transaction) configuration
         # (e.g., CASCADE, SET_NULL, PROTECT) will determine what happens to related transactions.
         return super().form_valid(form)

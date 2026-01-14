@@ -11,7 +11,7 @@
 {% block content %}
     <div class="container mt-2">
 
-        {% include "components/header-with-back-to-category-button.html" with icon="📂" title=category_summary.name %}
+        {% include "components/header-with-back-to-category-button.html" with title=category_summary.name %}
 
         <div class="category-layout-stacked">
 
@@ -39,7 +39,7 @@
                     </div>
                 </div>
 
-                <div class="create-category-card mt-5" style="position: static;">
+                <div class="create-category-card mt-5 edit-category-card">
                     <div class="card-header">
                         <h3>Modifica Categoria</h3>
                     </div>
@@ -86,7 +86,7 @@
                                     </p>
                                 </div>
                                 <div class="text-end">
-                            <span style="font-weight: 700; color: var(--{{ transaction.transaction_type|lower }}-color);">
+                            <span class="stat-amount-detail {{ transaction.transaction_type|lower }}">
                                 €{{ transaction.amount|floatformat:2 }}
                             </span>
                                 </div>

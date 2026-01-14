@@ -14,8 +14,15 @@
     min-width: 300px;
 }
 
-.category-list-section {
-    flex: 1.5;
+.category-list-section .data-list {
+    border: none;
+    background: transparent;
+    max-height: none;
+    overflow: visible;
+}
+
+.filter-actions {
+    align-self: flex-end;
 }
 
 /* Creation Card Styles */
@@ -27,6 +34,10 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     position: sticky;
     top: 90px; /* Sticks when scrolling if list is long */
+}
+
+.edit-category-card {
+    position: static;
 }
 
 .card-header h3 {
@@ -88,17 +99,36 @@
 }
 
 .badge-count {
-    background-color: #e9ecef;
-    color: var(--nav-text-color);
+    background-color: #f8f9fa;
+    color: var(--secondary-color);
     font-size: 0.8rem;
-    padding: 4px 10px;
-    border-radius: 12px;
+    padding: 2px 12px;
+    border-radius: 20px;
     font-weight: 600;
+    border: 1px solid #e9ecef;
 }
 
 /* Enhancing the reused .data-list-item for this specific context */
 .category-item {
-    align-items: flex-start; /* Align text to top if description is long */
+    align-items: center;
+    margin: 10px 15px;
+    border: 1px solid #edf2f7 !important;
+    border-radius: 12px;
+    background: #ffffff;
+    transition: all 0.25s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+    padding: 18px 24px;
+}
+
+.category-item:hover {
+    transform: translateX(5px);
+    border-color: var(--primary-color) !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    background: #ffffff !important;
+}
+
+.category-item:last-child {
+    border-bottom: 1px solid #edf2f7 !important;
 }
 
 .category-info {
@@ -127,6 +157,52 @@
     background: #f8f9fa;
     border-radius: 8px;
     border: 1px dashed #ced4da;
+}
+
+/* Category List Stats */
+.category-stats-inline {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+    margin-left: auto;
+    text-align: right;
+    min-width: 160px;
+}
+
+.category-stats-inline .stat-amount {
+    font-weight: 700;
+    font-size: 17px;
+    text-align: right;
+    min-width: 90px;
+    color: var(--expense-color);
+    transition: transform 0.2s ease;
+}
+
+.category-item:hover .stat-amount {
+    transform: scale(1.02);
+}
+
+.category-stats-inline .badge-count {
+    font-size: 0.75rem;
+    color: var(--secondary-color);
+    background-color: #ffffff;
+    padding: 3px 12px;
+    border-radius: 20px;
+    font-weight: 500;
+    border: 1px solid #e9ecef;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    transition: all 0.2s ease;
+}
+
+.category-item:hover .badge-count {
+    border-color: var(--primary-color);
+    background-color: var(--nav-link-active-bg);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.05);
 }
 
 .category-layout-stacked {
@@ -167,22 +243,23 @@
     gap: 15px;
 }
 
-.highlight-icon {
-    font-size: 2rem;
-    background: var(--nav-link-active-bg);
-    width: 48px;
-    height: 48px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-}
-
 .highlight-titles h4 {
     margin: 0 0 5px 0;
     font-size: 1.25rem;
     color: var(--nav-text-color);
     font-weight: 700;
+}
+
+.stat-amount-detail {
+    font-weight: 700;
+}
+
+.stat-amount-detail.expense {
+    color: var(--expense-color);
+}
+
+.stat-amount-detail.income {
+    color: var(--income-color);
 }
 
 .badge-tag {
@@ -222,14 +299,19 @@
     font-size: 0.75rem;
     text-transform: uppercase;
     color: var(--secondary-color);
-    font-weight: 600;
-    letter-spacing: 0.5px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 
 .stat-value {
-    font-size: 1.2rem;
-    font-weight: 700;
+    font-size: 1.5rem;
+    font-weight: 900;
     color: var(--nav-text-color);
+    letter-spacing: -0.8px;
 }
 
 .stat-separator {

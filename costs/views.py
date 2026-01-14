@@ -9,7 +9,7 @@ class CostSummaryView(LoginRequiredMixin, ListView):
     template_name = 'costs/summary.html'
     context_object_name = 'logs'
 
-    def get_queryset(self):
+    def _get_year_and_month(self):
         try:
             get_year = self.request.GET.get('year')
             if get_year:
@@ -23,29 +23,48 @@ class CostSummaryView(LoginRequiredMixin, ListView):
             import datetime
             selected_year = datetime.datetime.now().year
 
-        self.selected_year = selected_year
-        return ApiUsageLog.objects.filter(
+        try:
+            get_month = self.request.GET.get('month')
+            selected_month = int(get_month) if get_month else None
+        except (TypeError, ValueError):
+            selected_month = None
+
+        return selected_year, selected_month
+
+    def get_queryset(self):
+        selected_year, selected_month = self._get_year_and_month()
+        
+        queryset = ApiUsageLog.objects.filter(
             user=self.request.user,
             timestamp__year=selected_year
-        ).order_by('-timestamp')
+        )
+        if selected_month:
+            queryset = queryset.filter(timestamp__month=selected_month)
+        
+        return queryset.order_by('-timestamp')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        import datetime
-        year = getattr(self, 'selected_year', datetime.datetime.now().year)
+        selected_year, selected_month = self._get_year_and_month()
+
+        filter_kwargs = {
+            'user': self.request.user,
+            'timestamp__year': selected_year
+        }
+        if selected_month:
+            filter_kwargs['timestamp__month'] = selected_month
 
         total_cost = ApiUsageLog.objects.filter(
-            user=self.request.user,
-            timestamp__year=year
+            **filter_kwargs
         ).aggregate(total=Sum('computed_cost'))['total'] or 0
 
         context['total_cost'] = total_cost
-        context['year'] = year
+        context['year'] = selected_year
+        context['month'] = selected_month
 
-        # Summary per CSV upload for the selected year
+        # Summary per CSV upload for the selected year/month
         context['upload_summary'] = ApiUsageLog.objects.filter(
-            user=self.request.user,
-            timestamp__year=year
+            **filter_kwargs
         ).values(
             'csv_upload__id', 'csv_upload__file_name', 'csv_upload__upload_date'
         ).annotate(

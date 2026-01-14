@@ -48,7 +48,7 @@ class MonthlySummerView(View):
 
         # Selected month from query string (defaults to current month)
         try:
-            selected_month = request.GET.get("selected_month")
+            selected_month = request.GET.get("month") or request.GET.get("selected_month")
             selected_month = int(selected_month) if selected_month else None
         except (TypeError, ValueError):
             selected_month = None
@@ -115,6 +115,7 @@ class MonthlySummerView(View):
 
         context = {
             "year": selected_year,
+            "month": final_selected_month_number,
             "selected_month_number": final_selected_month_number,
             "months": months,
             "category_monthly_summaries": category_monthly_summaries

@@ -13,13 +13,12 @@
 
 {% block content %}
 <div class="container mt-2">
-    {% include "components/header-with-year-select.html" with icon="📂" title="Categorie" %}
+    {% include "components/header-with-year-select.html" with title="Categorie" %}
 
     {% if default_category %}
     <div class="category-highlight-section mb-4" onclick="window.location.href='{% url 'category_detail' default_category.id %}'">
         <div class="highlight-card">
             <div class="highlight-header">
-                <div class="highlight-icon">⭐</div>
                 <div class="highlight-titles">
                     <h4>{{ default_category.name }}</h4>
                     <span class="badge-tag">Categoria Principale</span>
@@ -49,12 +48,27 @@
     <!-- Search Filter (Leveraged from transaction_list.html, but only the search part) -->
     <form method="get" class="filters" action="{% url 'category_list' %}" id="main-filter-form">
         <div class="filter-group">
-            <label for="search">🔍 Ricerca</label>
+            <label for="search">Ricerca</label>
             <input type="text" name="search" id="search" placeholder="Cerca nome o descrizione..."
                    value="{{ search_query }}" onchange="debounceFormSubmit(this.form)"/>
         </div>
 
-        <div class="filter-group" style="align-self: flex-end;">
+        <div class="filter-group">
+            <label for="month-select">Mese</label>
+            <select id="month-select"
+                    name="month"
+                    class="form-select"
+                    onchange="debounceFormSubmit(this.form)">
+                <option value="">Tutti i mesi</option>
+                {% for available_month in available_months %}
+                    <option value="{{ available_month.value }}" {% if available_month.month_number == month %}selected{% endif %}>
+                        {{ available_month.label_it }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="filter-group filter-actions">
             <button type="submit" class="btn btn-primary">Filtra</button>
             <a href="{% url 'category_list' %}" class="btn btn-secondary" id="delete-category-search">Cancella</a>
         </div>
@@ -68,7 +82,7 @@
                 <span class="badge-count">{{ categories.count }}</span>
             </h2>
 
-            <a href="{% url 'create_category' %}" class="btn btn-primary mb-3">➕ Crea Nuova Categoria</a>
+            <a href="{% url 'create_category' %}" class="btn btn-primary mb-3">Crea Nuova Categoria</a>
 
             {% if categories %}
             <div class="data-list">
@@ -83,7 +97,11 @@
                             {% endif %}
                         </div>
 
-                        <div class="category-actions">
+                        <div class="category-stats-inline">
+                            <span class="stat-amount">€ {{ category.transaction_amount|floatformat:2|default:"0,00" }}</span>
+                            <span class="badge-count">
+                                {{ category.transaction_count|default:"0" }} transazioni
+                            </span>
                         </div>
                     </div>
                 {% endfor %}
