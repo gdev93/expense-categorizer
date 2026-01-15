@@ -32,27 +32,38 @@
             </div>
         </div>
     </div>
-    <!-- Search Filter (Leveraged from transaction_list.html, but only the search part) -->
+    <!-- Category Multiselect Filter -->
     <form method="get" class="filters" action="{% url 'category_list' %}" id="main-filter-form">
         <div class="filter-group">
-            <label for="search">Ricerca</label>
-            <input type="text" name="search" id="search" placeholder="Cerca nome o descrizione..."
-                   value="{{ search_query }}" onchange="debounceFormSubmit(this.form)"/>
+            <label for="categories">Categorie</label>
+            <select name="categories" id="categories" multiple size="1" onchange="debounceFormSubmit(this.form)">
+                <option value="">Tutte le Categorie</option>
+                {% for cat in all_categories %}
+                    <option value="{{ cat.id }}"
+                            {% if cat.id|stringformat:"s" in selected_categories %}selected{% endif %}>
+                        {{ cat.name }}
+                    </option>
+                {% endfor %}
+            </select>
+            <small class="form-text text-muted desktop-only" style="font-size: 0.75rem; margin-top: 4px;">
+                Tieni premuto Ctrl (Windows) o Cmd (Mac) per selezionare più categorie
+            </small>
         </div>
 
         <div class="filter-group">
-            <label for="month-select">Mese</label>
-            <select id="month-select"
-                    name="month"
-                    class="form-select"
-                    onchange="debounceFormSubmit(this.form)">
+            <label for="months">Mese/i</label>
+            <select name="months" id="months" multiple size="1" onchange="debounceFormSubmit(this.form)">
                 <option value="">Tutti i mesi</option>
                 {% for available_month in available_months %}
-                    <option value="{{ available_month.value }}" {% if available_month.month_number == month %}selected{% endif %}>
+                    <option value="{{ available_month.month_number }}"
+                            {% if available_month.month_number|stringformat:"s" in selected_months %}selected{% endif %}>
                         {{ available_month.label_it }}
                     </option>
                 {% endfor %}
             </select>
+            <small class="form-text text-muted desktop-only" style="font-size: 0.75rem; margin-top: 4px;">
+                Tieni premuto Ctrl (Windows) o Cmd (Mac) per selezionare più mesi
+            </small>
         </div>
 
         <div class="filter-group filter-actions">

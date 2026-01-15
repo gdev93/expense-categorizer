@@ -40,7 +40,7 @@ class CategoryListView(ListView):
     template_name = 'categories/categories.html'
     context_object_name = 'categories'
 
-    def _get_year_and_month(self):
+    def _get_year_and_months(self):
         try:
             get_year = self.request.GET.get('year')
             if get_year:
@@ -52,13 +52,20 @@ class CategoryListView(ListView):
         except (TypeError, ValueError, AttributeError):
             selected_year = datetime.datetime.now().year
 
-        try:
-            get_month = self.request.GET.get('month')
-            selected_month = int(get_month) if get_month else None
-        except (TypeError, ValueError):
-            selected_month = None
+        selected_months = self.request.GET.getlist('months')
+        # Also support single 'month' parameter for backward compatibility or simple links
+        single_month = self.request.GET.get('month')
+        if single_month and single_month not in selected_months:
+            selected_months.append(single_month)
 
-        return selected_year, selected_month
+        processed_months = []
+        for m in selected_months:
+            try:
+                processed_months.append(int(m))
+            except (TypeError, ValueError):
+                continue
+
+        return selected_year, processed_months
 
     def get_queryset(self):
         """
@@ -69,15 +76,15 @@ class CategoryListView(ListView):
 
         # 1. Filter: Start with categories belonging to the current user
         user_categories = self.model.objects.filter(user=self.request.user)
-        name = self.request.GET.get("search",'')
-        if name:
-            user_categories = user_categories.filter(name__icontains=name)
+        selected_category_ids = self.request.GET.getlist('categories')
+        if selected_category_ids:
+            user_categories = user_categories.filter(id__in=selected_category_ids)
 
-        selected_year, selected_month = self._get_year_and_month()
+        selected_year, selected_months = self._get_year_and_months()
 
         filter_q = Q(transactions__transaction_date__year=selected_year)
-        if selected_month:
-            filter_q &= Q(transactions__transaction_date__month=selected_month)
+        if selected_months:
+            filter_q &= Q(transactions__transaction_date__month__in=selected_months)
 
         enriched_categories = user_categories.annotate(
             transaction_count=Count(
@@ -106,10 +113,11 @@ class CategoryListView(ListView):
         categories = context['categories']
 
         context['total'] = sum([category.transaction_amount for category in categories]) if categories else 0
-        selected_year, selected_month = self._get_year_and_month()
-        context['search_query'] = self.request.GET.get('search', '')
+        selected_year, selected_months = self._get_year_and_months()
+        context['all_categories'] = Category.objects.filter(user=self.request.user).order_by('name')
+        context['selected_categories'] = self.request.GET.getlist('categories')
         context['year'] = selected_year
-        context['month'] = selected_month
+        context['selected_months'] = [str(m) for m in selected_months]
         return context
 
 

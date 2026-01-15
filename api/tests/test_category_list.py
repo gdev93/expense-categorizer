@@ -80,3 +80,42 @@ class TestCategoryListView:
         content = response.content.decode()
         assert "€ 50.00" in content
         assert "1 transazioni" in content
+
+    def test_category_list_multiselect_filter(self, client):
+        client.login(username="testuser", password="password")
+        url = reverse('category_list')
+        
+        other_category = Category.objects.create(user=self.user, name="Health")
+        
+        # Filter by 'Food' category only
+        response = client.get(url, {'categories': [self.category.id]})
+        assert response.status_code == 200
+        
+        categories = response.context['categories']
+        assert len(categories) == 1
+        assert categories[0].name == "Food"
+        
+        # Filter by both categories
+        response = client.get(url, {'categories': [self.category.id, other_category.id]})
+        assert response.status_code == 200
+        categories = response.context['categories']
+        assert len(categories) == 2
+        
+        # Filter by non-existent category ID
+        response = client.get(url, {'categories': [9999]})
+        assert response.status_code == 200
+        categories = response.context['categories']
+        assert len(categories) == 0
+
+    def test_category_list_month_multiselect_filter(self, client):
+        client.login(username="testuser", password="password")
+        url = reverse('category_list')
+
+        # Filter for Jan and Feb 2025
+        response = client.get(url, {'year': 2025, 'months': [1, 2]})
+        assert response.status_code == 200
+
+        categories = response.context['categories']
+        food_cat = next(c for c in categories if c.name == "Food")
+        assert food_cat.transaction_amount == Decimal("80.00")
+        assert food_cat.transaction_count == 2
