@@ -40,7 +40,7 @@ class CategoryListView(ListView):
     template_name = 'categories/categories.html'
     context_object_name = 'categories'
 
-    def _get_year_and_month(self):
+    def _get_year_and_months(self):
         try:
             get_year = self.request.GET.get('year')
             if get_year:
@@ -52,13 +52,20 @@ class CategoryListView(ListView):
         except (TypeError, ValueError, AttributeError):
             selected_year = datetime.datetime.now().year
 
-        try:
-            get_month = self.request.GET.get('month')
-            selected_month = int(get_month) if get_month else None
-        except (TypeError, ValueError):
-            selected_month = None
+        selected_months = self.request.GET.getlist('months')
+        # Also support single 'month' parameter for backward compatibility or simple links
+        single_month = self.request.GET.get('month')
+        if single_month and single_month not in selected_months:
+            selected_months.append(single_month)
 
-        return selected_year, selected_month
+        processed_months = []
+        for m in selected_months:
+            try:
+                processed_months.append(int(m))
+            except (TypeError, ValueError):
+                continue
+
+        return selected_year, processed_months
 
     def get_queryset(self):
         """
@@ -69,15 +76,15 @@ class CategoryListView(ListView):
 
         # 1. Filter: Start with categories belonging to the current user
         user_categories = self.model.objects.filter(user=self.request.user)
-        name = self.request.GET.get("search",'')
-        if name:
-            user_categories = user_categories.filter(name__icontains=name)
+        selected_category_ids = self.request.GET.getlist('categories')
+        if selected_category_ids:
+            user_categories = user_categories.filter(id__in=selected_category_ids)
 
-        selected_year, selected_month = self._get_year_and_month()
+        selected_year, selected_months = self._get_year_and_months()
 
         filter_q = Q(transactions__transaction_date__year=selected_year)
-        if selected_month:
-            filter_q &= Q(transactions__transaction_date__month=selected_month)
+        if selected_months:
+            filter_q &= Q(transactions__transaction_date__month__in=selected_months)
 
         enriched_categories = user_categories.annotate(
             transaction_count=Count(
@@ -104,15 +111,13 @@ class CategoryListView(ListView):
         # --- LOGIC FOR SUMMARY CARD ---
         # Get the queryset used by the list
         categories = context['categories']
-        if categories:
-            # Avoid re-running complex aggregation by using the already annotated results
-            default_category = max(categories, key=lambda cat: cat.transaction_amount)
-            context['default_category'] = default_category
 
-        selected_year, selected_month = self._get_year_and_month()
-        context['search_query'] = self.request.GET.get('search', '')
+        context['total'] = sum([category.transaction_amount for category in categories]) if categories else 0
+        selected_year, selected_months = self._get_year_and_months()
+        context['all_categories'] = Category.objects.filter(user=self.request.user).order_by('name')
+        context['selected_categories'] = self.request.GET.getlist('categories')
         context['year'] = selected_year
-        context['month'] = selected_month
+        context['selected_months'] = [str(m) for m in selected_months]
         return context
 
 
@@ -154,29 +159,76 @@ class CategoryDetailView(UpdateView):
         # Security: Only allow the user to view/edit their own categories
         return Category.objects.filter(user=self.request.user)
 
+    def _get_filters(self):
+        search_query = self.request.GET.get('search', '')
+
+        try:
+            get_year = self.request.GET.get('year')
+            if get_year:
+                selected_year = int(get_year)
+            else:
+                selected_year = None
+        except (TypeError, ValueError):
+            selected_year = None
+
+        selected_months = self.request.GET.getlist('months')
+        # Also support single 'month' parameter
+        single_month = self.request.GET.get('month')
+        if single_month and single_month not in selected_months:
+            selected_months.append(single_month)
+
+        processed_months = []
+        for m in selected_months:
+            try:
+                processed_months.append(int(m))
+            except (TypeError, ValueError):
+                continue
+
+        return search_query, selected_year, processed_months
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
         category = self.object
+        search_query, selected_year, selected_months = self._get_filters()
 
-        # 1. Fetch Aggregated Summary Data for the Summary Card
-        # This re-calculates the enrichment for the single category object
+        # 1. Build filters
+        filter_q = Q()
+        if selected_year:
+            filter_q &= Q(transactions__transaction_date__year=selected_year)
+        if selected_months:
+            filter_q &= Q(transactions__transaction_date__month__in=selected_months)
+        if search_query:
+            filter_q &= (
+                Q(transactions__merchant__name__icontains=search_query) |
+                Q(transactions__description__icontains=search_query)
+            )
+
+        # 2. Fetch Aggregated Summary Data for the Summary Card
         summary = Category.objects.filter(id=category.pk).annotate(
-            transaction_count=Count('transactions'),
+            transaction_count=Count('transactions', filter=filter_q),
             transaction_amount=Coalesce(
-                Sum('transactions__amount'),
-                0.00,
+                Sum('transactions__amount', filter=filter_q),
+                0.0,
                 output_field=DecimalField()
             )
         ).first()
 
         context['category_summary'] = summary
 
-        # 2. Fetch and Paginate Associated Transactions
-        transaction_list = Transaction.objects.filter(
-            user=self.request.user,
-            category=category
-        ).order_by('-transaction_date', '-created_at')  # Ordering defined in models.py
+        # 3. Fetch and Paginate Associated Transactions
+        t_filter_q = Q(user=self.request.user, category=category)
+        if selected_year:
+            t_filter_q &= Q(transaction_date__year=selected_year)
+        if selected_months:
+            t_filter_q &= Q(transaction_date__month__in=selected_months)
+        if search_query:
+            t_filter_q &= (
+                Q(merchant__name__icontains=search_query) |
+                Q(description__icontains=search_query)
+            )
+
+        transaction_list = Transaction.objects.filter(t_filter_q).order_by('-transaction_date', '-created_at')
 
         # Pagination logic
         paginator = Paginator(transaction_list, 20)  # Show 20 transactions per page
@@ -185,6 +237,9 @@ class CategoryDetailView(UpdateView):
         transactions = paginator.page(page_number)
 
         context['transactions'] = transactions
+        context['search_query'] = search_query
+        context['selected_year'] = selected_year
+        context['selected_months'] = [str(m) for m in selected_months]
 
         return context
 

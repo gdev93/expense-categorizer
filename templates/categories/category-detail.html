@@ -6,6 +6,7 @@
     <link rel="stylesheet" href="{% static 'css/summary-card.css' %}">
     <link rel="stylesheet" href="{% static 'css/list.css' %}">
     <link rel="stylesheet" href="{% static 'css/pagination.css' %}">
+    <link rel="stylesheet" href="{% static 'css/filters.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -72,6 +73,48 @@
                     <span class="badge-count">{{ category_summary.transaction_count }}</span>
                 </div>
 
+                <!-- Filters for Associated Transactions -->
+                <form method="get" class="filters mb-4" id="transaction-filter-form">
+                    <div class="filter-group">
+                        <label for="search">🔍 Ricerca</label>
+                        <input type="text" name="search" id="search" placeholder="Cerca merchant o descrizione..."
+                               value="{{ search_query }}" onchange="debounceFormSubmit(this.form)">
+                    </div>
+
+                    <div class="filter-group">
+                        <label for="year">📅 Anno</label>
+                        <select name="year" id="year" onchange="debounceFormSubmit(this.form)">
+                            <option value="">Tutti gli anni</option>
+                            {% for available_year in available_years %}
+                                <option value="{{ available_year }}" {% if available_year == selected_year %}selected{% endif %}>
+                                    {{ available_year }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label for="months">📅 Mese/i</label>
+                        <select name="months" id="months" multiple size="1" onchange="debounceFormSubmit(this.form)">
+                            <option value="">Tutti i mesi</option>
+                            {% for month in available_months %}
+                                <option value="{{ month.month_number }}"
+                                        {% if month.month_number|stringformat:"s" in selected_months %}selected{% endif %}>
+                                    {{ month.label_it }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <small class="form-text text-muted desktop-only" style="font-size: 0.75rem; margin-top: 4px;">
+                            Tieni premuto Ctrl (Windows) o Cmd (Mac) per selezionare più mesi
+                        </small>
+                    </div>
+
+                    <div class="filter-group filter-actions">
+                        <button type="submit" class="btn btn-primary">Filtra</button>
+                        <a href="{% url 'category_detail' category.id %}" class="btn btn-secondary">Cancella</a>
+                    </div>
+                </form>
+
                 <div class="data-list">
                     {% if transactions %}
                         {% for transaction in transactions %}
@@ -102,7 +145,7 @@
                 {% if transactions.has_other_pages %}
                     <div class="pagination">
                         {% if transactions.has_previous %}
-                            <a href="?page={{ transactions.previous_page_number }}" class="btn btn-sm">Precedente</a>
+                            <a href="?page={{ transactions.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_year %}&year={{ selected_year }}{% endif %}{% for m in selected_months %}&months={{ m }}{% endfor %}" class="btn btn-sm">Precedente</a>
                         {% else %}
                             <span class="disabled">Precedente</span>
                         {% endif %}
@@ -112,7 +155,7 @@
                 </span>
 
                         {% if transactions.has_next %}
-                            <a href="?page={{ transactions.next_page_number }}" class="btn btn-sm">Successiva</a>
+                            <a href="?page={{ transactions.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_year %}&year={{ selected_year }}{% endif %}{% for m in selected_months %}&months={{ m }}{% endfor %}" class="btn btn-sm">Successiva</a>
                         {% else %}
                             <span class="disabled">Successiva</span>
                         {% endif %}

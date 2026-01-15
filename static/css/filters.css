@@ -59,17 +59,20 @@
     box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.25);
 }
 
-#months {
+#months,
+#categories {
     min-height: 38px;
     max-height: 200px;
     overflow-y: auto;
 }
 
-#months option {
+#months option,
+#categories option {
     padding: 8px;
 }
 
-#months option:checked {
+#months option:checked,
+#categories option:checked {
     background: linear-gradient(0deg, #4CAF50 0%, #4CAF50 100%);
     color: white;
 }
@@ -174,7 +177,8 @@
         height: 38px;
     }
 
-    #months {
+    #months,
+    #categories {
         min-height: 38px;
         max-height: 38px;
     }
