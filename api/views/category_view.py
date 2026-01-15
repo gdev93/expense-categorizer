@@ -104,11 +104,8 @@ class CategoryListView(ListView):
         # --- LOGIC FOR SUMMARY CARD ---
         # Get the queryset used by the list
         categories = context['categories']
-        if categories:
-            # Avoid re-running complex aggregation by using the already annotated results
-            default_category = max(categories, key=lambda cat: cat.transaction_amount)
-            context['default_category'] = default_category
 
+        context['total'] = sum([category.transaction_amount for category in categories]) if categories else 0
         selected_year, selected_month = self._get_year_and_month()
         context['search_query'] = self.request.GET.get('search', '')
         context['year'] = selected_year
