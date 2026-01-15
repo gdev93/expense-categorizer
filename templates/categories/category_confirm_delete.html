@@ -2,28 +2,32 @@
 {% load static %}
 
 {% block extra_css %}
-    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+    <link rel="stylesheet" href="{% static 'css/categories.css' %}">
+    <link rel="stylesheet" href="{% static 'css/list.css' %}">
 {% endblock %}
 
 {% block content %}
-<div class="main-content">
-    <div class="container mt-5">
-        <div class="card p-4 mx-auto create-category-card" style="max-width: 500px; position: relative;">
-            <h2 class="card-header text-danger mb-3">Conferma Eliminazione</h2>
+    <div class="container mt-2">
 
-            <p>Sei sicuro di voler eliminare definitivamente la categoria <strong>"{{ object.name }}"</strong>?</p>
+        {% include "components/header-with-back-to-category-button.html" with title="Elimina Categoria" category_summary=object hide_delete=True %}
 
-            <p class="alert alert-warning mt-3">
-                <strong>Attenzione:</strong> Questa azione è **irreversibile**. Tutte le transazioni collegate
-                a questa categoria saranno **eliminate** o **non categorizzate** a seconda della configurazione del tuo database.
-            </p>
+        <div class="form-container-small mt-4">
+            <div class="category-form-section">
+                <p class="mb-3">Sei sicuro di voler eliminare definitivamente la categoria <strong>"{{ object.name }}"</strong>?</p>
 
-            <form method="post" class="mt-4">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-danger btn-full-width">Sì, Elimina Categoria</button>
-            </form>
-            <a href="{% url 'category_detail' pk=object.pk %}" class="btn btn-secondary btn-full-width mt-2">Annulla</a>
+                <div class="alert alert-warning mb-4">
+                    <strong>Attenzione:</strong> Questa azione è <strong>irreversibile</strong>. Tutte le transazioni collegate
+                    a questa categoria saranno <strong>eliminate</strong> o <strong>non categorizzate</strong> a seconda della configurazione del tuo database.
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="form-actions d-flex gap-3 justify-content-center">
+                        <button type="submit" class="btn btn-danger">Sì, Elimina Categoria</button>
+                        <a href="{% url 'category_detail' object.id %}" class="btn btn-secondary">Annulla</a>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
-</div>
 {% endblock %}

@@ -10,22 +10,6 @@
     <link rel="stylesheet" href="{% static 'css/appbar.css' %}">
     <link rel="stylesheet" href="{% static 'css/sidebar.css' %}">
     {% block extra_css %}{% endblock %}
-    <script>
-        /**
-         * Debounced form submission to prevent double invocation.
-         */
-        let isFormSubmitting = false;
-        function debounceFormSubmit(form) {
-            if (isFormSubmitting || !form) return;
-            isFormSubmitting = true;
-            form.submit();
-
-            // Reset after a timeout just in case the navigation doesn't happen
-            setTimeout(() => {
-                isFormSubmitting = false;
-            }, 2000);
-        }
-    </script>
 </head>
 <body>
     <header class="app-bar">

@@ -12,66 +12,16 @@
 {% block content %}
     <div class="container mt-2">
 
-        {% include "components/header-with-back-to-category-button.html" with title=category_summary.name %}
+        {% url 'category_update' category.id as edit_url %}
+        {% include "components/header-with-back-to-category-button.html" with title=category_summary.name total=category_summary.transaction_amount edit_url=edit_url hide_back=True %}
 
         <div class="category-layout-stacked">
 
-            <div class="category-form-section">
-
-                <div class="highlight-card">
-                    <div class="highlight-header">
-                        <div class="highlight-titles">
-                            <h4>{{ category_summary.name }} {% if category_summary.is_default %}
-                                <span class="badge-tag">Default</span>{% endif %}</h4>
-                            <p class="highlight-description">{{ category_summary.description|default:"Nessuna descrizione fornita." }}</p>
-                        </div>
-                    </div>
-
-                    <div class="highlight-stats">
-                        <div class="stat-box">
-                            <span class="stat-label">Totale Speso</span>
-                            <span class="stat-value">€{{ category_summary.transaction_amount|floatformat:2 }}</span>
-                        </div>
-                        <span class="stat-separator"></span>
-                        <div class="stat-box">
-                            <span class="stat-label">Transazioni</span>
-                            <span class="stat-value">{{ category_summary.transaction_count }}</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="create-category-card mt-5 edit-category-card">
-                    <div class="card-header">
-                        <h3>Modifica Categoria</h3>
-                    </div>
-
-                    <form method="post" class="category-form">
-                        {% csrf_token %}
-
-                        <div class="form-group mb-3">
-                            <label for="{{ form.name.id_for_label }}">Nome Categoria</label>
-                            {{ form.name }}
-                            {% if form.name.errors %}
-                                <div class="text-danger">{{ form.name.errors }}</div>{% endif %}
-                        </div>
-
-                        <div class="form-group mb-3">
-                            <label for="{{ form.description.id_for_label }}">Descrizione (Opzionale)</label>
-                            {{ form.description }}
-                            {% if form.description.errors %}
-                                <div class="text-danger">{{ form.description.errors }}</div>{% endif %}
-                        </div>
-
-                        <button type="submit" class="btn btn-primary btn-full-width">Salva Modifiche</button>
-                    </form>
-                </div>
-            </div>
-
-            <div class="category-list-section mt-5">
-                <div class="section-title">
+            <div class="category-list-section">
+                <h2 class="section-title">
                     Transazioni Associate
                     <span class="badge-count">{{ category_summary.transaction_count }}</span>
-                </div>
+                </h2>
 
                 <!-- Filters for Associated Transactions -->
                 <form method="get" class="filters mb-4" id="transaction-filter-form">

@@ -13,31 +13,31 @@
 <div class="container mt-2">
     {% include "components/header-with-year-select.html" with icon="✨" title="Nuova Categoria" %}
 
-    <div class="create-category-card">
-        <div class="card-header">
-            <h3>✨ Nuova Categoria</h3>
+    <div class="form-container-small mt-4">
+        <div class="category-form-section">
+            <form method="post" class="category-form" action="{% url 'create_category' %}">
+                {% csrf_token %}
+
+                <div class="form-group mb-3">
+                    <label for="id_name">Nome Categoria</label>
+                    <input type="text" name="name" id="id_name" class="form-control" placeholder="es. Alimentari" required>
+                </div>
+
+                <div class="form-group mb-4">
+                    <label for="id_description">Descrizione</label>
+                    <textarea name="description" id="id_description" class="form-control" rows="4" placeholder="es. Spese fatte al supermercato, panificio..."></textarea>
+                    <small class="form-text text-muted">
+                        Una breve descrizione per aiutarti a ricordare cosa includere qui.
+                    </small>
+                </div>
+
+                <div class="form-actions d-flex justify-content-center">
+                    <button type="submit" class="btn btn-primary">
+                        ➕ Crea Categoria
+                    </button>
+                </div>
+            </form>
         </div>
-
-        <form method="post" class="category-form" action="{% url 'create_category' %}">
-            {% csrf_token %}
-
-            <div class="form-group">
-                <label for="id_name">Nome Categoria</label>
-                <input type="text" name="name" id="id_name" class="form-control" placeholder="es. Alimentari" required>
-            </div>
-
-            <div class="form-group">
-                <label for="id_description">Descrizione</label>
-                <textarea name="description" id="id_description" class="form-control" rows="4" placeholder="es. Spese fatte al supermercato, panificio..."></textarea>
-                <small class="form-text text-muted">
-                    Una breve descrizione per aiutarti a ricordare cosa includere qui.
-                </small>
-            </div>
-
-            <button type="submit" class="btn btn-primary btn-full-width">
-                ➕ Crea Categoria
-            </button>
-        </form>
     </div>
 </div>
 {% endblock %}

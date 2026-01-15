@@ -1,4 +1,11 @@
 <div class="header">
-    <h1>{{ icon }} {{ title }}</h1>
-    {% block header_content %}{% endblock %}
+    <div class="header-title-container">
+        <h1>{{ icon }} {{ title }}</h1>
+        <div class="header-extra">
+            {% block header_extra_title %}{% endblock %}
+        </div>
+    </div>
+    <div class="header-actions">
+        {% block header_content %}{% endblock %}
+    </div>
 </div>

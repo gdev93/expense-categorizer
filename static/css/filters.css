@@ -42,21 +42,7 @@
 .filters select,
 .filters input[type="text"] {
     width: 100%;
-    padding: 10px;
-    border: 1px solid #ced4da;
-    border-radius: 4px;
-    box-sizing: border-box;
-    font-size: 15px;
-    transition: border-color 0.2s;
     margin-bottom: 0;
-    background-color: #fff;
-}
-
-.filters select:focus,
-.filters input[type="text"]:focus {
-    border-color: var(--primary-color);
-    outline: none;
-    box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.25);
 }
 
 #months,
@@ -90,26 +76,12 @@
 
 .amount-operator {
     width: 70px;
-    padding: 10px 8px;
-    border: 1px solid #ced4da;
-    border-radius: 4px;
-    box-sizing: border-box;
-    font-size: 15px;
-    transition: border-color 0.2s;
-    background-color: #fff;
     text-align: center;
     font-weight: 600;
 }
 
 .amount-input {
     flex: 1;
-    padding: 10px;
-    border: 1px solid #ced4da;
-    border-radius: 4px;
-    box-sizing: border-box;
-    font-size: 15px;
-    transition: border-color 0.2s;
-    background-color: #fff;
 }
 
 .amount-operator:focus,
@@ -155,9 +127,7 @@
 
     .filters select,
     .filters input[type="text"] {
-        padding: 8px;
         font-size: 14px;
-        height: 38px;
     }
 
     .amount-filter-wrapper {
@@ -166,15 +136,11 @@
 
     .amount-operator {
         width: 55px;
-        padding: 8px 4px;
         font-size: 14px;
-        height: 38px;
     }
 
     .amount-input {
-        padding: 8px;
         font-size: 14px;
-        height: 38px;
     }
 
     #months,

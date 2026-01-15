@@ -13,26 +13,13 @@
 
 {% block content %}
 <div class="container mt-2">
-    {% include "components/header-with-year-select.html" with title="Categorie" %}
 
-    <div class="category-highlight-section mb-4">
-        <div class="highlight-card">
-            <div class="highlight-header">
-                <div class="highlight-titles">
-                    <h4>Riepilogo</h4>
-                    <span class="badge-tag">Totale</span>
-                </div>
-            </div>
-
-            <div class="highlight-stats">
-                <div class="stat-box">
-                    <span class="stat-label">Totale Speso</span>
-                    <span class="stat-value">€ {{ total|floatformat:2|default:"0,00" }}</span>
-                </div>
-            </div>
+    <div class="sticky-header-bar" id="stickyHeader">
+        <div class="header-main-content">
+            {% include "components/header-categories.html" with title="Categorie" %}
         </div>
     </div>
-    <!-- Category Multiselect Filter -->
+
     <form method="get" class="filters" action="{% url 'category_list' %}" id="main-filter-form">
         <div class="filter-group">
             <label for="categories">Categorie</label>
@@ -73,15 +60,7 @@
     </form>
 
     <div class="category-layout-stacked">
-
         <div class="category-list-section">
-            <h2 class="section-title">
-                Categorie Esistenti
-                <span class="badge-count">{{ categories.count }}</span>
-            </h2>
-
-            <a href="{% url 'create_category' %}" class="btn btn-primary mb-3">Crea Nuova Categoria</a>
-
             {% if categories %}
             <div class="data-list">
                 {% for category in categories %}
@@ -108,8 +87,9 @@
                 </div>
             {% endif %}
         </div>
-
     </div>
 </div>
+
+<script src="{% static 'js/categories.js' %}"></script>
 <script src="{% static 'js/reset-filter.js' %}"></script>
 {% endblock %}

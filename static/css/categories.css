@@ -22,29 +22,6 @@
     align-self: flex-end;
 }
 
-/* Creation Card Styles */
-.create-category-card {
-    background: white;
-    padding: 25px;
-    border-radius: 8px;
-    border-left: 5px solid var(--primary-color); /* Gold accent */
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-    position: sticky;
-    top: 90px; /* Sticks when scrolling if list is long */
-}
-
-.edit-category-card {
-    position: static;
-}
-
-.card-header h3 {
-    margin-top: 0;
-    margin-bottom: 20px;
-    font-size: 1.25rem;
-    color: var(--nav-text-color);
-    font-weight: 700;
-}
-
 /* Form Elements */
 .category-form .form-group {
     margin-bottom: 20px;
@@ -60,12 +37,6 @@
 
 .category-form .form-control {
     width: 100%;
-    padding: 12px;
-    border: 1px solid #ced4da;
-    border-radius: 6px;
-    font-size: 15px;
-    font-family: inherit;
-    transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .category-form .form-control:focus {
@@ -88,11 +59,14 @@
 
 /* List Section Specifics */
 .section-title {
-    font-size: 1.25rem;
-    margin-bottom: 15px;
+    font-size: 1.35rem;
+    font-weight: 700;
+    margin-top: 10px;
+    margin-bottom: 20px;
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
+    color: var(--nav-text-color);
 }
 
 .badge-count {
@@ -142,6 +116,11 @@
     margin: 0 auto; /* Center the column */
 }
 
+.form-container-small {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
 .category-form-section,
 .category-list-section {
     width: 100%;
@@ -149,35 +128,48 @@
 }
 
 /* Highlight / Default Category Card Styling */
-.category-highlight-section {
-    margin: 0 auto 30px auto;
-}
-
-.highlight-card {
-    background: #fff;
+.header-total-pill {
+    text-align: right;
+    background-color: #f8f9fa;
+    padding: 0.5rem 1rem;
+    border-radius: 50px;
     border: 1px solid #e9ecef;
-    border-radius: 12px;
-    padding: 24px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-    border-top: 5px solid var(--primary-color); /* Gold accent */
     display: flex;
     flex-direction: column;
-    max-width: 700px;
-    margin: 0 auto 30px auto;
-    gap: 16px;
+    justify-content: center;
+    min-width: 120px;
 }
 
-.highlight-header {
-    display: flex;
-    align-items: flex-start;
-    gap: 15px;
+.header-total-pill .label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #6c757d;
+    font-weight: 600;
+    line-height: 1;
+    margin-bottom: 2px;
 }
 
-.highlight-titles h4 {
-    margin: 0 0 5px 0;
-    font-size: 1.25rem;
-    color: var(--nav-text-color);
+.header-total-pill .value {
+    font-size: 1.1rem;
     font-weight: 700;
+    color: #2c3e50;
+    line-height: 1;
+}
+
+.category-list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.category-list-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
 }
 
 .stat-amount-detail {
@@ -192,86 +184,44 @@
     color: var(--income-color);
 }
 
-.badge-tag {
-    background-color: var(--primary-color);
-    color: var(--nav-text-color);
-    font-size: 0.75rem;
-    padding: 2px 8px;
-    border-radius: 4px;
-    font-weight: 600;
-    text-transform: uppercase;
-}
-
-.highlight-description {
-    color: var(--secondary-color);
-    font-size: 0.95rem;
-    line-height: 1.5;
-    margin: 0;
-}
-
-/* Stats Section within the card */
-.highlight-stats {
-    margin-top: 10px;
-    padding-top: 15px;
-    border-top: 1px solid #e9ecef;
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 30px;
-}
-
-.stat-box {
-    display: flex;
-    flex-direction: column;
-}
-
-.stat-label {
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    color: var(--secondary-color);
-    font-weight: 700;
-    letter-spacing: 1px;
-    margin-bottom: 6px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.stat-value {
-    font-size: 1.5rem;
-    font-weight: 900;
-    color: var(--nav-text-color);
-    letter-spacing: -0.8px;
-}
-
-.stat-separator {
-    width: 1px;
-    height: 30px;
-    background-color: #e9ecef;
-}
-
-/* Mobile Adjustment for the card */
-@media (max-width: 600px) {
-    .highlight-stats {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 15px;
-    }
-
-    .stat-separator {
-        display: none;
-    }
-}
-
 /* Responsive adjustments */
-@media (max-width: 768px) {
+@media (max-width: 767px) {
     .category-layout {
         flex-direction: column;
     }
 
-    .create-category-card {
-        position: static; /* Remove sticky on mobile */
-        border-left: none;
-        border-top: 5px solid var(--primary-color);
+    .header-total-pill {
+        text-align: left;
+        align-self: flex-start;
+        min-width: auto;
     }
+}
+
+/* Sticky Header Container */
+.sticky-header-bar {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    background-color: #ffffff; /* Ensure background is solid so content scrolls behind */
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    /* Fix for container padding issues if any */
+    margin-left: -15px;
+    margin-right: -15px;
+    padding-left: 15px;
+    padding-right: 15px;
+}
+
+/* Shadow state (added via JS) */
+.sticky-header-bar.is-scrolled {
+    border-bottom: 1px solid #f0f0f0;
+}
+
+/* Adjust the included header to fit nicely */
+.header-main-content {
+    flex-grow: 1;
 }

@@ -2,12 +2,11 @@ import datetime
 import logging
 
 from django import forms
-from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Count, Sum, DecimalField, Q
 from django.db.models.functions import Coalesce
-from django.urls import reverse_lazy
-from django.views.generic import ListView, CreateView, UpdateView, DeleteView
+from django.urls import reverse, reverse_lazy
+from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView
 
 from api.models import Category, Transaction
 
@@ -134,29 +133,25 @@ class CategoryCreateView(CreateView):
     def form_valid(self, form):
         # Automatically assign the current user to the category
         form.instance.user = self.request.user
-        messages.success(self.request, "Categoria creata con successo!")
         return super().form_valid(form)
 
     def form_invalid(self, form):
-        messages.error(self.request, "Errore durante la creazione. Controlla i dati.")
         # If invalid, we must re-render the list context so the page doesn't break
         return self.render_to_response(self.get_context_data(form=form))
 
 
 
 
-class CategoryDetailView(UpdateView):
+class CategoryDetailView(DetailView):
     """
-    A view to display the details of a specific Category, allow updates,
+    A view to display the details of a specific Category,
     and list all associated transactions with pagination.
     """
     model = Category
-    form_class = CategoryForm
-    template_name = 'categories/category-detail.html'  # New template
-    success_url = reverse_lazy('category_list')
+    template_name = 'categories/category-detail.html'
 
     def get_queryset(self):
-        # Security: Only allow the user to view/edit their own categories
+        # Security: Only allow the user to view their own categories
         return Category.objects.filter(user=self.request.user)
 
     def _get_filters(self):
@@ -167,9 +162,11 @@ class CategoryDetailView(UpdateView):
             if get_year:
                 selected_year = int(get_year)
             else:
-                selected_year = None
-        except (TypeError, ValueError):
-            selected_year = None
+                # Fallback logic consistent with other views
+                last_t = Transaction.objects.filter(user=self.request.user, status='categorized').order_by('-transaction_date').first()
+                selected_year = last_t.transaction_date.year if last_t else datetime.datetime.now().year
+        except (TypeError, ValueError, AttributeError):
+            selected_year = datetime.datetime.now().year
 
         selected_months = self.request.GET.getlist('months')
         # Also support single 'month' parameter
@@ -192,23 +189,16 @@ class CategoryDetailView(UpdateView):
         category = self.object
         search_query, selected_year, selected_months = self._get_filters()
 
-        # 1. Build filters
-        filter_q = Q()
-        if selected_year:
-            filter_q &= Q(transactions__transaction_date__year=selected_year)
+        # 1. Build filters for SUMMARY (matching categories.html logic)
+        summary_filter_q = Q(transactions__transaction_date__year=selected_year)
         if selected_months:
-            filter_q &= Q(transactions__transaction_date__month__in=selected_months)
-        if search_query:
-            filter_q &= (
-                Q(transactions__merchant__name__icontains=search_query) |
-                Q(transactions__description__icontains=search_query)
-            )
+            summary_filter_q &= Q(transactions__transaction_date__month__in=selected_months)
 
         # 2. Fetch Aggregated Summary Data for the Summary Card
         summary = Category.objects.filter(id=category.pk).annotate(
-            transaction_count=Count('transactions', filter=filter_q),
+            transaction_count=Count('transactions', filter=summary_filter_q),
             transaction_amount=Coalesce(
-                Sum('transactions__amount', filter=filter_q),
+                Sum('transactions__amount', filter=summary_filter_q),
                 0.0,
                 output_field=DecimalField()
             )
@@ -216,7 +206,7 @@ class CategoryDetailView(UpdateView):
 
         context['category_summary'] = summary
 
-        # 3. Fetch and Paginate Associated Transactions
+        # 3. Fetch and Paginate Associated Transactions (with search)
         t_filter_q = Q(user=self.request.user, category=category)
         if selected_year:
             t_filter_q &= Q(transaction_date__year=selected_year)
@@ -243,10 +233,23 @@ class CategoryDetailView(UpdateView):
 
         return context
 
+
+class CategoryUpdateView(UpdateView):
+    """
+    A view to allow updating an existing Category.
+    """
+    model = Category
+    form_class = CategoryForm
+    template_name = 'categories/category-edit.html'
+
+    def get_queryset(self):
+        # Security: Only allow the user to edit their own categories
+        return Category.objects.filter(user=self.request.user)
+
+    def get_success_url(self):
+        return reverse('category_detail', kwargs={'pk': self.object.pk})
+
     def form_valid(self, form):
-        # The form_valid method handles the update. The success message is shown
-        # after the redirect to the success_url (or in this case, the same page).
-        messages.success(self.request, "Categoria aggiornata correttamente.")
         return super().form_valid(form)
 
 class CategoryDeleteView(DeleteView):
@@ -263,8 +266,6 @@ class CategoryDeleteView(DeleteView):
         return Category.objects.filter(user=self.request.user)
 
     def form_valid(self, form):
-        # Add a success message after deletion
-        messages.success(self.request, f"Categoria '{self.object.name}' eliminata con successo.")
         # Important: The model's Foreign Key (Category to Transaction) configuration
         # (e.g., CASCADE, SET_NULL, PROTECT) will determine what happens to related transactions.
         return super().form_valid(form)

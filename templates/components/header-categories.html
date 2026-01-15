@@ -1,0 +1,15 @@
+{% extends "components/header.html" %}
+
+{% block header_extra_title %}
+    <div class="header-total-pill" style="margin: 0;">
+        <span class="label">Totale Speso</span>
+        <span class="value">€ {{ total|floatformat:2|default:"0,00" }}</span>
+    </div>
+{% endblock %}
+
+{% block header_content %}
+    <div style="display: flex; align-items: center; gap: 0.75rem;">
+        {% include "components/year-select-compact.html" %}
+        {% include "components/create-category-button.html" %}
+    </div>
+{% endblock %}

@@ -56,23 +56,24 @@ class TestCategoryDetailView:
         
         response = client.get(url)
         assert response.status_code == 200
-        assert len(response.context['transactions']) == 3
+        # Should show 2 transactions (Jan 2025 and Feb 2025) because it defaults to the latest year (2025)
+        assert len(response.context['transactions']) == 2
 
     def test_category_detail_search_filter(self, client):
         client.login(username="testuser", password="password")
         url = reverse('category_detail', args=[self.category.id])
         
-        # Search for "Supermarket"
+        # Search for "Supermarket" - defaults to 2025
         response = client.get(url, {'search': 'Supermarket'})
         assert response.status_code == 200
-        # Should show 2 transactions (Jan 2025 and Jan 2024)
-        assert len(response.context['transactions']) == 2
-        
-        # Search for "Dinner"
-        response = client.get(url, {'search': 'Dinner'})
-        assert response.status_code == 200
+        # Should show 1 transaction (Jan 2025)
         assert len(response.context['transactions']) == 1
-        assert response.context['transactions'][0].description == "Dinner out"
+        
+        # Search for "Supermarket" in 2024
+        response = client.get(url, {'search': 'Supermarket', 'year': 2024})
+        assert response.status_code == 200
+        # Should show 1 transaction (Jan 2024)
+        assert len(response.context['transactions']) == 1
 
     def test_category_detail_year_filter(self, client):
         client.login(username="testuser", password="password")
@@ -92,11 +93,11 @@ class TestCategoryDetailView:
         client.login(username="testuser", password="password")
         url = reverse('category_detail', args=[self.category.id])
         
-        # Filter for Jan (across all years if no year specified, OR let's see how we implement it)
-        # Usually year is also specified or defaulted.
+        # Filter for Jan (defaults to 2025)
         response = client.get(url, {'months': [1]})
         assert response.status_code == 200
-        assert len(response.context['transactions']) == 2
+        # Should show 1 transaction (Jan 2025)
+        assert len(response.context['transactions']) == 1
         
         # Filter for Feb
         response = client.get(url, {'months': [2]})

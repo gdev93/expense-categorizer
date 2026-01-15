@@ -1,0 +1,41 @@
+{% extends "main/index.html" %}
+{% load static %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/categories.css' %}">
+    <link rel="stylesheet" href="{% static 'css/list.css' %}">
+{% endblock %}
+
+{% block content %}
+    <div class="container mt-2">
+
+        {% include "components/header-with-back-to-category-button.html" with title="Modifica Categoria" category_summary=category %}
+
+        <div class="form-container-small mt-4">
+            <div class="category-form-section">
+                <form method="post" class="category-form">
+                    {% csrf_token %}
+
+                    <div class="form-group mb-3">
+                        <label for="{{ form.name.id_for_label }}">Nome Categoria</label>
+                        {{ form.name }}
+                        {% if form.name.errors %}
+                            <div class="text-danger">{{ form.name.errors }}</div>{% endif %}
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label for="{{ form.description.id_for_label }}">Descrizione (Opzionale)</label>
+                        {{ form.description }}
+                        {% if form.description.errors %}
+                            <div class="text-danger">{{ form.description.errors }}</div>{% endif %}
+                    </div>
+
+                    <div class="form-actions d-flex gap-3 justify-content-center">
+                        <button type="submit" class="btn btn-primary">Salva Modifiche</button>
+                        <a href="{% url 'category_detail' category.id %}" class="btn btn-secondary">Annulla</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock content %}

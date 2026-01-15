@@ -1,0 +1,15 @@
+<div class="filters filters-clean">
+    <div class="filter-group">
+        <select id="year-select"
+                name="year"
+                class="form-select"
+                form="main-filter-form"
+                onchange="const monthSelect = document.getElementById('month-select'); if (monthSelect) monthSelect.value = ''; debounceFormSubmit(this.form)">
+            {% for available_year in available_years %}
+                <option value="{{ available_year }}" {% if available_year == year %}selected{% endif %}>
+                    {{ available_year }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+</div>
