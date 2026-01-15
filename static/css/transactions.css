@@ -395,7 +395,111 @@
 }
 
 /* =========================================
-   7. RESPONSIVE QUERIES
+   7. TRANSACTION DETAILS
+   ========================================= */
+
+.detail-card {
+    overflow: hidden;
+    margin-bottom: 2rem;
+}
+
+.detail-header {
+    padding: 0 0 15px 0;
+    border-bottom: 1px solid #edf2f7;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+.detail-header h2 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: #475569;
+}
+
+.detail-body {
+    padding: 0;
+}
+
+.amount-highlight {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--expense-color);
+    margin: 10px 0;
+    letter-spacing: -1px;
+}
+
+.amount-highlight.is-income {
+    color: var(--income-color);
+}
+
+.field-label {
+    font-weight: 700;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    color: #64748b;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.new-category-box {
+    background: #fffbeb;
+    border: 1px dashed #fcd34d;
+    border-radius: 8px;
+    padding: 20px;
+    margin-top: 20px;
+}
+
+.divider {
+    height: 1px;
+    background: #e2e8f0;
+    margin: 30px 0;
+}
+
+.amount-section {
+    margin-bottom: 3rem;
+}
+
+.amount-date {
+    color: #64748b;
+    font-weight: 500;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 24px;
+}
+
+.description-textarea {
+    background-color: #f8fafc;
+    border-color: #e2e8f0;
+    font-size: 0.9rem;
+}
+
+.field-label-highlight {
+    color: #92400e !important;
+}
+
+.help-text-highlight {
+    color: #b45309;
+    margin-top: 8px;
+    display: block;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 30px;
+}
+
+/* =========================================
+   8. RESPONSIVE QUERIES
    ========================================= */
 
 /* Desktop Specific Adjustments */
@@ -451,7 +555,76 @@
         font-size: 0.8rem;
     }
 
-    /* 3. Existing Rules List */
+    /* 3. Transaction Details & Form Grid */
+    .detail-header {
+        margin-bottom: 15px;
+    }
+
+    .amount-section {
+        margin-bottom: 1.5rem;
+    }
+
+    .amount-highlight {
+        font-size: 1.8rem;
+        margin: 5px 0;
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 16px !important;
+        margin-bottom: 16px !important;
+    }
+
+    .col-span-2-mobile {
+        grid-column: span 2 !important;
+    }
+
+    .divider {
+        margin: 20px 0;
+    }
+
+    .new-category-box {
+        padding: 15px;
+        margin-top: 15px;
+    }
+
+    .form-actions {
+        margin-top: 10px !important;
+        padding-top: 0 !important;
+        margin-bottom: 20px !important;
+        flex-direction: column;
+    }
+
+    .form-actions .btn {
+        width: 100%;
+        padding: 0 20px !important;
+        height: 40px !important;
+        font-size: 0.95rem !important;
+    }
+
+    .section-title {
+        margin-bottom: 15px !important;
+        font-size: 1.1rem !important;
+    }
+
+    .mt-4-mobile {
+        margin-top: 15px !important;
+    }
+
+    .header h1 {
+        font-size: 1.25rem !important;
+    }
+
+    .field-label {
+        font-size: 0.8rem !important;
+        margin-bottom: 4px !important;
+    }
+
+    .amount-date {
+        font-size: 0.9rem !important;
+    }
+
+    /* 4. Existing Rules List */
     .rule-item {
         flex-direction: column;
         align-items: flex-start;

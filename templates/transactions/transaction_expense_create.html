@@ -24,7 +24,7 @@
                 <form method="post" action="{% url 'transaction_create' %}">
                     {% csrf_token %}
 
-                    <div class="form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                    <div class="form-grid">
 
                         <div class="filter-group">
                             <label for="id_merchant_raw_name">Nome Esercente *</label>
@@ -46,9 +46,11 @@
 
                         <div class="filter-group">
                             <label>Tipo</label>
-                            <span class="transaction-status status-expense" style="align-self: flex-start; margin-top: 10px;">
-                                Spesa
-                            </span>
+                            <div class="d-flex align-items-center mt-2">
+                                <span class="transaction-status status-expense">
+                                    Spesa
+                                </span>
+                            </div>
                             <small class="form-text">Le nuove transazioni sono di tipo spesa.</small>
                         </div>
                     </div>
