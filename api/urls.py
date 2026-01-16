@@ -17,6 +17,7 @@ Including another URLconf
 from django.urls import path
 from django.views.generic import RedirectView
 
+from api.views import error_views, test_views
 from api.entry_point_views import login_form, authenticate_user, register_form, create_user, logout_user
 from api.views.category_view import CategoryCreateView, CategoryListView, CategoryDetailView, CategoryDeleteView, CategoryUpdateView
 from api.views.csv_upload_view import CsvUploadView, CsvUploadDelete, CsvProcessView, CsvProgressView, \
@@ -53,5 +54,8 @@ urlpatterns = [
     path('categories/<int:pk>/', CategoryDetailView.as_view(), name='category_detail'),
     path('categories/<int:pk>/edit/', CategoryUpdateView.as_view(), name='category_update'),
     path('categories/<int:pk>/delete/', CategoryDeleteView.as_view(), name='category_delete'),
-    path("", RedirectView.as_view(url="transactions/"), name="entry_point")
+    path("", RedirectView.as_view(url="transactions/"), name="entry_point"),
+    # Test error triggers
+    path('test-403/', test_views.trigger_403, name='test_403'),
+    path('test-500/', test_views.trigger_500, name='test_500'),
 ]

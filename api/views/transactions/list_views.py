@@ -3,6 +3,7 @@ from dataclasses import dataclass, asdict, field
 from typing import Any
 
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.exceptions import BadRequest
 from django.db.models import Q, Sum
 from django.db.models import QuerySet
 from django.views.generic import ListView
@@ -36,16 +37,16 @@ class TransactionListView(LoginRequiredMixin, ListView):
     paginate_by = 50
 
     def _get_selected_year(self, queryset):
-        try:
-            get_year = self.request.GET.get('year')
-            if get_year:
+        get_year = self.request.GET.get('year')
+        if get_year:
+            try:
                 return int(get_year)
-            else:
-                # Fallback to most recent transaction year if no year provided
-                first_t = queryset.first()
-                return first_t.transaction_date.year if first_t else datetime.datetime.now().year
-        except (TypeError, ValueError, AttributeError):
-            return datetime.datetime.now().year
+            except (TypeError, ValueError):
+                raise BadRequest("Invalid year format.")
+        else:
+            # Fallback to most recent transaction year if no year provided
+            first_t = queryset.first()
+            return first_t.transaction_date.year if first_t else datetime.datetime.now().year
 
     def get_queryset(self):
         """Filter transactions based on user and query parameters"""
@@ -83,7 +84,7 @@ class TransactionListView(LoginRequiredMixin, ListView):
                 elif amount_operator == 'lte':
                     queryset = queryset.filter(amount__lte=amount_value)
             except (ValueError, TypeError):
-                pass
+                raise BadRequest("Invalid amount format.")
 
         # Search filter
         search_query = self.request.GET.get('search')
@@ -171,16 +172,16 @@ class IncomeListView(LoginRequiredMixin, ListView):
     paginate_by = 50
 
     def _get_selected_year(self, queryset):
-        try:
-            get_year = self.request.GET.get('year')
-            if get_year:
+        get_year = self.request.GET.get('year')
+        if get_year:
+            try:
                 return int(get_year)
-            else:
-                # Fallback to most recent transaction year if no year provided
-                first_t = queryset.first()
-                return first_t.transaction_date.year if first_t else datetime.datetime.now().year
-        except (TypeError, ValueError, AttributeError):
-            return datetime.datetime.now().year
+            except (TypeError, ValueError):
+                raise BadRequest("Invalid year format.")
+        else:
+            # Fallback to most recent transaction year if no year provided
+            first_t = queryset.first()
+            return first_t.transaction_date.year if first_t else datetime.datetime.now().year
 
     def get_queryset(self):
         queryset = (Transaction.objects
@@ -206,7 +207,7 @@ class IncomeListView(LoginRequiredMixin, ListView):
                 elif amount_operator == 'lte':
                     queryset = queryset.filter(amount__lte=amount_value)
             except (ValueError, TypeError):
-                pass
+                raise BadRequest("Invalid amount format.")
 
         # Year logic
         selected_year = self._get_selected_year(queryset)

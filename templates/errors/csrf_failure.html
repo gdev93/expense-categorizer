@@ -1,0 +1,16 @@
+{% extends "main/index.html" %}
+
+{% block title %}403 - Errore CSRF{% endblock %}
+{% block app_title %}403 - Errore CSRF{% endblock %}
+
+{% block content %}
+<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 60vh; text-align: center; padding: 20px;">
+    <h1 style="font-size: 6rem; color: var(--secondary-color); margin-bottom: 0;">403</h1>
+    <h2 style="margin-bottom: 20px;">Verifica di sicurezza fallita</h2>
+    <p style="color: var(--secondary-color); max-width: 500px; margin-bottom: 30px;">
+        La verifica del token CSRF è fallita. La tua sessione potrebbe essere scaduta o la richiesta potrebbe essere sospetta.
+        Per favore, prova a ricaricare la pagina e riprova.
+    </p>
+    <a href="/" class="btn btn-primary">Torna alla Home</a>
+</div>
+{% endblock %}

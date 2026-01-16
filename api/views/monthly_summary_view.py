@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from datetime import date
 from collections import defaultdict
 
+from django.core.exceptions import BadRequest
 from django.core.paginator import Paginator
 from django.db.models import Sum
 from django.http import HttpRequest, HttpResponse
@@ -40,18 +41,17 @@ class MonthlySummerView(View):
 
         # Selected year from query string (check both 'year' and 'selected_year')
         try:
-            selected_year = int(
-                request.GET.get("selected_year") or request.GET.get("year", default_year)
-            )
+            year_param = request.GET.get("selected_year") or request.GET.get("year")
+            selected_year = int(year_param) if year_param else default_year
         except (TypeError, ValueError):
-            selected_year = default_year
+            raise BadRequest("Invalid year format.")
 
         # Selected month from query string (defaults to current month)
         try:
-            selected_month = request.GET.get("month") or request.GET.get("selected_month")
-            selected_month = int(selected_month) if selected_month else None
+            month_param = request.GET.get("month") or request.GET.get("selected_month")
+            selected_month = int(month_param) if month_param else None
         except (TypeError, ValueError):
-            selected_month = None
+            raise BadRequest("Invalid month format.")
 
         last_transaction = Transaction.objects.filter(user=request.user, status='categorized').order_by('-transaction_date').first()
         last_transaction_date = last_transaction.transaction_date if last_transaction else today

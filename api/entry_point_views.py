@@ -3,6 +3,7 @@ import os
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_not_required
 from django.contrib.auth.models import User
+from django.core.exceptions import PermissionDenied, BadRequest
 from django.shortcuts import render, redirect
 
 allowed_emails = os.getenv('ALLOWED_EMAILS','').split(',')
@@ -29,8 +30,13 @@ def create_user(request):
         username = request.POST.get('username')
         password = request.POST.get('password')
         email = request.POST.get('email', '')
+
+        if not username or not password or not email:
+            raise BadRequest("Username, password, and email are required.")
+
         if email not in allowed_emails:
-            return redirect('register_form')
+            raise PermissionDenied("Email not authorized.")
+
         first_name = request.POST.get('first_name', '')
         last_name = request.POST.get('last_name', '')
 
@@ -55,6 +61,10 @@ def create_user(request):
 def authenticate_user(request):
     username = request.POST.get('username')
     password = request.POST.get('password')
+
+    if not username or not password:
+        raise BadRequest("Username and password are required.")
+
     user = authenticate(request, username=username, password=password)
     if user is not None:
         login(request, user)

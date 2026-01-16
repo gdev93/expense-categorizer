@@ -1,6 +1,7 @@
 import logging
 
 from django.contrib.auth.models import User
+from django.core.exceptions import BadRequest
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect
 from django.urls import reverse, reverse_lazy
@@ -15,11 +16,17 @@ class RuleDeleteView(DeleteView):
     model = Rule
     success_url = reverse_lazy('transaction_list')
 
+    def get_queryset(self):
+        return self.model.objects.filter(user=self.request.user)
+
 class RuleDefineView(View):
 
     def post(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
         merchant_name = request.POST.get('merchant_name', '')
         category_name = request.POST.get('category_name', '')
+
+        if not merchant_name or not category_name:
+            raise BadRequest("Merchant name and category name are required.")
 
         # Get or create the merchant - unpack the tuple
         merchant, created = Merchant.objects.get_or_create(name=merchant_name, user=request.user)

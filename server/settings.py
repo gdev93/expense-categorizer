@@ -135,6 +135,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 LOGIN_URL = '/accounts/'
 
+CSRF_FAILURE_VIEW = 'api.views.error_views.csrf_failure'
+
 
 
 LOGGING = {

@@ -24,3 +24,8 @@ urlpatterns = [
     path('costs/', include(costs_urls)),
     path("", include(api_urls), name="api")
 ]
+
+handler400 = 'api.views.error_views.error_400'
+handler403 = 'api.views.error_views.error_403'
+handler404 = 'api.views.error_views.error_404'
+handler500 = 'api.views.error_views.error_500'

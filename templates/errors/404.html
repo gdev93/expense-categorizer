@@ -1,0 +1,15 @@
+{% extends "main/index.html" %}
+
+{% block title %}404 - Pagina non trovata{% endblock %}
+{% block app_title %}404 - Pagina non trovata{% endblock %}
+
+{% block content %}
+<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 60vh; text-align: center; padding: 20px;">
+    <h1 style="font-size: 6rem; color: var(--secondary-color); margin-bottom: 0;">404</h1>
+    <h2 style="margin-bottom: 20px;">Pagina non trovata</h2>
+    <p style="color: var(--secondary-color); max-width: 500px; margin-bottom: 30px;">
+        Spiacenti, la pagina che stai cercando non esiste o è stata spostata.
+    </p>
+    <a href="/" class="btn btn-primary">Torna alla Home</a>
+</div>
+{% endblock %}

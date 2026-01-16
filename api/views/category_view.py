@@ -2,6 +2,7 @@ import datetime
 import logging
 
 from django import forms
+from django.core.exceptions import BadRequest
 from django.core.paginator import Paginator
 from django.db.models import Count, Sum, DecimalField, Q
 from django.db.models.functions import Coalesce
@@ -49,6 +50,8 @@ class CategoryListView(ListView):
                 last_t = Transaction.objects.filter(user=self.request.user, status='categorized').order_by('-transaction_date').first()
                 selected_year = last_t.transaction_date.year if last_t else datetime.datetime.now().year
         except (TypeError, ValueError, AttributeError):
+            if self.request.GET.get('year'):
+                raise BadRequest("Invalid year format.")
             selected_year = datetime.datetime.now().year
 
         selected_months = self.request.GET.getlist('months')
@@ -62,7 +65,7 @@ class CategoryListView(ListView):
             try:
                 processed_months.append(int(m))
             except (TypeError, ValueError):
-                continue
+                raise BadRequest(f"Invalid month format: {m}")
 
         return selected_year, processed_months
 
@@ -166,6 +169,8 @@ class CategoryDetailView(DetailView):
                 last_t = Transaction.objects.filter(user=self.request.user, status='categorized').order_by('-transaction_date').first()
                 selected_year = last_t.transaction_date.year if last_t else datetime.datetime.now().year
         except (TypeError, ValueError, AttributeError):
+            if self.request.GET.get('year'):
+                raise BadRequest("Invalid year format.")
             selected_year = datetime.datetime.now().year
 
         selected_months = self.request.GET.getlist('months')
@@ -179,7 +184,7 @@ class CategoryDetailView(DetailView):
             try:
                 processed_months.append(int(m))
             except (TypeError, ValueError):
-                continue
+                raise BadRequest(f"Invalid month format: {m}")
 
         return search_query, selected_year, processed_months
 

@@ -11,6 +11,7 @@ from django import forms
 from django.contrib import messages
 from django.contrib.auth.models import User
 from django.contrib.postgres.aggregates import StringAgg
+from django.core.exceptions import BadRequest, PermissionDenied
 from django.core.paginator import Paginator
 from django.core.validators import FileExtensionValidator
 from django.db import transaction
@@ -95,6 +96,9 @@ def _parse_csv(csv_file) -> List[Dict[str, str]]:
 class CsvUploadDelete(DeleteView):
     model = CsvUpload
     success_url = reverse_lazy('transactions_upload')
+
+    def get_queryset(self):
+        return self.model.objects.filter(user=self.request.user)
 
     def post(self, request, *args, **kwargs):
         response = super().post(request, *args, **kwargs)
@@ -256,6 +260,9 @@ class CsvUploadView(ListView, FormView):
 
             with transaction.atomic():
                 csv_upload = persist_csv_file(file_data, self.request.user, uploaded_file)
+
+            if not csv_upload:
+                raise Exception("Failed to persist CSV upload record.")
 
             return CsvProcessingResult(
                 csv_upload=csv_upload,
@@ -468,6 +475,9 @@ class CsvUploadClean(DetailView):
         csv_file = self.get_object()
         merchant_id = request.POST.get('merchant_id')
         new_category_id = request.POST.get('new_category_id')
+
+        if not merchant_id or not new_category_id:
+            raise BadRequest("Merchant ID and Category ID are required.")
 
         merchant = get_object_or_404(Merchant, id=merchant_id, user=self.request.user)
         new_category = get_object_or_404(Category, id=new_category_id, user=self.request.user)
