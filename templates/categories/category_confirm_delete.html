@@ -16,17 +16,50 @@
                 <p class="mb-3">Sei sicuro di voler eliminare definitivamente la categoria <strong>"{{ object.name }}"</strong>?</p>
 
                 <div class="alert alert-warning mb-4">
-                    <strong>Attenzione:</strong> Questa azione è <strong>irreversibile</strong>. Tutte le transazioni collegate
-                    a questa categoria saranno <strong>eliminate</strong> o <strong>non categorizzate</strong> a seconda della configurazione del tuo database.
+                    <strong>Attenzione:</strong> Questa azione è <strong>irreversibile</strong>.
+                    Prima di eliminare la categoria <strong>"{{ object.name }}"</strong>, devi selezionare una categoria esistente
+                    o crearne una nuova a cui riassegnare tutte le transazioni collegate.
                 </div>
 
-                <form method="post">
+                <form method="post" id="delete-category-form">
                     {% csrf_token %}
-                    <div class="form-actions d-flex gap-3 justify-content-center">
-                        <button type="submit" class="btn btn-danger">Sì, Elimina Categoria</button>
+                    
+                    <div class="mb-4">
+                        <label for="replacement_category" class="form-label">Seleziona una categoria esistente:</label>
+                        <select name="replacement_category" id="replacement_category" class="form-select">
+                            <option value="">-- Scegli una categoria --</option>
+                            {% for cat in other_categories %}
+                                <option value="{{ cat.pk }}">{{ cat.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-4 text-center">
+                        <span class="text-muted">oppure</span>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="new_category_name" class="form-label">Crea una nuova categoria:</label>
+                        <input type="text" name="new_category_name" id="new_category_name" class="form-control" placeholder="Esempio: Varie">
+                    </div>
+
+                    <div class="form-actions d-flex gap-3 justify-content-center mt-4">
+                        <button type="submit" class="btn btn-danger">Sì, Elimina e Riassegna</button>
                         <a href="{% url 'category_detail' object.id %}" class="btn btn-secondary">Annulla</a>
                     </div>
                 </form>
+
+                <script>
+                    document.getElementById('delete-category-form').addEventListener('submit', function(e) {
+                        const existingCat = document.getElementById('replacement_category').value;
+                        const newCat = document.getElementById('new_category_name').value.trim();
+                        
+                        if (!existingCat && !newCat) {
+                            e.preventDefault();
+                            alert('Per favore, seleziona una categoria esistente o inserisci il nome per una nuova.');
+                        }
+                    });
+                </script>
             </div>
         </div>
     </div>

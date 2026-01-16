@@ -263,19 +263,54 @@ class CategoryUpdateView(SuccessMessageMixin, UpdateView):
 
 class CategoryDeleteView(DeleteView):
     """
-    A view to securely delete a user's category.
+    A view to securely delete a user's category and reassign its transactions/rules.
     """
     model = Category
-    # Django's DeleteView expects a template named *_confirm_delete.html by default
     template_name = 'categories/category_confirm_delete.html'
     success_url = reverse_lazy('category_list')
 
     def get_queryset(self):
-        # Security: Only allow the user to delete their own categories that are NOT default/system categories
+        # Security: Only allow the user to delete their own categories
         return Category.objects.filter(user=self.request.user)
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Provide other categories for reassignment
+        context['other_categories'] = Category.objects.filter(
+            user=self.request.user
+        ).exclude(pk=self.object.pk)
+        return context
+
     def form_valid(self, form):
-        # Important: The model's Foreign Key (Category to Transaction) configuration
-        # (e.g., CASCADE, SET_NULL, PROTECT) will determine what happens to related transactions.
-        messages.success(self.request, "Categoria eliminata con successo.")
+        category_to_delete = self.get_object()
+        replacement_category_id = self.request.POST.get('replacement_category')
+        new_category_name = self.request.POST.get('new_category_name')
+
+        if new_category_name:
+            # Create a new category or get existing if it has the same name
+            replacement_category, created = Category.objects.get_or_create(
+                name=new_category_name,
+                user=self.request.user
+            )
+        elif replacement_category_id:
+            try:
+                replacement_category = Category.objects.get(
+                    pk=replacement_category_id,
+                    user=self.request.user
+                )
+            except Category.DoesNotExist:
+                messages.error(self.request, "La categoria di sostituzione selezionata non è valida.")
+                return self.render_to_response(self.get_context_data(form=form))
+        else:
+            messages.error(self.request, "Devi selezionare una categoria di sostituzione o crearne una nuova.")
+            return self.render_to_response(self.get_context_data(form=form))
+
+        # Reassign transactions
+        category_to_delete.transactions.all().update(category=replacement_category)
+        
+        # Reassign rules if any
+        if hasattr(category_to_delete, 'rules'):
+            category_to_delete.rules.all().update(category=replacement_category)
+
+        messages.success(self.request, f"Categoria '{category_to_delete.name}' eliminata. Tutte le transazioni sono state spostate in '{replacement_category.name}'.")
         return super().form_valid(form)
