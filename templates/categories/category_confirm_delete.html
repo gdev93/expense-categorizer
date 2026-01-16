@@ -4,6 +4,147 @@
 {% block extra_css %}
     <link rel="stylesheet" href="{% static 'css/categories.css' %}">
     <link rel="stylesheet" href="{% static 'css/list.css' %}">
+    <style>
+        .category-selection-wrapper {
+            margin-top: 20px;
+        }
+
+        .search-container {
+            position: relative;
+            margin-bottom: 15px;
+        }
+
+        .search-container .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6c757d;
+        }
+
+        .search-container .form-control {
+            padding-left: 35px;
+        }
+
+        .category-scroll-area {
+            max-height: 350px;
+            overflow-y: auto;
+            border: 1px solid #edf2f7;
+            border-radius: 12px;
+            padding: 10px;
+            background: #f8f9fa;
+        }
+
+        .category-card {
+            display: flex;
+            align-items: flex-start;
+            padding: 15px;
+            background: white;
+            border: 2px solid #edf2f7;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .category-card:hover {
+            border-color: var(--primary-color);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        .category-card.selected {
+            border-color: var(--primary-color);
+            background-color: #fffdf5;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .category-card input[type="radio"] {
+            margin-top: 3px;
+            margin-right: 15px;
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: var(--primary-color);
+        }
+
+        .category-card label {
+            flex: 1;
+            margin: 0;
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--nav-text-color);
+        }
+
+        .category-card .card-content {
+            flex: 1;
+        }
+
+        .new-category-input-wrapper {
+            margin-top: 10px;
+            display: none;
+        }
+
+        .category-card.selected .new-category-input-wrapper {
+            display: block;
+        }
+
+        .category-card.new-card {
+            border-style: dashed;
+            background-color: #fcfcfc;
+        }
+
+        .category-card.new-card.selected {
+            border-style: solid;
+        }
+
+        .section-title {
+            font-weight: 700;
+            color: var(--nav-text-color);
+            font-size: 1.1rem;
+            margin-bottom: 1.5rem !important;
+            display: block;
+        }
+
+        .divider-text {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            margin: 2rem 0;
+            color: #6c757d;
+        }
+
+        .divider-text::before,
+        .divider-text::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .divider-text:not(:empty)::before {
+            margin-right: 1rem;
+        }
+
+        .divider-text:not(:empty)::after {
+            margin-left: 1rem;
+        }
+
+        /* Custom scrollbar */
+        .category-scroll-area::-webkit-scrollbar {
+            width: 6px;
+        }
+        .category-scroll-area::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        .category-scroll-area::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 10px;
+        }
+        .category-scroll-area::-webkit-scrollbar-thumb:hover {
+            background: #999;
+        }
+    </style>
 {% endblock %}
 
 {% block content %}
@@ -17,30 +158,46 @@
 
                 <div class="alert alert-warning mb-4">
                     <strong>Attenzione:</strong> Questa azione è <strong>irreversibile</strong>.
-                    Prima di eliminare la categoria <strong>"{{ object.name }}"</strong>, devi selezionare una categoria esistente
-                    o crearne una nuova a cui riassegnare tutte le transazioni collegate.
+                    Devi riassegnare tutte le transazioni e le regole a un'altra categoria.
                 </div>
 
                 <form method="post" id="delete-category-form">
                     {% csrf_token %}
                     
-                    <div class="mb-4">
-                        <label for="replacement_category" class="form-label">Seleziona una categoria esistente:</label>
-                        <select name="replacement_category" id="replacement_category" class="form-select">
-                            <option value="">-- Scegli una categoria --</option>
+                    <div class="category-selection-wrapper">
+                        <label class="section-title">Scegli la categoria di destinazione:</label>
+
+                        <!-- New Category Option -->
+                        <div class="category-card new-card selected" id="new-card">
+                            <input type="radio" name="replacement_category" value="" id="radio_new" checked>
+                            <div class="card-content">
+                                <label for="radio_new">Crea una nuova categoria</label>
+                                <div class="new-category-input-wrapper">
+                                    <input type="text" name="new_category_name" id="new_category_name" 
+                                           class="form-control" placeholder="Esempio: Varie, Altro..." autofocus>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="divider-text">
+                            <span class="small text-uppercase fw-bold">oppure seleziona una esistente</span>
+                        </div>
+
+                        <div class="search-container">
+                            <span class="search-icon">🔍</span>
+                            <input type="text" id="category-search" class="form-control" placeholder="Cerca categoria...">
+                        </div>
+
+                        <div class="category-scroll-area" id="category-list">
                             {% for cat in other_categories %}
-                                <option value="{{ cat.pk }}">{{ cat.name }}</option>
+                                <div class="category-card existing-card">
+                                    <input type="radio" name="replacement_category" value="{{ cat.pk }}" id="cat_{{ cat.pk }}">
+                                    <div class="card-content">
+                                        <label for="cat_{{ cat.pk }}" class="category-name-label">{{ cat.name }}</label>
+                                    </div>
+                                </div>
                             {% endfor %}
-                        </select>
-                    </div>
-
-                    <div class="mb-4 text-center">
-                        <span class="text-muted">oppure</span>
-                    </div>
-
-                    <div class="mb-4">
-                        <label for="new_category_name" class="form-label">Crea una nuova categoria:</label>
-                        <input type="text" name="new_category_name" id="new_category_name" class="form-control" placeholder="Esempio: Varie">
+                        </div>
                     </div>
 
                     <div class="form-actions d-flex gap-3 justify-content-center mt-4">
@@ -50,13 +207,73 @@
                 </form>
 
                 <script>
+                    // Handle initial state
+                    document.addEventListener('DOMContentLoaded', function() {
+                        const selectedRadio = document.querySelector('input[name="replacement_category"]:checked');
+                        if (selectedRadio) {
+                            const card = selectedRadio.closest('.category-card');
+                            // Reset all and set current
+                            document.querySelectorAll('.category-card').forEach(c => c.classList.remove('selected'));
+                            card.classList.add('selected');
+                            
+                            const newCatInput = document.getElementById('new_category_name');
+                            if (selectedRadio.value === '') {
+                                newCatInput.disabled = false;
+                            } else {
+                                newCatInput.disabled = true;
+                            }
+                        }
+                    });
+
+                    // Handle card clicks
+                    document.querySelectorAll('.category-card').forEach(card => {
+                        card.addEventListener('click', function(e) {
+                            // Don't trigger if clicking the text input itself
+                            if (e.target.tagName === 'INPUT' && e.target.type === 'text') return;
+                            
+                            const radio = this.querySelector('input[type="radio"]');
+                            radio.checked = true;
+                            
+                            // Update UI classes
+                            document.querySelectorAll('.category-card').forEach(c => c.classList.remove('selected'));
+                            this.classList.add('selected');
+                            
+                            const newCatInput = document.getElementById('new_category_name');
+                            if (this.id === 'new-card') {
+                                newCatInput.disabled = false;
+                                newCatInput.focus();
+                            } else {
+                                newCatInput.disabled = true;
+                            }
+                        });
+                    });
+
+                    // Search filtering
+                    document.getElementById('category-search').addEventListener('input', function(e) {
+                        const term = e.target.value.toLowerCase();
+                        document.querySelectorAll('.existing-card').forEach(card => {
+                            const name = card.querySelector('.category-name-label').textContent.toLowerCase();
+                            if (name.includes(term)) {
+                                card.style.display = 'flex';
+                            } else {
+                                card.style.display = 'none';
+                            }
+                        });
+                    });
+
+                    // Form validation
                     document.getElementById('delete-category-form').addEventListener('submit', function(e) {
-                        const existingCat = document.getElementById('replacement_category').value;
-                        const newCat = document.getElementById('new_category_name').value.trim();
+                        const selectedRadio = document.querySelector('input[name="replacement_category"]:checked');
+                        const newCatNameField = document.getElementById('new_category_name');
+                        const newCatName = newCatNameField.value.trim();
                         
-                        if (!existingCat && !newCat) {
+                        if (selectedRadio && selectedRadio.value === '' && !newCatName) {
                             e.preventDefault();
-                            alert('Per favore, seleziona una categoria esistente o inserisci il nome per una nuova.');
+                            alert('Per favore, inserisci un nome per la nuova categoria.');
+                            newCatNameField.focus();
+                        } else if (!selectedRadio) {
+                            e.preventDefault();
+                            alert('Per favore, seleziona una categoria esistente o creane una nuova.');
                         }
                     });
                 </script>

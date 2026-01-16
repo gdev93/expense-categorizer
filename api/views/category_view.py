@@ -11,7 +11,7 @@ from django.db.models.functions import Coalesce
 from django.urls import reverse, reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView
 
-from api.models import Category, Transaction
+from api.models import Category, Transaction, Rule
 
 logger = logging.getLogger(__name__)
 
@@ -306,11 +306,8 @@ class CategoryDeleteView(DeleteView):
             return self.render_to_response(self.get_context_data(form=form))
 
         # Reassign transactions
-        category_to_delete.transactions.all().update(category=replacement_category)
-        
-        # Reassign rules if any
-        if hasattr(category_to_delete, 'rules'):
-            category_to_delete.rules.all().update(category=replacement_category)
+        Transaction.objects.filter(category=category_to_delete).update(category=replacement_category)
+        Rule.objects.filter(category=category_to_delete).update(category=replacement_category)
 
         messages.success(self.request, f"Categoria '{category_to_delete.name}' eliminata. Tutte le transazioni sono state spostate in '{replacement_category.name}'.")
         return super().form_valid(form)
