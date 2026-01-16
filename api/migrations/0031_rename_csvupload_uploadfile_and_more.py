@@ -7,7 +7,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('api', '0030_update_upload_file_status'),
+        ('api', '0030_update_csv_upload_status'),
         ('costs', '0005_apiusagelog_final_earning_apiusagelog_input_cost_and_more'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]

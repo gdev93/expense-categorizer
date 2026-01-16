@@ -19,7 +19,7 @@
                 <button type="button" class="btn btn-outline-success" onclick="exportToCsv()">
                     📥 Esporta CSV
                 </button>
-                <a href="{% url 'transactions_upload_delete' csv_file.id %}" class="btn btn-danger">
+                <a href="{% url 'transactions_upload_delete' upload_file.id %}" class="btn btn-danger">
                     Elimina
                 </a>
                 <a href="{% url 'transactions_upload' %}" class="btn btn-secondary">
@@ -51,7 +51,7 @@
 
             <div class="filter-group" style="justify-content: flex-end;">
                 <button type="submit" class="btn btn-primary">Filtra</button>
-                <a href="{% url 'transactions_upload_detail' csv_file.id %}" class="btn btn-secondary">Reset</a>
+                <a href="{% url 'transactions_upload_detail' upload_file.id %}" class="btn btn-secondary">Reset</a>
             </div>
         </form>
 
