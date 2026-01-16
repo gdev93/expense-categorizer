@@ -7,7 +7,7 @@ from django.shortcuts import redirect
 from django.urls import reverse
 from django.views.generic import CreateView
 
-from api.models import Transaction, Category, Merchant, CsvUpload
+from api.models import Transaction, Category, Merchant, UploadFile
 
 pre_check_confidence_threshold = os.environ.get('PRE_CHECK_CONFIDENCE_THRESHOLD', 0.8)
 
@@ -51,14 +51,14 @@ class TransactionIncomeCreateView(LoginRequiredMixin, CreateView):
         last_day_of_month = transaction_date.replace(day=last_day)
 
         # Find CSV upload that has transactions in this date range
-        csv_upload_in_date_range = CsvUpload.objects.filter(
+        upload_file_in_date_range = UploadFile.objects.filter(
             user=self.request.user,
             transactions__transaction_date__gte=first_day_of_month,
             transactions__transaction_date__lte=last_day_of_month
         ).distinct().first()
 
         # Associate the transaction with the found CSV upload (if any)
-        form.instance.csv_upload = csv_upload_in_date_range
+        form.instance.upload_file = upload_file_in_date_range
 
         self.object = form.save()
 

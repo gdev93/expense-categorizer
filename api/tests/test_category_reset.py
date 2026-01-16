@@ -1,7 +1,7 @@
 import pytest
 from django.urls import reverse
 from django.contrib.auth.models import User
-from api.models import Category, Merchant, Transaction, CsvUpload
+from api.models import Category, Merchant, Transaction, UploadFile
 from datetime import date
 from decimal import Decimal
 
@@ -12,7 +12,7 @@ class TestCategoryResetIssue:
         self.user = User.objects.create_user(username="testuser", password="password")
         self.category = Category.objects.create(user=self.user, name="Food")
         self.merchant = Merchant.objects.create(user=self.user, name="Supermarket")
-        self.csv_upload = CsvUpload.objects.create(user=self.user, file_name="test.csv")
+        self.upload_file = UploadFile.objects.create(user=self.user, file_name="test.csv")
         
         # 2024 Transaction
         Transaction.objects.create(
@@ -22,7 +22,7 @@ class TestCategoryResetIssue:
             category=self.category,
             merchant=self.merchant,
             status="categorized",
-            csv_upload=self.csv_upload
+            upload_file=self.upload_file
         )
         
         # 2025 Transaction
@@ -33,7 +33,7 @@ class TestCategoryResetIssue:
             category=self.category,
             merchant=self.merchant,
             status="categorized",
-            csv_upload=self.csv_upload
+            upload_file=self.upload_file
         )
 
     def test_view_logic_handles_year_month_correctly(self, client):

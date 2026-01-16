@@ -27,11 +27,11 @@ class TransactionExportView(LoginRequiredMixin, View):
 
         # 2. Apply filters from Design Document
         upload_ids = data.get('upload_ids', [])
-        csv_upload_id = data.get('csv_upload')
+        upload_file_id = data.get('upload_file')
         
-        # Support both 'upload_ids' (list/json) and 'csv_upload' (single ID from form)
-        if csv_upload_id and not upload_ids:
-            upload_ids = [csv_upload_id]
+        # Support both 'upload_ids' (list/json) and 'upload_file' (single ID from form)
+        if upload_file_id and not upload_ids:
+            upload_ids = [upload_file_id]
 
         if upload_ids:
             if isinstance(upload_ids, str):
@@ -39,7 +39,7 @@ class TransactionExportView(LoginRequiredMixin, View):
                     upload_ids = json.loads(upload_ids)
                 except json.JSONDecodeError:
                     upload_ids = [upload_ids]
-            queryset = queryset.filter(csv_upload_id__in=upload_ids)
+            queryset = queryset.filter(upload_file_id__in=upload_ids)
         
         start_date = data.get('start_date')
         if start_date:
@@ -103,7 +103,7 @@ class TransactionExportView(LoginRequiredMixin, View):
         if only_expense:
             queryset = queryset.filter(transaction_type='expense')
         # Optimize query: select_related for file metadata and .iterator() for memory efficiency
-        iterator = queryset.select_related('csv_upload').order_by('-transaction_date', '-created_at').iterator()
+        iterator = queryset.select_related('upload_file').order_by('-transaction_date', '-created_at').iterator()
 
         # Exporter Layer: Use the generator to stream the response
         response = StreamingHttpResponse(

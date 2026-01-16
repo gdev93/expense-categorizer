@@ -9,7 +9,7 @@ from typing import Any
 
 from google import genai
 
-from api.models import CsvUpload, Category
+from api.models import UploadFile, Category
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -384,7 +384,7 @@ class ExpenseCategorizerAgent:
                 notes=f"Rilevamento fallito: {str(e)}"
             ), None
 
-    def build_batch_prompt(self, batch: list[AgentTransactionUpload], csv_upload: CsvUpload) -> str:
+    def build_batch_prompt(self, batch: list[AgentTransactionUpload], upload_file: UploadFile) -> str:
         """Costruisce il prompt per un batch di transazioni"""
 
         logic_constraints = """
@@ -418,7 +418,7 @@ class ExpenseCategorizerAgent:
 
         # Build CSV structure hints section
         csv_hints_section = ""
-        if csv_upload:
+        if upload_file:
             csv_hints_section = """
             ═══════════════════════════════════════════════════════════════════
             📋 INFORMAZIONI STRUTTURA CSV - SUGGERIMENTI PER L'ESTRAZIONE 📋
@@ -426,18 +426,18 @@ class ExpenseCategorizerAgent:
 
             Per aiutarti nell'estrazione dei dati, ecco le informazioni sulla struttura CSV identificata:
             """
-            if csv_upload.description_column_name:
-                csv_hints_section += f"📝 **DESCRIPTION FIELD**: Il campo '{csv_upload.description_column_name}' contiene la descrizione della transazione.\n"
-            if csv_upload.merchant_column_name:
-                csv_hints_section += f"🏪 **MERCHANT FIELD**: Il campo '{csv_upload.merchant_column_name}' contiene informazioni sul commerciante/beneficiario.\n"
-            if csv_upload.date_column_name:
-                csv_hints_section += f"📅 **DATE FIELD**: Il campo '{csv_upload.date_column_name}' contiene la data della transazione.\n"
-            if csv_upload.income_amount_column_name or csv_upload.expense_amount_column_name:
-                csv_hints_section += f"💰 **AMOUNT FIELD**: Il campo '{csv_upload.income_amount_column_name} oppure {csv_upload.expense_amount_column_name}' contiene l'importo della transazione.\n"
-            if csv_upload.operation_type_column_name:
-                csv_hints_section += f"🔄 **OPERATION TYPE FIELD**: Il campo '{csv_upload.operation_type_column_name}' contiene il tipo di operazione.\n"
-            if csv_upload.notes:
-                csv_hints_section += f"\n📌 **NOTE SULLA STRUTTURA CSV**:\n{csv_upload.notes}\n"
+            if upload_file.description_column_name:
+                csv_hints_section += f"📝 **DESCRIPTION FIELD**: Il campo '{upload_file.description_column_name}' contiene la descrizione della transazione.\n"
+            if upload_file.merchant_column_name:
+                csv_hints_section += f"🏪 **MERCHANT FIELD**: Il campo '{upload_file.merchant_column_name}' contiene informazioni sul commerciante/beneficiario.\n"
+            if upload_file.date_column_name:
+                csv_hints_section += f"📅 **DATE FIELD**: Il campo '{upload_file.date_column_name}' contiene la data della transazione.\n"
+            if upload_file.income_amount_column_name or upload_file.expense_amount_column_name:
+                csv_hints_section += f"💰 **AMOUNT FIELD**: Il campo '{upload_file.income_amount_column_name} oppure {upload_file.expense_amount_column_name}' contiene l'importo della transazione.\n"
+            if upload_file.operation_type_column_name:
+                csv_hints_section += f"🔄 **OPERATION TYPE FIELD**: Il campo '{upload_file.operation_type_column_name}' contiene il tipo di operazione.\n"
+            if upload_file.notes:
+                csv_hints_section += f"\n📌 **NOTE SULLA STRUTTURA CSV**:\n{upload_file.notes}\n"
 
             csv_hints_section += """
             ⚠️ IMPORTANTE: Usa questi suggerimenti come guida principale per identificare e estrarre i campi corretti.
@@ -709,14 +709,14 @@ class ExpenseCategorizerAgent:
 
     RISPONDI SOLO CON L'ARRAY JSON:"""
 
-    def process_batch(self, batch: list[AgentTransactionUpload], csv_upload: CsvUpload) -> tuple[list[
+    def process_batch(self, batch: list[AgentTransactionUpload], upload_file: UploadFile) -> tuple[list[
         TransactionCategorization], GeminiResponse | None]:
         """
         Process a single batch through LLM and deserialize into structured objects.
 
         Args:
             batch: list of transactions with 'id' and raw data
-            csv_upload: CsvUpload instance with column mappings and notes
+            upload_file: UploadFile instance with column mappings and notes
 
         Returns:
             list[TransactionCategorization]: Array of categorization objects
@@ -724,7 +724,7 @@ class ExpenseCategorizerAgent:
         try:
             logger.info(f"Analyzing batch with {len(batch)} transactions...")
             # Build prompt with CSV column hints
-            prompt = self.build_batch_prompt(batch, csv_upload)
+            prompt = self.build_batch_prompt(batch, upload_file)
 
             # Send to API using new SDK
             response = call_gemini_api(prompt, self.client)

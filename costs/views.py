@@ -66,10 +66,10 @@ class CostSummaryView(LoginRequiredMixin, ListView):
         context['upload_summary'] = ApiUsageLog.objects.filter(
             **filter_kwargs
         ).values(
-            'csv_upload__id', 'csv_upload__file_name', 'csv_upload__upload_date'
+            'upload_file__id', 'upload_file__file_name', 'upload_file__upload_date'
         ).annotate(
             total_input_tokens=Sum('input_tokens'),
             total_output_tokens=Sum('output_tokens'),
             total_cost=Sum('computed_cost')
-        ).order_by('-csv_upload__upload_date')
+        ).order_by('-upload_file__upload_date')
         return context

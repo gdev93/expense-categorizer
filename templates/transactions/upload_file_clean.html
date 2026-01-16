@@ -19,6 +19,9 @@
                 <button type="button" class="btn btn-outline-success" onclick="exportToCsv()">
                     📥 Esporta CSV
                 </button>
+                <a href="{% url 'transactions_upload_delete' csv_file.id %}" class="btn btn-danger">
+                    Elimina
+                </a>
                 <a href="{% url 'transactions_upload' %}" class="btn btn-secondary">
                     &larr; Torna agli Upload
                 </a>

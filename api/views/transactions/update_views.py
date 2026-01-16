@@ -1,4 +1,5 @@
 import os
+from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import transaction
 from django.db.models import Q
@@ -37,6 +38,7 @@ class TransactionDetailUpdateView(LoginRequiredMixin, UpdateView):
     def delete(self, request, *args, **kwargs):
         """Handle transaction deletion"""
         self.get_object().delete()
+        messages.success(request, "Spesa eliminata con successo.")
 
         # Check if filters were stored before deletion
         redirect_filters = request.POST.get('redirect_filters', '')
@@ -90,6 +92,8 @@ class TransactionDetailUpdateView(LoginRequiredMixin, UpdateView):
         form.instance.modified_by_user = True
         form.instance.status = 'categorized'
         self.object = form.save()
+
+        messages.success(self.request, "Spesa aggiornata con successo.")
 
         return self.render_to_response(self.get_context_data(form=form))
 

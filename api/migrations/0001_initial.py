@@ -100,7 +100,7 @@ class Migration(migrations.Migration):
                 ('updated_at', models.DateTimeField(auto_now=True)),
                 ('raw_data', models.JSONField(default=dict)),
                 ('category', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='transactions', to='api.category')),
-                ('csv_upload', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='transactions', to='api.csvupload')),
+                ('upload_file', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='transactions', to='api.csvupload')),
                 ('merchant', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='transactions', to='api.merchant')),
                 ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='transactions', to=settings.AUTH_USER_MODEL)),
             ],

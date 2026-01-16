@@ -1,5 +1,5 @@
 from django.contrib.auth.models import User
-from api.models import Category, Merchant, Transaction, CsvUpload
+from api.models import Category, Merchant, Transaction, UploadFile
 from datetime import date
 from decimal import Decimal
 
@@ -15,7 +15,7 @@ def create_test_data(user):
     electric_co = Merchant.objects.create(user=user, name="Electric Co")
     
     # Create a CSV upload
-    csv_upload = CsvUpload.objects.create(user=user, file_name="test.csv", dimension=1024)
+    upload_file = UploadFile.objects.create(user=user, file_name="test.csv", dimension=1024)
     
     # Create transactions
     transactions = [
@@ -28,7 +28,7 @@ def create_test_data(user):
             merchant=supermarket,
             category=food,
             status="categorized",
-            csv_upload=csv_upload
+            upload_file=upload_file
         ),
         Transaction(
             user=user,
@@ -39,7 +39,7 @@ def create_test_data(user):
             merchant=gas_station,
             category=transport,
             status="categorized",
-            csv_upload=csv_upload
+            upload_file=upload_file
         ),
         Transaction(
             user=user,
@@ -50,7 +50,7 @@ def create_test_data(user):
             merchant=electric_co,
             category=utilities,
             status="categorized",
-            csv_upload=csv_upload
+            upload_file=upload_file
         ),
         Transaction(
             user=user,
@@ -59,7 +59,7 @@ def create_test_data(user):
             description="Lunch",
             merchant_raw_name="Unknown Cafe",
             status="uncategorized",
-            csv_upload=csv_upload
+            upload_file=upload_file
         )
     ]
     Transaction.objects.bulk_create(transactions)
@@ -68,5 +68,5 @@ def create_test_data(user):
         "categories": [food, transport, utilities],
         "merchants": [supermarket, gas_station, electric_co],
         "transactions": transactions,
-        "csv_upload": csv_upload
+        "upload_file": upload_file
     }

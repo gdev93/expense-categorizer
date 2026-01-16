@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand
 from django.db import IntegrityError
-from api.models import CsvUpload, Rule, Category, UploadResume
+from api.models import UploadFile, Rule, Category, UploadResume
 from processors.expense_upload_processor import ExpenseUploadProcessor
 
 class Command(BaseCommand):
@@ -8,7 +8,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         # Find uploads that never finished and are not already being processed by another command instance
-        incomplete_uploads = CsvUpload.objects.filter(
+        incomplete_uploads = UploadFile.objects.filter(
             status='processing',
             resume_info__isnull=True
         )
@@ -21,7 +21,7 @@ class Command(BaseCommand):
             try:
                 # Attempt to create a resume entry to "lock" this upload
                 # Only the command can update/delete this entry
-                resume_entry = UploadResume.objects.create(csv_upload=upload)
+                resume_entry = UploadResume.objects.create(upload_file=upload)
             except IntegrityError:
                 self.stdout.write(f"Upload {upload.id} is already being processed by another command instance.")
                 continue

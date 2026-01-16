@@ -17,18 +17,16 @@ Including another URLconf
 from django.urls import path
 from django.views.generic import RedirectView
 
-from api.views import error_views, test_views
 from api.entry_point_views import login_form, authenticate_user, register_form, create_user, logout_user
-from api.views.category_view import CategoryCreateView, CategoryListView, CategoryDetailView, CategoryDeleteView, CategoryUpdateView
-from api.views.csv_upload_view import CsvUploadView, CsvUploadDelete, CsvProcessView, CsvProgressView, \
-    CsvUploadCheckView, CsvUploadClean
-from api.views.rule_view import RuleDefineView, RuleDeleteView
-from api.views.monthly_summary_view import MonthlySummerView
-from api.views.transactions.list_views import TransactionListView, IncomeListView
-from api.views.transactions.update_views import EditTransactionCategory, TransactionDetailUpdateView
-from api.views.transactions.create_views import TransactionIncomeCreateView
+from api.views import test_views
+from api.views.category_view import CategoryCreateView, CategoryListView, CategoryDetailView, CategoryDeleteView, \
+    CategoryUpdateView
 from api.views.transactions.export_views import TransactionExportView
-from api.views.transactions.query_views import TransactionByCsvUploadAndMerchant
+from api.views.transactions.list_views import TransactionListView, IncomeListView
+from api.views.transactions.query_views import TransactionByUploadFileAndMerchant
+from api.views.transactions.update_views import EditTransactionCategory, TransactionDetailUpdateView
+from api.views.upload_file_view import UploadFileView, UploadFileDelete, UploadProcessView, UploadProgressView, \
+    UploadFileCheckView, UploadFileCleanView
 
 urlpatterns = [
     path("accounts/", login_form, name="login_form"),
@@ -36,16 +34,17 @@ urlpatterns = [
     path("accounts/logout/", logout_user, name="logout_user"),
     path('accounts/register/', register_form, name='register_form'),
     path('accounts/create/', create_user, name='create_user'),
-    path('transactions/upload/', CsvUploadView.as_view(), name='transactions_upload'),
-    path('transactions/upload/process', CsvProcessView.as_view(), name='transactions_process'),
-    path('transactions/upload/progress/', CsvProgressView.as_view(), name='transactions_progress'),
-    path('transactions/upload/check', CsvUploadCheckView.as_view(), name='transactions_upload_check'),
-    path('transactions/upload/<int:pk>/', CsvUploadClean.as_view(), name='transactions_upload_detail'),
-    path('transactions/upload/<int:pk>/process', CsvProcessView.as_view(), name='transactions_process_detail'),
-    path('transactions/upload/<int:pk>/delete/', CsvUploadDelete.as_view(), name='transactions_upload_delete'),
+    path('transactions/upload/', UploadFileView.as_view(), name='transactions_upload'),
+    path('transactions/upload/process', UploadProcessView.as_view(), name='transactions_process'),
+    path('transactions/upload/progress/', UploadProgressView.as_view(), name='transactions_progress'),
+    path('transactions/upload/check', UploadFileCheckView.as_view(), name='transactions_upload_check'),
+    path('transactions/upload/<int:pk>/', UploadFileCleanView.as_view(), name='transactions_upload_detail'),
+    path('transactions/upload/<int:pk>/process', UploadProcessView.as_view(), name='transactions_process_detail'),
+    path('transactions/upload/<int:pk>/delete/', UploadFileDelete.as_view(), name='transactions_upload_delete'),
     path('transactions/', TransactionListView.as_view(), name='transaction_list'),
     path('transactions/income/', IncomeListView.as_view(), name='income_list'),
-    path('transactions/by_csv_by_merchant/', TransactionByCsvUploadAndMerchant.as_view(), name='transactions_by_csv_by_merchant'),
+    path('transactions/by_csv_by_merchant/', TransactionByUploadFileAndMerchant.as_view(),
+         name='transactions_by_csv_by_merchant'),
     path('transactions/export/', TransactionExportView.as_view(), name='transaction_export'),
     path('transactions/<int:pk>/', TransactionDetailUpdateView.as_view(), name='transaction_detail'),
     path('transactions/category/edit', EditTransactionCategory.as_view(), name='update_transaction_category'),

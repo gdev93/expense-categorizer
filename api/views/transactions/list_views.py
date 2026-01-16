@@ -8,7 +8,7 @@ from django.db.models import Q, Sum
 from django.db.models import QuerySet
 from django.views.generic import ListView
 
-from api.models import Transaction, Category, Rule, CsvUpload
+from api.models import Transaction, Category, Rule, UploadFile
 
 
 @dataclass
@@ -17,7 +17,7 @@ class TransactionListContextData:
     categories: list[dict[str, Any]]
     selected_category: str
     selected_status: str
-    selected_csv_upload: str
+    selected_upload_file: str
     search_query: str
     uncategorized_transaction: QuerySet[Transaction, Transaction]  # QuerySet
     total_count: int
@@ -55,17 +55,17 @@ class TransactionListView(LoginRequiredMixin, ListView):
             transaction_type='expense',
             category__isnull=False,
             merchant_id__isnull=False
-        ).select_related('category', 'merchant', 'csv_upload').order_by('-transaction_date', '-created_at')
+        ).select_related('category', 'merchant', 'upload_file').order_by('-transaction_date', '-created_at')
 
         # Filter by category
         category_id = self.request.GET.get('category')
         if category_id:
             queryset = queryset.filter(category_id=category_id)
 
-        # Filter by csv_upload
-        csv_upload_id = self.request.GET.get('csv_upload')
-        if csv_upload_id:
-            queryset = queryset.filter(csv_upload_id=csv_upload_id)
+        # Filter by upload_file
+        upload_file_id = self.request.GET.get('upload_file')
+        if upload_file_id:
+            queryset = queryset.filter(upload_file_id=upload_file_id)
 
         # Filter by amount
         amount = self.request.GET.get('amount')
@@ -96,7 +96,7 @@ class TransactionListView(LoginRequiredMixin, ListView):
 
         # Year logic
         selected_year = self._get_selected_year(queryset)
-        if not csv_upload_id:
+        if not upload_file_id:
             queryset = queryset.filter(transaction_date__year=selected_year)
 
         # Filter by months
@@ -134,16 +134,16 @@ class TransactionListView(LoginRequiredMixin, ListView):
             user=self.request.user,
             status='uncategorized',
             transaction_type='expense'
-        ).select_related('csv_upload')
+        ).select_related('upload_file')
 
-        csv_upload_id = self.request.GET.get('csv_upload', '')
-        if csv_upload_id:
-            uncategorized_transaction = uncategorized_transaction.filter(csv_upload_id=csv_upload_id)
+        upload_file_id = self.request.GET.get('upload_file', '')
+        if upload_file_id:
+            uncategorized_transaction = uncategorized_transaction.filter(upload_file_id=upload_file_id)
 
         transaction_list_context = TransactionListContextData(
             categories=categories,
             selected_status=self.request.GET.get('status', ''),
-            selected_csv_upload=csv_upload_id,
+            selected_upload_file=upload_file_id,
             search_query=self.request.GET.get('search', ''),
             uncategorized_transaction=uncategorized_transaction,
             total_count=user_transactions.count(),

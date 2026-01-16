@@ -2,6 +2,8 @@ import datetime
 import logging
 
 from django import forms
+from django.contrib import messages
+from django.contrib.messages.views import SuccessMessageMixin
 from django.core.exceptions import BadRequest
 from django.core.paginator import Paginator
 from django.db.models import Count, Sum, DecimalField, Q
@@ -125,13 +127,14 @@ class CategoryListView(ListView):
 
 
 # 2. CREATION VIEW
-class CategoryCreateView(CreateView):
+class CategoryCreateView(SuccessMessageMixin, CreateView):
     model = Category
     form_class = CategoryForm
     # We don't need a specific template because this view handles the POST request
     # from the form on the List page. If it fails validation, it re-renders the list.
     template_name = 'categories/category-creation.html'
     success_url = reverse_lazy('category_list')
+    success_message = "Categoria creata con successo."
 
     def form_valid(self, form):
         # Automatically assign the current user to the category
@@ -239,13 +242,14 @@ class CategoryDetailView(DetailView):
         return context
 
 
-class CategoryUpdateView(UpdateView):
+class CategoryUpdateView(SuccessMessageMixin, UpdateView):
     """
     A view to allow updating an existing Category.
     """
     model = Category
     form_class = CategoryForm
     template_name = 'categories/category-edit.html'
+    success_message = "Categoria aggiornata con successo."
 
     def get_queryset(self):
         # Security: Only allow the user to edit their own categories
@@ -273,4 +277,5 @@ class CategoryDeleteView(DeleteView):
     def form_valid(self, form):
         # Important: The model's Foreign Key (Category to Transaction) configuration
         # (e.g., CASCADE, SET_NULL, PROTECT) will determine what happens to related transactions.
+        messages.success(self.request, "Categoria eliminata con successo.")
         return super().form_valid(form)

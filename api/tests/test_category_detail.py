@@ -1,7 +1,7 @@
 import pytest
 from django.urls import reverse
 from django.contrib.auth.models import User
-from api.models import Category, Merchant, Transaction, CsvUpload
+from api.models import Category, Merchant, Transaction, UploadFile
 from datetime import date
 from decimal import Decimal
 
@@ -12,7 +12,7 @@ class TestCategoryDetailView:
         self.category = Category.objects.create(user=self.user, name="Food")
         self.merchant_a = Merchant.objects.create(user=self.user, name="Supermarket")
         self.merchant_b = Merchant.objects.create(user=self.user, name="Restaurant")
-        self.csv_upload = CsvUpload.objects.create(user=self.user, file_name="test.csv")
+        self.upload_file = UploadFile.objects.create(user=self.user, file_name="test.csv")
         
         # Jan 2025 - Supermarket
         Transaction.objects.create(
@@ -23,7 +23,7 @@ class TestCategoryDetailView:
             merchant=self.merchant_a,
             description="Grocery shopping",
             status="categorized",
-            csv_upload=self.csv_upload
+            upload_file=self.upload_file
         )
         
         # Feb 2025 - Restaurant
@@ -35,7 +35,7 @@ class TestCategoryDetailView:
             merchant=self.merchant_b,
             description="Dinner out",
             status="categorized",
-            csv_upload=self.csv_upload
+            upload_file=self.upload_file
         )
 
         # Jan 2024 - Supermarket (different year)
@@ -47,7 +47,7 @@ class TestCategoryDetailView:
             merchant=self.merchant_a,
             description="Old grocery",
             status="categorized",
-            csv_upload=self.csv_upload
+            upload_file=self.upload_file
         )
 
     def test_category_detail_no_filter(self, client):

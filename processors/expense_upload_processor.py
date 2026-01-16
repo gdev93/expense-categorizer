@@ -8,7 +8,7 @@ from django.core.files.uploadedfile import UploadedFile
 from django.db import transaction, connections
 
 from agent.agent import ExpenseCategorizerAgent, AgentTransactionUpload, TransactionCategorization, GeminiResponse
-from api.models import Transaction, Category, Merchant, CsvUpload, normalize_string
+from api.models import Transaction, Category, Merchant, UploadFile, normalize_string
 from processors.data_prechecks import parse_raw_transaction, RawTransactionParseResult
 from processors.parser_utils import normalize_amount, parse_raw_date, parse_date_from_raw_data_with_no_suggestions
 from processors.similarity_matcher import SimilarityMatcher
@@ -46,11 +46,11 @@ class ExpenseUploadProcessor:
             float(self.csv_structure_sample_size_percentage)
         )
 
-    def process_transactions(self, transactions: list[Transaction], csv_upload: CsvUpload) -> CsvUpload:
+    def process_transactions(self, transactions: list[Transaction], upload_file: UploadFile) -> UploadFile:
 
-        self.csv_structure_detector.setup_csv_upload_structure(transactions, csv_upload)
+        self.csv_structure_detector.setup_upload_file_structure(transactions, upload_file)
 
-        all_transactions_to_upload = self._process_prechecks(transactions, csv_upload)
+        all_transactions_to_upload = self._process_prechecks(transactions, upload_file)
         transaction_batches = self.batch_helper.compute_batches(all_transactions_to_upload)
         data_count = len(all_transactions_to_upload)
 
@@ -58,7 +58,7 @@ class ExpenseUploadProcessor:
 
         with ThreadPoolExecutor() as executor:
             # Parallelize the agent calls only
-            results = list(executor.map(lambda batch: self._process_with_agent(batch, csv_upload), transaction_batches))
+            results = list(executor.map(lambda batch: self._process_with_agent(batch, upload_file), transaction_batches))
 
         # Process each batch's results synchronously
         for batch_result, response in results:
@@ -68,26 +68,26 @@ class ExpenseUploadProcessor:
                     llm_model=response.model_name,
                     input_tokens=response.prompt_tokens,
                     output_tokens=response.candidate_tokens,
-                    csv_upload=csv_upload
+                    upload_file=upload_file
                 )
             if batch_result:
                 with transaction.atomic():
                     self._persist_batch_results(batch_result)
 
         with transaction.atomic():
-            self._post_process_transactions(csv_upload)
-            csv_upload.status = 'completed'
-            csv_upload.save()
+            self._post_process_transactions(upload_file)
+            upload_file.status = 'completed'
+            upload_file.save()
 
-        return csv_upload
-    def _process_prechecks(self, batch: list[Transaction], csv_upload: CsvUpload) -> list[Transaction]:
+        return upload_file
+    def _process_prechecks(self, batch: list[Transaction], upload_file: UploadFile) -> list[Transaction]:
         all_transactions_to_upload: list[Transaction] = []
         all_transactions_as_income: list[Transaction] = []
         all_transactions_categorized: list[Transaction] = []
         all_transactions_to_delete: list[Transaction] = []
         merchant_with_category: dict[str, tuple[Merchant, Category]] = {}
         for tx in batch:
-            transaction_parse_result = parse_raw_transaction(tx.raw_data, [csv_upload])
+            transaction_parse_result = parse_raw_transaction(tx.raw_data, [upload_file])
             if not transaction_parse_result.is_valid():
                 all_transactions_to_upload.append(tx)
                 continue
@@ -146,12 +146,12 @@ class ExpenseUploadProcessor:
         )
         return all_transactions_to_upload
 
-    def _process_with_agent(self, batch: list[Transaction], csv_upload: CsvUpload) -> tuple[list[TransactionCategorization], GeminiResponse | None]:
+    def _process_with_agent(self, batch: list[Transaction], upload_file: UploadFile) -> tuple[list[TransactionCategorization], GeminiResponse | None]:
         agent_upload_transaction = [AgentTransactionUpload(transaction_id=tx.id, raw_text=tx.raw_data) for tx in
                                     batch]
         if agent_upload_transaction:
             try:
-                return self.agent.process_batch(agent_upload_transaction, csv_upload)
+                return self.agent.process_batch(agent_upload_transaction, upload_file)
             except Exception as e:
                 logger.error(f"⚠️  Agent failed to process batch: {str(e)}")
                 return [], None
@@ -213,25 +213,25 @@ class ExpenseUploadProcessor:
 
 
 
-    def _post_process_transactions(self, csv_upload: CsvUpload) -> None:
+    def _post_process_transactions(self, upload_file: UploadFile) -> None:
         """Post-process transactions after batch processing to identify column mappings and categorize uncategorized transactions."""
-        self._categorize_remaining_transactions(csv_upload)
+        self._categorize_remaining_transactions(upload_file)
 
-    def _categorize_remaining_transactions(self, csv_upload: CsvUpload) -> None:
+    def _categorize_remaining_transactions(self, upload_file: UploadFile) -> None:
         """Process uncategorized transactions by parsing their data and attempting to categorize them using similar transactions."""
         uncategorized_transactions = Transaction.objects.filter(
             user=self.user,
-            csv_upload=csv_upload,
+            upload_file=upload_file,
             status__in=['uncategorized', 'pending']
         )
 
         for tx in uncategorized_transactions:
             # Get values from raw_data, handling None column names
-            original_amount = tx.raw_data.get(csv_upload.expense_amount_column_name, '') if csv_upload.expense_amount_column_name else '' or tx.raw_data.get(csv_upload.income_amount_column_name, '') if csv_upload.income_amount_column_name else ''
-            description = tx.raw_data.get(csv_upload.description_column_name,
-                                          '') if csv_upload.description_column_name else ''
-            merchant = tx.raw_data.get(csv_upload.merchant_column_name, '') if csv_upload.merchant_column_name else ''
-            original_date = tx.raw_data.get(csv_upload.date_column_name, '') if csv_upload.date_column_name else ''
+            original_amount = tx.raw_data.get(upload_file.expense_amount_column_name, '') if upload_file.expense_amount_column_name else '' or tx.raw_data.get(upload_file.income_amount_column_name, '') if upload_file.income_amount_column_name else ''
+            description = tx.raw_data.get(upload_file.description_column_name,
+                                          '') if upload_file.description_column_name else ''
+            merchant = tx.raw_data.get(upload_file.merchant_column_name, '') if upload_file.merchant_column_name else ''
+            original_date = tx.raw_data.get(upload_file.date_column_name, '') if upload_file.date_column_name else ''
 
             if original_amount:
                 amount = normalize_amount(original_amount)
@@ -265,17 +265,17 @@ class ExpenseUploadProcessor:
             ['transaction_date', 'amount', 'original_amount', 'description',
              'merchant_raw_name', 'original_date', 'category', 'status', 'merchant', 'normalized_description']
         )
-        Transaction.objects.filter(user=self.user, csv_upload=csv_upload, status__in=['pending', 'uncategorized'],
+        Transaction.objects.filter(user=self.user, upload_file=upload_file, status__in=['pending', 'uncategorized'],
                                    original_amount__isnull=True).update(status='uncategorized',
                                                                         transaction_type='income')
 
-def persist_csv_file(csv_data: list[dict[str, str]], user: User, csv_file: UploadedFile) -> CsvUpload:
-    csv_upload = CsvUpload.objects.create(user=user, dimension=csv_file.size,file_name=csv_file.name)
+def persist_uploaded_file(csv_data: list[dict[str, str]], user: User, csv_file: UploadedFile) -> UploadFile:
+    upload_file = UploadFile.objects.create(user=user, dimension=csv_file.size, file_name=csv_file.name)
     all_pending_transactions = [Transaction(
-        csv_upload=csv_upload,
+        upload_file=upload_file,
         user=user,
         status='pending',
         raw_data=csv_row,
     ) for csv_row in csv_data]
     Transaction.objects.bulk_create(all_pending_transactions)
-    return csv_upload
+    return upload_file

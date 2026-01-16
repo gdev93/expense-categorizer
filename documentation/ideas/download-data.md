@@ -18,7 +18,7 @@ Filtering: Restricts data to the authenticated user.
 
 Time Range: Applies filters on the transaction_date field.
 
-Relation Loading: Uses select_related('csv_upload') to efficiently access the source file metadata without extra queries.
+Relation Loading: Uses select_related('upload_file') to efficiently access the source file metadata without extra queries.
 
 Batching: Employs .iterator() to fetch records from PostgreSQL in chunks, preventing high memory usage.
 
@@ -37,7 +37,7 @@ transaction_type
 
 description
 
-csv_upload.file_name
+upload_file.file_name
 
 Streaming: The StreamingHttpResponse consumes this generator, pushing data to the client as it is created.
 
@@ -49,7 +49,7 @@ Date	Data	transaction_date
 Amount	Importo	amount
 Transaction Type	Tipo di Transazione	transaction_type
 Bank Description	Descrizione Bancaria	description
-Original CSV Source	File Sorgente	csv_upload.file_name
+Original CSV Source	File Sorgente	upload_file.file_name
 
 Esporta in Fogli
 

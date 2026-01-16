@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
      */
     async function checkUploadAvailability() {
         try {
-            const response = await fetch(CSV_UPLOAD_CHECK, {
+            const response = await fetch(FILE_UPLOAD_CHECK, {
                 method: 'GET',
                 headers: {
                     'X-CSRFToken': CSRF_TOKEN
@@ -142,11 +142,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Funzioni per Avvio e Controllo Processo ---
 
     /**
-     * Invia la richiesta POST a CSV_UPLOAD_PROCESS per avviare l'elaborazione in background.
+     * Invia la richiesta POST a FILE_UPLOAD_PROCESS per avviare l'elaborazione in background.
      */
     async function startCsvProcessing() {
         try {
-            const response = await fetch(CSV_UPLOAD_PROCESS, {
+            const response = await fetch(FILE_UPLOAD_PROCESS, {
                 method: 'POST',
                 headers: {
                     'X-CSRFToken': CSRF_TOKEN
@@ -165,18 +165,18 @@ document.addEventListener('DOMContentLoaded', () => {
             processingComplete = true;
             submitUpload.disabled = false;
             submitUpload.classList.remove('btn-disabled');
-            window.location.href = CSV_UPLOADS_PAGE;
+            window.location.href = FILE_UPLOADS_PAGE;
         }
 
     }
 
 
     /**
-     * Controlla lo stato di avanzamento usando CSV_UPLOAD_PROGRESS (GET request).
+     * Controlla lo stato di avanzamento usando FILE_UPLOAD_PROGRESS (GET request).
      */
     async function checkProcessingProgress() {
         try {
-            const response = await fetch(CSV_UPLOAD_PROGRESS, {
+            const response = await fetch(FILE_UPLOAD_PROGRESS, {
                 method: 'GET',
                 headers: {
                     'X-CSRFToken': CSRF_TOKEN
@@ -260,9 +260,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Una volta completato, reindirizza l'utente
-        if (processingComplete && window.location.href !== CSV_UPLOADS_PAGE) {
+        if (processingComplete && window.location.href !== FILE_UPLOADS_PAGE) {
             setTimeout(() => {
-                window.location.href = CSV_UPLOADS_PAGE;
+                window.location.href = FILE_UPLOADS_PAGE;
             }, 1000)
         }
     }

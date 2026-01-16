@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 from django.db import models
 
-from api.models import CsvUpload
+from api.models import UploadFile
 
 
 class CostConfiguration(models.Model):
@@ -20,7 +20,7 @@ class CostConfiguration(models.Model):
 
 class ApiUsageLog(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='api_usage_logs')
-    csv_upload = models.ForeignKey(CsvUpload, on_delete=models.SET_NULL, null=True, blank=True, related_name='api_usage_logs')
+    upload_file = models.ForeignKey(UploadFile, on_delete=models.SET_NULL, null=True, blank=True, related_name='api_usage_logs')
     cost_configuration = models.ForeignKey(CostConfiguration, on_delete=models.SET_NULL, null=True, blank=True)
     input_tokens = models.IntegerField(default=0)
     output_tokens = models.IntegerField(default=0)

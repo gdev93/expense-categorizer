@@ -13,6 +13,7 @@ import os
 from pathlib import Path
 
 from django.contrib import staticfiles
+from django.contrib.messages import constants as messages
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,6 +21,14 @@ SECRET_KEY = os.getenv('SECRET_KEY','django-insecure-sn-x3ofrldb(ey$&8(gpas4x9qy
 DEBUG = os.getenv('DEBUG', 'True').lower() == 'true'
 ALLOWED_HOSTS = os.environ.setdefault('ALLOWED_HOSTS', '127.0.0.1,0.0.0.0,localhost').split(',')
 CSRF_TRUSTED_ORIGINS=os.environ.setdefault('CSRF_TRUSTED_ORIGINS', 'http://localhost:8000').split(',')
+
+MESSAGE_TAGS = {
+    messages.DEBUG: 'secondary',
+    messages.INFO: 'info',
+    messages.SUCCESS: 'success',
+    messages.WARNING: 'warning',
+    messages.ERROR: 'danger',
+}
 
 # Application definition
 

@@ -35,7 +35,7 @@ class Migration(migrations.Migration):
                 ('total_tokens', models.IntegerField(default=0)),
                 ('computed_cost', models.DecimalField(decimal_places=6, default=0.0, max_digits=12)),
                 ('timestamp', models.DateTimeField(auto_now_add=True)),
-                ('csv_upload', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='api_usage_logs', to='api.csvupload')),
+                ('upload_file', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='api_usage_logs', to='api.csvupload')),
                 ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='api_usage_logs', to=settings.AUTH_USER_MODEL)),
             ],
         ),

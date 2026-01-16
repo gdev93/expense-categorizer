@@ -3,7 +3,7 @@ from datetime import datetime
 from django.db.models import Sum
 from django.http import HttpRequest
 
-from api.models import Transaction, Profile, CsvUpload
+from api.models import Transaction, Profile, UploadFile
 
 def available_years_context(request: HttpRequest):
     if not request.user.is_authenticated:
@@ -92,5 +92,5 @@ def is_free_trial(request:HttpRequest):
 
 def user_uploads(request:HttpRequest):
     return {
-        'user_uploads': CsvUpload.objects.filter(user=request.user).order_by('-upload_date') if request.user.is_authenticated else []
+        'user_uploads': UploadFile.objects.filter(user=request.user).order_by('-upload_date') if request.user.is_authenticated else []
     }

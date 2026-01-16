@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from decimal import Decimal
 
-from api.models import CsvUpload
+from api.models import UploadFile
 from processors.parser_utils import parse_amount_from_raw_data, parse_date_from_raw_data, \
     parse_unstructured_text
 
@@ -22,35 +22,35 @@ class RawTransactionParseResult:
         return self.amount is not None and self.date is not None and self.description is not None
 
     @staticmethod
-    def from_dict(raw_data: dict[str, str], csv_uploads: list[CsvUpload] = None) -> 'RawTransactionParseResult':
-        if not csv_uploads:
+    def from_dict(raw_data: dict[str, str], upload_files: list[UploadFile] = None) -> 'RawTransactionParseResult':
+        if not upload_files:
             return RawTransactionParseResult(raw_data=raw_data)
         amount, amount_column_name = parse_amount_from_raw_data(raw_data,
-                                                                [csv_upload.expense_amount_column_name for csv_upload in
-                                                                 csv_uploads]+[csv_upload.income_amount_column_name for csv_upload in csv_uploads])
+                                                                [upload_file.expense_amount_column_name for upload_file in
+                                                                 upload_files]+[upload_file.income_amount_column_name for upload_file in upload_files])
         date, date_column_name = parse_date_from_raw_data(raw_data,
-                                                          [csv_upload.date_column_name for csv_upload in csv_uploads])
-        target_csv_upload = next((csv_upload for csv_upload in csv_uploads if
-                                  (csv_upload.income_amount_column_name == amount_column_name or csv_upload.expense_amount_column_name == amount_column_name) and csv_upload.date_column_name == date_column_name),
+                                                          [upload_file.date_column_name for upload_file in upload_files])
+        target_upload_file = next((upload_file for upload_file in upload_files if
+                                  (upload_file.income_amount_column_name == amount_column_name or upload_file.expense_amount_column_name == amount_column_name) and upload_file.date_column_name == date_column_name),
                                  None)
         is_income = False
-        if target_csv_upload:
-            if target_csv_upload.income_amount_column_name != target_csv_upload.expense_amount_column_name:
-                is_income = target_csv_upload.income_amount_column_name == amount_column_name
+        if target_upload_file:
+            if target_upload_file.income_amount_column_name != target_upload_file.expense_amount_column_name:
+                is_income = target_upload_file.income_amount_column_name == amount_column_name
             else:
                 is_income = amount > Decimal(0)
 
 
         description, _ = parse_unstructured_text(raw_data,
-                                                                       [csv_upload.description_column_name for
-                                                                        csv_upload in csv_uploads])
+                                                                       [upload_file.description_column_name for
+                                                                        upload_file in upload_files])
         merchant, _ = parse_unstructured_text(raw_data,
-                                                                 [csv_upload.merchant_column_name for csv_upload in
-                                                                  csv_uploads])
+                                                                 [upload_file.merchant_column_name for upload_file in
+                                                                  upload_files])
         operation_type, _ = parse_unstructured_text(raw_data,
-                                                                             [csv_upload.operation_type_column_name for
-                                                                              csv_upload in
-                                                                              csv_uploads])
+                                                                             [upload_file.operation_type_column_name for
+                                                                              upload_file in
+                                                                              upload_files])
 
         raw_transaction_result = RawTransactionParseResult(
             raw_data=raw_data,
@@ -66,5 +66,5 @@ class RawTransactionParseResult:
         return raw_transaction_result
 
 
-def parse_raw_transaction(raw_data: dict[str, str], csv_uploads: list[CsvUpload] = None) -> RawTransactionParseResult:
-    return RawTransactionParseResult.from_dict(raw_data, csv_uploads)
+def parse_raw_transaction(raw_data: dict[str, str], upload_files: list[UploadFile] = None) -> RawTransactionParseResult:
+    return RawTransactionParseResult.from_dict(raw_data, upload_files)

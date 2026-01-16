@@ -4,7 +4,7 @@ from .models import ApiUsageLog, CostConfiguration
 
 class CostService:
     @staticmethod
-    def log_api_usage(user, llm_model, input_tokens, output_tokens, csv_upload=None):
+    def log_api_usage(user, llm_model, input_tokens, output_tokens, upload_file=None):
         """
         Logs API usage and computes cost based on current configuration.
         """
@@ -24,7 +24,7 @@ class CostService:
         
         usage_log = ApiUsageLog.objects.create(
             user=user,
-            csv_upload=csv_upload,
+            upload_file=upload_file,
             cost_configuration=config,
             input_tokens=input_tokens,
             output_tokens=output_tokens,
@@ -45,9 +45,9 @@ class CostService:
         return result['total'] or Decimal('0.0')
 
     @staticmethod
-    def get_csv_upload_cost(csv_upload):
+    def get_upload_file_cost(upload_file):
         """
         Returns total cost for a specific CSV upload.
         """
-        result = ApiUsageLog.objects.filter(csv_upload=csv_upload).aggregate(total=Sum('computed_cost'))
+        result = ApiUsageLog.objects.filter(upload_file=upload_file).aggregate(total=Sum('computed_cost'))
         return result['total'] or Decimal('0.0')

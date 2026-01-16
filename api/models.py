@@ -110,7 +110,7 @@ class Merchant(models.Model):
         super().save(*args, **kwargs)
 
 
-class CsvUpload(models.Model):
+class UploadFile(models.Model):
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
@@ -186,15 +186,15 @@ class CsvUpload(models.Model):
 
 
 class UploadResume(models.Model):
-    csv_upload = models.OneToOneField(
-        CsvUpload,
+    upload_file = models.OneToOneField(
+        UploadFile,
         on_delete=models.CASCADE,
         related_name='resume_info'
     )
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Resume for {self.csv_upload}"
+        return f"Resume for {self.upload_file}"
 
 
 class Transaction(models.Model):
@@ -212,8 +212,8 @@ class Transaction(models.Model):
 
 
 
-    csv_upload = models.ForeignKey(
-        CsvUpload,
+    upload_file = models.ForeignKey(
+        UploadFile,
         on_delete=models.CASCADE,
         related_name='transactions',
         null=False

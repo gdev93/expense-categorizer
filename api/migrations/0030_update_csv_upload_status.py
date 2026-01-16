@@ -2,7 +2,7 @@
 
 from django.db import migrations
 
-def update_csv_upload_status(apps, schema_editor):
+def update_upload_file_status(apps, schema_editor):
     CsvUpload = apps.get_model('api', 'CsvUpload')
     Transaction = apps.get_model('api', 'Transaction')
     
@@ -11,7 +11,7 @@ def update_csv_upload_status(apps, schema_editor):
         # Check if all related transactions are categorized or reviewed
         # We also ensure there is at least one transaction to avoid marking 
         # brand new/empty uploads as completed.
-        transactions = Transaction.objects.filter(csv_upload=upload)
+        transactions = Transaction.objects.filter(upload_file=upload)
         
         if transactions.exists():
             # If there are NO transactions that are NOT categorized/reviewed,
@@ -22,7 +22,7 @@ def update_csv_upload_status(apps, schema_editor):
                 upload.status = 'completed'
                 upload.save()
 
-def reverse_update_csv_upload_status(apps, schema_editor):
+def reverse_update_upload_file_status(apps, schema_editor):
     pass
 
 class Migration(migrations.Migration):
@@ -32,5 +32,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(update_csv_upload_status, reverse_update_csv_upload_status),
+        migrations.RunPython(update_upload_file_status, reverse_update_upload_file_status),
     ]

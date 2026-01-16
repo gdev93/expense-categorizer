@@ -35,7 +35,7 @@ def generate_transaction_csv(transactions_iterator: Iterator[Transaction]):
             tx.category.name if tx.category else '',
             tx.description,
             tx.transaction_type,
-            tx.csv_upload.file_name if tx.csv_upload else ''
+            tx.upload_file.file_name if tx.upload_file else ''
         ]
         writer.writerow(row)
         yield output.getvalue()

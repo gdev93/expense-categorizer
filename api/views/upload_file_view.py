@@ -22,10 +22,10 @@ from django.urls import reverse_lazy
 from django.views import View
 from django.views.generic import FormView, ListView, DeleteView, DetailView
 
-from api.models import CsvUpload, Transaction, Merchant, DefaultCategory
+from api.models import UploadFile, Transaction, Merchant, DefaultCategory
 from api.models import Rule, Category
 from api.views.rule_view import create_rule
-from processors.expense_upload_processor import ExpenseUploadProcessor, persist_csv_file
+from processors.expense_upload_processor import ExpenseUploadProcessor, persist_uploaded_file
 from processors.file_parsers import parse_uploaded_file, FileParserError
 
 
@@ -34,7 +34,7 @@ from processors.file_parsers import parse_uploaded_file, FileParserError
 @dataclass
 class CsvProcessingResult:
     """Result of CSV processing operation"""
-    csv_upload: CsvUpload | None
+    upload_file: UploadFile | None
     rows_processed: int
     success: bool
     error_message: str = ""
@@ -93,14 +93,16 @@ def _parse_csv(csv_file) -> List[Dict[str, str]]:
     reader = csv.DictReader(io_string)
     return list(reader)
 
-class CsvUploadDelete(DeleteView):
-    model = CsvUpload
+class UploadFileDelete(DeleteView):
+    model = UploadFile
+    template_name = 'transactions/upload_file_confirm_delete.html'
     success_url = reverse_lazy('transactions_upload')
 
     def get_queryset(self):
         return self.model.objects.filter(user=self.request.user)
 
     def post(self, request, *args, **kwargs):
+        messages.success(request, "Caricamento eliminato correttamente.")
         response = super().post(request, *args, **kwargs)
         # Delete merchants that have no transactions and no rules
         Merchant.objects.filter(user=request.user).exclude(
@@ -111,7 +113,7 @@ class CsvUploadDelete(DeleteView):
         return response
 
 
-class CsvUploadForm(forms.Form):
+class UploadFileForm(forms.Form):
     """Form for CSV/Excel file upload with validation"""
 
     MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB in bytes
@@ -171,7 +173,7 @@ def _format_file_size(size_bytes: int) -> str:
         return f"{size_bytes / (1024 * 1024):.2f} MB"
 
 
-class CsvUploadView(ListView, FormView):
+class UploadFileView(ListView, FormView):
     """
     Combined view for CSV file upload and display of upload history.
 
@@ -182,12 +184,12 @@ class CsvUploadView(ListView, FormView):
     - Show upload statistics
     """
     # ListView attributes
-    model = CsvUpload
+    model = UploadFile
     context_object_name = 'recent_uploads'
     paginate_by = 10
 
     # FormView attributes
-    form_class = CsvUploadForm
+    form_class = UploadFileForm
     success_url = reverse_lazy('transactions_upload')
 
     # Shared attributes
@@ -195,7 +197,7 @@ class CsvUploadView(ListView, FormView):
 
     def get_queryset(self):
         """Get uploads for the current user (ListView method)"""
-        queryset = CsvUpload.objects.filter(
+        queryset = UploadFile.objects.filter(
             user=self.request.user
         ).select_related('user').prefetch_related('transactions').order_by('-upload_date')
 
@@ -222,7 +224,7 @@ class CsvUploadView(ListView, FormView):
             ).values_list('text_content', flat=True)
         )
 
-    def _process_csv_upload(self, uploaded_file) -> CsvProcessingResult:
+    def _process_upload_file(self, uploaded_file) -> CsvProcessingResult:
         """
         Process file upload: parse, validate, and create transactions.
         Supports both CSV and Excel formats.
@@ -233,14 +235,14 @@ class CsvUploadView(ListView, FormView):
         Returns:
             CsvProcessingResult with processing details
         """
-        csv_upload_query = CsvUpload.objects.filter(
+        upload_file_query = UploadFile.objects.filter(
             user=self.request.user,
             status__in=['pending', 'processing']
         ).distinct()
 
-        if csv_upload_query.exists():
+        if upload_file_query.exists():
             return CsvProcessingResult(
-                csv_upload=None,
+                upload_file=None,
                 rows_processed=0,
                 success=False,
                 error_message='There is already a pending upload'
@@ -252,34 +254,34 @@ class CsvUploadView(ListView, FormView):
 
             if not file_data:
                 return CsvProcessingResult(
-                    csv_upload=None,
+                    upload_file=None,
                     rows_processed=0,
                     success=False,
                     error_message='The file is empty.'
                 )
 
             with transaction.atomic():
-                csv_upload = persist_csv_file(file_data, self.request.user, uploaded_file)
+                upload_file = persist_uploaded_file(file_data, self.request.user, uploaded_file)
 
-            if not csv_upload:
+            if not upload_file:
                 raise Exception("Failed to persist CSV upload record.")
 
             return CsvProcessingResult(
-                csv_upload=csv_upload,
+                upload_file=upload_file,
                 rows_processed=len(file_data),
                 success=True
             )
 
         except FileParserError as e:
             return CsvProcessingResult(
-                csv_upload=None,
+                upload_file=None,
                 rows_processed=0,
                 success=False,
                 error_message=str(e)
             )
         except Exception as e:
             return CsvProcessingResult(
-                csv_upload=None,
+                upload_file=None,
                 rows_processed=0,
                 success=False,
                 error_message=f'Errore durante l\'elaborazione del file: {str(e)}'
@@ -301,7 +303,7 @@ class CsvUploadView(ListView, FormView):
         queryset = self.get_queryset().annotate(
             has_pending=Exists(
                 Transaction.objects.filter(
-                    csv_upload=OuterRef('pk'),
+                    upload_file=OuterRef('pk'),
                     status__in=['pending','uncategorized'],
                     user=self.request.user,
                     transaction_type='expense'
@@ -343,7 +345,7 @@ class CsvUploadView(ListView, FormView):
         csv_file = form.cleaned_data['file']
 
         # Process the CSV upload
-        result = self._process_csv_upload(csv_file)
+        result = self._process_upload_file(csv_file)
 
         if result.success:
             messages.success(
@@ -367,17 +369,17 @@ class CsvUploadView(ListView, FormView):
         return self.render_to_response(self.get_context_data(form=form))
 
 
-class CsvProgressView(View):
+class UploadProgressView(View):
     long_polling_limit = os.getenv('LONG_POLLING_SLEEP', 5)
 
     def get(self, request, *args, **kwargs):
-        csv_upload_query = CsvUpload.objects.filter(user=self.request.user, status='processing').distinct()
-        if not csv_upload_query.exists():
+        upload_file_query = UploadFile.objects.filter(user=self.request.user, status='processing').distinct()
+        if not upload_file_query.exists():
             return HttpResponse(status=404)
-        csv_upload = csv_upload_query.first()
+        upload_file = upload_file_query.first()
         time.sleep(self.long_polling_limit)
-        total = Transaction.objects.filter(csv_upload=csv_upload, user=request.user).count()
-        current_pending = Transaction.objects.filter(csv_upload=csv_upload, user=request.user, status='pending').count()
+        total = Transaction.objects.filter(upload_file=upload_file, user=request.user).count()
+        current_pending = Transaction.objects.filter(upload_file=upload_file, user=request.user, status='pending').count()
         if current_pending == 0:
             return JsonResponse(status=200, data={
                 "total": total,
@@ -385,7 +387,7 @@ class CsvProgressView(View):
                 "current_categorized": total,
                 "percentage": "100%"
             })
-        current_categorized = Transaction.objects.filter(csv_upload=csv_upload, user=request.user,
+        current_categorized = Transaction.objects.filter(upload_file=upload_file, user=request.user,
                                                          status='categorized').count()
         return JsonResponse(status=200, data={
             "total": total,
@@ -394,28 +396,28 @@ class CsvProgressView(View):
             "percentage": f"{ceil(current_categorized / total * 100)}%"
         })
 
-class CsvProcessView(View):
+class UploadProcessView(View):
 
     def post(self, request, *args, **kwargs):
-        csv_upload_query = CsvUpload.objects.filter(user=self.request.user, status='pending').distinct()
-        if not csv_upload_query.exists():
+        upload_file_query = UploadFile.objects.filter(user=self.request.user, status='pending').distinct()
+        if not upload_file_query.exists():
             return HttpResponse(status=404)
-        csv_upload = csv_upload_query.first()
+        upload_file = upload_file_query.first()
         thread = threading.Thread(
             target=self._do_process,
-            args=(request.user, csv_upload,),
+            args=(request.user, upload_file,),
             daemon=True
         )
         thread.start()
         return HttpResponse(status=202)
 
-    def _do_process(self, user: User, csv_upload: CsvUpload) -> HttpResponse:
+    def _do_process(self, user: User, upload_file: UploadFile) -> HttpResponse:
         start_time = time.time()
 
-        csv_upload.status = 'processing'
-        csv_upload.save()
+        upload_file.status = 'processing'
+        upload_file.save()
 
-        transactions = Transaction.objects.filter(csv_upload=csv_upload, user=user, status='pending')
+        transactions = Transaction.objects.filter(upload_file=upload_file, user=user, status='pending')
         user_rules = list(
             Rule.objects.filter(
                 user=self.request.user,
@@ -438,38 +440,38 @@ class CsvProcessView(View):
         )
 
 
-        csv_upload = processor.process_transactions(list(transactions), csv_upload)
+        upload_file = processor.process_transactions(list(transactions), upload_file)
 
         # Calculate processing time and update record
         processing_time = int((time.time() - start_time) * 1000)
-        csv_upload.processing_time = processing_time
-        csv_upload.save()
+        upload_file.processing_time = processing_time
+        upload_file.save()
         return HttpResponse(status=201)
 
-class CsvUploadCheckView(View):
+class UploadFileCheckView(View):
 
     def get(self, request, *args, **kwargs):
-        csv_upload_query = CsvUpload.objects.filter(user=self.request.user, status='processing').distinct()
-        if not csv_upload_query.exists():
+        upload_file_query = UploadFile.objects.filter(user=self.request.user, status='processing').distinct()
+        if not upload_file_query.exists():
             return HttpResponse(status=404)
-        csv_upload = csv_upload_query.first()
+        upload_file = upload_file_query.first()
         return JsonResponse(status=200, data={
-            "total": Transaction.objects.filter(csv_upload=csv_upload, user=request.user).count(),
-            "current_pending": Transaction.objects.filter(csv_upload=csv_upload, user=request.user, status='pending').count(),
-            "current_categorized": Transaction.objects.filter(csv_upload=csv_upload, user=request.user, status='categorized').count(),
+            "total": Transaction.objects.filter(upload_file=upload_file, user=request.user).count(),
+            "current_pending": Transaction.objects.filter(upload_file=upload_file, user=request.user, status='pending').count(),
+            "current_categorized": Transaction.objects.filter(upload_file=upload_file, user=request.user, status='categorized').count(),
         })
 
 
-class CsvUploadClean(DetailView):
-    model = CsvUpload
-    template_name = 'transactions/csv_upload_clean.html'
-    context_object_name = 'csv_file'
+class UploadFileCleanView(DetailView):
+    model = UploadFile
+    template_name = 'transactions/upload_file_clean.html'
+    context_object_name = 'upload_file'
 
     # Variabile di classe per controllare il numero di elementi per pagina
     paginate_by_merchant = 10
 
     def get_queryset(self):
-        return CsvUpload.objects.filter(user=self.request.user)
+        return UploadFile.objects.filter(user=self.request.user)
 
     def post(self, request, *args, **kwargs):
         csv_file = self.get_object()
@@ -483,7 +485,7 @@ class CsvUploadClean(DetailView):
         new_category = get_object_or_404(Category, id=new_category_id, user=self.request.user)
 
         Transaction.objects.filter(
-            csv_upload=csv_file,
+            upload_file=csv_file,
             merchant=merchant,
         ).update(category=new_category, status='categorized', modified_by_user=True)
 

@@ -62,7 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
             contentArea.innerHTML = '<p class="text-muted">Caricamento transazioni...</p>';
 
             try {
-                const response = await fetch(`${TRANSACTION_BY_MERCHANT_BY_CSV_URL}?merchant_id=${mId}&csv_upload_id=${cId}`);
+                const response = await fetch(`${TRANSACTION_BY_MERCHANT_BY_CSV_URL}?merchant_id=${mId}&upload_file_id=${cId}`);
                 const data = await response.json();
 
                 let html = '';
