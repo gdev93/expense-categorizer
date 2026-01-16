@@ -76,7 +76,7 @@ class CategoryListView(ListView):
         # 1. Filter: Start with categories belonging to the current user
         user_categories = self.model.objects.filter(user=self.request.user)
         selected_category_ids = self.request.GET.getlist('categories')
-        if selected_category_ids:
+        if any(selected_category_ids):
             user_categories = user_categories.filter(id__in=selected_category_ids)
 
         selected_year, selected_months = self._get_year_and_months()
