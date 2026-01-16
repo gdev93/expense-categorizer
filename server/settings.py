@@ -58,7 +58,6 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'api.context_processors.savings_context',
                 'api.context_processors.available_months_context',
                 'api.context_processors.available_years_context',
                 'api.context_processors.is_free_trial',

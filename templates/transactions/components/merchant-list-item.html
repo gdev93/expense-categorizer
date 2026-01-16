@@ -1,0 +1,36 @@
+<div class="merchant-group">
+    <div class="data-list-item merchant-clickable"
+         data-merchant-id="{{ item.merchant__id }}"
+         data-csv-id="{{ csv_file.id }}"
+         style="cursor: pointer;">
+
+        <div class="list-item-info">
+            <div class="transaction-merchant">
+                {{ item.merchant__name|default:"Sconosciuto" }}
+            </div>
+            <div class="transaction-description">
+                <form method="post" class="quick-category-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="merchant_id" value="{{ item.merchant__id }}">
+                    <select name="new_category_id" onchange="debounceFormSubmit(this.form)">
+                        <option selected>{{ item.categories_list }}</option>
+                        {% for cat in categories %}
+                            <option value="{{ cat.id }}">
+                                {{ cat.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </form>
+            </div>
+        </div>
+        <div class="list-item-stats">
+            <span class="badge-count">{{ item.number_of_transactions }} transazioni</span>
+            <div class="list-amount">€{{ item.total_spent|floatformat:2 }}</div>
+        </div>
+    </div>
+
+    <div class="merchant-details-expansion" id="details-{{ item.merchant__id }}">
+        <div class="expansion-content">
+        </div>
+    </div>
+</div>

@@ -191,9 +191,23 @@ class CsvUploadView(ListView, FormView):
 
     def get_queryset(self):
         """Get uploads for the current user (ListView method)"""
-        return CsvUpload.objects.filter(
+        queryset = CsvUpload.objects.filter(
             user=self.request.user
         ).select_related('user').prefetch_related('transactions').order_by('-upload_date')
+
+        # Search by file name
+        search_query = self.request.GET.get('search')
+        if search_query:
+            queryset = queryset.filter(file_name__icontains=search_query)
+
+        # Filter by status
+        status_filter = self.request.GET.get('status')
+        if status_filter == 'ready':
+            queryset = queryset.filter(status='completed')
+        elif status_filter == 'not_ready':
+            queryset = queryset.exclude(status='completed')
+
+        return queryset
 
     def _get_user_rules(self) -> List[str]:
         """Get active user rules"""
@@ -502,12 +516,17 @@ class CsvUploadClean(DetailView):
             ),
             categories_list=StringAgg('category__name', delimiter=', ', distinct=True)
         ).order_by('-is_uncategorized', '-number_of_transactions', 'merchant__name')
+
+        uncategorized_merchants = merchant_group.filter(is_uncategorized=1)
+        categorized_merchants = merchant_group.filter(is_uncategorized=0)
+
         # 4. Paginazione del Merchant Summary
-        paginator = Paginator(merchant_group, self.paginate_by_merchant)
+        paginator = Paginator(categorized_merchants, self.paginate_by_merchant)
         page_number = self.request.GET.get('page')
         page_obj = paginator.get_page(page_number)
 
         # 5. Context
+        context['uncategorized_merchants'] = uncategorized_merchants
         context['merchant_summary'] = page_obj  # Ora è un oggetto Page
         context['search_query'] = search_query
         context['categories'] = Category.objects.filter(user=self.request.user)

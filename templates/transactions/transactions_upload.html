@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="{% static 'css/list.css' %}">
     <link rel="stylesheet" href="{% static 'css/pagination.css' %}">
     <link rel="stylesheet" href="{% static 'css/progress-bar.css' %}">
+    <link rel="stylesheet" href="{% static 'css/filters.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -91,6 +92,31 @@
 
         <h1 class="header">🚚 Tutti i tuoi caricamenti</h1>
 
+        <!-- Filters -->
+        <form method="get" class="filters" id="upload-filter-form">
+            <div class="filter-group">
+                <label for="search">🔍 Ricerca</label>
+                <input type="text" name="search" id="search" placeholder="Cerca per nome file..."
+                       value="{{ request.GET.search|default:'' }}" onchange="debounceFormSubmit(this.form)"/>
+            </div>
+
+            <div class="filter-group">
+                <label for="status">📊 Stato</label>
+                <select name="status" id="status" onchange="debounceFormSubmit(this.form)">
+                    <option value="">Tutti gli stati</option>
+                    <option value="ready" {% if request.GET.status == 'ready' %}selected{% endif %}>Completato</option>
+                    <option value="not_ready" {% if request.GET.status == 'not_ready' %}selected{% endif %}>In corso</option>
+                </select>
+            </div>
+
+            <div class="filter-group" style="align-self: flex-end; display: flex; gap: 8px;">
+                <button type="submit" class="btn btn-primary">Filtra</button>
+                {% if request.GET.search or request.GET.status %}
+                    <a href="{% url 'transactions_upload' %}" class="btn btn-secondary">Cancella</a>
+                {% endif %}
+            </div>
+        </form>
+
         <div class="data-list uploaded-list-padding">
     {% if uploads %}
         {% for upload in uploads %}
@@ -156,8 +182,8 @@
         {% if is_paginated %}
             <div class="pagination mt-4">
                 {% if page_obj.has_previous %}
-                    <a href="?page=1" class="pagination-link">&laquo; Prima</a>
-                    <a href="?page={{ page_obj.previous_page_number }}" class="pagination-link">Precedente</a>
+                    <a href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}" class="pagination-link">&laquo; Prima</a>
+                    <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}" class="pagination-link">Precedente</a>
                 {% endif %}
 
                 <span class="pagination-current">
@@ -165,8 +191,8 @@
                 </span>
 
                 {% if page_obj.has_next %}
-                    <a href="?page={{ page_obj.next_page_number }}" class="pagination-link">Successiva</a>
-                    <a href="?page={{ page_obj.paginator.num_pages }}" class="pagination-link">Ultima &raquo;</a>
+                    <a href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}" class="pagination-link">Successiva</a>
+                    <a href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}" class="pagination-link">Ultima &raquo;</a>
                 {% endif %}
             </div>
         {% endif %}
