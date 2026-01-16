@@ -48,6 +48,7 @@ class ExpenseUploadProcessor:
 
     def _process_prechecks(self, batch: list[Transaction], csv_upload: CsvUpload) -> list[Transaction]:
         all_transactions_to_upload: list[Transaction] = []
+        all_transactions_as_income: list[Transaction] = []
         all_transactions_categorized: list[Transaction] = []
         all_transactions_to_delete: list[Transaction] = []
         merchant_with_category: dict[str, tuple[Merchant, Category]] = {}
@@ -67,7 +68,7 @@ class ExpenseUploadProcessor:
                 tx.amount = transaction_parse_result.amount
                 tx.operation_type = transaction_parse_result.operation_type
                 # income transactions are not categorized yet
-                all_transactions_categorized.append(tx)
+                all_transactions_as_income.append(tx)
                 continue
             if transaction_parse_result.description:
                 transaction_from_description = Transaction.objects.filter(
@@ -99,7 +100,7 @@ class ExpenseUploadProcessor:
                     uncategorized_transaction = TransactionUpdater.update_transaction_with_parse_result(tx, transaction_parse_result)
                     all_transactions_to_upload.append(uncategorized_transaction)
 
-        Transaction.objects.bulk_update(all_transactions_categorized + all_transactions_to_upload,
+        Transaction.objects.bulk_update(all_transactions_categorized + all_transactions_to_upload + all_transactions_as_income,
                                         ['status', 'merchant', 'merchant_raw_name', 'category', 'transaction_date',
                                          'original_date', 'description', 'amount', 'original_amount',
                                          'transaction_type', 'normalized_description','operation_type'])
