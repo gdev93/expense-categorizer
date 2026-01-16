@@ -1,5 +1,4 @@
 from django.shortcuts import render
-from django.contrib.auth.decorators import login_not_required
 
 def error_400(request, exception):
     return render(request, 'errors/400.html', status=400)
