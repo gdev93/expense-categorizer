@@ -177,6 +177,7 @@ class CsvUpload(models.Model):
     )
     notes = models.TextField(blank=True, help_text='Agent description of the csv structure')
 
+    status = models.CharField(max_length=70, choices=[('pending', 'Pending'), ('processing', 'Processing'), ('completed', 'Completed')], default='pending')
 
 
 

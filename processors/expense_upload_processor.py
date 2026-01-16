@@ -46,6 +46,40 @@ class ExpenseUploadProcessor:
             float(self.csv_structure_sample_size_percentage)
         )
 
+    def process_transactions(self, transactions: list[Transaction], csv_upload: CsvUpload) -> CsvUpload:
+
+        self.csv_structure_detector.setup_csv_upload_structure(transactions, csv_upload)
+
+        all_transactions_to_upload = self._process_prechecks(transactions, csv_upload)
+        transaction_batches = self.batch_helper.compute_batches(all_transactions_to_upload)
+        data_count = len(all_transactions_to_upload)
+
+        logger.info(f"🚀 Starting CSV Processing: {data_count} transactions")
+
+        with ThreadPoolExecutor() as executor:
+            # Parallelize the agent calls only
+            results = list(executor.map(lambda batch: self._process_with_agent(batch, csv_upload), transaction_batches))
+
+        # Process each batch's results synchronously
+        for batch_result, response in results:
+            if response:
+                CostService.log_api_usage(
+                    user=self.user,
+                    llm_model=response.model_name,
+                    input_tokens=response.prompt_tokens,
+                    output_tokens=response.candidate_tokens,
+                    csv_upload=csv_upload
+                )
+            if batch_result:
+                with transaction.atomic():
+                    self._persist_batch_results(batch_result)
+
+        with transaction.atomic():
+            self._post_process_transactions(csv_upload)
+            csv_upload.status = 'completed'
+            csv_upload.save()
+
+        return csv_upload
     def _process_prechecks(self, batch: list[Transaction], csv_upload: CsvUpload) -> list[Transaction]:
         all_transactions_to_upload: list[Transaction] = []
         all_transactions_as_income: list[Transaction] = []
@@ -110,7 +144,7 @@ class ExpenseUploadProcessor:
         )
         return all_transactions_to_upload
 
-    def process_with_agent(self, batch: list[Transaction], csv_upload: CsvUpload) -> tuple[list[TransactionCategorization], GeminiResponse | None]:
+    def _process_with_agent(self, batch: list[Transaction], csv_upload: CsvUpload) -> tuple[list[TransactionCategorization], GeminiResponse | None]:
         agent_upload_transaction = [AgentTransactionUpload(transaction_id=tx.id, raw_text=tx.raw_data) for tx in
                                     batch]
         if agent_upload_transaction:
@@ -174,38 +208,8 @@ class ExpenseUploadProcessor:
             except Exception as e:
                 logger.error(f"⚠️  Failed to persist transaction {tx_id}: {str(e)}")
                 continue
-    def process_transactions(self, transactions: list[Transaction], csv_upload: CsvUpload) -> CsvUpload:
 
-        self.csv_structure_detector.setup_csv_upload_structure(transactions, csv_upload)
 
-        all_transactions_to_upload = self._process_prechecks(transactions, csv_upload)
-        transaction_batches = self.batch_helper.compute_batches(all_transactions_to_upload)
-        data_count = len(all_transactions_to_upload)
-
-        logger.info(f"🚀 Starting CSV Processing: {data_count} transactions")
-
-        with ThreadPoolExecutor() as executor:
-            # Parallelize the agent calls only
-            results = list(executor.map(lambda batch: self.process_with_agent(batch, csv_upload), transaction_batches))
-
-        # Process each batch's results synchronously
-        for batch_result, response in results:
-            if response:
-                CostService.log_api_usage(
-                    user=self.user,
-                    llm_model=response.model_name,
-                    input_tokens=response.prompt_tokens,
-                    output_tokens=response.candidate_tokens,
-                    csv_upload=csv_upload
-                )
-            if batch_result:
-                with transaction.atomic():
-                    self._persist_batch_results(batch_result)
-
-        with transaction.atomic():
-            self._post_process_transactions(csv_upload)
-
-        return csv_upload
 
     def _post_process_transactions(self, csv_upload: CsvUpload) -> None:
         """Post-process transactions after batch processing to identify column mappings and categorize uncategorized transactions."""

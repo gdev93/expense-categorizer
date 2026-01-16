@@ -15,6 +15,9 @@ class CsvStructureDetector:
         self.sample_size_percentage = sample_size_percentage
 
     def setup_csv_upload_structure(self, current_data: list[Transaction], csv_upload: CsvUpload) -> CsvUpload:
+        if csv_upload.description_column_name and csv_upload.date_column_name and (csv_upload.income_amount_column_name or csv_upload.expense_amount_column_name):
+            return csv_upload
+
         csv_upload_same_structure = None
         all_csv_uploads = list(CsvUpload.objects.filter(user=self.user).exclude(id=csv_upload.id))
         for csv_upload_candidate in all_csv_uploads:
