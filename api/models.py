@@ -185,6 +185,18 @@ class CsvUpload(models.Model):
         return f"CSV Map (Upload: {self.upload_date.strftime('%Y-%m-%d')})"
 
 
+class UploadResume(models.Model):
+    csv_upload = models.OneToOneField(
+        CsvUpload,
+        on_delete=models.CASCADE,
+        related_name='resume_info'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Resume for {self.csv_upload}"
+
+
 class Transaction(models.Model):
     """Individual financial transactions"""
     STATUS_CHOICES = [
