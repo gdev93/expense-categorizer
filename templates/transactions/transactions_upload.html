@@ -120,8 +120,8 @@
                 </div>
 
                 <div class="list-item-stats">
-                    <span class="upload-status {% if upload.status != 'categorized' %}status-pending{% else %}status-completato{% endif %}">
-                        {% if upload.status != 'categorized' %}
+                    <span class="upload-status {% if upload.status != 'completed' %}status-pending{% else %}status-completato{% endif %}">
+                        {% if upload.status != 'completed' %}
                         In corso
                         {% else %}
                         Completato

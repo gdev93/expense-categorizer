@@ -177,11 +177,24 @@ class CsvUpload(models.Model):
     )
     notes = models.TextField(blank=True, help_text='Agent description of the csv structure')
 
+    status = models.CharField(max_length=70, choices=[('pending', 'Pending'), ('processing', 'Processing'), ('completed', 'Completed')], default='pending')
 
 
 
     def __str__(self):
         return f"CSV Map (Upload: {self.upload_date.strftime('%Y-%m-%d')})"
+
+
+class UploadResume(models.Model):
+    csv_upload = models.OneToOneField(
+        CsvUpload,
+        on_delete=models.CASCADE,
+        related_name='resume_info'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Resume for {self.csv_upload}"
 
 
 class Transaction(models.Model):

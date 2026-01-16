@@ -1,4 +1,6 @@
 import logging
+import os
+
 from django.contrib.auth.models import User
 from django.db.models import Count, Max
 from django.contrib.postgres.search import TrigramWordSimilarity
@@ -11,6 +13,7 @@ class SimilarityMatcher:
     def __init__(self, user: User, threshold: float):
         self.user = user
         self.threshold = threshold
+        self.fuzzy_match_depth = os.getenv('FUZZY_MATCH_DEPTH', 5)
 
     def find_similar_transaction_by_merchant(self, merchant_name: str) -> Transaction | None:
         """
@@ -61,19 +64,35 @@ class SimilarityMatcher:
             return self.find_similar_transaction_by_merchant(tx.merchant.name)
         return None
 
-    # TODO Per gli addebiti, se c'è il nome del debitore, ma un merchant ha lo stesso nome (esempio giroconto verso un conto intensato all'utente) passa la query ilike
-    def find_reference_transaction_from_raw(self, transaction_parse_result: RawTransactionParseResult) -> Transaction | None:
-        """Find reference transaction from a raw transaction parse result."""
+    def find_reference_transaction_from_raw(self,
+                                            transaction_parse_result: RawTransactionParseResult) -> Transaction | None:
         if transaction_parse_result.merchant:
             similar_transaction = self.find_similar_transaction_by_merchant(transaction_parse_result.merchant)
             if similar_transaction:
                 return similar_transaction
-        
-        if transaction_parse_result.description:
+
+        desc = transaction_parse_result.description
+        if desc:
+            # Get all merchants that meet the threshold
             merchants_from_description = Merchant.get_merchants_by_transaction_description(
-                transaction_parse_result.description, self.user, self.threshold
+                desc, self.user, self.threshold
             )
-            if merchants_from_description.count() == 1:
-                return self.find_similar_transaction_by_merchant(merchants_from_description[0].name)
-        
+
+            if merchants_from_description.exists():
+                # Strategy: Find the merchant whose name appears EARLIEST in the description.
+                # This prioritizes the "Creditor" over the "Debtor" in SDD strings.
+                best_merchant = None
+                earliest_index = float('inf')
+
+                for merchant in merchants_from_description[:self.fuzzy_match_depth]:  # Check top fuzzy candidates
+                    # Find the position of the merchant name in the raw description
+                    pos = desc.lower().find(merchant.name.lower())
+
+                    if pos != -1 and pos < earliest_index:
+                        earliest_index = pos
+                        best_merchant = merchant
+
+                if best_merchant:
+                    return self.find_similar_transaction_by_merchant(best_merchant.name)
+
         return None
