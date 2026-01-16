@@ -287,12 +287,6 @@ class CsvUploadView(ListView, FormView):
                 )
             )
         ).annotate(
-            status=Case(
-                When(has_pending=True, then=Value('pending')),
-                default=Value('categorized'),
-                output_field=CharField()
-            )
-        ).annotate(
             transactions_count=Count('transactions')
         )
 

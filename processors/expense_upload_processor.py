@@ -109,6 +109,8 @@ class ExpenseUploadProcessor:
                     user=self.user,
                     normalized_description=normalize_string(transaction_parse_result.description),
                     transaction_date=transaction_parse_result.date,
+                    category__isnull=False,
+                    status='categorized'
                 ).exists()
                 if transaction_from_description:
                     logger.info(f"Transaction from description {transaction_parse_result.description} already categorized")
