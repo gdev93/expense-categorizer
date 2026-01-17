@@ -1,16 +1,26 @@
+import os
+from datetime import timedelta
+
 from django.core.management.base import BaseCommand
 from django.db import IntegrityError
+from django.utils import timezone
+
 from api.models import UploadFile, Rule, Category, UploadResume
 from processors.expense_upload_processor import ExpenseUploadProcessor
 
+
 class Command(BaseCommand):
     help = 'Resumes CSV uploads that were interrupted by a server shutdown'
-
+    process_time_minute = os.getenv('PROCESS_TIME_MINUTE', '15')
+    
     def handle(self, *args, **options):
+        now = timezone.now()
         # Find uploads that never finished and are not already being processed by another command instance
         incomplete_uploads = UploadFile.objects.filter(
             status='processing',
-            resume_info__isnull=True
+            resume_info__isnull=True,
+            # more of 15 minutes ago to process it
+            upload_date__lt=now - timedelta(minutes=int(self.process_time_minute))
         )
         
         if not incomplete_uploads.exists():

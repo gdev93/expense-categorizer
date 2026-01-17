@@ -6,7 +6,8 @@ from django.http import HttpRequest
 from api.models import Transaction, Profile, UploadFile
 
 def available_years_context(request: HttpRequest):
-    if not request.user.is_authenticated:
+    user = request.user
+    if not user or not user.is_authenticated:
         return {
             'available_years': []
         }
@@ -35,7 +36,8 @@ def available_months_context(request):
     Provide a list of available months for the authenticated user as a global context.
     - Months are restricted to the selected year (from GET 'year') or the most recent year with data.
     """
-    if not request.user.is_authenticated:
+    user = request.user
+    if not user or not user.is_authenticated:
         return {
             'available_months': [],
         }
@@ -81,7 +83,8 @@ def available_months_context(request):
     }
 
 def is_free_trial(request:HttpRequest):
-    if not request.user.is_authenticated:
+    user = request.user
+    if not user or not user.is_authenticated:
         return {
             'is_free_trial': False
         }
@@ -91,6 +94,11 @@ def is_free_trial(request:HttpRequest):
     }
 
 def user_uploads(request:HttpRequest):
+    user = request.user
+    if not user or not user.is_authenticated:
+        return {
+            'user_uploads': []
+        }
     return {
         'user_uploads': UploadFile.objects.filter(user=request.user).order_by('-upload_date') if request.user.is_authenticated else []
     }
