@@ -26,6 +26,7 @@ urlpatterns = [
 ]
 
 handler400 = 'api.views.error_views.error_400'
+handler401 = 'api.views.error_views.error_401'
 handler403 = 'api.views.error_views.error_403'
 handler404 = 'api.views.error_views.error_404'
 handler500 = 'api.views.error_views.error_500'

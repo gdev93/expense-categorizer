@@ -2,15 +2,20 @@ from datetime import datetime
 
 from django.db.models import Sum
 from django.http import HttpRequest
+from django.core.exceptions import PermissionDenied
 
 from api.models import Transaction, Profile, UploadFile
 
 def available_years_context(request: HttpRequest):
     user = request.user
     if not user or not user.is_authenticated:
-        return {
-            'available_years': []
-        }
+        # Avoid throwing 401 on public views (login, register, etc.) and 404 pages
+        resolver_match = getattr(request, 'resolver_match', None)
+        if not resolver_match or getattr(resolver_match.func, 'login_required', True) is False:
+            return {
+                'available_years': []
+            }
+        raise PermissionDenied("401 Unauthorized")
 
     # We only get available years here.
     # The 'year' selection logic should primarily stay in the views
@@ -38,9 +43,13 @@ def available_months_context(request):
     """
     user = request.user
     if not user or not user.is_authenticated:
-        return {
-            'available_months': [],
-        }
+        # Avoid throwing 401 on public views (login, register, etc.) and 404 pages
+        resolver_match = getattr(request, 'resolver_match', None)
+        if not resolver_match or getattr(resolver_match.func, 'login_required', True) is False:
+            return {
+                'available_months': [],
+            }
+        raise PermissionDenied("401 Unauthorized")
 
     # Determine target year using a consistent fallback
     selected_year_str = request.GET.get('year')
@@ -85,9 +94,13 @@ def available_months_context(request):
 def is_free_trial(request:HttpRequest):
     user = request.user
     if not user or not user.is_authenticated:
-        return {
-            'is_free_trial': False
-        }
+        # Avoid throwing 401 on public views (login, register, etc.) and 404 pages
+        resolver_match = getattr(request, 'resolver_match', None)
+        if not resolver_match or getattr(resolver_match.func, 'login_required', True) is False:
+            return {
+                'is_free_trial': False
+            }
+        raise PermissionDenied("401 Unauthorized")
     user_profile = Profile.objects.filter(user=request.user).first()
     return {
         'is_free_trial': 'free_trial' == user_profile.subscription_type if user_profile else False
@@ -96,9 +109,13 @@ def is_free_trial(request:HttpRequest):
 def user_uploads(request:HttpRequest):
     user = request.user
     if not user or not user.is_authenticated:
-        return {
-            'user_uploads': []
-        }
+        # Avoid throwing 401 on public views (login, register, etc.) and 404 pages
+        resolver_match = getattr(request, 'resolver_match', None)
+        if not resolver_match or getattr(resolver_match.func, 'login_required', True) is False:
+            return {
+                'user_uploads': []
+            }
+        raise PermissionDenied("401 Unauthorized")
     return {
         'user_uploads': UploadFile.objects.filter(user=request.user).order_by('-upload_date') if request.user.is_authenticated else []
     }

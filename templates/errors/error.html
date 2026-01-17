@@ -1,0 +1,15 @@
+{% extends "main/index.html" %}
+
+{% block title %}{{ error_code }} - {{ error_title }}{% endblock %}
+{% block app_title %}{{ error_code }} - {{ error_title }}{% endblock %}
+
+{% block content %}
+<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 60vh; text-align: center; padding: 20px;">
+    <h1 style="font-size: 6rem; color: var(--secondary-color); margin-bottom: 0;">{{ error_code }}</h1>
+    <h2 style="margin-bottom: 20px;">{{ error_title }}</h2>
+    <p style="color: var(--secondary-color); max-width: 500px; margin-bottom: 30px;">
+        {{ error_message }}
+    </p>
+    <a href="{{ button_url|default:'/' }}" class="btn btn-primary">{{ button_text|default:'Torna alla Home' }}</a>
+</div>
+{% endblock %}
