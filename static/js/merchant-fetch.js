@@ -10,14 +10,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     rows.forEach(row => {
         row.addEventListener('click', async (event) => {
-            // Check if the click was on the category select or form
-            if (event.target.closest('.quick-category-form')) {
-                console.log("[MerchantFetch] Click ignored: category selector used.");
-                return;
-            }
 
             const mId = row.dataset.merchantId;
-            const cId = row.dataset.csvId;
+            const cId = row.dataset.uploadFileId;
             console.log(`[MerchantFetch] Row clicked. Merchant ID: ${mId}, CSV ID: ${cId}`);
 
             const cacheKey = `${mId}-${cId}`;

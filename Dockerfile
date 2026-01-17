@@ -17,22 +17,11 @@ COPY requirements.txt /app/
 RUN pip install --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-RUN echo 'import urllib.request \n\
-import sys \n\
- \n\
-def check_health(): \n\
-    try: \n\
-        # Checks the Django app on port 8000\n\
-        urllib.request.urlopen("http://localhost:8000/", timeout=5) \n\
-        sys.exit(0) \n\
-    except Exception: \n\
-        sys.exit(1) \n\
- \n\
-if __name__ == "__main__": \n\
-    check_health()' > /app/healthcheck.py
+# Copy healthcheck script
+COPY healthcheck.py /app/healthcheck.py
 
 # Define the healthcheck within the image
-HEALTHCHECK --interval=20s --timeout=10s --start-period=10s --retries=3 \
+HEALTHCHECK --interval=20s --timeout=10s --start-period=90s --retries=3 \
   CMD python /app/healthcheck.py
 
 COPY . /app/

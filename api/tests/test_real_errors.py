@@ -56,3 +56,16 @@ def test_real_csrf_failure(live_server):
     assert response.status_code == 403
     assert "403" in response.text
     assert "Verifica di sicurezza fallita" in response.text
+
+@pytest.mark.django_db
+def test_real_502_error(live_server, settings):
+    """
+    Test that a real 502 error triggers our custom template via the test trigger.
+    """
+    settings.DEBUG = False
+    url = f"{live_server.url}{reverse('test_502')}"
+    response = requests.get(url)
+
+    assert response.status_code == 502
+    assert "502" in response.text
+    assert "Bad Gateway" in response.text

@@ -54,3 +54,19 @@ class ErrorHandlerTest(TestCase):
         self.assertEqual(response.status_code, 403)
         self.assertContains(response, "403", status_code=403)
         self.assertContains(response, "Verifica di sicurezza fallita", status_code=403)
+
+    @override_settings(DEBUG=False, ALLOWED_HOSTS=['testserver'])
+    def test_502_handler(self):
+        from api.views.error_views import error_502
+        from django.http import HttpRequest
+        from django.contrib.auth.models import AnonymousUser
+        from unittest.mock import MagicMock
+        request = HttpRequest()
+        request.user = AnonymousUser()
+        request.resolver_match = MagicMock()
+        request.resolver_match.func = error_502
+        request.GET = {}
+        response = error_502(request)
+        self.assertEqual(response.status_code, 502)
+        self.assertContains(response, "502", status_code=502)
+        self.assertContains(response, "Bad Gateway", status_code=502)

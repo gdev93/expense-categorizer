@@ -7,7 +7,7 @@ from django.core.exceptions import PermissionDenied
 from api.models import Transaction, Profile, UploadFile
 
 def available_years_context(request: HttpRequest):
-    user = request.user
+    user = getattr(request, 'user', None)
     if not user or not user.is_authenticated:
         # Avoid throwing 401 on public views (login, register, etc.) and 404 pages
         resolver_match = getattr(request, 'resolver_match', None)
@@ -41,7 +41,7 @@ def available_months_context(request):
     Provide a list of available months for the authenticated user as a global context.
     - Months are restricted to the selected year (from GET 'year') or the most recent year with data.
     """
-    user = request.user
+    user = getattr(request, 'user', None)
     if not user or not user.is_authenticated:
         # Avoid throwing 401 on public views (login, register, etc.) and 404 pages
         resolver_match = getattr(request, 'resolver_match', None)
@@ -92,7 +92,7 @@ def available_months_context(request):
     }
 
 def is_free_trial(request:HttpRequest):
-    user = request.user
+    user = getattr(request, 'user', None)
     if not user or not user.is_authenticated:
         # Avoid throwing 401 on public views (login, register, etc.) and 404 pages
         resolver_match = getattr(request, 'resolver_match', None)
@@ -107,7 +107,7 @@ def is_free_trial(request:HttpRequest):
     }
 
 def user_uploads(request:HttpRequest):
-    user = request.user
+    user = getattr(request, 'user', None)
     if not user or not user.is_authenticated:
         # Avoid throwing 401 on public views (login, register, etc.) and 404 pages
         resolver_match = getattr(request, 'resolver_match', None)

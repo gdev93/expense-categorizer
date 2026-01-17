@@ -52,6 +52,15 @@ def error_500(request):
     return render(request, 'errors/error.html', context, status=500)
 
 @login_not_required
+def error_502(request, exception=None):
+    context = {
+        'error_code': 502,
+        'error_title': 'Bad Gateway',
+        'error_message': 'Il server ha ricevuto una risposta non valida mentre agiva come gateway o proxy.'
+    }
+    return render(request, 'errors/error.html', context, status=502)
+
+@login_not_required
 def csrf_failure(request, reason=""):
     context = {
         'error_code': 403,
@@ -69,3 +78,7 @@ def trigger_403(request):
 @login_not_required
 def trigger_500(request):
     raise Exception("Test 500 error")
+
+@login_not_required
+def trigger_502(request):
+    return error_502(request)
