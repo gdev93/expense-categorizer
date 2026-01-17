@@ -11,19 +11,19 @@ from django import forms
 from django.contrib import messages
 from django.contrib.auth.models import User
 from django.contrib.postgres.aggregates import StringAgg
-from django.core.exceptions import BadRequest, PermissionDenied
+from django.core.exceptions import BadRequest
 from django.core.paginator import Paginator
 from django.core.validators import FileExtensionValidator
 from django.db import transaction
-from django.db.models import Sum, Count, Case, When, Value, CharField, Exists, OuterRef, Q, Max, IntegerField
+from django.db.models import Sum, Count, Case, When, Value, Exists, OuterRef, Q, Max, IntegerField
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect, get_object_or_404
 from django.urls import reverse_lazy
 from django.views import View
 from django.views.generic import FormView, ListView, DeleteView, DetailView
 
-from api.models import UploadFile, Transaction, Merchant, DefaultCategory
 from api.models import Rule, Category
+from api.models import UploadFile, Transaction, Merchant, DefaultCategory
 from api.views.rule_view import create_rule
 from processors.expense_upload_processor import ExpenseUploadProcessor, persist_uploaded_file
 from processors.file_parsers import parse_uploaded_file, FileParserError
@@ -215,15 +215,6 @@ class UploadFileView(ListView, FormView):
 
         return queryset
 
-    def _get_user_rules(self) -> List[str]:
-        """Get active user rules"""
-        return list(
-            Rule.objects.filter(
-                user=self.request.user,
-                is_active=True
-            ).values_list('text_content', flat=True)
-        )
-
     def _process_upload_file(self, uploaded_file) -> CsvProcessingResult:
         """
         Process file upload: parse, validate, and create transactions.
@@ -310,7 +301,13 @@ class UploadFileView(ListView, FormView):
                 )
             )
         ).annotate(
-            transactions_count=Count('transactions')
+            transactions_count=Count(
+                'transactions',
+                filter=Q(
+                    transactions__transaction_type='expense',
+                    transactions__user=self.request.user,
+                )
+            )
         )
 
         context['uploads'] = queryset

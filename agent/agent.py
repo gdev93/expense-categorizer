@@ -246,7 +246,7 @@ class ExpenseCategorizerAgent:
                 samples_text += f"    - {column}: {display_value}\n"
             samples_text += "\n"
 
-        prompt = f"""Sei un esperto nell'analisi di strutture CSV di transazioni bancarie italiane.
+        prompt = f"""Sei un esperto nell'analisi di strutture dati di transazioni bancarie italiane.
 
             Analizza i seguenti campioni di transazioni e identifica quali campi corrispondono a:
             1. **description_field**: Il campo contenente la descrizione/dettagli della transazione
