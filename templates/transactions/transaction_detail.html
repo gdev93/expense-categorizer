@@ -144,28 +144,38 @@
         </div>
     </div>
 
+{% endblock %}
+
+{% block modals %}
     <!-- Modal for applying category to all previous transactions -->
-    <div id="categoryModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
+    <div id="categoryModal" class="app-modal" style="display: none;">
+        <div class="app-modal-content">
+            <div class="app-modal-header">
                 <h3>Aggiorna transazioni precedenti?</h3>
             </div>
-            <div class="modal-body">
-                <p>Vuoi applicare questa categoria a tutte le transazioni di <strong>{{ transaction.merchant.name|default:transaction.merchant_raw_name }}</strong>?</p>
+            <div class="app-modal-body">
+                <p>Vuoi applicare questa categoria a tutte le transazioni di <strong id="modal-merchant-name">{{ transaction.merchant.name|default:transaction.merchant_raw_name }}</strong>?</p>
             </div>
-            <div class="modal-footer">
+            <div class="app-modal-footer">
                 <button type="button" id="btnOnlyThis" class="btn btn-secondary">Solo questa</button>
                 <button type="button" id="btnApplyAll" class="btn btn-primary">Applica a tutte</button>
             </div>
         </div>
     </div>
+{% endblock %}
 
+{% block extra_js %}
     <script>
     document.addEventListener('DOMContentLoaded', function() {
         const form = document.getElementById('transaction-form');
         const categorySelect = document.getElementById('id_category');
         const newCategoryInput = document.getElementById('id_new_category_name');
+        const merchantInput = document.getElementById('id_merchant_raw_name');
+
+        if (!form || !categorySelect || !newCategoryInput) return;
+
         const originalCategoryId = categorySelect.value;
+
         const modal = document.getElementById('categoryModal');
         const btnOnlyThis = document.getElementById('btnOnlyThis');
         const btnApplyAll = document.getElementById('btnApplyAll');
@@ -174,34 +184,51 @@
         let shouldShowModal = true;
 
         form.addEventListener('submit', function(e) {
+            // Avoid showing modal when deleting
+            if (e.submitter && e.submitter.name === 'delete') {
+                return;
+            }
+
             const currentCategoryId = categorySelect.value;
             const newCategoryName = newCategoryInput.value.trim();
+            const currentMerchantName = merchantInput ? merchantInput.value.trim() : '';
 
             // If category has changed OR a new category name is provided
             const categoryChanged = currentCategoryId !== originalCategoryId || newCategoryName !== '';
 
-            if (categoryChanged && shouldShowModal) {
+            if (categoryChanged && shouldShowModal && modal) {
+                // Update merchant name in modal text
+                const modalMerchantName = document.getElementById('modal-merchant-name');
+                if (modalMerchantName) {
+                    modalMerchantName.textContent = currentMerchantName;
+                }
+
                 e.preventDefault();
-                modal.style.display = "block";
+                // Use !important in style to ensure visibility against conflicting CSS
+                modal.style.setProperty('display', 'flex', 'important');
             }
         });
 
-        btnOnlyThis.onclick = function() {
-            applyToAllInput.value = "false";
-            shouldShowModal = false;
-            modal.style.display = "none";
-            form.submit();
+        if (btnOnlyThis) {
+            btnOnlyThis.onclick = function() {
+                if (applyToAllInput) applyToAllInput.value = "false";
+                shouldShowModal = false;
+                if (modal) modal.style.display = "none";
+                form.submit();
+            }
         }
 
-        btnApplyAll.onclick = function() {
-            applyToAllInput.value = "true";
-            shouldShowModal = false;
-            modal.style.display = "none";
-            form.submit();
+        if (btnApplyAll) {
+            btnApplyAll.onclick = function() {
+                if (applyToAllInput) applyToAllInput.value = "true";
+                shouldShowModal = false;
+                if (modal) modal.style.display = "none";
+                form.submit();
+            }
         }
 
         window.onclick = function(event) {
-            if (event.target == modal) {
+            if (modal && event.target == modal) {
                 modal.style.display = "none";
             }
         }

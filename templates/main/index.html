@@ -100,7 +100,9 @@
     </main>
 
     <div class="overlay" id="overlay"></div>
+    {% block modals %}{% endblock %}
 
     <script src="{% static 'js/index.js' %}"></script>
+    {% block extra_js %}{% endblock %}
 </body>
 </html>

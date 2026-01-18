@@ -98,7 +98,6 @@ class TransactionDetailUpdateView(LoginRequiredMixin, UpdateView):
             updated_count = Transaction.objects.filter(
                 user=self.request.user,
                 merchant=self.object.merchant,
-                transaction_date__lte=self.object.transaction_date
             ).exclude(
                 pk=self.object.pk
             ).update(
@@ -107,9 +106,9 @@ class TransactionDetailUpdateView(LoginRequiredMixin, UpdateView):
                 status='categorized'
             )
             if updated_count > 0:
-                messages.info(self.request, f"Aggiornate altre {updated_count} transazioni precedenti per questo esercente.")
-
-        messages.success(self.request, "Spesa aggiornata con successo.")
+                messages.info(self.request, f"Aggiornate questa e altre {updated_count} transazioni precedenti per questo esercente.")
+        else:
+            messages.success(self.request, "Spesa aggiornata con successo.")
 
         return self.render_to_response(self.get_context_data(form=form))
 
