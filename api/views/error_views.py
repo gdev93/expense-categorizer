@@ -61,6 +61,15 @@ def error_502(request, exception=None):
     return render(request, 'errors/error.html', context, status=502)
 
 @login_not_required
+def error_503(request, exception=None):
+    context = {
+        'error_code': 503,
+        'error_title': 'Servizio non disponibile',
+        'error_message': 'Il server è temporaneamente impossibilitato a gestire la richiesta. Per favore, riprova più tardi.'
+    }
+    return render(request, 'errors/error.html', context, status=503)
+
+@login_not_required
 def csrf_failure(request, reason=""):
     context = {
         'error_code': 403,
@@ -82,3 +91,7 @@ def trigger_500(request):
 @login_not_required
 def trigger_502(request):
     return error_502(request)
+
+@login_not_required
+def trigger_503(request):
+    return error_503(request)

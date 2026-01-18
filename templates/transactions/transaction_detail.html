@@ -52,6 +52,7 @@
                 <div class="detail-body">
                     <form method="post" action="{% url 'transaction_detail' transaction.id %}" class="category-form" id="transaction-form">
                         {% csrf_token %}
+                        <input type="hidden" name="apply_to_all" id="apply_to_all" value="false">
 
                         <div class="text-center amount-section">
                             <div class="amount-highlight {% if transaction.transaction_type == 'income' %}is-income{% endif %}">
@@ -142,4 +143,76 @@
             </div>
         </div>
     </div>
+
+    <!-- Modal for applying category to all previous transactions -->
+    <div id="categoryModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Aggiorna transazioni precedenti?</h3>
+            </div>
+            <div class="modal-body">
+                <p>Vuoi applicare questa categoria a tutte le transazioni di <strong>{{ transaction.merchant.name|default:transaction.merchant_raw_name }}</strong>?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="btnOnlyThis" class="btn btn-secondary">Solo questa</button>
+                <button type="button" id="btnApplyAll" class="btn btn-primary">Applica a tutte</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('transaction-form');
+        const categorySelect = document.getElementById('id_category');
+        const newCategoryInput = document.getElementById('id_new_category_name');
+        const originalCategoryId = categorySelect.value;
+        const modal = document.getElementById('categoryModal');
+        const btnOnlyThis = document.getElementById('btnOnlyThis');
+        const btnApplyAll = document.getElementById('btnApplyAll');
+        const applyToAllInput = document.getElementById('apply_to_all');
+
+        let shouldShowModal = true;
+
+        form.addEventListener('submit', function(e) {
+            const currentCategoryId = categorySelect.value;
+            const newCategoryName = newCategoryInput.value.trim();
+
+            // If category has changed OR a new category name is provided
+            const categoryChanged = currentCategoryId !== originalCategoryId || newCategoryName !== '';
+
+            if (categoryChanged && shouldShowModal) {
+                e.preventDefault();
+                modal.style.display = "block";
+            }
+        });
+
+        btnOnlyThis.onclick = function() {
+            applyToAllInput.value = "false";
+            shouldShowModal = false;
+            modal.style.display = "none";
+            form.submit();
+        }
+
+        btnApplyAll.onclick = function() {
+            applyToAllInput.value = "true";
+            shouldShowModal = false;
+            modal.style.display = "none";
+            form.submit();
+        }
+
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        }
+    });
+
+    function smartBack() {
+        if (window.history.length > 1) {
+            window.history.back();
+        } else {
+            window.location.href = "{% url 'transaction_list' %}";
+        }
+    }
+    </script>
 {% endblock %}

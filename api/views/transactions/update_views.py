@@ -93,6 +93,22 @@ class TransactionDetailUpdateView(LoginRequiredMixin, UpdateView):
         form.instance.status = 'categorized'
         self.object = form.save()
 
+        if self.request.POST.get('apply_to_all') == 'true' and self.object.merchant:
+            # Update previous transactions with the same merchant and same user
+            updated_count = Transaction.objects.filter(
+                user=self.request.user,
+                merchant=self.object.merchant,
+                transaction_date__lte=self.object.transaction_date
+            ).exclude(
+                pk=self.object.pk
+            ).update(
+                category=self.object.category,
+                modified_by_user=True,
+                status='categorized'
+            )
+            if updated_count > 0:
+                messages.info(self.request, f"Aggiornate altre {updated_count} transazioni precedenti per questo esercente.")
+
         messages.success(self.request, "Spesa aggiornata con successo.")
 
         return self.render_to_response(self.get_context_data(form=form))
