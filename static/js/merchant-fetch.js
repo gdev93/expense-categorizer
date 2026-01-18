@@ -3,31 +3,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const openState = new Map();
     let currentlyOpenId = null;
 
-    console.log("[MerchantFetch] Script initialized and ready.");
-
     const rows = document.querySelectorAll('.merchant-clickable');
-    console.log(`[MerchantFetch] Found ${rows.length} clickable rows.`);
 
     rows.forEach(row => {
         row.addEventListener('click', async (event) => {
 
             const mId = row.dataset.merchantId;
             const cId = row.dataset.uploadFileId;
-            console.log(`[MerchantFetch] Row clicked. Merchant ID: ${mId}, CSV ID: ${cId}`);
 
             const cacheKey = `${mId}-${cId}`;
             const expansionPanel = document.getElementById(`details-${mId}`);
-
-            if (!expansionPanel) {
-                console.error(`[MerchantFetch] Error: Expansion panel 'details-${mId}' not found in DOM.`);
-                return;
-            }
 
             const contentArea = expansionPanel.querySelector('.expansion-content');
 
             // 1. Toggle Close logic
             if (openState.get(mId)) {
-                console.log(`[MerchantFetch] Closing panel: ${mId}`);
                 expansionPanel.classList.remove('is-open');
                 openState.set(mId, false);
                 currentlyOpenId = null;
@@ -36,7 +26,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // 2. Auto-close previous
             if (currentlyOpenId && currentlyOpenId !== mId) {
-                console.log(`[MerchantFetch] Auto-closing previous: ${currentlyOpenId}`);
                 const prevPanel = document.getElementById(`details-${currentlyOpenId}`);
                 if (prevPanel) prevPanel.classList.remove('is-open');
                 openState.set(currentlyOpenId, false);
@@ -44,7 +33,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // 3. Cache Check
             if (dataCache.has(cacheKey)) {
-                console.log(`[MerchantFetch] Rendering from cache: ${cacheKey}`);
                 contentArea.innerHTML = dataCache.get(cacheKey);
                 expansionPanel.classList.add('is-open');
                 openState.set(mId, true);
@@ -52,8 +40,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // 4. Fetch
-            console.log(`[MerchantFetch] Fetching data from server...`);
             contentArea.innerHTML = '<p class="text-muted">Caricamento transazioni...</p>';
 
             try {
@@ -66,11 +52,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     data.transactions.forEach(t => {
                         const finalUrl = TRANSACTION_DETAIL_URL.replace('0', t.id);
+                        const amountClass = t.transaction_type === 'income' ? 'is-income' : '';
                         html += `
-                            <div class="mini-transaction-row" onclick="window.location.href='${finalUrl}'" style="cursor:pointer;">
+                            <div class="mini-transaction-row" onclick="window.location.href='${finalUrl}'">
                                 <span class="mini-date">${t.transaction_date}</span>
                                 <span class="mini-desc">${t.description}</span>
-                                <span class="mini-amount">€${t.amount}</span>
+                                <span class="mini-amount ${amountClass}">€${t.amount}</span>
+                                <span class="mini-chevron">›</span>
                             </div>`;
                     });
                 }

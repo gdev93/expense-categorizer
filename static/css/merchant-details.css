@@ -24,14 +24,63 @@
 .mini-transaction-row {
     display: flex;
     justify-content: space-between;
-    padding: 8px 0;
-    border-bottom: 1px dashed #e0e0e0;
+    align-items: center;
+    padding: 10px 12px;
+    border-bottom: 1px solid #f0f0f0;
     font-size: 0.9rem;
+    transition: all 0.2s ease;
+    border-radius: 6px;
+    margin-bottom: 4px;
+    cursor: pointer;
+}
+
+.mini-transaction-row:hover {
+    background-color: #f1f5f9;
+    transform: translateX(4px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
 }
 
 .mini-transaction-row:last-child {
     border-bottom: none;
+    margin-bottom: 0;
 }
 
-.mini-date { color: #888; }
-.mini-amount { font-weight: 600; }
+.mini-date {
+    color: var(--secondary-color);
+    font-size: 0.8rem;
+    min-width: 85px;
+    font-weight: 500;
+}
+
+.mini-desc {
+    flex-grow: 1;
+    color: var(--nav-text-color);
+    margin: 0 15px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.mini-amount {
+    font-weight: 700;
+    color: var(--expense-color);
+    white-space: nowrap;
+    min-width: 70px;
+    text-align: right;
+}
+
+.mini-amount.is-income {
+    color: var(--income-color);
+}
+
+.mini-chevron {
+    color: #cbd5e1;
+    margin-left: 10px;
+    font-size: 0.8rem;
+    transition: transform 0.2s;
+}
+
+.mini-transaction-row:hover .mini-chevron {
+    color: var(--primary-color);
+    transform: translateX(2px);
+}

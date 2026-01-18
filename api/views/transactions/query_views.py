@@ -35,7 +35,8 @@ class TransactionByUploadFileAndMerchant(View):
             'id',
             'transaction_date',
             'amount',
-            'description'
+            'description',
+            'transaction_type'
         ))
 
         return JsonResponse(
