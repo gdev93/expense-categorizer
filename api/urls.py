@@ -17,7 +17,7 @@ Including another URLconf
 from django.urls import path
 from django.views.generic import RedirectView
 
-from api.entry_point_views import login_form, authenticate_user, register_form, create_user, logout_user
+from api.views.entry_point_views import login_form, authenticate_user, register_form, create_user, logout_user
 from api.views.category_view import CategoryCreateView, CategoryListView, CategoryDetailView, CategoryDeleteView, \
     CategoryUpdateView
 from api.views.transactions.export_views import TransactionExportView

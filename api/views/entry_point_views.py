@@ -4,7 +4,10 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_not_required
 from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied, BadRequest
+from django.db import transaction
 from django.shortcuts import render, redirect
+
+from api.models import Profile
 
 allowed_emails = os.getenv('ALLOWED_EMAILS','').split(',')
 # Create your views here.
@@ -43,13 +46,15 @@ def create_user(request):
         last_name = request.POST.get('last_name', '')
 
         # Create the user
-        user = User.objects.create_user(
-            username=username,
-            password=password,
-            email=email,
-            first_name=first_name,
-            last_name=last_name
-        )
+        with transaction.atomic():
+            user = User.objects.create_user(
+                username=username,
+                password=password,
+                email=email,
+                first_name=first_name,
+                last_name=last_name
+            )
+            Profile.objects.create(user=user,subscription_type='free_trial')
 
         # Auto-login after registration
         login(request, user)
