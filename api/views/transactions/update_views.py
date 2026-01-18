@@ -110,7 +110,7 @@ class TransactionDetailUpdateView(LoginRequiredMixin, UpdateView):
         else:
             messages.success(self.request, "Spesa aggiornata con successo.")
 
-        return self.render_to_response(self.get_context_data(form=form))
+        return redirect(reverse('transaction_detail', kwargs={'pk': self.object.pk}))
 
 class EditTransactionCategory(View):
 
