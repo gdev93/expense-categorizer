@@ -111,6 +111,27 @@
     <script>
     const TRANSACTION_BY_MERCHANT_BY_CSV_URL = "{% url 'transactions_by_csv_by_merchant' %}"
     const TRANSACTION_DETAIL_URL = "{% url 'transaction_detail' pk=0 %}";
+
+    function selectCategory(item, categoryId) {
+        const container = item.closest('.category-pill-container');
+        const input = container.querySelector('input[name="new_category_id"]');
+        const form = container.closest('form');
+        const span = container.querySelector('.transaction-category');
+
+        input.value = categoryId;
+        span.textContent = item.textContent.trim();
+
+        // Close menu
+        item.closest('.category-dropdown-menu').classList.remove('show');
+        container.classList.remove('is-open');
+
+        // Submit form
+        if (typeof debounceFormSubmit === 'function') {
+            debounceFormSubmit(form);
+        } else {
+            form.submit();
+        }
+    }
     </script>
     <script src="{% static 'js/merchant-fetch.js' %}"></script>
     <script src="{% static 'js/export.js' %}"></script>

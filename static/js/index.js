@@ -140,3 +140,36 @@ document.querySelectorAll('.nav-link').forEach(link => {
 
 // Set active item on page load
 setActiveNavItem();
+
+/**
+ * Category Dropdown Menu logic
+ */
+function toggleCategoryMenu(span) {
+    const container = span.closest('.category-pill-container');
+    const menu = span.nextElementSibling;
+    if (!menu || !container) return;
+
+    // Close all other menus first
+    document.querySelectorAll('.category-dropdown-menu.show').forEach(m => {
+        if (m !== menu) {
+            m.classList.remove('show');
+            const otherContainer = m.closest('.category-pill-container');
+            if (otherContainer) otherContainer.classList.remove('is-open');
+        }
+    });
+
+    const isOpening = !menu.classList.contains('show');
+    menu.classList.toggle('show');
+    container.classList.toggle('is-open', isOpening);
+}
+
+// Close menus when clicking outside
+document.addEventListener('click', function(event) {
+    if (!event.target.closest('.category-pill-container')) {
+        document.querySelectorAll('.category-dropdown-menu.show').forEach(menu => {
+            menu.classList.remove('show');
+            const container = menu.closest('.category-pill-container');
+            if (container) container.classList.remove('is-open');
+        });
+    }
+});

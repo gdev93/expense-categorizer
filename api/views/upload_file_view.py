@@ -523,7 +523,8 @@ class UploadFileCleanView(DetailView):
                     output_field=IntegerField(),
                 )
             ),
-            categories_list=StringAgg('category__name', delimiter=', ', distinct=True)
+            categories_list=StringAgg('category__name', delimiter=', ', distinct=True),
+            category_id=Max('category__id')
         ).order_by('-is_uncategorized', '-number_of_transactions', 'merchant__name')
 
         uncategorized_merchants = merchant_group.filter(is_uncategorized=1)

@@ -146,6 +146,14 @@
                         </div>
 
                         <div class="list-item-stats">
+                            <div onclick="event.stopPropagation()" style="display: inline-block;">
+                                <span class="transaction-category"
+                                      data-transaction-id="{{ transaction.id }}"
+                                      data-current-category-id=""
+                                      onclick="makeSelectable(this,event)">
+                                    Seleziona Categoria
+                                </span>
+                            </div>
                             <div class="list-amount">
                                 €{% if transaction.original_amount|slice:":1" == '+' %}
                                 {{ transaction.original_amount|slice:"1:" }}
@@ -190,12 +198,14 @@
 
                         <div class="list-item-stats">
                             {% if transaction.category %}
-                                <span class="transaction-category"
-                                      data-transaction-id="{{ transaction.id }}"
-                                      data-current-category-id="{{ transaction.category.id }}"
-                                      onclick="makeSelectable(this,event)">
-                    {{ transaction.category.name }}
-                </span>
+                                <div onclick="event.stopPropagation()" style="display: inline-block;">
+                                    <span class="transaction-category"
+                                          data-transaction-id="{{ transaction.id }}"
+                                          data-current-category-id="{{ transaction.category.id }}"
+                                          onclick="makeSelectable(this,event)">
+                                        {{ transaction.category.name }}
+                                    </span>
+                                </div>
                             {% endif %}
 
                             <div class="list-amount">
@@ -233,14 +243,6 @@
             <span class="disabled">Ultima »</span>
         {% endif %}
     </div>
-    {{ categories|json_script:"category-data" }}
-    <script>
-        // URL is now set correctly for the transaction update endpoint
-        const BASE_EDIT_TRANSACTION_URL = '{% url 'update_transaction_category' %}';
-        const EDIT_TRANSACTION_CATEGORY_CSRF_TOKEN = "{{ csrf_token }}";
-        const CATEGORY_OPTIONS = JSON.parse(document.getElementById('category-data').textContent)
-    </script>
-    <script src="{% static 'js/clickable-transaction-form-input.js' %}"></script>
 {% endif %}
 
         {% else %}
@@ -255,6 +257,15 @@
             </div>
         {% endif %}
     </div>
+
+{{ categories|json_script:"category-data" }}
+<script>
+    const BASE_EDIT_TRANSACTION_URL = '{% url 'update_transaction_category' %}';
+    const EDIT_TRANSACTION_CATEGORY_CSRF_TOKEN = "{{ csrf_token }}";
+    const CATEGORY_OPTIONS = JSON.parse(document.getElementById('category-data').textContent)
+</script>
+<script src="{% static 'js/clickable-transaction-form-input.js' %}"></script>
+
 <script>
 const EXPORT_DOWNLOAD_ENDPOINT = "{% url 'transaction_export' %}"
 </script>

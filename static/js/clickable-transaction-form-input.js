@@ -1,58 +1,82 @@
 /**
- * Transforms the clicked <span> into a <select> dropdown using pre-loaded options.
+ * Transforms the clicked <span> into a custom dropdown menu using pre-loaded options.
  * This function relies on the global array: CATEGORY_OPTIONS.
  */
 function makeSelectable(element, event) {
     if (event) event.stopPropagation();
-    // Exit if already a select element
-    if (element.querySelector('select')) {
+
+    // Exit if already transformed
+    if (element.classList.contains('category-pill-container')) {
         return;
     }
 
     // Retrieve IDs from the HTML data attributes
     const currentCategoryId = element.getAttribute('data-current-category-id');
     const transactionId = element.getAttribute('data-transaction-id');
+    const currentName = element.textContent.trim();
 
-    // 1. Create the new select element
-    const selectElement = document.createElement('select');
-    selectElement.className = 'category-select-input form-control';
-    selectElement.setAttribute('data-transaction-id', transactionId);
+    // 1. Create container
+    const container = document.createElement('div');
+    container.className = 'category-pill-container';
 
-    // 2. Populate options using the global CATEGORY_OPTIONS
-    CATEGORY_OPTIONS.forEach(category => {
-        const option = document.createElement('option');
-        // The value sent to the server is the Category ID
-        option.value = category.id;
-        option.textContent = category.name;
-
-        // Pre-select the current category ID
-        if (String(category.id) === currentCategoryId) {
-            option.selected = true;
-        }
-        selectElement.appendChild(option);
-    });
-
-    // 3. Set the change event to trigger submission immediately upon selection
-    selectElement.onchange = function () {
-        submitEdit(this, element);
+    // 2. Create the pill span
+    const span = document.createElement('span');
+    span.className = 'transaction-category';
+    span.style.cursor = 'pointer';
+    span.textContent = currentName;
+    span.onclick = function(e) {
+        e.stopPropagation();
+        toggleCategoryMenu(this);
     };
 
-    // 4. Replace the content and focus
-    element.innerHTML = '';
-    element.appendChild(selectElement);
-    selectElement.focus();
+    // 3. Create the dropdown menu
+    const menu = document.createElement('div');
+    menu.className = 'category-dropdown-menu';
+
+    // 4. Populate options using the global CATEGORY_OPTIONS
+    CATEGORY_OPTIONS.forEach(category => {
+        const item = document.createElement('div');
+        item.className = 'category-dropdown-item';
+        item.setAttribute('data-category-id', category.id);
+        if (String(category.id) === currentCategoryId) {
+            item.classList.add('active');
+        }
+        item.textContent = category.name;
+
+        item.onclick = function(e) {
+            e.stopPropagation();
+            submitCategoryChange(category.id, category.name, transactionId, span, menu);
+        };
+        menu.appendChild(item);
+    });
+
+    container.appendChild(span);
+    container.appendChild(menu);
+
+    // 5. Replace the original element
+    element.parentNode.replaceChild(container, element);
+
+    // 6. Open immediately
+    toggleCategoryMenu(span);
 }
 
+async function submitCategoryChange(newCategoryId, newCategoryName, transactionId, span, menu) {
+    // Visual feedback & close menu
+    span.textContent = newCategoryName;
+    menu.classList.remove('show');
+    const container = span.closest('.category-pill-container');
+    if (container) container.classList.remove('is-open');
 
-
-async function submitEdit(selectElement, parentDiv) {
-    const newCategoryId = selectElement.value;
-    const transactionId = selectElement.getAttribute('data-transaction-id');
-
-    parentDiv.innerHTML = selectElement.options[selectElement.selectedIndex].text;
+    // Update active state in menu
+    menu.querySelectorAll('.category-dropdown-item').forEach(item => {
+        if (item.getAttribute('data-category-id') == newCategoryId) {
+            item.classList.add('active');
+        } else {
+            item.classList.remove('active');
+        }
+    });
 
     const formData = new FormData();
-    // Send the necessary IDs to the server
     formData.append('category_id', newCategoryId);
     formData.append('transaction_id', transactionId);
 
@@ -66,25 +90,24 @@ async function submitEdit(selectElement, parentDiv) {
         });
 
         if (!response.ok) {
-            parentDiv.style.backgroundColor = '#f8d7da';
+            span.style.backgroundColor = '#f8d7da';
             throw new Error(`Update failed with status: ${response.status}`);
         }
 
-        // Success: Execute redirect immediately if mandatory
         if (response.redirected) {
             window.location.href = response.url;
             return;
         }
 
-        // Fallback for success without redirect (visual feedback)
-        parentDiv.style.backgroundColor = '#d4edda';
+        // Success: visual feedback
+        span.style.backgroundColor = '#d4edda';
         setTimeout(() => {
-            parentDiv.style.backgroundColor = '';
+            span.style.backgroundColor = '';
         }, 800);
 
     } catch (error) {
         console.error("Error updating transaction category:", error);
-        parentDiv.style.backgroundColor = '#f8d7da';
+        span.style.backgroundColor = '#f8d7da';
         alert("Failed to update transaction category. Check console for details.");
     }
 }
