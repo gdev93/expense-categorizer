@@ -13,7 +13,7 @@ function makeSelectable(element, event) {
     // Retrieve IDs from the HTML data attributes
     const currentCategoryId = element.getAttribute('data-current-category-id');
     const transactionId = element.getAttribute('data-transaction-id');
-    const currentName = element.textContent.trim();
+    const currentHTML = element.innerHTML;
 
     // 1. Create container
     const container = document.createElement('div');
@@ -23,7 +23,7 @@ function makeSelectable(element, event) {
     const span = document.createElement('span');
     span.className = 'transaction-category';
     span.style.cursor = 'pointer';
-    span.textContent = currentName;
+    span.innerHTML = currentHTML;
     span.onclick = function(e) {
         e.stopPropagation();
         toggleCategoryMenu(this);

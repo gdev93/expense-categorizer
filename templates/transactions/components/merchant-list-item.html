@@ -16,7 +16,7 @@
                         <span class="transaction-category"
                               onclick="toggleCategoryMenu(this)"
                               style="cursor: pointer;">
-                            {{ item.categories_list|default:"Seleziona Categoria" }}
+                            {% if item.categories_list %}{{ item.categories_list }}{% else %}Seleziona<span class="desktop-only"> Categoria</span>{% endif %}
                         </span>
                         <div class="category-dropdown-menu">
                             {% for cat in categories %}
