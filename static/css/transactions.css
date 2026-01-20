@@ -689,12 +689,21 @@
     display: block;
 }
 
+.category-dropdown-menu.open-above {
+    top: auto;
+    bottom: 100%;
+    margin: 0 0 5px;
+}
+
 @media (max-width: 767px) {
     .category-dropdown-menu {
         top: 0;
         left: auto;
         right: 100%;
         margin: 0 10px 0 0;
+    }
+    .category-dropdown-item {
+        white-space: normal;
     }
 }
 

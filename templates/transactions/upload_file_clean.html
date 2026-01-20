@@ -9,32 +9,6 @@
     <link rel="stylesheet" href="{% static 'css/layout.css' %}">
     <link rel="stylesheet" href="{% static 'css/filters.css' %}">
     <link rel="stylesheet" href="{% static 'css/merchant-details.css' %}">
-    <style>
-        @media (max-width: 767px) {
-            .category-dropdown-menu.show {
-                position: fixed !important;
-                top: 10px !important;
-                right: 10px !important;
-                left: auto !important;
-                width: 240px !important;
-                height: auto !important;
-                max-height: 200px !important;
-                z-index: 2000 !important;
-                background-color: #fff !important;
-                display: block !important;
-                margin: 0 !important;
-                border-radius: 12px !important;
-                padding: 10px 0 !important;
-                overflow-y: auto !important;
-                border: 1px solid #ddd !important;
-            }
-            .category-dropdown-item {
-                padding: 8px 16px !important;
-                border-bottom: 1px solid #eee !important;
-                white-space: normal !important;
-            }
-        }
-    </style>
 {% endblock %}
 
 {% block content %}
@@ -139,44 +113,22 @@
     const TRANSACTION_BY_MERCHANT_BY_CSV_URL = "{% url 'transactions_by_csv_by_merchant' %}"
     const TRANSACTION_DETAIL_URL = "{% url 'transaction_detail' pk=0 %}";
 
-    function toggleCategoryMenu(span) {
-        const container = span.closest('.category-pill-container');
-        const menu = span.nextElementSibling;
-        if (!menu || !container) return;
-
-        // Close all other menus first
-        document.querySelectorAll('.category-dropdown-menu.show').forEach(m => {
-            if (m !== menu) {
-                m.classList.remove('show');
-                const otherContainer = m.closest('.category-pill-container');
-                if (otherContainer) otherContainer.classList.remove('is-open');
-            }
-        });
-
-        const isOpening = !menu.classList.contains('show');
-        menu.classList.toggle('show');
-        container.classList.toggle('is-open', isOpening);
-    }
-
-    function closeAllCategoryMenus() {
-        document.querySelectorAll('.category-dropdown-menu.show').forEach(menu => {
-            menu.classList.remove('show');
-            const container = menu.closest('.category-pill-container');
-            if (container) container.classList.remove('is-open');
-        });
-    }
-
     function selectCategory(item, categoryId) {
         const container = item.closest('.category-pill-container');
         const input = container.querySelector('input[name="new_category_id"]');
         const form = container.closest('form');
         const span = container.querySelector('.transaction-category');
+        const menu = container.querySelector('.category-dropdown-menu');
 
         input.value = categoryId;
         span.textContent = item.textContent.trim();
 
         // Close menu
-        closeAllCategoryMenus();
+        if (menu) {
+            menu.classList.remove('show');
+            menu.classList.remove('open-above');
+        }
+        container.classList.remove('is-open');
 
         // Submit form
         if (typeof debounceFormSubmit === 'function') {

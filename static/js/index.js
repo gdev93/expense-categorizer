@@ -153,13 +153,35 @@ function toggleCategoryMenu(span) {
     document.querySelectorAll('.category-dropdown-menu.show').forEach(m => {
         if (m !== menu) {
             m.classList.remove('show');
+            m.classList.remove('open-above');
             const otherContainer = m.closest('.category-pill-container');
             if (otherContainer) otherContainer.classList.remove('is-open');
         }
     });
 
     const isOpening = !menu.classList.contains('show');
-    menu.classList.toggle('show');
+    
+    if (isOpening) {
+        // Reset positioning before calculating
+        menu.classList.remove('open-above');
+        menu.classList.add('show');
+
+        const rect = menu.getBoundingClientRect();
+        const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+        
+        // If the menu overflows the bottom of the viewport
+        if (rect.bottom > viewportHeight) {
+            const spanRect = span.getBoundingClientRect();
+            // And if there's more space above the span than below it
+            if (spanRect.top > viewportHeight - spanRect.bottom) {
+                menu.classList.add('open-above');
+            }
+        }
+    } else {
+        menu.classList.remove('show');
+        menu.classList.remove('open-above');
+    }
+
     container.classList.toggle('is-open', isOpening);
 }
 
@@ -168,6 +190,7 @@ document.addEventListener('click', function(event) {
     if (!event.target.closest('.category-pill-container')) {
         document.querySelectorAll('.category-dropdown-menu.show').forEach(menu => {
             menu.classList.remove('show');
+            menu.classList.remove('open-above');
             const container = menu.closest('.category-pill-container');
             if (container) container.classList.remove('is-open');
         });

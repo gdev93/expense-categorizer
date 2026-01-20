@@ -64,6 +64,7 @@ async function submitCategoryChange(newCategoryId, newCategoryName, transactionI
     // Visual feedback & close menu
     span.textContent = newCategoryName;
     menu.classList.remove('show');
+    menu.classList.remove('open-above');
     const container = span.closest('.category-pill-container');
     if (container) container.classList.remove('is-open');
 
