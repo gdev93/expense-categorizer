@@ -71,6 +71,7 @@
     border: 1px solid #e9ecef;
     white-space: nowrap;
     flex-shrink: 0;
+    width: fit-content;
 }
 
 @media (max-width: 768px) {

@@ -8,6 +8,9 @@
             <div class="transaction-merchant">
                 {{ item.merchant__name|default:"Sconosciuto" }}
             </div>
+            <span class="badge-count">{{ item.number_of_transactions }} transazioni</span>
+        </div>
+        <div class="list-item-stats">
             <div class="merchant-category-selection" onclick="event.stopPropagation()">
                 <form method="post" class="quick-category-form">
                     {% csrf_token %}
@@ -30,9 +33,6 @@
                     </div>
                 </form>
             </div>
-        </div>
-        <div class="list-item-stats">
-            <span class="badge-count">{{ item.number_of_transactions }} transazioni</span>
             <div class="list-amount">€{{ item.total_spent|floatformat:2 }}</div>
         </div>
     </div>

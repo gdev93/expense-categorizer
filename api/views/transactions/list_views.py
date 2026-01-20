@@ -34,7 +34,7 @@ class TransactionListView(LoginRequiredMixin, ListView):
     model = Transaction
     template_name = 'transactions/transaction_list.html'
     context_object_name = 'transactions'
-    paginate_by = 50
+    paginate_by = 20
 
     def _get_selected_year(self, queryset):
         get_year = self.request.GET.get('year')
