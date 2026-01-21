@@ -1,0 +1,80 @@
+<form method="get" class="filters" id="main-filter-form">
+    <input type="hidden" name="transaction_type" value="expense">
+    
+    <div class="filter-group">
+        <label for="category">📁 Categoria</label>
+        <select name="category" id="category" onchange="debounceFormSubmit(this.form)">
+            <option value="">Tutte le Categorie</option>
+            {% for cat in categories %}
+                <option value="{{ cat.id }}"
+                        {% if selected_category == cat.id|stringformat:"s" or selected_category == cat.id %}selected{% endif %}>
+                    {{ cat.name }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="filter-group">
+        <label for="upload_file">📄 File</label>
+        <select name="upload_file" id="upload_file" onchange="debounceFormSubmit(this.form)">
+            <option value="">Tutti i caricamenti</option>
+            {% for upload in user_uploads %}
+                <option value="{{ upload.id }}"
+                        {% if selected_upload_file == upload.id|stringformat:"s" or selected_upload_file == upload.id %}selected{% endif %}>
+                    {{ upload.file_name }} ({{ upload.upload_date|date:"d/m/Y" }})
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="filter-group">
+        <label for="amount">💰 Importo</label>
+        <div class="amount-filter-wrapper">
+            <select name="amount_operator" id="amount_operator" class="amount-operator" onchange="debounceFormSubmit(this.form)">
+                <option value="eq" {% if selected_amount_operator == "eq" %}selected{% endif %}>=</option>
+                <option value="gt" {% if selected_amount_operator == "gt" %}selected{% endif %}>&gt;</option>
+                <option value="gte" {% if selected_amount_operator == "gte" %}selected{% endif %}>&gt;=</option>
+                <option value="lt" {% if selected_amount_operator == "lt" %}selected{% endif %}>&lt;</option>
+                <option value="lte" {% if selected_amount_operator == "lte" %}selected{% endif %}>&lt;=</option>
+            </select>
+            <input type="number"
+                   name="amount"
+                   id="amount"
+                   class="amount-input"
+                   placeholder="0.00"
+                   step="0.01"
+                   min="0"
+                   value="{{ selected_amount }}"
+                   onchange="debounceFormSubmit(this.form)"/>
+        </div>
+    </div>
+
+    <div class="filter-group">
+        <label for="months">📅 Mese/i</label>
+        <select name="months" id="months" multiple size="1" onchange="debounceFormSubmit(this.form)">
+            <option value="">Tutti i Mesi</option>
+            {% for month in available_months %}
+                <option value="{{ month.month_number }}"
+                        {% if month.month_number|stringformat:"s" in selected_months %}selected{% endif %}>
+                    {{ month.label_it }}
+                </option>
+            {% endfor %}
+        </select>
+        <small class="form-text text-muted desktop-only" style="font-size: 0.75rem; margin-top: 4px;">
+            Tieni premuto Ctrl (Windows) o Cmd (Mac) per selezionare più mesi
+        </small>
+    </div>
+
+
+    <div class="filter-group">
+        <label for="search">🔍 Ricerca</label>
+        <input type="text" name="search" id="search" placeholder="Cerca merchant o descrizione..."
+               value="{{ search_query }}" onchange="debounceFormSubmit(this.form)"/>
+    </div>
+
+    <div class="filter-group" style="align-self: flex-end; display: flex; gap: 8px;">
+        <button type="submit" class="btn btn-primary">Filtra</button>
+        <a href="{{ request.path }}" class="btn btn-secondary">Cancella</a>
+        <button type="button" class="btn btn-outline-success" onclick="exportToCsv()">📥 Esporta</button>
+    </div>
+</form>

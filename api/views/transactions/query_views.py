@@ -8,19 +8,21 @@ class TransactionByUploadFileAndMerchant(View):
     def get(self, request: HttpRequest, **kwargs):
         merchant_id = request.GET.get('merchant_id', None)
         upload_file_id = request.GET.get('upload_file_id', None)
-        upload_file = get_object_or_404(UploadFile, user=request.user, id=upload_file_id)
+
+        transactions_qs = Transaction.objects.filter(user=request.user).order_by('-transaction_date')
+
+        if upload_file_id and upload_file_id != 'None' and upload_file_id != 'undefined' and upload_file_id != '':
+            upload_file = get_object_or_404(UploadFile, user=request.user, id=upload_file_id)
+            transactions_qs = transactions_qs.filter(upload_file=upload_file)
+
         if not merchant_id or merchant_id.lower() == 'none':
             merchant = None
-            transactions_qs = Transaction.objects.filter(user=request.user, upload_file=upload_file, merchant__isnull=True).order_by('-transaction_date')
+            transactions_qs = transactions_qs.filter(merchant__isnull=True)
         else:
             # Security: Ensure objects belong to the requesting user
             merchant = get_object_or_404(Merchant, user=request.user, id=merchant_id)
             # Filter transactions
-            transactions_qs = Transaction.objects.filter(
-                merchant=merchant,
-                upload_file=upload_file,
-                user=request.user
-            ).order_by('-transaction_date')
+            transactions_qs = transactions_qs.filter(merchant=merchant)
 
         # Get date range for the UI
         first_date = None

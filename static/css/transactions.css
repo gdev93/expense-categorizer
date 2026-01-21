@@ -217,12 +217,9 @@
 
 /* Expander Card */
 .expander-card {
-    border: 1px solid #e9ecef;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+    border-top: 1px solid #e9ecef;
+    border-bottom: 1px solid #e9ecef;
     margin-bottom: 20px;
-    background-color: #ffffff;
-    overflow: hidden;
 }
 
 .expander-header {
@@ -255,6 +252,25 @@
     padding: 5px;
     transition: transform 0.3s ease;
     line-height: 1;
+}
+
+/* Support for details/summary expansion */
+details.expander-card summary::-webkit-details-marker {
+    display: none;
+}
+
+details.expander-card summary {
+    list-style: none;
+    outline: none;
+}
+
+details.expander-card[open] .expander-icon {
+    transform: rotate(180deg);
+}
+
+.expander-icon {
+    display: inline-block;
+    transition: transform 0.3s ease;
 }
 
 .expander-toggle-btn[aria-expanded="true"] .expander-icon {

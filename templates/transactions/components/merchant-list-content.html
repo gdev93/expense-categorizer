@@ -1,0 +1,62 @@
+{% if uncategorized_merchants %}
+<h2 class="mb-3">
+    🏷️ Non Categorizzate
+    <span class="badge"
+          style="background-color: #ffc107; color: #000; padding: 4px 8px; border-radius: 12px; font-size: 14px;">
+        {{ uncategorized_merchants.count }}
+    </span>
+</h2>
+<details class="expander-card" style="margin-bottom: 40px;">
+    <summary class="expander-header" style="list-style: none; cursor: pointer;">
+        <span style="font-weight: 600; color: #343a40;">Apri</span>
+        <div class="expander-toggle-btn">
+            <span class="expander-icon">▼</span>
+        </div>
+    </summary>
+
+    <div class="expander-body" style="max-height: none; padding: 0;">
+        <div class="data-list">
+            {% for item in uncategorized_merchants %}
+                {% include "transactions/components/merchant-list-item.html" with item=item %}
+            {% endfor %}
+        </div>
+    </div>
+</details>
+{% endif %}
+
+{% if merchant_summary %}
+    <h2 class="mb-3">📊 Categorizzate</h2>
+
+    <div class="data-list" id="scroll-target">
+        {% for item in merchant_summary %}
+            {% include "transactions/components/merchant-list-item.html" with item=item %}
+        {% endfor %}
+    </div>
+
+    {% if merchant_summary.has_other_pages %}
+        <div class="pagination">
+            {% if merchant_summary.has_previous %}
+                <a href="?page={{ merchant_summary.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_upload_file %}&upload_file={{ selected_upload_file }}{% endif %}{% if view_type %}&view_type={{ view_type }}{% endif %}{% if year %}&year={{ year }}{% endif %}{% if selected_amount %}&amount={{ selected_amount }}&amount_operator={{ selected_amount_operator }}{% endif %}{% for month in selected_months %}&months={{ month }}{% endfor %}">&laquo; Precedente</a>
+            {% else %}
+                <span class="disabled">&laquo; Precedente</span>
+            {% endif %}
+
+            <span class="current">
+                Pagina {{ merchant_summary.number }} di {{ merchant_summary.paginator.num_pages }}
+            </span>
+
+            {% if merchant_summary.has_next %}
+                <a href="?page={{ merchant_summary.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_upload_file %}&upload_file={{ selected_upload_file }}{% endif %}{% if view_type %}&view_type={{ view_type }}{% endif %}{% if year %}&year={{ year }}{% endif %}{% if selected_amount %}&amount={{ selected_amount }}&amount_operator={{ selected_amount_operator }}{% endif %}{% for month in selected_months %}&months={{ month }}{% endfor %}">Successivo &raquo;</a>
+            {% else %}
+                <span class="disabled">Successivo &raquo;</span>
+            {% endif %}
+        </div>
+    {% endif %}
+{% else %}
+    <!-- Empty State for Merchant View -->
+    <div class="empty-state">
+        <div class="empty-state-icon">📭</div>
+        <h3>Nessuna Transazione Trovata</h3>
+        <p>Non ci sono transazioni che corrispondono ai filtri selezionati.</p>
+    </div>
+{% endif %}

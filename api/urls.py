@@ -25,7 +25,7 @@ from api.views.transactions.list_views import TransactionListView, IncomeListVie
 from api.views.transactions.query_views import TransactionByUploadFileAndMerchant
 from api.views.transactions.update_views import EditTransactionCategory, TransactionDetailUpdateView
 from api.views.upload_file_view import UploadFileView, UploadFileDelete, UploadProcessView, UploadProgressView, \
-    UploadFileCheckView, UploadFileCleanView
+    UploadFileCheckView
 from api.views.error_views import trigger_403, trigger_500, trigger_502, trigger_503
 
 urlpatterns = [
@@ -42,9 +42,9 @@ urlpatterns = [
     path('transactions/upload/process', UploadProcessView.as_view(), name='transactions_process'),
     path('transactions/upload/progress/', UploadProgressView.as_view(), name='transactions_progress'),
     path('transactions/upload/check', UploadFileCheckView.as_view(), name='transactions_upload_check'),
-    path('transactions/upload/<int:pk>/', UploadFileCleanView.as_view(), name='transactions_upload_detail'),
     path('transactions/upload/<int:pk>/process', UploadProcessView.as_view(), name='transactions_process_detail'),
     path('transactions/upload/<int:pk>/delete/', UploadFileDelete.as_view(), name='transactions_upload_delete'),
+    path('transactions/upload/<int:upload_file_id>/', TransactionListView.as_view(), name='transactions_upload_detail'),
     path('transactions/', TransactionListView.as_view(), name='transaction_list'),
     path('transactions/income/', IncomeListView.as_view(), name='income_list'),
     path('transactions/by_csv_by_merchant/', TransactionByUploadFileAndMerchant.as_view(),

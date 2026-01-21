@@ -239,6 +239,7 @@ input:focus,
     margin-bottom: 25px;
     padding-bottom: 15px;
     border-bottom: 1px solid #e9ecef;
+    width: 100%;
 }
 
 .header-title-container {
@@ -246,6 +247,12 @@ input:focus,
     align-items: center;
     gap: 15px;
     flex-wrap: wrap;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 15px;
 }
 
 .header-extra {

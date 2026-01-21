@@ -1,4 +1,14 @@
-<div class="filters filters-clean">
+<div class="filters filters-clean header-filters">
+    {% if view_type %}
+    <div class="view-toggle">
+        <input type="radio" name="view_type" id="view_list" value="list" {% if view_type != 'merchant' %}checked{% endif %} form="main-filter-form" onchange="this.form.submit()">
+        <label for="view_list">Lista</label>
+        
+        <input type="radio" name="view_type" id="view_merchant" value="merchant" {% if view_type == 'merchant' %}checked{% endif %} form="main-filter-form" onchange="this.form.submit()">
+        <label for="view_merchant">Merchant</label>
+    </div>
+    {% endif %}
+
     <div class="filter-group">
         <select id="year-select"
                 name="year"

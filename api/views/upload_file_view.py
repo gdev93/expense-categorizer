@@ -9,15 +9,16 @@ from typing import List, Dict
 
 from django import forms
 from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.contrib.postgres.aggregates import StringAgg
 from django.core.exceptions import BadRequest
 from django.core.paginator import Paginator
 from django.core.validators import FileExtensionValidator
 from django.db import transaction
-from django.db.models import Sum, Count, Case, When, Value, Exists, OuterRef, Q, Max, IntegerField
+from django.db.models import Sum, Count, Exists, OuterRef, Q, Max, Case, When, Value, IntegerField
 from django.http import HttpResponse, JsonResponse
-from django.shortcuts import redirect, get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.views import View
 from django.views.generic import FormView, ListView, DeleteView, DetailView
@@ -459,85 +460,4 @@ class UploadFileCheckView(View):
         })
 
 
-class UploadFileCleanView(DetailView):
-    model = UploadFile
-    template_name = 'transactions/upload_file_clean.html'
-    context_object_name = 'upload_file'
 
-    # Variabile di classe per controllare il numero di elementi per pagina
-    paginate_by_merchant = 10
-
-    def get_queryset(self):
-        return UploadFile.objects.filter(user=self.request.user)
-
-    def post(self, request, *args, **kwargs):
-        csv_file = self.get_object()
-        merchant_id = request.POST.get('merchant_id')
-        new_category_id = request.POST.get('new_category_id')
-
-        if not merchant_id or not new_category_id:
-            raise BadRequest("Merchant ID and Category ID are required.")
-
-        merchant = get_object_or_404(Merchant, id=merchant_id, user=self.request.user)
-        new_category = get_object_or_404(Category, id=new_category_id, user=self.request.user)
-
-        Transaction.objects.filter(
-            upload_file=csv_file,
-            merchant=merchant,
-        ).update(category=new_category, status='categorized', modified_by_user=True)
-
-        create_rule(merchant, new_category, self.request.user)
-
-        # Redirect alla stessa pagina mantenendo eventuali parametri GET (come la pagina corrente)
-        return redirect(request.META.get('HTTP_REFERER', 'transactions_upload_detail'))
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        csv_file = self.object
-
-        # 1. Base Queryset
-        transactions_qs = csv_file.transactions.all().filter(
-            transaction_type='expense'
-        )
-
-        # 2. Filtri
-        search_query = self.request.GET.get('search', '')
-        if search_query:
-            transactions_qs = transactions_qs.filter(
-                Q(description__icontains=search_query) |
-                Q(merchant__name__icontains=search_query)
-            )
-
-        # 3. Aggregazione (Merchant Summary)
-        merchant_group = transactions_qs.values(
-            'merchant__id',
-            'merchant__name'
-        ).annotate(
-            number_of_transactions=Count('id'),
-            total_spent=Sum('amount'),
-            # Use Max to find if any 'uncategorized' exists (1 = True, 0 = False)
-            is_uncategorized=Max(
-                Case(
-                    When(status='uncategorized', then=Value(1)),
-                    default=Value(0),
-                    output_field=IntegerField(),
-                )
-            ),
-            categories_list=StringAgg('category__name', delimiter=', ', distinct=True),
-            category_id=Max('category__id')
-        ).order_by('-is_uncategorized', '-number_of_transactions', 'merchant__name')
-
-        uncategorized_merchants = merchant_group.filter(is_uncategorized=1)
-        categorized_merchants = merchant_group.filter(is_uncategorized=0)
-
-        # 4. Paginazione del Merchant Summary
-        paginator = Paginator(categorized_merchants, self.paginate_by_merchant)
-        page_number = self.request.GET.get('page')
-        page_obj = paginator.get_page(page_number)
-
-        # 5. Context
-        context['uncategorized_merchants'] = uncategorized_merchants
-        context['merchant_summary'] = page_obj  # Ora è un oggetto Page
-        context['search_query'] = search_query
-        context['categories'] = Category.objects.filter(user=self.request.user)
-        return context

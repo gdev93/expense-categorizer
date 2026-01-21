@@ -3,12 +3,16 @@ from dataclasses import dataclass, asdict, field
 from typing import Any
 
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.postgres.aggregates import StringAgg
 from django.core.exceptions import BadRequest
-from django.db.models import Q, Sum
+from django.core.paginator import Paginator
+from django.db.models import Q, Sum, Count, Max, Case, When, Value, IntegerField
 from django.db.models import QuerySet
+from django.shortcuts import get_object_or_404, redirect
 from django.views.generic import ListView
 
-from api.models import Transaction, Category, Rule, UploadFile
+from api.models import Transaction, Category, Rule, UploadFile, Merchant
+from api.views.rule_view import create_rule
 
 
 @dataclass
@@ -36,6 +40,40 @@ class TransactionListView(LoginRequiredMixin, ListView):
     context_object_name = 'transactions'
     paginate_by = 20
 
+    def get_paginate_by(self, queryset):
+        if self.request.GET.get('view_type') == 'merchant':
+            return None
+        return self.paginate_by
+
+    def get_template_names(self):
+        return [self.template_name]
+
+    def post(self, request, *args, **kwargs):
+        merchant_id = request.POST.get('merchant_id')
+        new_category_id = request.POST.get('new_category_id')
+
+        if not merchant_id or not new_category_id:
+            raise BadRequest("Merchant ID and Category ID are required.")
+
+        merchant = get_object_or_404(Merchant, id=merchant_id, user=self.request.user)
+        new_category = get_object_or_404(Category, id=new_category_id, user=self.request.user)
+
+        # Update all transactions of this merchant (possibly filtered by upload_file if present in GET or URL)
+        transactions_to_update = Transaction.objects.filter(
+            user=self.request.user,
+            merchant=merchant,
+        )
+        
+        upload_file_id = self.kwargs.get('upload_file_id') or self.request.GET.get('upload_file')
+        if upload_file_id:
+            transactions_to_update = transactions_to_update.filter(upload_file_id=upload_file_id)
+            
+        transactions_to_update.update(category=new_category, status='categorized', modified_by_user=True)
+
+        create_rule(merchant, new_category, self.request.user)
+
+        return redirect(request.META.get('HTTP_REFERER', 'transaction_list'))
+
     def _get_selected_year(self, queryset):
         get_year = self.request.GET.get('year')
         if get_year:
@@ -53,8 +91,6 @@ class TransactionListView(LoginRequiredMixin, ListView):
         queryset = Transaction.objects.filter(
             user=self.request.user,
             transaction_type='expense',
-            category__isnull=False,
-            merchant_id__isnull=False
         ).select_related('category', 'merchant', 'upload_file').order_by('-transaction_date', '-created_at')
 
         # Filter by category
@@ -62,8 +98,8 @@ class TransactionListView(LoginRequiredMixin, ListView):
         if category_id:
             queryset = queryset.filter(category_id=category_id)
 
-        # Filter by upload_file
-        upload_file_id = self.request.GET.get('upload_file')
+        # Filter by upload_file (from URL or GET)
+        upload_file_id = self.kwargs.get('upload_file_id') or self.request.GET.get('upload_file')
         if upload_file_id:
             queryset = queryset.filter(upload_file_id=upload_file_id)
 
@@ -90,6 +126,7 @@ class TransactionListView(LoginRequiredMixin, ListView):
         search_query = self.request.GET.get('search')
         if search_query:
             queryset = queryset.filter(
+                Q(merchant__name__icontains=search_query) |
                 Q(merchant_raw_name__icontains=search_query) |
                 Q(description__icontains=search_query)
             )
@@ -116,11 +153,18 @@ class TransactionListView(LoginRequiredMixin, ListView):
             if month_queries:
                 queryset = queryset.filter(month_queries)
 
+        # For the main list view, we only want categorized transactions
+        # to avoid duplication with the uncategorized section in the template.
+        if self.request.GET.get('view_type', 'list') == 'list':
+            return queryset.filter(category__isnull=False, merchant_id__isnull=False)
+
         return queryset
 
     def get_context_data(self, **kwargs):
         """Add extra context data"""
         context = super().get_context_data(**kwargs)
+        view_type = self.request.GET.get('view_type', 'list')
+        context['view_type'] = view_type
 
         # Use the unpaginated queryset for summary statistics
         user_transactions = self.object_list
@@ -136,9 +180,27 @@ class TransactionListView(LoginRequiredMixin, ListView):
             transaction_type='expense'
         ).select_related('upload_file')
 
-        upload_file_id = self.request.GET.get('upload_file', '')
+        upload_file_id = self.kwargs.get('upload_file_id') or self.request.GET.get('upload_file', '')
         if upload_file_id:
             uncategorized_transaction = uncategorized_transaction.filter(upload_file_id=upload_file_id)
+            context['upload_file'] = get_object_or_404(UploadFile, id=upload_file_id, user=self.request.user)
+
+        # We need the full queryset (including uncategorized) for correct totals
+        full_user_transactions = Transaction.objects.filter(
+            user=self.request.user,
+            transaction_type='expense'
+        )
+        if upload_file_id:
+            full_user_transactions = full_user_transactions.filter(upload_file_id=upload_file_id)
+
+        # Apply other filters to full_user_transactions as well for consistent totals
+        search_query = self.request.GET.get('search')
+        if search_query:
+            full_user_transactions = full_user_transactions.filter(
+                Q(merchant__name__icontains=search_query) |
+                Q(merchant_raw_name__icontains=search_query) |
+                Q(description__icontains=search_query)
+            )
 
         transaction_list_context = TransactionListContextData(
             categories=categories,
@@ -146,11 +208,11 @@ class TransactionListView(LoginRequiredMixin, ListView):
             selected_upload_file=upload_file_id,
             search_query=self.request.GET.get('search', ''),
             uncategorized_transaction=uncategorized_transaction,
-            total_count=user_transactions.count(),
-            total_amount=user_transactions.filter(status="categorized").aggregate(
+            total_count=full_user_transactions.count(),
+            total_amount=full_user_transactions.filter(status="categorized").aggregate(
                 total=Sum('amount')
             )['total'] or 0,
-            category_count=user_transactions.values('category').distinct().count(),
+            category_count=full_user_transactions.values('category').distinct().count(),
             rules=Rule.objects.filter(user=self.request.user, is_active=True),
             selected_category=self.request.GET.get('category', ''),
             selected_months=self.request.GET.getlist('months')
@@ -161,6 +223,33 @@ class TransactionListView(LoginRequiredMixin, ListView):
         context['selected_amount'] = self.request.GET.get('amount', '')
         context['selected_amount_operator'] = self.request.GET.get('amount_operator', 'eq')
         context['year'] = self._get_selected_year(user_transactions)
+
+        if view_type == 'merchant':
+            # Aggregate transactions by merchant
+            merchant_group = user_transactions.values(
+                'merchant__id',
+                'merchant__name'
+            ).annotate(
+                number_of_transactions=Count('id'),
+                total_spent=Sum('amount'),
+                is_uncategorized=Max(
+                    Case(
+                        When(status='uncategorized', then=Value(1)),
+                        default=Value(0),
+                        output_field=IntegerField(),
+                    )
+                ),
+                categories_list=StringAgg('category__name', delimiter=', ', distinct=True),
+                category_id=Max('category__id')
+            ).order_by('-is_uncategorized', '-number_of_transactions', 'merchant__name')
+
+            context['uncategorized_merchants'] = merchant_group.filter(is_uncategorized=1)
+            categorized_merchants = merchant_group.filter(is_uncategorized=0)
+
+            # Paginate merchants
+            paginator = Paginator(categorized_merchants, 10)
+            page_number = self.request.GET.get('page')
+            context['merchant_summary'] = paginator.get_page(page_number)
 
         return context
 
