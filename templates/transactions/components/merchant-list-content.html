@@ -1,6 +1,6 @@
 {% if uncategorized_merchants %}
 <h2 class="mb-3">
-    🏷️ Non Categorizzate
+    🏷️ Spese Non Categorizzate
     <span class="badge"
           style="background-color: #ffc107; color: #000; padding: 4px 8px; border-radius: 12px; font-size: 14px;">
         {{ uncategorized_merchants.count }}
@@ -25,7 +25,7 @@
 {% endif %}
 
 {% if merchant_summary %}
-    <h2 class="mb-3">📊 Categorizzate</h2>
+    <h2 class="mb-3">📊 Spese Categorizzate</h2>
 
     <div class="data-list" id="scroll-target">
         {% for item in merchant_summary %}

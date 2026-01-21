@@ -25,7 +25,10 @@
                         Elimina File
                     </a>
                 {% endif %}
-                {% include "components/year-select.html" %}
+                {% include "components/year-select.html" with hide_toggle_mobile=True %}
+            </div>
+            <div class="header-extra mobile-only">
+                {% include "components/year-select.html" with show_year=False %}
             </div>
         </div>
         
