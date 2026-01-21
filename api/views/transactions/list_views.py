@@ -72,6 +72,12 @@ class TransactionListView(LoginRequiredMixin, ListView):
 
         create_rule(merchant, new_category, self.request.user)
 
+        # Advance onboarding if at step 4
+        profile = getattr(self.request.user, 'profile', None)
+        if profile and profile.onboarding_step < 5:
+            profile.onboarding_step = 5
+            profile.save()
+
         return redirect(request.META.get('HTTP_REFERER', 'transaction_list'))
 
     def _get_selected_year(self, queryset):
@@ -88,6 +94,14 @@ class TransactionListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         """Filter transactions based on user and query parameters"""
+        # Advance onboarding if before step 5 and filters are used
+        profile = getattr(self.request.user, 'profile', None)
+        if profile and profile.onboarding_step < 4:
+            filter_params = ['category', 'upload_file', 'amount', 'search', 'months', 'month', 'year']
+            if any(self.request.GET.get(param) for param in filter_params):
+                profile.onboarding_step = 4
+                profile.save()
+
         queryset = Transaction.objects.filter(
             user=self.request.user,
             transaction_type='expense',

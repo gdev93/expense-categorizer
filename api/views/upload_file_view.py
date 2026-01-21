@@ -350,6 +350,11 @@ class UploadFileView(ListView, FormView):
                 self.request,
                 f'File caricato con successo! {result.rows_processed}'
             )
+            # Advance onboarding if before step 3
+            profile = getattr(self.request.user, 'profile', None)
+            if profile and profile.onboarding_step < 3:
+                profile.onboarding_step = 3
+                profile.save()
         else:
             messages.error(self.request, result.error_message)
             return self.form_invalid(form)

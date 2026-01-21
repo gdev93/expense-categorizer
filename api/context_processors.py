@@ -119,3 +119,9 @@ def user_uploads(request:HttpRequest):
     return {
         'user_uploads': UploadFile.objects.filter(user=request.user).order_by('-upload_date') if request.user.is_authenticated else []
     }
+
+def onboarding_status(request):
+    """
+    Check and advance onboarding step based on existing data.
+    """
+    return {}

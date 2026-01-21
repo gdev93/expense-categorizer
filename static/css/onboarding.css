@@ -1,0 +1,222 @@
+.onboarding-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 9998;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.onboarding-card {
+    background: white;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    max-width: 500px;
+    width: 90%;
+    z-index: 10010;
+    position: relative;
+    text-align: center;
+}
+
+.onboarding-card h2 {
+    margin-bottom: 1rem;
+    color: var(--nav-text-color);
+}
+
+.onboarding-card p {
+    margin-bottom: 1.5rem;
+    line-height: 1.6;
+    color: var(--secondary-color);
+}
+
+.onboarding-steps {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 1.5rem;
+}
+
+.onboarding-step-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #e0e0e0;
+}
+
+.onboarding-step-indicator.active {
+    background: var(--primary-color);
+}
+
+.onboarding-step-indicator.completed {
+    background: var(--income-color);
+}
+
+.onboarding-actions {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.highlight-onboarding {
+    position: relative;
+    z-index: 10000 !important;
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.8), 0 0 0 2px var(--primary-color) !important;
+    pointer-events: auto !important;
+}
+
+/* Floating hint style */
+.onboarding-hint {
+    position: fixed;
+    background: var(--primary-color);
+    color: var(--nav-text-color);
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: bold;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 10020;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.onboarding-hint::after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 0;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+}
+
+.onboarding-hint.bottom::after {
+    top: -8px;
+    left: var(--arrow-left, 50%);
+    transform: translateX(-50%);
+    border-bottom: 8px solid var(--primary-color);
+}
+
+.onboarding-hint.top::after {
+    bottom: -8px;
+    left: var(--arrow-left, 50%);
+    transform: translateX(-50%);
+    border-top: 8px solid var(--primary-color);
+}
+
+/* Mobile Adjustments */
+@media (max-width: 767px) {
+    .onboarding-overlay {
+        align-items: flex-end;
+        padding: 15px;
+    }
+
+    .onboarding-card {
+        padding: 1.25rem;
+        width: 100%;
+        max-width: none;
+        margin-bottom: 10px;
+    }
+
+    .onboarding-card h2 {
+        font-size: 1.25rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .onboarding-card p {
+        font-size: 0.95rem;
+        margin-bottom: 1rem;
+        line-height: 1.4;
+    }
+
+    .onboarding-steps {
+        margin-bottom: 1rem;
+        gap: 8px;
+    }
+
+    .onboarding-step-indicator {
+        width: 10px;
+        height: 10px;
+    }
+
+    .onboarding-actions {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .onboarding-actions .btn {
+        width: 100%;
+        margin: 0;
+    }
+
+    .onboarding-hint {
+        max-width: 80vw;
+        font-size: 0.85rem;
+        padding: 8px 15px;
+    }
+
+    body.onboarding-step-3 .main-content,
+    body.onboarding-step-4 .main-content {
+        padding-bottom: 50vh !important;
+    }
+
+    body.onboarding-step-3 #main-filter-form {
+        scroll-margin-top: 100px;
+    }
+}
+
+/* Desktop Adjustments for Step 3 (Filters) */
+@media (min-width: 768px) {
+    .onboarding-overlay.step-3,
+    .onboarding-overlay.step-4 {
+        align-items: flex-end;
+        padding-bottom: 5rem; /* More space on desktop */
+    }
+}
+
+/* Replay Modal Styles */
+#replay-modal {
+    z-index: 11000;
+}
+
+#replay-modal .app-modal-content {
+    border-top: 5px solid var(--primary-color);
+    text-align: center;
+}
+
+#replay-modal .app-modal-header h3 {
+    justify-content: center;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 0.5rem;
+}
+
+#replay-modal .app-modal-header h3::before {
+    content: '🔄';
+}
+
+#replay-modal .app-modal-body {
+    padding: 1rem 0;
+    color: var(--secondary-color);
+}
+
+#replay-modal .app-modal-footer {
+    justify-content: center;
+    border-top: 1px solid #eee;
+    padding-top: 1.5rem;
+}
+
+@media (max-width: 767px) {
+    #replay-modal .app-modal-footer {
+        flex-direction: column;
+    }
+    #replay-modal .app-modal-footer .btn {
+        width: 100%;
+        margin: 0;
+    }
+}

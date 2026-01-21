@@ -26,9 +26,11 @@ from api.views.transactions.query_views import TransactionByUploadFileAndMerchan
 from api.views.transactions.update_views import EditTransactionCategory, TransactionDetailUpdateView
 from api.views.upload_file_view import UploadFileView, UploadFileDelete, UploadProcessView, UploadProgressView, \
     UploadFileCheckView
+from api.views.onboarding_views import OnboardingStepView
 from api.views.error_views import trigger_403, trigger_500, trigger_502, trigger_503
 
 urlpatterns = [
+    path('onboarding/update-step/', OnboardingStepView.as_view(), name='update_onboarding_step'),
     path('test-403/', trigger_403, name='test_403'),
     path('test-500/', trigger_500, name='test_500'),
     path('test-502/', trigger_502, name='test_502'),

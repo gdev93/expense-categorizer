@@ -110,6 +110,12 @@ class TransactionDetailUpdateView(LoginRequiredMixin, UpdateView):
         else:
             messages.success(self.request, "Spesa aggiornata con successo.")
 
+        # Advance onboarding if at step 4
+        profile = getattr(self.request.user, 'profile', None)
+        if profile and profile.onboarding_step < 5:
+            profile.onboarding_step = 5
+            profile.save()
+
         return redirect(reverse('transaction_detail', kwargs={'pk': self.object.pk}))
 
 class EditTransactionCategory(View):
@@ -141,6 +147,12 @@ class EditTransactionCategory(View):
         expense.category = new_category
         expense.modified_by_user = True
         expense.save()  # ⬅️ MUST CALL .save() to write the change to the database
+
+        # Advance onboarding if at step 4
+        profile = getattr(request.user, 'profile', None)
+        if profile and profile.onboarding_step < 5:
+            profile.onboarding_step = 5
+            profile.save()
 
         # 5. Return success response (JSON for AJAX)
         return JsonResponse({

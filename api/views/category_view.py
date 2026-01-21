@@ -137,9 +137,16 @@ class CategoryCreateView(SuccessMessageMixin, CreateView):
     success_message = "Categoria creata con successo."
 
     def form_valid(self, form):
-        # Automatically assign the current user to the category
         form.instance.user = self.request.user
-        return super().form_valid(form)
+        response = super().form_valid(form)
+        
+        # Advance onboarding if at step 1 or before
+        profile = getattr(self.request.user, 'profile', None)
+        if profile and profile.onboarding_step < 2:
+            profile.onboarding_step = 2
+            profile.save()
+            
+        return response
 
     def form_invalid(self, form):
         # If invalid, we must re-render the list context so the page doesn't break

@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="{% static 'css/main.css' %}">
     <link rel="stylesheet" href="{% static 'css/appbar.css' %}">
     <link rel="stylesheet" href="{% static 'css/sidebar.css' %}">
+    <link rel="stylesheet" href="{% static 'css/onboarding.css' %}">
     {% block extra_css %}{% endblock %}
 </head>
 <body>
@@ -69,6 +70,12 @@
                         <span class="nav-text">Suggerimenti</span>
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" id="replay-onboarding">
+                        <span class="nav-icon">🔄</span>
+                        <span class="nav-text">Ripeti Tutorial</span>
+                    </a>
+                </li>
 
             </ul>
             {% endblock %}
@@ -85,6 +92,7 @@
     </aside>
 
     <main class="main-content">
+        {% include 'components/onboarding.html' %}
         {% if messages %}
         <div class="messages-container">
             {% for message in messages %}
@@ -103,6 +111,7 @@
     {% block modals %}{% endblock %}
 
     <script src="{% static 'js/index.js' %}"></script>
+    <script src="{% static 'js/onboarding.js' %}"></script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>
