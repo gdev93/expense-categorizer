@@ -1,9 +1,9 @@
 <div class="filters filters-clean" style="margin: 0;">
-    <select id="year-select"
+    <select id="year-select{{ id_suffix }}"
             name="year"
             class="form-select"
             form="main-filter-form"
-            onchange="const monthSelect = document.getElementById('month-select'); if (monthSelect) monthSelect.value = ''; debounceFormSubmit(this.form)"
+            onchange="const monthSelect = document.getElementById('month-select') || document.getElementById('months'); if (monthSelect) monthSelect.value = ''; debounceFormSubmit(this.form)"
             style="padding: 6px 10px; height: 38px; width: auto; min-width: 100px;">
         {% for available_year in available_years %}
             <option value="{{ available_year }}" {% if available_year == year %}selected{% endif %}>

@@ -1,21 +1,21 @@
 <div class="filters filters-clean header-filters">
     {% if show_toggle != False and view_type %}
-    <div class="view-toggle {% if hide_toggle_mobile %}desktop-only{% endif %}">
-        <input type="radio" name="view_type" id="view_list" value="list" {% if view_type != 'merchant' %}checked{% endif %} form="main-filter-form" onchange="this.form.submit()">
-        <label for="view_list">Lista</label>
+    <div class="view-toggle" data-view-type="{{ view_type }}">
+        <input type="radio" name="view_type" id="view_list{{ id_suffix }}" value="list" {% if view_type != 'merchant' %}checked{% endif %} form="main-filter-form" onchange="this.form.submit()">
+        <label for="view_list{{ id_suffix }}">Lista</label>
         
-        <input type="radio" name="view_type" id="view_merchant" value="merchant" {% if view_type == 'merchant' %}checked{% endif %} form="main-filter-form" onchange="this.form.submit()">
-        <label for="view_merchant">Merchant</label>
+        <input type="radio" name="view_type" id="view_merchant{{ id_suffix }}" value="merchant" {% if view_type == 'merchant' %}checked{% endif %} form="main-filter-form" onchange="this.form.submit()">
+        <label for="view_merchant{{ id_suffix }}">Esercente</label>
     </div>
     {% endif %}
 
     {% if show_year != False %}
     <div class="filter-group">
-        <select id="year-select"
+        <select id="year-select{{ id_suffix }}"
                 name="year"
                 class="form-select"
                 form="main-filter-form"
-                onchange="const monthSelect = document.getElementById('month-select'); if (monthSelect) monthSelect.value = ''; debounceFormSubmit(this.form)">
+                onchange="const monthSelect = document.getElementById('month-select') || document.getElementById('months'); if (monthSelect) monthSelect.value = ''; debounceFormSubmit(this.form)">
             {% for available_year in available_years %}
                 <option value="{{ available_year }}" {% if available_year == year %}selected{% endif %}>
                     {{ available_year }}

@@ -18,6 +18,11 @@
         <div class="header">
             <div class="header-title-container">
                 <h1>💸 {% if view_type == 'merchant' %}Spese per Esercente{% else %}Lista Spese{% endif %}</h1>
+                <div class="header-extra">
+                    <div class="mobile-only">
+                        {% include "components/year-select.html" with id_suffix="_mobile_toggle" show_year=False %}
+                    </div>
+                </div>
             </div>
             <div class="header-actions">
                 {% if upload_file %}
@@ -25,10 +30,12 @@
                         Elimina File
                     </a>
                 {% endif %}
-                {% include "components/year-select.html" with hide_toggle_mobile=True %}
-            </div>
-            <div class="header-extra mobile-only">
-                {% include "components/year-select.html" with show_year=False %}
+                <div class="desktop-only">
+                    {% include "components/year-select.html" with id_suffix="_desktop" %}
+                </div>
+                <div class="mobile-only">
+                    {% include "components/year-select.html" with id_suffix="_mobile" show_toggle=False %}
+                </div>
             </div>
         </div>
         

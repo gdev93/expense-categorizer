@@ -55,28 +55,28 @@ document.addEventListener('DOMContentLoaded', function() {
     const steps = {
         1: {
             title: 'Crea le tue Categorie',
-            text: 'Il primo passo è creare le categorie di spesa (es. Spesa, Affitto, Trasporti) con una breve descrizione.',
+            text: 'Questo passaggio si trova nella sezione di menu <b>Categorie di spesa</b>. Il primo passo è creare le categorie di spesa (es. Spesa, Affitto, Trasporti) con una breve descrizione.',
             targetUrl: '/categories/',
             hint: 'Clicca qui per creare la tua prima categoria!',
             selector: '.btn-primary[href*="create"]'
         },
         2: {
             title: 'Carica i tuoi Dati',
-            text: 'Ora carica il file CSV delle tue transazioni bancarie per iniziare a categorizzarle.',
+            text: 'Questo passaggio si trova nella sezione di menu <b>Caricamento dati</b>. Ora carica il file CSV delle tue transazioni bancarie per iniziare a categorizzarle.',
             targetUrl: '/transactions/upload/',
             hint: 'Trascina qui il tuo file CSV o clicca per selezionarlo.',
             selector: '.upload-area'
         },
         3: {
             title: 'Usa i Filtri',
-            text: 'Ottimo! Ora puoi usare i filtri per analizzare le tue spese per periodo, categoria o esercente.',
+            text: 'Questo passaggio si trova nella sezione di menu <b>Spese</b>. Ottimo! Ora puoi usare i filtri per analizzare le tue spese per periodo, categoria o esercente.',
             targetUrl: '/transactions/',
             hint: 'Usa questi filtri per trovare esattamente quello che cerchi.',
             selector: '#main-filter-form'
         },
         4: {
             title: 'Personalizza le tue Spese',
-            text: 'Puoi cambiare la categoria di una spesa cliccando sulla "pillola" colorata, oppure cliccare sulla riga per vedere i dettagli e gestire le regole.',
+            text: 'Questo passaggio si trova nella sezione di menu <b>Spese</b>. Puoi cambiare la categoria di una spesa cliccando sulla "pillola" colorata, oppure cliccare sulla riga per vedere i dettagli e gestire le regole.',
             targetUrl: '/transactions/',
             hint: 'Clicca qui per cambiare categoria o sulla riga per i dettagli.',
             selector: '.data-list-item'
@@ -131,7 +131,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!config) return;
 
         title.textContent = config.title;
-        text.textContent = config.text;
+        text.innerHTML = config.text;
         overlay.style.display = 'flex';
         
         // Add step-specific class for positioning

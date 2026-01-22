@@ -9,7 +9,12 @@
 
 {% block header_content %}
     <div style="display: flex; align-items: center; gap: 0.75rem;">
-        {% include "components/year-select-compact.html" %}
+        <div class="desktop-only">
+            {% include "components/year-select-compact.html" with id_suffix="_desktop" %}
+        </div>
+        <div class="mobile-only">
+            {% include "components/year-select-compact.html" with id_suffix="_mobile" %}
+        </div>
         {% include "components/create-category-button.html" %}
     </div>
 {% endblock %}

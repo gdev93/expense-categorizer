@@ -354,6 +354,7 @@ input:focus,
         grid-column: 2;
         grid-row: 1;
         justify-self: end;
+        gap: 8px;
     }
 
     .header-extra {
