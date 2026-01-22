@@ -472,7 +472,7 @@ class ExpenseCategorizerAgent:
         # Format categories as "KEY": Description
         categories_formatted_list = []
         for cat in self.available_categories:
-            if cat.name != 'not_expense':
+            if cat.name not in ['not_expense', 'Altro', 'altro']:
                 if cat.description:
                     categories_formatted_list.append(f'  • "{cat.name}": {cat.description}')
                 else:
@@ -524,18 +524,19 @@ class ExpenseCategorizerAgent:
     🚨🚨🚨 REGOLA ANTI-"Altro" - MASSIMA PRIORITÀ 🚨🚨🚨
     ═══════════════════════════════════════════════════════
 
-    ⛔ LA CATEGORIA "Altro" È QUASI SEMPRE SBAGLIATA.
+    ⛔ LA CATEGORIA "Altro" È ASSOLUTAMENTE VIETATA.
 
-    PRIMA di usare "Altro", DEVI completare questa checklist:
+    NON USARE MAI "Altro". DEVI scegliere una delle categorie fornite nella lista, senza alcuna eccezione.
 
-    [ ] 1. Ho analizzato il nome del merchant cercando parole chiave di settore?
-    [ ] 2. Ho cercato di identificare il brand (es. CONAD, ENEL, BOOKING, NETFLIX)?
-    [ ] 3. Ho letto OGNI parola della descrizione cercando indizi?
-    [ ] 4. Ho considerato il tipo di operazione (SDD, POS, Bonifico)?
-    [ ] 5. Ho verificato se potrebbe essere un'abbreviazione di un settore noto?
-    [ ] 6. Ho confrontato con TUTTE le categorie disponibili una per una?
+    Checklist di analisi obbligatoria:
+    1. Ho analizzato il nome del merchant cercando parole chiave di settore?
+    2. Ho cercato di identificare il brand (es. CONAD, ENEL, BOOKING, NETFLIX)?
+    3. Ho letto OGNI parola della descrizione cercando indizi?
+    4. Ho considerato il tipo di operazione (SDD, POS, Bonifico)?
+    5. Ho verificato se potrebbe essere un'abbreviazione di un settore noto?
+    6. Ho confrontato con TUTTE le categorie disponibili una per una e scelto quella PIÙ PROBABILE?
 
-    SE HAI RISPOSTO "NO" ANCHE A UNA DOMANDA, DEVI TORNARE INDIETRO E ANALIZZARE MEGLIO.
+    DEVI sforzarti di trovare la categoria più attinente. Se sei in dubbio, scegli quella che ritieni più vicina per tipologia di spesa.
 
     ═══════════════════════════════════════════════════════
     ESEMPI DI CATEGORIZZAZIONE CORRETTA (NON usare "Altro"):
@@ -594,28 +595,13 @@ class ExpenseCategorizerAgent:
     → REASONING: "Decathlon vende articoli sportivi, categoria Sport"
 
     ═══════════════════════════════════════════════════════
-    USA "Altro" SOLO IN QUESTI CASI RARI:
-    ═══════════════════════════════════════════════════════
-
-    ✓ Il merchant è un codice alfanumerico incomprensibile (es. "TX78291ABC", "CODE_12345")
-    ✓ La descrizione è in una lingua non italiana/inglese e completamente incomprensibile
-    ✓ Non c'è ALCUN indizio testuale sul tipo di spesa
-    ✓ Hai provato TUTTE le categorie una per una e nessuna è minimamente applicabile
-
-    SE usi "Altro", il campo "reasoning" DEVE spiegare perché:
-    1. Quale analisi hai fatto
-    2. Quali indizi hai cercato
-    3. Perché NESSUNA categoria era applicabile
-    Esempio: "Merchant completamente sconosciuto 'XYZA123BC' senza descrizione aggiuntiva. Codice alfanumerico non interpretabile, nessuna categoria applicabile."
-
-    ═══════════════════════════════════════════════════════
     ISTRUZIONI PRINCIPALI (ORDINE DI PRIORITÀ):
     ═══════════════════════════════════════════════════════
 
     1. CHECK USER RULES FIRST - FILTRA SALDI E ACCREDITI.
     2. Elabora TUTTE le transazioni rimanenti (SPESE).
     3. Per OGNI spesa, completa l'analisi approfondita della categorizzazione.
-    4. Assegna la categoria più specifica e probabile (NON "Altro" senza motivo).
+    4. Assegna la categoria più specifica e probabile tra quelle fornite (MAI "Altro").
     5. Estrai il nome del commerciante e tutti i campi obbligatori.
     6. Scrivi un "reasoning" dettagliato che giustifichi la scelta.
 
@@ -659,9 +645,8 @@ class ExpenseCategorizerAgent:
     ┌─────────────────────────────────────────────────────┐
     │ 6. REASONING (RAGIONAMENTO) (OBBLIGATORIO)          │
     └─────────────────────────────────────────────────────┘
-       • Spiega in 1-2 frasi perché hai scelto questa categoria specifica.
+       • Spiega in 1-2 frasi perché hai scelto questa categoria specifica tra quelle disponibili.
        • Menziona gli elementi chiave che hanno guidato la decisione (merchant, tipo operazione, descrizione).
-       • Se hai usato "Altro", DEVI spiegare perché nessun'altra categoria era applicabile.
        • Esempi di buon reasoning:
          * "Categoria Alimentari per merchant ESSELUNGA, supermercato italiano tra i più noti"
          * "Categoria Trasporti per pagamento biglietto bus ATM Milano, confermato da descrizione"

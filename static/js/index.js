@@ -41,15 +41,68 @@ function smartBack() {
 
 /**
  * Debounced form submission to prevent double invocation.
+ * Also handles duplicate form parameters by disabling all but one element with the same name.
  */
 let isFormSubmitting = false;
 function debounceFormSubmit(form) {
     if (isFormSubmitting || !form) return;
     isFormSubmitting = true;
+
+    // To prevent duplicate parameters in the URL (e.g., year=2024&year=2024)
+    // which happens when we have both desktop and mobile versions of the same filter
+    // both associated with the same form via the 'form' attribute.
+    const elementsArray = Array.from(form.elements);
+    if (form.id) {
+        const externalElements = document.querySelectorAll(`[form="${form.id}"]`);
+        externalElements.forEach(el => {
+            if (!elementsArray.includes(el)) {
+                elementsArray.push(el);
+            }
+        });
+    }
+
+    const namedElements = elementsArray.filter(el =>
+        el.name &&
+        el.name !== 'csrfmiddlewaretoken' &&
+        !el.disabled
+    );
+
+    const disabledByUs = [];
+    const grouped = {};
+    namedElements.forEach(el => {
+        if (!grouped[el.name]) grouped[el.name] = [];
+        grouped[el.name].push(el);
+    });
+
+    for (const name in grouped) {
+        const els = grouped[name];
+        if (els.length > 1) {
+            // Find the "best" element to keep.
+            // We use a heuristic for visibility that handles styled radio buttons (which are often display:none).
+            const isVisible = el => (el.offsetWidth > 0 || el.offsetHeight > 0) || 
+                                   (el.parentElement && (el.parentElement.offsetWidth > 0 || el.parentElement.offsetHeight > 0));
+
+            let best = els.find(el => isVisible(el) && el.checked) ||
+                       els.find(el => isVisible(el) && el.type !== 'radio' && el.type !== 'checkbox') ||
+                       els.find(el => el.checked) ||
+                       els.find(el => isVisible(el)) ||
+                       els[0];
+
+            els.forEach(el => {
+                if (el !== best) {
+                    el.disabled = true;
+                    disabledByUs.push(el);
+                }
+            });
+        }
+    }
+
     form.submit();
 
     // Reset after a timeout just in case the navigation doesn't happen
+    // and re-enable elements we disabled
     setTimeout(() => {
+        disabledByUs.forEach(el => el.disabled = false);
         isFormSubmitting = false;
     }, 2000);
 }

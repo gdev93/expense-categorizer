@@ -146,6 +146,7 @@ class EditTransactionCategory(View):
         # 4. Update and Save
         expense.category = new_category
         expense.modified_by_user = True
+        expense.status = 'categorized'
         expense.save()  # ⬅️ MUST CALL .save() to write the change to the database
 
         # Advance onboarding if at step 4

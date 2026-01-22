@@ -1,10 +1,10 @@
 <div class="filters filters-clean header-filters">
     {% if show_toggle != False and view_type %}
     <div class="view-toggle" data-view-type="{{ view_type }}">
-        <input type="radio" name="view_type" id="view_list{{ id_suffix }}" value="list" {% if view_type != 'merchant' %}checked{% endif %} form="main-filter-form" onchange="this.form.submit()">
+        <input type="radio" name="view_type" id="view_list{{ id_suffix }}" value="list" {% if view_type != 'merchant' %}checked{% endif %} form="main-filter-form" onchange="debounceFormSubmit(this.form)">
         <label for="view_list{{ id_suffix }}">Lista</label>
         
-        <input type="radio" name="view_type" id="view_merchant{{ id_suffix }}" value="merchant" {% if view_type == 'merchant' %}checked{% endif %} form="main-filter-form" onchange="this.form.submit()">
+        <input type="radio" name="view_type" id="view_merchant{{ id_suffix }}" value="merchant" {% if view_type == 'merchant' %}checked{% endif %} form="main-filter-form" onchange="debounceFormSubmit(this.form)">
         <label for="view_merchant{{ id_suffix }}">Esercente</label>
     </div>
     {% endif %}

@@ -142,7 +142,7 @@ class ExpenseUploadProcessor:
                                          'transaction_type', 'normalized_description','operation_type'])
         Transaction.objects.filter(user=self.user, id__in=[tx.id for tx in all_transactions_to_delete]).delete()
         logger.info(
-            f"Found {len(all_transactions_categorized)} {'👌' if len(all_transactions_categorized) > 0 else '😩'} transactions that have similar merchant names"
+            f"Found {len(all_transactions_categorized)} {'👌' if len(all_transactions_categorized) > 0 else '😩'} transactions that have similar merchant names."
         )
         return all_transactions_to_upload
 
