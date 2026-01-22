@@ -199,22 +199,6 @@ class TransactionListView(LoginRequiredMixin, ListView):
             uncategorized_transaction = uncategorized_transaction.filter(upload_file_id=upload_file_id)
             context['upload_file'] = get_object_or_404(UploadFile, id=upload_file_id, user=self.request.user)
 
-        # We need the full queryset (including uncategorized) for correct totals
-        full_user_transactions = Transaction.objects.filter(
-            user=self.request.user,
-            transaction_type='expense'
-        )
-        if upload_file_id:
-            full_user_transactions = full_user_transactions.filter(upload_file_id=upload_file_id)
-
-        # Apply other filters to full_user_transactions as well for consistent totals
-        search_query = self.request.GET.get('search')
-        if search_query:
-            full_user_transactions = full_user_transactions.filter(
-                Q(merchant__name__icontains=search_query) |
-                Q(merchant_raw_name__icontains=search_query) |
-                Q(description__icontains=search_query)
-            )
 
         transaction_list_context = TransactionListContextData(
             categories=categories,
@@ -222,11 +206,11 @@ class TransactionListView(LoginRequiredMixin, ListView):
             selected_upload_file=upload_file_id,
             search_query=self.request.GET.get('search', ''),
             uncategorized_transaction=uncategorized_transaction,
-            total_count=full_user_transactions.count(),
-            total_amount=full_user_transactions.filter(status="categorized").aggregate(
+            total_count=self.get_queryset().count(),
+            total_amount=self.get_queryset().aggregate(
                 total=Sum('amount')
             )['total'] or 0,
-            category_count=full_user_transactions.values('category').distinct().count(),
+            category_count=self.get_queryset().values('category').distinct().count(),
             rules=Rule.objects.filter(user=self.request.user, is_active=True),
             selected_category=self.request.GET.get('category', ''),
             selected_months=self.request.GET.getlist('months')
