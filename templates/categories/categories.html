@@ -56,6 +56,7 @@
         <div class="filter-group filter-actions">
             <button type="submit" class="btn btn-primary">Filtra</button>
             <a href="{% url 'category_list' %}" class="btn btn-secondary" id="delete-category-search">Cancella</a>
+            <button type="button" class="btn btn-outline-success" onclick="exportCategories()">Esporta</button>
         </div>
     </form>
 
@@ -92,4 +93,24 @@
 
 <script src="{% static 'js/categories.js' %}"></script>
 <script src="{% static 'js/reset-filter.js' %}"></script>
+<script>
+    function exportCategories() {
+        const form = document.getElementById('main-filter-form');
+        const formData = new FormData(form);
+        const params = new URLSearchParams();
+
+        for (const [key, value] of formData.entries()) {
+            if (value) {
+                if (key === 'categories' || key === 'months') {
+                    params.append(key, value);
+                } else {
+                    params.set(key, value);
+                }
+            }
+        }
+
+        const url = "{% url 'category_export' %}?" + params.toString();
+        window.location.href = url;
+    }
+</script>
 {% endblock %}

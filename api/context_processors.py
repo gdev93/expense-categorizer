@@ -5,6 +5,7 @@ from django.http import HttpRequest
 from django.core.exceptions import PermissionDenied
 
 from api.models import Transaction, Profile, UploadFile
+from api.constants import ITALIAN_MONTHS
 
 def available_years_context(request: HttpRequest):
     user = getattr(request, 'user', None)
@@ -73,17 +74,11 @@ def available_months_context(request):
         transaction_date__year=selected_year,
     ).values_list("transaction_date__month", flat=True).distinct().order_by("-transaction_date__month"))
 
-    italian_months = {
-        1: 'Gennaio', 2: 'Febbraio', 3: 'Marzo', 4: 'Aprile',
-        5: 'Maggio', 6: 'Giugno', 7: 'Luglio', 8: 'Agosto',
-        9: 'Settembre', 10: 'Ottobre', 11: 'Novembre', 12: 'Dicembre'
-    }
-
     available_months = [
         {
             'value': str(d),  # month number as string value
             'month_number': d,
-            'label_it': f"{italian_months[d]}",
+            'label_it': f"{ITALIAN_MONTHS[d]}",
         }
         for d in dates
     ]

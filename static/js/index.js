@@ -108,6 +108,18 @@ function debounceFormSubmit(form) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Global listener for main-filter-form to handle deduplication on manual submit
+    document.addEventListener('submit', function(e) {
+        if (e.target && e.target.id === 'main-filter-form') {
+            if (isFormSubmitting) {
+                e.preventDefault();
+                return;
+            }
+            e.preventDefault();
+            debounceFormSubmit(e.target);
+        }
+    });
+
     const menuToggle = document.getElementById('menuToggle');
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('overlay');

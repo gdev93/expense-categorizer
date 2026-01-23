@@ -1,17 +1,22 @@
 import datetime
 import logging
+import pandas as pd
 
 from django import forms
 from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.messages.views import SuccessMessageMixin
 from django.core.exceptions import BadRequest
 from django.core.paginator import Paginator
-from django.db.models import Count, Sum, DecimalField, Q
-from django.db.models.functions import Coalesce
+from django.db.models import Count, Sum, DecimalField, Q, QuerySet, IntegerField, Expression
+from django.db.models.functions import Coalesce, ExtractMonth, ExtractYear
+from django.http import HttpResponse
 from django.urls import reverse, reverse_lazy
+from django.views import View
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView
 
-from api.models import Category, Transaction, Rule
+from api.models import Category, Transaction, Rule, CategoryMonthlySummary
+from api.constants import ITALIAN_MONTHS
 
 logger = logging.getLogger(__name__)
 
@@ -36,12 +41,7 @@ class CategoryForm(forms.ModelForm):
             'description': 'Descrizione (Opzionale)'
         }
 
-# 1. VISUALIZATION VIEW (The List)
-class CategoryListView(ListView):
-    model = Category
-    template_name = 'categories/categories.html'
-    context_object_name = 'categories'
-
+class CategoryFilterMixin(View):
     def _get_year_and_months(self):
         try:
             get_year = self.request.GET.get('year')
@@ -56,41 +56,30 @@ class CategoryListView(ListView):
                 raise BadRequest("Invalid year format.")
             selected_year = datetime.datetime.now().year
 
-        selected_months = self.request.GET.getlist('months')
+        selected_months = self.request.GET.getlist('months', [])
         # Also support single 'month' parameter for backward compatibility or simple links
         single_month = self.request.GET.get('month')
         if single_month and single_month not in selected_months:
             selected_months.append(single_month)
 
         processed_months = []
-        for m in selected_months:
-            try:
-                processed_months.append(int(m))
-            except (TypeError, ValueError):
-                raise BadRequest(f"Invalid month format: {m}")
+        if any(selected_months):
+            for m in selected_months:
+                try:
+                    processed_months.append(int(m))
+                except (TypeError, ValueError):
+                    raise BadRequest(f"Invalid month format: {m}")
 
         return selected_year, processed_months
 
-    def get_queryset(self):
-        """
-        Returns categories belonging to the logged-in user, annotated with:
-        1. The count of associated transactions (transaction_count).
-        2. The total amount of associated transactions (transaction_amount).
-        """
-
-        # 1. Filter: Start with categories belonging to the current user
-        user_categories = self.model.objects.filter(user=self.request.user)
-        selected_category_ids = self.request.GET.getlist('categories')
-        if any(selected_category_ids):
-            user_categories = user_categories.filter(id__in=selected_category_ids)
-
+class CategoryEnrichedMixin(CategoryFilterMixin):
+    def get_enriched_category_queryset(self, base_category_queryset:QuerySet[Category,Category]):
         selected_year, selected_months = self._get_year_and_months()
-
         filter_q = Q(transactions__transaction_date__year=selected_year)
         if selected_months:
             filter_q &= Q(transactions__transaction_date__month__in=selected_months)
 
-        enriched_categories = user_categories.annotate(
+        enriched_categories = base_category_queryset.annotate(
             transaction_count=Count(
                 'transactions',
                 filter=filter_q
@@ -106,6 +95,26 @@ class CategoryListView(ListView):
         ).order_by('name')
 
         return enriched_categories
+# 1. VISUALIZATION VIEW (The List)
+class CategoryListView(LoginRequiredMixin, CategoryEnrichedMixin, ListView):
+    model = Category
+    template_name = 'categories/categories.html'
+    context_object_name = 'categories'
+
+    def get_queryset(self):
+        """
+        Returns categories belonging to the logged-in user, annotated with:
+        1. The count of associated transactions (transaction_count).
+        2. The total amount of associated transactions (transaction_amount).
+        """
+
+        # 1. Filter: Start with categories belonging to the current user
+        user_categories = self.model.objects.filter(user=self.request.user)
+        selected_category_ids = self.request.GET.getlist('categories')
+        if any(selected_category_ids):
+            user_categories = user_categories.filter(id__in=selected_category_ids)
+
+        return self.get_enriched_category_queryset(user_categories)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -123,6 +132,54 @@ class CategoryListView(ListView):
         context['year'] = selected_year
         context['selected_months'] = [str(m) for m in selected_months]
         return context
+
+
+class CategoryExportView(LoginRequiredMixin, CategoryEnrichedMixin, View):
+    def get(self, request, *args, **kwargs):
+        selected_year, selected_months = self._get_year_and_months()
+        selected_category_ids = request.GET.getlist('categories')
+        base_query = Category.objects.filter(user=request.user)
+
+        if selected_months:
+            base_query = base_query.filter(month__in=selected_months)
+        if any(selected_category_ids):
+            base_query = base_query.filter(category_id__in=selected_category_ids)
+
+        queryset = self.get_enriched_category_queryset(base_query)
+        queryset = queryset.annotate(
+            month=ExtractMonth('transactions__transaction_date'),
+            year=ExtractYear('transactions__transaction_date'),
+        ).filter(transaction_amount__gt=0)
+        data = list(queryset.values('name', 'transaction_amount', 'month'))
+
+        df = pd.DataFrame(data)
+        if not df.empty:
+            # Add Anno column and sort by year, month (numeric), and name
+            df['Anno'] = selected_year
+            df = df.sort_values(by=['Anno', 'month', 'name'])
+
+            # Map numeric month to Italian name
+            df['Mese'] = df['month'].map(ITALIAN_MONTHS)
+
+            df = df.rename(columns={
+                'name': 'Categoria',
+                'transaction_amount': 'Importo',
+            })
+
+            # Ensure columns order as requested: month, year, category, total
+            df = df[['Categoria', 'Importo','Mese', 'Anno']]
+            df['Importo'] = df['Importo'].apply(float).astype(str).str.replace(".", ",", regex=False)
+        else:
+            df = pd.DataFrame(columns=['Categoria', 'Importo','Mese', 'Anno'])
+
+        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        response['Content-Disposition'] = f'attachment; filename="export_categorie_{selected_year}_{timestamp}.xlsx"'
+
+        with pd.ExcelWriter(response, engine='openpyxl') as writer:
+            df.to_excel(writer, index=False, sheet_name='Categorie')
+
+        return response
 
 
 
@@ -155,7 +212,7 @@ class CategoryCreateView(SuccessMessageMixin, CreateView):
 
 
 
-class CategoryDetailView(DetailView):
+class CategoryDetailView(DetailView, CategoryFilterMixin, View):
     """
     A view to display the details of a specific Category,
     and list all associated transactions with pagination.
@@ -169,33 +226,7 @@ class CategoryDetailView(DetailView):
 
     def _get_filters(self):
         search_query = self.request.GET.get('search', '')
-
-        try:
-            get_year = self.request.GET.get('year')
-            if get_year:
-                selected_year = int(get_year)
-            else:
-                # Fallback logic consistent with other views
-                last_t = Transaction.objects.filter(user=self.request.user, status='categorized').order_by('-transaction_date').first()
-                selected_year = last_t.transaction_date.year if last_t else datetime.datetime.now().year
-        except (TypeError, ValueError, AttributeError):
-            if self.request.GET.get('year'):
-                raise BadRequest("Invalid year format.")
-            selected_year = datetime.datetime.now().year
-
-        selected_months = self.request.GET.getlist('months')
-        # Also support single 'month' parameter
-        single_month = self.request.GET.get('month')
-        if single_month and single_month not in selected_months:
-            selected_months.append(single_month)
-
-        processed_months = []
-        for m in selected_months:
-            try:
-                processed_months.append(int(m))
-            except (TypeError, ValueError):
-                raise BadRequest(f"Invalid month format: {m}")
-
+        selected_year, processed_months = self._get_year_and_months()
         return search_query, selected_year, processed_months
 
     def get_context_data(self, **kwargs):
