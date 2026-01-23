@@ -4,7 +4,7 @@ from .models import ApiUsageLog, CostConfiguration
 
 class CostService:
     @staticmethod
-    def log_api_usage(user, llm_model, input_tokens, output_tokens, upload_file=None):
+    def log_api_usage(user, llm_model, input_tokens, output_tokens, number_of_transactions:int, upload_file=None):
         """
         Logs API usage and computes cost based on current configuration.
         """
@@ -14,14 +14,12 @@ class CostService:
         computed_cost = Decimal('0.0')
         input_cost = Decimal('0.0')
         output_cost = Decimal('0.0')
-        final_earning = Decimal('0.0')
 
         if config:
             input_cost = (Decimal(str(input_tokens)) * config.input_token_price_per_million) / Decimal('1000000')
             output_cost = (Decimal(str(output_tokens)) * config.output_token_price_per_million) / Decimal('1000000')
             computed_cost = input_cost + output_cost
-            final_earning = computed_cost * (Decimal('1') + (config.earning_multiplier_percentage / Decimal('100')))
-        
+
         usage_log = ApiUsageLog.objects.create(
             user=user,
             upload_file=upload_file,
@@ -31,8 +29,8 @@ class CostService:
             total_tokens=input_tokens + output_tokens,
             computed_cost=computed_cost,
             input_cost=input_cost,
+            number_of_transactions=number_of_transactions,
             output_cost=output_cost,
-            final_earning=final_earning
         )
         return usage_log
 

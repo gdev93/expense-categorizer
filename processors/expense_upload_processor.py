@@ -68,6 +68,7 @@ class ExpenseUploadProcessor:
                     llm_model=response.model_name,
                     input_tokens=response.prompt_tokens,
                     output_tokens=response.candidate_tokens,
+                    number_of_transactions = len(batch_result),
                     upload_file=upload_file
                 )
             if batch_result:
