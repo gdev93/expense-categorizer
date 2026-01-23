@@ -3,15 +3,17 @@ from django.shortcuts import get_object_or_404
 from django.views import View
 
 from api.models import Transaction, Merchant, UploadFile
+from api.views.transactions.transaction_mixins import TransactionFilterMixin
 
-class TransactionByUploadFileAndMerchant(View):
+
+class TransactionByUploadFileAndMerchant(TransactionFilterMixin, View):
     def get(self, request: HttpRequest, **kwargs):
         merchant_id = request.GET.get('merchant_id', None)
         upload_file_id = request.GET.get('upload_file_id', None)
 
-        transactions_qs = Transaction.objects.filter(user=request.user).order_by('-transaction_date')
+        transactions_qs = self.get_transaction_filter_query()
 
-        if upload_file_id and upload_file_id != 'None' and upload_file_id != 'undefined' and upload_file_id != '':
+        if upload_file_id:
             upload_file = get_object_or_404(UploadFile, user=request.user, id=upload_file_id)
             transactions_qs = transactions_qs.filter(upload_file=upload_file)
 

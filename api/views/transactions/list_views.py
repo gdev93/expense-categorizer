@@ -13,6 +13,7 @@ from django.views.generic import ListView
 
 from api.models import Transaction, Category, Rule, UploadFile, Merchant
 from api.views.rule_view import create_rule
+from api.views.transactions.transaction_mixins import TransactionFilterMixin
 
 
 @dataclass
@@ -33,7 +34,7 @@ class TransactionListContextData:
         """Convert dataclass to context dictionary"""
         return asdict(self)
 
-class TransactionListView(LoginRequiredMixin, ListView):
+class TransactionListView(LoginRequiredMixin, ListView, TransactionFilterMixin):
     """Display list of transactions with filtering and pagination"""
     model = Transaction
     template_name = 'transactions/transaction_list.html'
@@ -80,99 +81,8 @@ class TransactionListView(LoginRequiredMixin, ListView):
 
         return redirect(request.META.get('HTTP_REFERER', 'transaction_list'))
 
-    def _get_selected_year(self, queryset):
-        get_year = self.request.GET.get('year')
-        if get_year:
-            try:
-                return int(get_year)
-            except (TypeError, ValueError):
-                raise BadRequest("Invalid year format.")
-        else:
-            # Fallback to most recent transaction year if no year provided
-            first_t = queryset.first()
-            return first_t.transaction_date.year if first_t else datetime.datetime.now().year
-
     def get_queryset(self):
-        """Filter transactions based on user and query parameters"""
-        # Advance onboarding if before step 5 and filters are used
-        profile = getattr(self.request.user, 'profile', None)
-        if profile and profile.onboarding_step < 4:
-            filter_params = ['category', 'upload_file', 'amount', 'search', 'months', 'month', 'year']
-            if any(self.request.GET.get(param) for param in filter_params):
-                profile.onboarding_step = 4
-                profile.save()
-
-        queryset = Transaction.objects.filter(
-            user=self.request.user,
-            transaction_type='expense',
-        ).select_related('category', 'merchant', 'upload_file').order_by('-transaction_date', '-created_at')
-
-        # Filter by category
-        category_id = self.request.GET.get('category')
-        if category_id:
-            queryset = queryset.filter(category_id=category_id)
-
-        # Filter by upload_file (from URL or GET)
-        upload_file_id = self.kwargs.get('upload_file_id') or self.request.GET.get('upload_file')
-        if upload_file_id:
-            queryset = queryset.filter(upload_file_id=upload_file_id)
-
-        # Filter by amount
-        amount = self.request.GET.get('amount')
-        amount_operator = self.request.GET.get('amount_operator', 'eq')
-        if amount:
-            try:
-                amount_value = float(amount)
-                if amount_operator == 'eq':
-                    queryset = queryset.filter(amount=amount_value)
-                elif amount_operator == 'gt':
-                    queryset = queryset.filter(amount__gt=amount_value)
-                elif amount_operator == 'gte':
-                    queryset = queryset.filter(amount__gte=amount_value)
-                elif amount_operator == 'lt':
-                    queryset = queryset.filter(amount__lt=amount_value)
-                elif amount_operator == 'lte':
-                    queryset = queryset.filter(amount__lte=amount_value)
-            except (ValueError, TypeError):
-                raise BadRequest("Invalid amount format.")
-
-        # Search filter
-        search_query = self.request.GET.get('search')
-        if search_query:
-            queryset = queryset.filter(
-                Q(merchant__name__icontains=search_query) |
-                Q(merchant_raw_name__icontains=search_query) |
-                Q(description__icontains=search_query)
-            )
-
-        # Year logic
-        selected_year = self._get_selected_year(queryset)
-        if not upload_file_id:
-            queryset = queryset.filter(transaction_date__year=selected_year)
-
-        # Filter by months
-        selected_months = self.request.GET.getlist('months')
-        single_month = self.request.GET.get('month')
-        if single_month and single_month not in selected_months:
-            selected_months.append(single_month)
-
-        if selected_months:
-            month_queries = Q()
-            for month_str in selected_months:
-                try:
-                    month = int(month_str)
-                    month_queries |= Q(transaction_date__month=month)
-                except (ValueError, TypeError):
-                    pass
-            if month_queries:
-                queryset = queryset.filter(month_queries)
-
-        # For the main list view, we only want categorized transactions
-        # to avoid duplication with the uncategorized section in the template.
-        if self.request.GET.get('view_type', 'list') == 'list':
-            return queryset.filter(category__isnull=False, merchant_id__isnull=False)
-
-        return queryset
+        return self.get_transaction_filter_query()
 
     def get_context_data(self, **kwargs):
         """Add extra context data"""
@@ -217,10 +127,11 @@ class TransactionListView(LoginRequiredMixin, ListView):
         )
         context.update(transaction_list_context.to_context())
 
+        year, months = self.get_year_and_months()
         # Add amount filter context
         context['selected_amount'] = self.request.GET.get('amount', '')
         context['selected_amount_operator'] = self.request.GET.get('amount_operator', 'eq')
-        context['year'] = self._get_selected_year(user_transactions)
+        context['year'] = year
 
         if view_type == 'merchant':
             # Aggregate transactions by merchant
