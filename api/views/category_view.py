@@ -138,7 +138,9 @@ class CategoryExportView(LoginRequiredMixin, CategoryEnrichedMixin, View):
     def get(self, request, *args, **kwargs):
         selected_year, selected_months = self._get_year_and_months()
         selected_category_ids = request.GET.getlist('categories')
-        base_query = Category.objects.filter(user=request.user, id__in=selected_category_ids)
+        base_query = Category.objects.filter(user=request.user)
+        if any(selected_category_ids):
+            base_query = base_query.filter(id__in=selected_category_ids)
 
         queryset = self.get_enriched_category_queryset(base_query)
         queryset = queryset.annotate(
