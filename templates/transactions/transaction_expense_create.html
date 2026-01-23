@@ -11,9 +11,9 @@
     <div class="container mt-2">
         <div class="header">
             <a href="{% url 'transaction_list' %}" class="btn btn-secondary">
-                < Torna alle Transazioni
+                <span class="material-icons" style="vertical-align: middle; margin-right: 4px;">arrow_back</span> Torna alle Transazioni
             </a>
-            <h1>➕ Nuova Transazione</h1>
+            <h1><span class="material-icons" style="vertical-align: middle; margin-right: 8px;">add_circle</span> Nuova Transazione</h1>
         </div>
 
         <div class="rule-card card mb-4">
@@ -85,10 +85,10 @@
 
                     <div class="rule-form-actions" style="border-top: 2px solid #ddd; padding-top: 15px;">
                         <button type="submit" class="btn btn-primary">
-                            💾 Crea Transazione
+                            <span class="material-icons" style="vertical-align: middle; margin-right: 4px;">add_circle</span> Crea Transazione
                         </button>
                         <a href="{% url 'transaction_list' %}" class="btn btn-secondary">
-                            ❌ Annulla
+                             Annulla
                         </a>
                     </div>
                 </form>

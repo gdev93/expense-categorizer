@@ -13,7 +13,7 @@
 
 {% block content %}
     <div class="container mt-2">
-        {% include "components/header-with-year-select.html" with icon="🗓️" title="Riepilogo Mensile" %}
+        {% include "components/header-with-year-select.html" with icon="calendar_month" title="Riepilogo Mensile" %}
 
         <form method="get" id="main-filter-form" style="display: none;">
             {% if selected_month_number %}
@@ -46,26 +46,26 @@
                     </header>
 
                     <div class="summary">
-                        {% include "components/summary-card.html" with icon="💸" label="Totale spese" value=month.total_spending subtext="" change_class="neutral" %}
-                        {% include "components/summary-card.html" with icon="💰" label="Totale entrate" value=month.total_income subtext="" change_class="neutral" %}
-                        {% include "components/summary-card.html" with icon="📈" label="Risparmi" value=month.total_savings subtext="" change_class="neutral" %}
+                        {% include "components/summary-card.html" with icon="payments" label="Totale spese" value=month.total_spending subtext="" change_class="neutral" %}
+                        {% include "components/summary-card.html" with icon="account_balance_wallet" label="Totale entrate" value=month.total_income subtext="" change_class="neutral" %}
+                        {% include "components/summary-card.html" with icon="savings" label="Risparmi" value=month.total_savings subtext="" change_class="neutral" %}
                     </div>
 
                     <div class="quick-actions"
                          style="display: flex; gap: 12px; margin-top: 24px; margin-bottom: 32px; flex-wrap: wrap;">
                         <a href="#" class="btn btn-primary"
                            style="flex: 1; min-width: 200px; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                            <span style="font-size: 1.2em;">➕</span>
+                            <span class="material-icons" style="font-size: 1.2em;">add_circle_outline</span>
                             <span>Nuova Spesa</span>
                         </a>
                         <a href="{% url 'new_transaction_income' %}?selected_month={{ selected_month_number }}" class="btn btn-success"
                            style="flex: 1; min-width: 200px; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                            <span style="font-size: 1.2em;">💰</span>
+                            <span class="material-icons" style="font-size: 1.2em;">add_circle_outline</span>
                             <span>Nuova Entrata</span>
                         </a>
                     </div>
 
-                    <h2 class="mb-3">📊 Riepilogo per Categoria</h2>
+                    <h2 class="mb-3"> Riepilogo per Categoria</h2>
                     {% if category_monthly_summaries %}
                         <div class="data-list">
                             {% for summary in category_monthly_summaries %}
@@ -92,7 +92,7 @@
             {% endfor %}
 
             <section class="other-months">
-                    <h2 class="mb-3">📊 Altri mesi</h2>
+                    <h2 class="mb-3"> Altri mesi</h2>
                     <div class="data-list">
                         {% for month in months %}
                             {% if not month.is_current %}
@@ -105,7 +105,7 @@
                 </section>
         {% else %}
             <div class="empty-state">
-                <div class="empty-state-icon">📊</div>
+                <div class="empty-state-icon material-icons">search_off</div>
                 <h3>Nessun dato disponibile</h3>
                 <p>
                     Non ci sono transazioni per l'anno selezionato.

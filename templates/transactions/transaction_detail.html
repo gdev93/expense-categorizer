@@ -12,7 +12,7 @@
     <div class="container mt-2">
         <div class="header">
             <div class="header-title-container">
-                <h1>📝 Dettaglio Transazione</h1>
+                <h1><span class="material-icons" style="vertical-align: middle; margin-right: 8px;">info</span> Dettaglio Transazione</h1>
             </div>
             <div class="header-actions">
                 <div class="d-flex align-items-center gap-3">
@@ -21,13 +21,7 @@
                     </a>
                     <button type="submit" form="transaction-form" name="delete" class="btn btn-icon btn-icon-danger" title="Elimina"
                             onclick="return confirm('Sei sicuro di voler eliminare questa transazione? Questa azione non è reversibile.')">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M3 6h18"></path>
-                            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
-                            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
-                            <line x1="10" y1="11" x2="10" y2="17"></line>
-                            <line x1="14" y1="11" x2="14" y2="17"></line>
-                        </svg>
+                        <span class="material-icons">delete</span>
                     </button>
                 </div>
             </div>
@@ -37,7 +31,7 @@
             <div class="mobile-only">
                 <div class="form-actions mb-4">
                     <button type="submit" form="transaction-form" class="btn btn-primary">
-                        💾 Salva Modifiche
+                        <span class="material-icons" style="vertical-align: middle; margin-right: 4px;">save</span> Salva Modifiche
                     </button>
                 </div>
             </div>
@@ -59,14 +53,14 @@
                                 € {{ transaction.amount|floatformat:2 }}
                             </div>
                             <div class="amount-date">
-                                <span class="nav-icon">📅</span> {{ transaction.transaction_date|date:"d F Y" }}
+                                <span class="material-icons" style="font-size: 1.1em; vertical-align: middle; margin-right: 4px;">calendar_today</span> {{ transaction.transaction_date|date:"d F Y" }}
                             </div>
                         </div>
 
                         <div class="form-grid">
                             <div class="form-group col-span-2-mobile">
                                 <label class="field-label" for="id_merchant_raw_name">
-                                    <span>🏢</span> Nome Esercente
+                                    <span class="material-icons">store</span> Nome Esercente
                                 </label>
                                 <input type="text" name="merchant_raw_name" id="id_merchant_raw_name"
                                        class="form-control" value="{{ transaction.merchant.name|default:"" }}" required />
@@ -74,7 +68,7 @@
 
                             <div class="form-group">
                                 <label class="field-label" for="id_amount">
-                                    <span>💰</span> Importo (€)
+                                    <span class="material-icons">payments</span> Importo (€)
                                 </label>
                                 <input type="number" name="amount" id="id_amount" step="0.01"
                                        class="form-control" value="{{ transaction.amount|floatformat:2 }}" required />
@@ -82,7 +76,7 @@
 
                             <div class="form-group">
                                 <label class="field-label" for="id_transaction_date">
-                                    <span>📅</span> Data Operazione
+                                    <span class="material-icons">calendar_today</span> Data Operazione
                                 </label>
                                 <input type="date" name="transaction_date" id="id_transaction_date"
                                        class="form-control" value="{{ transaction.transaction_date|date:'Y-m-d' }}" required />
@@ -93,7 +87,7 @@
 
                         <div class="form-group mb-4">
                             <label class="field-label" for="id_description">
-                                <span>📄</span> Descrizione Originale (Banca)
+                                <span class="material-icons">description</span> Descrizione Originale (Banca)
                             </label>
                             <textarea id="id_description" name="description" class="form-control description-textarea" rows="3">{{ transaction.description|default:"" }}</textarea>
                         </div>
@@ -101,7 +95,7 @@
                         <div class="divider"></div>
 
                         <div class="section-title">
-                            <span>📂</span> Categorizzazione
+                            <span class="material-icons">category</span> Categorizzazione
                         </div>
 
                         <div class="form-group mb-3">
@@ -122,7 +116,7 @@
 
                         <div class="new-category-box">
                             <label class="field-label field-label-highlight" for="id_new_category_name">
-                                <span>✨</span> Crea Nuova Categoria
+                                <span class="material-icons">add_circle</span> Crea Nuova Categoria
                             </label>
                             <input type="text" name="new_category_name" id="id_new_category_name"
                                    class="form-control" placeholder="Inserisci nome (es: Regali, Salute...)" />
@@ -134,7 +128,7 @@
                         <div class="desktop-only">
                             <div class="form-actions">
                                 <button type="submit" class="btn btn-primary">
-                                    💾 Salva Modifiche
+                                    <span class="material-icons" style="vertical-align: middle; margin-right: 4px;">save</span> Salva Modifiche
                                 </button>
                             </div>
                         </div>

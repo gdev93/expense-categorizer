@@ -53,10 +53,10 @@
             </small>
         </div>
 
-        <div class="filter-group filter-actions">
-            <button type="submit" class="btn btn-primary">Filtra</button>
-            <a href="{% url 'category_list' %}" class="btn btn-secondary" id="delete-category-search">Cancella</a>
-            <button type="button" class="btn btn-outline-success" onclick="exportCategories()">Esporta</button>
+        <div class="filter-group filter-actions" style="display: flex; gap: 8px;">
+            <button type="submit" class="btn btn-primary btn-icon" title="Filtra"><span class="material-icons">filter_alt</span></button>
+            <a href="{% url 'category_list' %}" class="btn btn-secondary btn-icon" id="delete-category-search" title="Cancella"><span class="material-icons">clear</span></a>
+            <button type="button" class="btn btn-outline-success" onclick="exportCategories()"><span class="material-icons" style="font-size: 1.1em; vertical-align: middle; margin-right: 4px;">download</span> Esporta</button>
         </div>
     </form>
 

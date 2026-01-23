@@ -13,12 +13,12 @@
 {% block content %}
 <div class="container mt-2">
 
-    {% include "components/header.html" with icon="📈" title="Riepilogo" %}
+    {% include "components/header.html" with icon="analytics" title="Riepilogo" %}
     <!-- Summary Cards -->
     <div class="summary">
-    {% include "components/summary-card.html" with icon="💰" label="Spese totali" value=data.total_expenses subtext="+8.5% from last month" change_class="negative" %}
-    {% include "components/summary-card.html" with icon="📊" label="Media mensile" value=data.average_monthly subtext="-2.3% from average" change_class="positive" %}
-    {% include "components/summary-card.html" with icon="🏷️" label="Voce di spesa più alta" value=data.top_category subtext="35% of total" change_class="neutral" %}
+    {% include "components/summary-card.html" with icon="payments" label="Spese totali" value=data.total_expenses subtext="+8.5% from last month" change_class="negative" %}
+    {% include "components/summary-card.html" with icon="calendar_month" label="Media mensile" value=data.average_monthly subtext="-2.3% from average" change_class="positive" %}
+    {% include "components/summary-card.html" with icon="trending_up" label="Voce di spesa più alta" value=data.top_category subtext="35% of total" change_class="neutral" %}
 </div>
     <!-- Filters and Controls -->
 
@@ -47,9 +47,9 @@
         </select>
     </div>
 
-    <div class="filter-group" style="align-self: flex-end;">
-        <button type="submit" class="btn btn-primary">{% trans "Apply Filters" %}</button>
-        <a href="{% url 'monthly_summary' %}" class="btn btn-secondary">{% trans "Reset" %}</a>
+    <div class="filter-group" style="align-self: flex-end; display: flex; gap: 8px;">
+        <button type="submit" class="btn btn-primary btn-icon" title="{% trans 'Apply Filters' %}"><span class="material-icons">filter_alt</span></button>
+        <a href="{% url 'monthly_summary' %}" class="btn btn-secondary btn-icon" title="{% trans 'Reset' %}"><span class="material-icons">clear</span></a>
     </div>
 </form>
 
@@ -74,7 +74,7 @@
             <div class="category-item">
                 <div class="category-info">
                     <span class="category-icon"
-                          style="background-color: #{{ breakdown.category.color|default:'4CAF50' }};">{{ breakdown.category.icon|default:'📊' }}</span>
+                          style="background-color: #{{ breakdown.category.color|default:'4CAF50' }};">{{ breakdown.category.icon|default:'' }}</span>
                     <span class="category-name">{{ breakdown.category.name }}</span>
                 </div>
                 <div class="category-bar-container">
@@ -95,4 +95,5 @@
         <button class="btn btn-secondary">{% trans "Export to CSV" %}</button>
         <button class="btn btn-outline">{% trans "Print Summary" %}</button>
     </div>
+</div>
 {% endblock %}

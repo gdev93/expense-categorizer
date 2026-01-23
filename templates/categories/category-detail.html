@@ -26,13 +26,13 @@
                 <!-- Filters for Associated Transactions -->
                 <form method="get" class="filters mb-4" id="transaction-filter-form">
                     <div class="filter-group">
-                        <label for="search">🔍 Ricerca</label>
+                        <label for="search"> Ricerca</label>
                         <input type="text" name="search" id="search" placeholder="Cerca merchant o descrizione..."
                                value="{{ search_query }}" onchange="debounceFormSubmit(this.form)">
                     </div>
 
                     <div class="filter-group">
-                        <label for="year">📅 Anno</label>
+                        <label for="year"> Anno</label>
                         <select name="year" id="year" onchange="debounceFormSubmit(this.form)">
                             <option value="">Tutti gli anni</option>
                             {% for available_year in available_years %}
@@ -44,7 +44,7 @@
                     </div>
 
                     <div class="filter-group">
-                        <label for="months">📅 Mese/i</label>
+                        <label for="months"> Mese/i</label>
                         <select name="months" id="months" multiple size="1" onchange="debounceFormSubmit(this.form)">
                             <option value="">Tutti i mesi</option>
                             {% for month in available_months %}
@@ -59,9 +59,9 @@
                         </small>
                     </div>
 
-                    <div class="filter-group filter-actions">
-                        <button type="submit" class="btn btn-primary">Filtra</button>
-                        <a href="{% url 'category_detail' category.id %}" class="btn btn-secondary">Cancella</a>
+                    <div class="filter-group filter-actions" style="display: flex; gap: 8px;">
+                        <button type="submit" class="btn btn-primary btn-icon" title="Filtra"><span class="material-icons">filter_alt</span></button>
+                        <a href="{% url 'category_detail' category.id %}" class="btn btn-secondary btn-icon" title="Cancella"><span class="material-icons">clear</span></a>
                     </div>
                 </form>
 

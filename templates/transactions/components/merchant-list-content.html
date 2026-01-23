@@ -1,6 +1,6 @@
 {% if uncategorized_merchants %}
 <h2 class="mb-3">
-    🏷️ Spese Non Categorizzate
+     Spese Non Categorizzate
     <span class="badge"
           style="background-color: #ffc107; color: #000; padding: 4px 8px; border-radius: 12px; font-size: 14px;">
         {{ uncategorized_merchants.count }}
@@ -25,7 +25,7 @@
 {% endif %}
 
 {% if merchant_summary %}
-    <h2 class="mb-3">📊 Spese Categorizzate</h2>
+    <h2 class="mb-3"> Spese Categorizzate</h2>
 
     <div class="data-list" id="scroll-target">
         {% for item in merchant_summary %}
@@ -55,7 +55,7 @@
 {% else %}
     <!-- Empty State for Merchant View -->
     <div class="empty-state">
-        <div class="empty-state-icon">📭</div>
+        <div class="empty-state-icon"></div>
         <h3>Nessuna Transazione Trovata</h3>
         <p>Non ci sono transazioni che corrispondono ai filtri selezionati.</p>
     </div>

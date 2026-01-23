@@ -14,7 +14,7 @@
 {% block content %}
     <div class="container mt-2">
 
-        {% include "components/header-with-year-select.html" with icon="💰" title="Entrate" %}
+        {% include "components/header-with-year-select.html" with icon="account_balance_wallet" title="Entrate" %}
         {% csrf_token %}
 
         {% if transactions %}
@@ -29,7 +29,7 @@
             <input type="hidden" name="transaction_type" value="income">
 
             <div class="filter-group">
-                <label for="amount">💰 Importo</label>
+                <label for="amount"> Importo</label>
                 <div class="amount-filter-wrapper">
                     <select name="amount_operator" id="amount_operator" class="amount-operator" onchange="debounceFormSubmit(this.form)">
                         <option value="eq" {% if selected_amount_operator == "eq" %}selected{% endif %}>=</option>
@@ -51,7 +51,7 @@
             </div>
 
             <div class="filter-group">
-                <label for="months">📅 Mese/i</label>
+                <label for="months"> Mese/i</label>
                 <select name="months" id="months" multiple size="1" onchange="debounceFormSubmit(this.form)">
                     <option value="">Tutti i Mesi</option>
                     {% for month in available_months %}
@@ -67,28 +67,28 @@
             </div>
 
             <div class="filter-group">
-                <label for="search">🔍 Ricerca</label>
+                <label for="search"> Ricerca</label>
                 <input type="text" name="search" id="search" placeholder="Cerca descrizione..."
                        value="{{ search_query }}" onchange="debounceFormSubmit(this.form)"/>
             </div>
 
             <div class="filter-group" style="align-self: flex-end; display: flex; gap: 8px;">
-                <button type="submit" class="btn btn-primary">Filtra</button>
-                <a href="{% url 'income_list' %}" class="btn btn-secondary">Cancella</a>
-                <button type="button" class="btn btn-outline-success" onclick="exportToCsv()">📥 Esporta</button>
+                <button type="submit" class="btn btn-primary btn-icon" title="Filtra"><span class="material-icons">filter_alt</span></button>
+                <a href="{% url 'income_list' %}" class="btn btn-secondary btn-icon" title="Cancella"><span class="material-icons">clear</span></a>
+                <button type="button" class="btn btn-outline-success" onclick="exportToCsv()"><span class="material-icons" style="font-size: 1.1em; vertical-align: middle; margin-right: 4px;">download</span> Esporta</button>
             </div>
         </form>
 
         <!-- Income List -->
         {% if transactions %}
-            <h2 class="mb-3">📊 Entrate</h2>
+            <h2 class="mb-3"> Entrate</h2>
 
             <div class="data-list" id="scroll-target">
                 {% for transaction in transactions %}
                     <div class="data-list-item">
                         <div class="list-item-info">
                             <div class="transaction-date">
-                                📅 {{ transaction.transaction_date|date:"d/m/Y" }}
+                                 {{ transaction.transaction_date|date:"d/m/Y" }}
                             </div>
                         <div class="transaction-merchant">
                                 {{ transaction.operation_type }}

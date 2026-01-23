@@ -69,8 +69,12 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 18px;
     margin-right: 10px;
+}
+
+.user-avatar-placeholder .material-icons {
+    font-size: 20px;
+    line-height: 1;
 }
 
 .user-details {
