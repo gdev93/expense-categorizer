@@ -72,10 +72,13 @@
                        value="{{ search_query }}" onchange="debounceFormSubmit(this.form)"/>
             </div>
 
-            <div class="filter-group" style="align-self: flex-end; display: flex; gap: 8px;">
-                <button type="submit" class="btn btn-primary btn-icon" title="Filtra"><span class="material-icons">filter_alt</span></button>
-                <a href="{% url 'income_list' %}" class="btn btn-secondary btn-icon" title="Cancella"><span class="material-icons">clear</span></a>
-                <button type="button" class="btn btn-outline-success" onclick="exportToCsv()"><span class="material-icons" style="font-size: 1.1em; vertical-align: middle; margin-right: 4px;">download</span> Esporta</button>
+            <div class="filter-group">
+                <label class="desktop-only">&nbsp;</label>
+                <div style="display: flex; flex-direction: row; gap: 8px;">
+                    <button type="submit" class="btn btn-icon btn-subtle-primary" title="Filtra"><span class="material-icons">search</span></button>
+                    <a href="{% url 'income_list' %}" class="btn btn-icon btn-subtle-danger" title="Cancella"><span class="material-icons">clear</span></a>
+                    <button type="button" class="btn btn-icon btn-subtle-success" onclick="exportToCsv()" title="Esporta"><span class="material-icons">download</span></button>
+                </div>
             </div>
         </form>
 

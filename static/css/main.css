@@ -145,6 +145,49 @@ h3 { font-size: 18px; }
     border-color: #dc3545;
 }
 
+.btn-subtle {
+    background-color: transparent;
+    color: var(--secondary-color);
+    box-shadow: none;
+}
+
+.btn-subtle:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    color: var(--nav-text-color);
+    transform: none;
+    box-shadow: none;
+}
+
+.btn-subtle-primary {
+    color: #0d6efd;
+    background-color: transparent;
+}
+
+.btn-subtle-primary:hover {
+    background-color: rgba(13, 110, 253, 0.1);
+    color: #0d6efd;
+}
+
+.btn-subtle-danger {
+    color: var(--danger-color);
+    background-color: transparent;
+}
+
+.btn-subtle-danger:hover {
+    background-color: rgba(220, 53, 69, 0.1);
+    color: var(--danger-color);
+}
+
+.btn-subtle-success {
+    color: var(--income-color);
+    background-color: transparent;
+}
+
+.btn-subtle-success:hover {
+    background-color: rgba(40, 167, 69, 0.1);
+    color: var(--income-color);
+}
+
 /* --- Buttons (Disabled State) --- */
 .btn.btn-disabled,
 .btn-primary.btn-disabled,

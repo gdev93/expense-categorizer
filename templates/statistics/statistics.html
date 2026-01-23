@@ -47,9 +47,12 @@
         </select>
     </div>
 
-    <div class="filter-group" style="align-self: flex-end; display: flex; gap: 8px;">
-        <button type="submit" class="btn btn-primary btn-icon" title="{% trans 'Apply Filters' %}"><span class="material-icons">filter_alt</span></button>
-        <a href="{% url 'monthly_summary' %}" class="btn btn-secondary btn-icon" title="{% trans 'Reset' %}"><span class="material-icons">clear</span></a>
+    <div class="filter-group">
+        <label class="desktop-only">&nbsp;</label>
+        <div style="display: flex; flex-direction: row; gap: 8px;">
+            <button type="submit" class="btn btn-icon btn-subtle-primary" title="{% trans 'Apply Filters' %}"><span class="material-icons">search</span></button>
+            <a href="{% url 'monthly_summary' %}" class="btn btn-icon btn-subtle-danger" title="{% trans 'Reset' %}"><span class="material-icons">clear</span></a>
+        </div>
     </div>
 </form>
 
