@@ -1,22 +1,22 @@
 import datetime
 import logging
-import pandas as pd
 
+import pandas as pd
 from django import forms
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.messages.views import SuccessMessageMixin
 from django.core.exceptions import BadRequest
 from django.core.paginator import Paginator
-from django.db.models import Count, Sum, DecimalField, Q, QuerySet, IntegerField, Expression
+from django.db.models import Count, Sum, DecimalField, Q, QuerySet
 from django.db.models.functions import Coalesce, ExtractMonth, ExtractYear
 from django.http import HttpResponse
 from django.urls import reverse, reverse_lazy
 from django.views import View
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView
 
-from api.models import Category, Transaction, Rule, CategoryMonthlySummary
 from api.constants import ITALIAN_MONTHS
+from api.models import Category, Transaction, Rule
 
 logger = logging.getLogger(__name__)
 
@@ -138,12 +138,7 @@ class CategoryExportView(LoginRequiredMixin, CategoryEnrichedMixin, View):
     def get(self, request, *args, **kwargs):
         selected_year, selected_months = self._get_year_and_months()
         selected_category_ids = request.GET.getlist('categories')
-        base_query = Category.objects.filter(user=request.user)
-
-        if selected_months:
-            base_query = base_query.filter(month__in=selected_months)
-        if any(selected_category_ids):
-            base_query = base_query.filter(category_id__in=selected_category_ids)
+        base_query = Category.objects.filter(user=request.user, id__in=selected_category_ids)
 
         queryset = self.get_enriched_category_queryset(base_query)
         queryset = queryset.annotate(
@@ -167,10 +162,10 @@ class CategoryExportView(LoginRequiredMixin, CategoryEnrichedMixin, View):
             })
 
             # Ensure columns order as requested: month, year, category, total
-            df = df[['Categoria', 'Importo','Mese', 'Anno']]
+            df = df[['Mese', 'Anno', 'Categoria', 'Importo']]
             df['Importo'] = df['Importo'].apply(float).astype(str).str.replace(".", ",", regex=False)
         else:
-            df = pd.DataFrame(columns=['Categoria', 'Importo','Mese', 'Anno'])
+            df = pd.DataFrame(columns=['Mese', 'Anno', 'Categoria', 'Importo'])
 
         response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
