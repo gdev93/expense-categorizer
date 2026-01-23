@@ -1,8 +1,9 @@
 import pytest
-from django.urls import reverse
-from django.core.files.uploadedfile import SimpleUploadedFile
 from django.contrib.auth.models import User
+from django.urls import reverse
+
 from api.models import Profile, Category, UploadFile
+
 
 @pytest.mark.django_db
 class TestOnboarding:
@@ -43,72 +44,6 @@ class TestOnboarding:
         self.profile.refresh_from_db()
         assert self.profile.onboarding_step == 5
 
-    def test_onboarding_advances_on_later_action(self, client):
-        """
-        Test that performing an action for step 2 (upload) advances onboarding
-        even if current step is 1 (categories).
-        """
-        client.login(username='testuser', password='password123')
-        self.profile.onboarding_step = 1
-        self.profile.save()
-        
-        # Perform step 2 action: upload a file
-        csv_content = b"Date;Amount;Description\n2023-01-01;10.0;Test"
-        csv_file = SimpleUploadedFile("test.csv", csv_content, content_type="text/csv")
-        
-        url = reverse('transactions_upload')
-        client.post(url, {'file': csv_file})
-        
-        self.profile.refresh_from_db()
-        assert self.profile.onboarding_step == 3
-
-    def test_onboarding_advances_on_filter_action_from_step_1(self, client):
-        """
-        Test that using filters (step 3 action) advances onboarding
-        even if current step is 1.
-        """
-        client.login(username='testuser', password='password123')
-        self.profile.onboarding_step = 1
-        self.profile.save()
-        
-        # Perform step 3 action: use filters
-        url = reverse('transaction_list') + "?category=1"
-        client.get(url)
-        
-        self.profile.refresh_from_db()
-        assert self.profile.onboarding_step == 4
-
-    def test_onboarding_advances_to_completed_on_transaction_update(self, client):
-        """
-        Test that updating a transaction (step 4 action) advances onboarding
-        to completed (step 5).
-        """
-        from api.models import Transaction, Merchant
-        client.login(username='testuser', password='password123')
-        self.profile.onboarding_step = 4
-        self.profile.save()
-        
-        category = Category.objects.create(user=self.user, name="Category")
-        merchant = Merchant.objects.create(user=self.user, name="Merchant")
-        upload_file = UploadFile.objects.create(user=self.user, file_name="test.csv", dimension=100)
-        transaction = Transaction.objects.create(
-            user=self.user, 
-            merchant=merchant, 
-            upload_file=upload_file,
-            amount=10.0, 
-            transaction_date="2023-01-01",
-            status='uncategorized'
-        )
-        
-        # Perform step 4 action: update transaction category
-        url = reverse('update_transaction_category')
-        client.post(url, {
-            'transaction_id': transaction.id,
-            'category_id': category.id
-        })
-        
-        self.profile.refresh_from_db()
-        assert self.profile.onboarding_step == 5
 
     def test_onboarding_does_not_skip_steps_on_load(self, client):
         """

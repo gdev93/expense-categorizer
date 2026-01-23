@@ -6,7 +6,6 @@ from django import forms
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.messages.views import SuccessMessageMixin
-from django.core.exceptions import BadRequest
 from django.core.paginator import Paginator
 from django.db.models import Count, Sum, DecimalField, Q, QuerySet
 from django.db.models.functions import Coalesce, ExtractMonth, ExtractYear
@@ -17,6 +16,8 @@ from django.views.generic import ListView, CreateView, UpdateView, DeleteView, D
 
 from api.constants import ITALIAN_MONTHS
 from api.models import Category, Transaction, Rule
+from api.views.mixins import MonthYearFilterMixin
+from api.views.transactions.transaction_mixins import TransactionFilterMixin
 
 logger = logging.getLogger(__name__)
 
@@ -41,40 +42,10 @@ class CategoryForm(forms.ModelForm):
             'description': 'Descrizione (Opzionale)'
         }
 
-class CategoryFilterMixin(View):
-    def _get_year_and_months(self):
-        try:
-            get_year = self.request.GET.get('year')
-            if get_year:
-                selected_year = int(get_year)
-            else:
-                # Fallback logic consistent with other views
-                last_t = Transaction.objects.filter(user=self.request.user, status='categorized').order_by('-transaction_date').first()
-                selected_year = last_t.transaction_date.year if last_t else datetime.datetime.now().year
-        except (TypeError, ValueError, AttributeError):
-            if self.request.GET.get('year'):
-                raise BadRequest("Invalid year format.")
-            selected_year = datetime.datetime.now().year
 
-        selected_months = self.request.GET.getlist('months', [])
-        # Also support single 'month' parameter for backward compatibility or simple links
-        single_month = self.request.GET.get('month')
-        if single_month and single_month not in selected_months:
-            selected_months.append(single_month)
-
-        processed_months = []
-        if any(selected_months):
-            for m in selected_months:
-                try:
-                    processed_months.append(int(m))
-                except (TypeError, ValueError):
-                    raise BadRequest(f"Invalid month format: {m}")
-
-        return selected_year, processed_months
-
-class CategoryEnrichedMixin(CategoryFilterMixin):
+class CategoryEnrichedMixin(MonthYearFilterMixin):
     def get_enriched_category_queryset(self, base_category_queryset:QuerySet[Category,Category]):
-        selected_year, selected_months = self._get_year_and_months()
+        selected_year, selected_months = self.get_year_and_months()
         filter_q = Q(transactions__transaction_date__year=selected_year)
         if selected_months:
             filter_q &= Q(transactions__transaction_date__month__in=selected_months)
@@ -126,7 +97,7 @@ class CategoryListView(LoginRequiredMixin, CategoryEnrichedMixin, ListView):
         categories = context['categories']
 
         context['total'] = sum([category.transaction_amount for category in categories]) if categories else 0
-        selected_year, selected_months = self._get_year_and_months()
+        selected_year, selected_months = self.get_year_and_months()
         context['all_categories'] = Category.objects.filter(user=self.request.user).order_by('name')
         context['selected_categories'] = self.request.GET.getlist('categories')
         context['year'] = selected_year
@@ -136,7 +107,7 @@ class CategoryListView(LoginRequiredMixin, CategoryEnrichedMixin, ListView):
 
 class CategoryExportView(LoginRequiredMixin, CategoryEnrichedMixin, View):
     def get(self, request, *args, **kwargs):
-        selected_year, selected_months = self._get_year_and_months()
+        selected_year, selected_months = self.get_year_and_months()
         selected_category_ids = request.GET.getlist('categories')
         base_query = Category.objects.filter(user=request.user)
         if any(selected_category_ids):
@@ -207,9 +178,7 @@ class CategoryCreateView(SuccessMessageMixin, CreateView):
         return self.render_to_response(self.get_context_data(form=form))
 
 
-
-
-class CategoryDetailView(DetailView, CategoryFilterMixin, View):
+class CategoryDetailView(DetailView, CategoryEnrichedMixin, TransactionFilterMixin, View):
     """
     A view to display the details of a specific Category,
     and list all associated transactions with pagination.
@@ -223,7 +192,7 @@ class CategoryDetailView(DetailView, CategoryFilterMixin, View):
 
     def _get_filters(self):
         search_query = self.request.GET.get('search', '')
-        selected_year, processed_months = self._get_year_and_months()
+        selected_year, processed_months = self.get_year_and_months()
         return search_query, selected_year, processed_months
 
     def get_context_data(self, **kwargs):
@@ -231,37 +200,13 @@ class CategoryDetailView(DetailView, CategoryFilterMixin, View):
 
         category = self.object
         search_query, selected_year, selected_months = self._get_filters()
-
-        # 1. Build filters for SUMMARY (matching categories.html logic)
-        summary_filter_q = Q(transactions__transaction_date__year=selected_year)
-        if selected_months:
-            summary_filter_q &= Q(transactions__transaction_date__month__in=selected_months)
-
+        base_query = Category.objects.filter(id=category.pk, user=self.request.user)
         # 2. Fetch Aggregated Summary Data for the Summary Card
-        summary = Category.objects.filter(id=category.pk).annotate(
-            transaction_count=Count('transactions', filter=summary_filter_q),
-            transaction_amount=Coalesce(
-                Sum('transactions__amount', filter=summary_filter_q),
-                0.0,
-                output_field=DecimalField()
-            )
-        ).first()
+        summary = self.get_enriched_category_queryset(base_query).first()
 
         context['category_summary'] = summary
 
-        # 3. Fetch and Paginate Associated Transactions (with search)
-        t_filter_q = Q(user=self.request.user, category=category)
-        if selected_year:
-            t_filter_q &= Q(transaction_date__year=selected_year)
-        if selected_months:
-            t_filter_q &= Q(transaction_date__month__in=selected_months)
-        if search_query:
-            t_filter_q &= (
-                Q(merchant__name__icontains=search_query) |
-                Q(description__icontains=search_query)
-            )
-
-        transaction_list = Transaction.objects.filter(t_filter_q).order_by('-transaction_date', '-created_at')
+        transaction_list = self.get_transaction_filter_query().filter(category=category)
 
         # Pagination logic
         paginator = Paginator(transaction_list, 20)  # Show 20 transactions per page

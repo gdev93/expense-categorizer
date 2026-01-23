@@ -1,4 +1,4 @@
 from .list_views import TransactionListView, IncomeListView
 from .create_views import TransactionIncomeCreateView, TransactionCreateView
 from .update_views import TransactionDetailUpdateView, EditTransactionCategory
-from .query_views import TransactionByUploadFileAndMerchant
+from .query_views import TransactionByMerchant

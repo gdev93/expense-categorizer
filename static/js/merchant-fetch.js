@@ -9,9 +9,11 @@ document.addEventListener('DOMContentLoaded', () => {
         row.addEventListener('click', async (event) => {
 
             const mId = row.dataset.merchantId;
-            const cId = row.dataset.uploadFileId;
 
-            const cacheKey = `${mId}-${cId}`;
+            const params = new URLSearchParams(window.location.search);
+            params.set('merchant_id', mId);
+
+            const cacheKey = mId;
             const expansionPanel = document.getElementById(`details-${mId}`);
 
             const contentArea = expansionPanel.querySelector('.expansion-content');
@@ -43,7 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
             contentArea.innerHTML = '<p class="text-muted">Caricamento transazioni...</p>';
 
             try {
-                const response = await fetch(`${TRANSACTION_BY_MERCHANT_BY_CSV_URL}?merchant_id=${mId}&upload_file_id=${cId}`);
+                const response = await fetch(`${TRANSACTION_BY_MERCHANT_BY_CSV_URL}?${params.toString()}`);
                 const data = await response.json();
 
                 let html = '';

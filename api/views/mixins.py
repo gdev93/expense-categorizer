@@ -41,7 +41,7 @@ class MonthYearFilterMixin(View):
                 last_t = Transaction.objects.filter(
                     user=self.request.user,
                     status='categorized'
-                ).order_by('-transaction_date').last()
+                ).order_by('-transaction_date').first()
                 selected_year = last_t.transaction_date.year if last_t else datetime.datetime.now().year
 
             # Resolve Months

@@ -2,20 +2,15 @@ from django.http import HttpRequest, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.views import View
 
-from api.models import Transaction, Merchant, UploadFile
+from api.models import Merchant, UploadFile
 from api.views.transactions.transaction_mixins import TransactionFilterMixin
 
 
-class TransactionByUploadFileAndMerchant(TransactionFilterMixin, View):
+class TransactionByMerchant(TransactionFilterMixin, View):
     def get(self, request: HttpRequest, **kwargs):
         merchant_id = request.GET.get('merchant_id', None)
-        upload_file_id = request.GET.get('upload_file_id', None)
 
         transactions_qs = self.get_transaction_filter_query()
-
-        if upload_file_id:
-            upload_file = get_object_or_404(UploadFile, user=request.user, id=upload_file_id)
-            transactions_qs = transactions_qs.filter(upload_file=upload_file)
 
         if not merchant_id or merchant_id.lower() == 'none':
             merchant = None
