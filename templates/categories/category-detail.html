@@ -25,7 +25,12 @@
 
                 <!-- Filters for Associated Transactions -->
                 <form method="get" class="filters mb-4" id="transaction-filter-form">
-                    <div class="filter-group">
+                    <div class="filter-actions">
+                        <button type="submit" class="btn btn-icon btn-subtle-primary" title="Filtra"><span class="material-icons">search</span></button>
+                        <a href="{% url 'category_detail' category.id %}" class="btn btn-icon btn-subtle-danger" title="Cancella"><span class="material-icons">clear</span></a>
+                    </div>
+
+                    <div class="filter-group w-100-mobile">
                         <label for="search"> Ricerca</label>
                         <input type="text" name="search" id="search" placeholder="Cerca merchant o descrizione..."
                                value="{{ search_query }}" onchange="debounceFormSubmit(this.form)">
@@ -43,7 +48,7 @@
                         </select>
                     </div>
 
-                    <div class="filter-group">
+                    <div class="filter-group w-100-mobile">
                         <label for="months"> Mese/i</label>
                         <select name="months" id="months" multiple size="1" onchange="debounceFormSubmit(this.form)">
                             <option value="">Tutti i mesi</option>
@@ -59,13 +64,6 @@
                         </small>
                     </div>
 
-                    <div class="filter-group">
-                        <label class="desktop-only">&nbsp;</label>
-                        <div style="display: flex; flex-direction: row; gap: 8px;">
-                            <button type="submit" class="btn btn-icon btn-subtle-primary" title="Filtra"><span class="material-icons">search</span></button>
-                            <a href="{% url 'category_detail' category.id %}" class="btn btn-icon btn-subtle-danger" title="Cancella"><span class="material-icons">clear</span></a>
-                        </div>
-                    </div>
                 </form>
 
                 <div class="data-list">

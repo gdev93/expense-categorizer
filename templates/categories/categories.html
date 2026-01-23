@@ -21,7 +21,13 @@
     </div>
 
     <form method="get" class="filters" action="{% url 'category_list' %}" id="main-filter-form">
-        <div class="filter-group">
+        <div class="filter-actions">
+            <button type="submit" class="btn btn-icon btn-subtle-primary" title="Filtra"><span class="material-icons">search</span></button>
+            <a href="{% url 'category_list' %}" class="btn btn-icon btn-subtle-danger" id="delete-category-search" title="Cancella"><span class="material-icons">clear</span></a>
+            <button type="button" class="btn btn-icon btn-subtle-success" onclick="exportCategories()" title="Esporta"><span class="material-icons">download</span></button>
+        </div>
+
+        <div class="filter-group w-100-mobile">
             <label for="categories">Categorie</label>
             <select name="categories" id="categories" multiple size="1" onchange="debounceFormSubmit(this.form)">
                 <option value="">Tutte le Categorie</option>
@@ -37,7 +43,7 @@
             </small>
         </div>
 
-        <div class="filter-group">
+        <div class="filter-group w-100-mobile">
             <label for="months">Mese/i</label>
             <select name="months" id="months" multiple size="1" onchange="debounceFormSubmit(this.form)">
                 <option value="">Tutti i mesi</option>
@@ -53,14 +59,6 @@
             </small>
         </div>
 
-        <div class="filter-group">
-            <label class="desktop-only">&nbsp;</label>
-            <div style="display: flex; flex-direction: row; gap: 8px;">
-                <button type="submit" class="btn btn-icon btn-subtle-primary" title="Filtra"><span class="material-icons">search</span></button>
-                <a href="{% url 'category_list' %}" class="btn btn-icon btn-subtle-danger" id="delete-category-search" title="Cancella"><span class="material-icons">clear</span></a>
-                <button type="button" class="btn btn-icon btn-subtle-success" onclick="exportCategories()" title="Esporta"><span class="material-icons">download</span></button>
-            </div>
-        </div>
     </form>
 
     <div class="category-layout-stacked">

@@ -23,6 +23,11 @@
     <!-- Filters and Controls -->
 
 <form method="get" class="filters">
+    <div class="filter-actions">
+        <button type="submit" class="btn btn-icon btn-subtle-primary" title="{% trans 'Apply Filters' %}"><span class="material-icons">search</span></button>
+        <a href="{% url 'monthly_summary' %}" class="btn btn-icon btn-subtle-danger" title="{% trans 'Reset' %}"><span class="material-icons">clear</span></a>
+    </div>
+
     <div class="filter-group">
         <label for="year-select">{% trans "Year:" %}</label>
         <select name="year" id="year-select" class="input-field" onchange="debounceFormSubmit(this.form)">
@@ -47,13 +52,6 @@
         </select>
     </div>
 
-    <div class="filter-group">
-        <label class="desktop-only">&nbsp;</label>
-        <div style="display: flex; flex-direction: row; gap: 8px;">
-            <button type="submit" class="btn btn-icon btn-subtle-primary" title="{% trans 'Apply Filters' %}"><span class="material-icons">search</span></button>
-            <a href="{% url 'monthly_summary' %}" class="btn btn-icon btn-subtle-danger" title="{% trans 'Reset' %}"><span class="material-icons">clear</span></a>
-        </div>
-    </div>
 </form>
 
     <!-- Monthly Chart -->
