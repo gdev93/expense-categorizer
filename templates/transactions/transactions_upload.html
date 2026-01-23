@@ -14,7 +14,7 @@
 
 {% block content %}
     <div class="container mt-2">
-        {% include "components/header.html" with icon="🚚" title="Carica Estratti Conto" %}
+        {% include "components/header.html" with icon="upload_file" title="Carica Estratti Conto" %}
 
         <div class="upload-area mb-3">
             <p class="text-muted mb-5">
@@ -77,18 +77,25 @@
             </form>
         </div>
 
-        <h1 class="header">🚚 Tutti i tuoi caricamenti</h1>
+        <h1 class="header"> Tutti i tuoi caricamenti</h1>
 
         <!-- Filters -->
         <form method="get" class="filters" id="upload-filter-form">
-            <div class="filter-group">
-                <label for="search">🔍 Ricerca</label>
+            <div class="filter-actions">
+                <button type="submit" class="btn btn-icon btn-subtle-primary" title="Filtra"><span class="material-icons">search</span></button>
+                {% if request.GET.search or request.GET.status %}
+                    <a href="{% url 'transactions_upload' %}" class="btn btn-icon btn-subtle-danger" title="Cancella"><span class="material-icons">clear</span></a>
+                {% endif %}
+            </div>
+
+            <div class="filter-group w-100-mobile">
+                <label for="search"> Ricerca</label>
                 <input type="text" name="search" id="search" placeholder="Cerca per nome file..."
                        value="{{ request.GET.search|default:'' }}" onchange="debounceFormSubmit(this.form)"/>
             </div>
 
             <div class="filter-group">
-                <label for="status">📊 Stato</label>
+                <label for="status"> Stato</label>
                 <select name="status" id="status" onchange="debounceFormSubmit(this.form)">
                     <option value="">Tutti gli stati</option>
                     <option value="ready" {% if request.GET.status == 'ready' %}selected{% endif %}>Completato</option>
@@ -96,12 +103,6 @@
                 </select>
             </div>
 
-            <div class="filter-group" style="align-self: flex-end; display: flex; gap: 8px;">
-                <button type="submit" class="btn btn-primary">Filtra</button>
-                {% if request.GET.search or request.GET.status %}
-                    <a href="{% url 'transactions_upload' %}" class="btn btn-secondary">Cancella</a>
-                {% endif %}
-            </div>
         </form>
 
         <div class="data-list uploaded-list-padding">
@@ -116,16 +117,16 @@
                                 {% if upload.file_name %}{{ upload.file_name }}{% else %}{{ upload.id }}_{{ upload.upload_date|date:"Ymd_His" }}.csv{% endif %}
                             </div>
                             <div class="file-date">
-                                📅 Caricato il {{ upload.upload_date|date:"d/m/Y H:i" }}
+                                 Caricato il {{ upload.upload_date|date:"d/m/Y H:i" }}
                             </div>
                             <div class="file-size text-muted">
                                 {% if upload.dimension %}
-                                    💾 {{ upload.file_size_display }}
+                                     {{ upload.file_size_display }}
                                 {% endif %}
                                 {% if upload.processing_time %}
-                                    ⏱️ {{ upload.processing_time|format_processing_time }}
+                                     {{ upload.processing_time|format_processing_time }}
                                 {% else %}
-                                   🔥 In corso
+                                    In corso
                                 {% endif %}
                             </div>
                         </div>
@@ -146,7 +147,7 @@
                     </div>
                     <div class="list-item-actions">
                         <button type="button" class="btn btn-outline-success btn-sm" onclick="exportUpload({{ upload.id }}, event)">
-                            Esporta
+                            <span class="material-icons" style="font-size: 1.1em; vertical-align: middle; margin-right: 4px;">download</span> Esporta
                         </button>
                         <a href="{% url 'transactions_upload_delete' upload.id %}" class="btn btn-danger btn-sm" onclick="event.stopPropagation();">
                             Elimina
@@ -157,7 +158,7 @@
         {% endfor %}
     {% else %}
         <div class="empty-state">
-            <p class="text-muted">📭 Nessun caricamento trovato. Carica il tuo primo file CSV!</p>
+            <p class="text-muted"> Nessun caricamento trovato. Carica il tuo primo file CSV!</p>
         </div>
     {% endif %}
 </div>

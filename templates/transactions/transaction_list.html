@@ -17,7 +17,7 @@
 
         <div class="header">
             <div class="header-title-container">
-                <h1>💸 {% if view_type == 'merchant' %}Spese per Esercente{% else %}Lista Spese{% endif %}</h1>
+                <h1><span class="material-icons" style="vertical-align: middle; margin-right: 8px;">{% if view_type == 'merchant' %}store{% else %}receipt_long{% endif %}</span> {% if view_type == 'merchant' %}Spese per Esercente{% else %}Lista Spese{% endif %}</h1>
                 <div class="header-extra">
                     <div class="mobile-only">
                         {% include "components/year-select.html" with id_suffix="_mobile_toggle" show_year=False %}
@@ -44,10 +44,10 @@
         <!-- Summary Cards -->
         {% if total_count > 0 %}
             <div class="summary">
-                {% include "components/summary-card.html" with label="Importo Totale" value=total_amount|floatformat:2 currency="€" %}
-                {% include "components/summary-card.html" with label="Totale Spese" value=total_count %}
+                {% include "components/summary-card.html" with icon="payments" label="Importo Totale" value=total_amount|floatformat:2 currency="€" %}
+                {% include "components/summary-card.html" with icon="receipt_long" label="Totale Spese" value=total_count %}
                 <div class="desktop-only">
-                    {% include "components/summary-card.html" with label="Categorie" value=category_count %}
+                    {% include "components/summary-card.html" with icon="category" label="Categorie" value=category_count %}
                 </div>
             </div>
         {% endif %}

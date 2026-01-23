@@ -2,7 +2,7 @@
 <link rel="stylesheet" href="{% static 'css/summary-card.css' %}">
 
 <div class="summary-card">
-    {% if icon %}<div class="card-icon">{{ icon }}</div>{% endif %}
+    {% if icon %}<div class="card-icon material-icons">{{ icon }}</div>{% endif %}
     <div class="card-content">
         {% if label %}<h3>{{ label }}</h3>{% endif %}
         {% if value is not None %}

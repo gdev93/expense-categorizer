@@ -1,6 +1,6 @@
 <div class="header">
     <div class="header-title-container">
-        <h1>{{ icon }} {{ title }}</h1>
+        <h1>{% if icon %}<span class="material-icons" style="vertical-align: middle; margin-right: 8px;">{{ icon }}</span>{% endif %}{{ title }}</h1>
         <div class="header-extra">
             {% block header_extra_title %}{% endblock %}
         </div>

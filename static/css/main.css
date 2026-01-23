@@ -145,6 +145,32 @@ h3 { font-size: 18px; }
     border-color: #dc3545;
 }
 
+.btn-subtle,
+.btn-subtle-primary,
+.btn-subtle-danger,
+.btn-subtle-success {
+    background-color: transparent;
+    color: #000000 !important;
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+.btn-subtle:hover,
+.btn-subtle-primary:hover,
+.btn-subtle-danger:hover,
+.btn-subtle-success:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    color: #000000 !important;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+.btn-subtle-primary .material-icons,
+.btn-subtle-danger .material-icons,
+.btn-subtle-success .material-icons {
+    color: #000000 !important;
+}
+
 /* --- Buttons (Disabled State) --- */
 .btn.btn-disabled,
 .btn-primary.btn-disabled,
