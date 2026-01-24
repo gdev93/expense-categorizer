@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            contentArea.innerHTML = '<p class="text-muted">Caricamento transazioni...</p>';
+            contentArea.innerHTML = '<p class="text-muted"><span class="material-icons spin-animation" style="font-size: 1.2rem; vertical-align: middle; margin-right: 8px;">sync</span>Caricamento transazioni...</p>';
 
             try {
                 const response = await fetch(`${TRANSACTION_BY_MERCHANT_BY_CSV_URL}?${params.toString()}`);

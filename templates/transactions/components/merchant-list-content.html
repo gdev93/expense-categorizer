@@ -7,14 +7,14 @@
     </span>
 </h2>
 <details class="expander-card" style="margin-bottom: 40px;">
-    <summary class="expander-header" style="list-style: none; cursor: pointer;">
+    <summary class="expander-header">
         <span style="font-weight: 600; color: #343a40;">Apri</span>
         <div class="expander-toggle-btn">
             <span class="expander-icon">▼</span>
         </div>
     </summary>
 
-    <div class="expander-body" style="max-height: none; padding: 0;">
+    <div class="expander-body">
         <div class="data-list">
             {% for item in uncategorized_merchants %}
                 {% include "transactions/components/merchant-list-item.html" with item=item %}

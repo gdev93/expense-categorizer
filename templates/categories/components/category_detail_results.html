@@ -1,0 +1,73 @@
+<div id="category-detail-results" hx-indicator="this">
+    <div class="skeleton-loader">
+        <div class="data-list">
+            {% for i in "12345" %}
+                <div class="data-list-item" style="cursor: default; pointer-events: none;">
+                    <div class="list-item-info">
+                        <div class="skeleton-text" style="width: 150px; height: 16px; margin-bottom: 8px;"></div>
+                        <div class="skeleton-text" style="width: 250px; height: 14px;"></div>
+                    </div>
+                    <div class="list-item-stats">
+                        <div class="skeleton-text" style="width: 80px; height: 20px;"></div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="hide-on-loading">
+        <div class="data-list">
+        {% if transactions %}
+            {% for transaction in transactions %}
+                <div class="data-list-item" onclick="window.location.href='{% url 'transaction_detail' transaction.id %}'">
+                    <div class="category-info">
+                        <div class="category-name">
+                            {{ transaction.transaction_date|date:"d M Y" }}
+                            <span class="text-muted small">({{ transaction.merchant.name|default:"Nessun Mercante" }})</span>
+                        </div>
+                        <p class="category-description">
+                            {{ transaction.description|default:"Nessuna descrizione"|truncatechars:100 }}
+                        </p>
+                    </div>
+                    <div class="text-end">
+                <span class="stat-amount-detail {{ transaction.transaction_type|lower }}">
+                    €{{ transaction.amount|floatformat:2 }}
+                </span>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state-simple">
+                Nessuna transazione registrata per questa categoria.
+            </div>
+        {% endif %}
+    </div>
+
+    {% if transactions.has_other_pages %}
+        <div class="pagination">
+            {% if transactions.has_previous %}
+                <a hx-get="?page={{ transactions.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_year %}&year={{ selected_year }}{% endif %}{% for m in selected_months %}&months={{ m }}{% endfor %}"
+                   hx-target="#category-detail-results"
+                   hx-swap="outerHTML"
+                   hx-indicator="#category-detail-results"
+                   class="btn btn-sm">Precedente</a>
+            {% else %}
+                <span class="disabled">Precedente</span>
+            {% endif %}
+
+            <span class="current">
+                Pagina {{ transactions.number }} di {{ transactions.paginator.num_pages }}
+            </span>
+
+            {% if transactions.has_next %}
+                <a hx-get="?page={{ transactions.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_year %}&year={{ selected_year }}{% endif %}{% for m in selected_months %}&months={{ m }}{% endfor %}"
+                   hx-target="#category-detail-results"
+                   hx-swap="outerHTML"
+                   hx-indicator="#category-detail-results"
+                   class="btn btn-sm">Successiva</a>
+            {% else %}
+                <span class="disabled">Successiva</span>
+            {% endif %}
+        </div>
+    {% endif %}
+    </div>
+</div>

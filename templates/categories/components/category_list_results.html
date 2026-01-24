@@ -1,0 +1,45 @@
+<div class="category-layout-stacked" id="category-results" hx-indicator="this">
+    <div class="skeleton-loader">
+        <div class="data-list">
+            {% for i in "12345" %}
+                <div class="data-list-item" style="cursor: default; pointer-events: none;">
+                    <div class="list-item-info">
+                        <div class="skeleton-text" style="width: 150px; height: 18px; margin-bottom: 8px;"></div>
+                        <div class="skeleton-text" style="width: 250px; height: 14px;"></div>
+                    </div>
+                    <div class="list-item-stats">
+                        <div class="skeleton-text" style="width: 80px; height: 20px;"></div>
+                        <div class="skeleton-text" style="width: 100px; height: 18px; border-radius: 12px;"></div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="category-list-section hide-on-loading">
+        {% if categories %}
+        <div class="data-list">
+            {% for category in categories %}
+                <div class="data-list-item" onclick="window.location.href='{% url 'category_detail' category.id %}?year={{ year }}{% for m in selected_months %}&months={{ m }}{% endfor %}'">
+                    <div class="list-item-info">
+                        <span class="category-name">{{ category.name }}</span>
+                        {% if category.description %}
+                            <p class="category-description">{{ category.description|truncatechars:100 }}</p>
+                        {% else %}
+                            <p class="category-description text-muted"><em>Nessuna descrizione</em></p>
+                        {% endif %}
+                    </div>
+
+                    <div class="list-item-stats">
+                        <span class="list-amount">€ {{ category.transaction_amount|floatformat:2|default:"0,00" }}</span>
+                        <span class="badge-count">{{ category.transaction_count|default:"0" }} transazioni</span>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        {% else %}
+            <div class="empty-state-simple">
+                <p>Non hai ancora creato nessuna categoria.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>

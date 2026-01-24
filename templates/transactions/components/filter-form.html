@@ -1,15 +1,35 @@
-<form method="get" class="filters" id="main-filter-form">
+<form method="get" class="filters" id="main-filter-form"
+      hx-get="{% url 'transaction_list' %}"
+      hx-target="#transaction-results"
+      hx-swap="outerHTML"
+      hx-indicator="#form-loader, #transaction-results"
+      hx-trigger="change delay:500ms, submit, change from:[form='main-filter-form'] delay:500ms">
+
     <input type="hidden" name="transaction_type" value="expense">
-    
+
     <div class="filter-actions">
-        <button type="submit" class="btn btn-icon btn-subtle-primary" title="Filtra"><span class="material-icons">search</span></button>
-        <a href="{{ request.path }}" class="btn btn-icon btn-subtle-danger" title="Cancella"><span class="material-icons">clear</span></a>
-        <button type="button" class="btn btn-icon btn-subtle-success" onclick="exportToCsv()" title="Esporta"><span class="material-icons">download</span></button>
+        <button type="submit" class="btn btn-icon btn-subtle-primary" title="Filtra">
+            <span class="material-icons htmx-hide-indicator">search</span>
+            <div id="form-loader" class="htmx-indicator spinner-border-sm"></div>
+        </button>
+
+        <a href="{{ request.path }}"
+           hx-get="{{ request.path }}"
+           hx-target="#transaction-results"
+           hx-swap="outerHTML"
+           hx-indicator="#form-loader, #transaction-results"
+           class="btn btn-icon btn-subtle-danger" title="Cancella">
+            <span class="material-icons">clear</span>
+        </a>
+
+        <button type="button" class="btn btn-icon btn-subtle-success" onclick="exportToCsv()" title="Esporta">
+            <span class="material-icons">download</span>
+        </button>
     </div>
 
     <div class="filter-group">
         <label for="category"><span class="material-icons" style="font-size: 1.1em; vertical-align: middle; margin-right: 4px;">category</span> Categoria</label>
-        <select name="category" id="category" onchange="debounceFormSubmit(this.form)">
+        <select name="category" id="category">
             <option value="">Tutte le Categorie</option>
             {% for cat in categories %}
                 <option value="{{ cat.id }}"
@@ -22,7 +42,7 @@
 
     <div class="filter-group">
         <label for="upload_file"><span class="material-icons" style="font-size: 1.1em; vertical-align: middle; margin-right: 4px;">upload_file</span> File</label>
-        <select name="upload_file" id="upload_file" onchange="debounceFormSubmit(this.form)">
+        <select name="upload_file" id="upload_file">
             <option value="">Tutti i caricamenti</option>
             {% for upload in user_uploads %}
                 <option value="{{ upload.id }}"
@@ -36,7 +56,7 @@
     <div class="filter-group w-100-mobile">
         <label for="amount"><span class="material-icons" style="font-size: 1.1em; vertical-align: middle; margin-right: 4px;">payments</span> Importo</label>
         <div class="amount-filter-wrapper">
-            <select name="amount_operator" id="amount_operator" class="amount-operator" onchange="debounceFormSubmit(this.form)">
+            <select name="amount_operator" id="amount_operator" class="amount-operator">
                 <option value="eq" {% if selected_amount_operator == "eq" %}selected{% endif %}>=</option>
                 <option value="gt" {% if selected_amount_operator == "gt" %}selected{% endif %}>&gt;</option>
                 <option value="gte" {% if selected_amount_operator == "gte" %}selected{% endif %}>&gt;=</option>
@@ -50,14 +70,13 @@
                    placeholder="0.00"
                    step="0.01"
                    min="0"
-                   value="{{ selected_amount }}"
-                   onchange="debounceFormSubmit(this.form)"/>
+                   value="{{ selected_amount }}"/>
         </div>
     </div>
 
     <div class="filter-group w-100-mobile">
         <label for="months"><span class="material-icons" style="font-size: 1.1em; vertical-align: middle; margin-right: 4px;">calendar_today</span> Mese/i</label>
-        <select name="months" id="months" multiple size="1" onchange="debounceFormSubmit(this.form)">
+        <select name="months" id="months" multiple size="1">
             <option value="">Tutti i Mesi</option>
             {% for month in available_months %}
                 <option value="{{ month.month_number }}"
@@ -67,15 +86,13 @@
             {% endfor %}
         </select>
         <small class="form-text text-muted desktop-only" style="font-size: 0.75rem; margin-top: 4px;">
-            Tieni premuto Ctrl (Windows) o Cmd (Mac) per selezionare più mesi
+            Tieni premuto Ctrl o Cmd per selezione multipla
         </small>
     </div>
-
 
     <div class="filter-group w-100-mobile">
         <label for="search"><span class="material-icons" style="font-size: 1.1em; vertical-align: middle; margin-right: 4px;">search</span> Ricerca</label>
         <input type="text" name="search" id="search" placeholder="Cerca merchant o descrizione..."
-               value="{{ search_query }}" onchange="debounceFormSubmit(this.form)"/>
+               value="{{ search_query }}"/>
     </div>
-
 </form>

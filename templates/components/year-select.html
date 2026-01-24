@@ -1,10 +1,10 @@
 <div class="filters filters-clean header-filters">
     {% if show_toggle != False and view_type %}
     <div class="view-toggle" data-view-type="{{ view_type }}">
-        <input type="radio" name="view_type" id="view_list{{ id_suffix }}" value="list" {% if view_type != 'merchant' %}checked{% endif %} form="main-filter-form" onchange="debounceFormSubmit(this.form)">
+        <input type="radio" name="view_type" id="view_list{{ id_suffix }}" value="list" {% if view_type != 'merchant' %}checked{% endif %} form="main-filter-form">
         <label for="view_list{{ id_suffix }}">Lista</label>
         
-        <input type="radio" name="view_type" id="view_merchant{{ id_suffix }}" value="merchant" {% if view_type == 'merchant' %}checked{% endif %} form="main-filter-form" onchange="debounceFormSubmit(this.form)">
+        <input type="radio" name="view_type" id="view_merchant{{ id_suffix }}" value="merchant" {% if view_type == 'merchant' %}checked{% endif %} form="main-filter-form">
         <label for="view_merchant{{ id_suffix }}">Esercente</label>
     </div>
     {% endif %}
@@ -14,8 +14,7 @@
         <select id="year-select{{ id_suffix }}"
                 name="year"
                 class="form-select"
-                form="main-filter-form"
-                onchange="const ms = document.getElementById('month-select') || document.getElementById('months'); if (ms) { if (ms.multiple) { Array.from(ms.options).forEach(o => o.selected = false); } else { ms.value = ''; } } debounceFormSubmit(this.form || document.getElementById('main-filter-form'))">
+                form="main-filter-form">
             {% for available_year in available_years %}
                 <option value="{{ available_year }}" {% if available_year == year %}selected{% endif %}>
                     {{ available_year }}

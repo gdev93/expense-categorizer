@@ -196,6 +196,11 @@ class UploadFileView(ListView, FormView):
     # Shared attributes
     template_name = 'transactions/transactions_upload.html'
 
+    def get_template_names(self):
+        if self.request.headers.get('HX-Request'):
+            return ['transactions/components/upload_list_htmx.html']
+        return [self.template_name]
+
     def get_queryset(self):
         """Get uploads for the current user (ListView method)"""
         queryset = UploadFile.objects.filter(

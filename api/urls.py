@@ -21,7 +21,7 @@ from api.views.entry_point_views import login_form, authenticate_user, register_
 from api.views.category_view import CategoryCreateView, CategoryListView, CategoryDetailView, CategoryDeleteView, \
     CategoryUpdateView, CategoryExportView
 from api.views.transactions.export_views import TransactionExportView
-from api.views.transactions.list_views import TransactionListView, IncomeListView
+from api.views.transactions.list_views import TransactionListView
 from api.views.transactions.query_views import TransactionByMerchant
 from api.views.transactions.update_views import EditTransactionCategory, TransactionDetailUpdateView
 from api.views.upload_file_view import UploadFileView, UploadFileDelete, UploadProcessView, UploadProgressView, \
@@ -48,9 +48,8 @@ urlpatterns = [
     path('transactions/upload/<int:pk>/delete/', UploadFileDelete.as_view(), name='transactions_upload_delete'),
     path('transactions/upload/<int:upload_file_id>/', TransactionListView.as_view(), name='transactions_upload_detail'),
     path('transactions/', TransactionListView.as_view(), name='transaction_list'),
-    path('transactions/income/', IncomeListView.as_view(), name='income_list'),
-    path('transactions/by_csv_by_merchant/', TransactionByMerchant.as_view(),
-         name='transactions_by_csv_by_merchant'),
+    path('transactions/by_merchant/', TransactionByMerchant.as_view(),
+         name='transactions_by_merchant'),
     path('transactions/export/', TransactionExportView.as_view(), name='transaction_export'),
     path('transactions/<int:pk>/', TransactionDetailUpdateView.as_view(), name='transaction_detail'),
     path('transactions/category/edit', EditTransactionCategory.as_view(), name='update_transaction_category'),

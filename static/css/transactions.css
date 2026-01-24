@@ -217,9 +217,12 @@
 
 /* Expander Card */
 .expander-card {
-    border-top: 1px solid #e9ecef;
-    border-bottom: 1px solid #e9ecef;
+    border-radius: 12px;
     margin-bottom: 20px;
+    background-color: #ffffff;
+    overflow: visible;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+    width: 100%;
 }
 
 .expander-header {
@@ -231,6 +234,12 @@
     border-bottom: 1px solid transparent;
     cursor: pointer;
     transition: background-color 0.2s;
+    border-radius: 12px; /* Default for closed state */
+}
+
+details.expander-card[open] .expander-header {
+    border-bottom: 1px solid #e9ecef;
+    border-radius: 12px 12px 0 0;
 }
 
 .expander-header:hover {
@@ -278,14 +287,14 @@ details.expander-card[open] .expander-icon {
 }
 
 .expander-body {
-    max-height: 500px;
-    overflow: hidden;
+    max-height: none;
+    overflow: visible;
     transition: max-height 0.3s ease-in-out, padding 0.3s ease-in-out, border-top 0.3s;
-    padding: 20px;
 }
 
-.expander-body:not(.collapsed) {
-    border-top: 1px solid #e9ecef;
+.expander-body.collapsed {
+    padding-top: 0;
+    padding-bottom: 0;
 }
 
 .expander-body h5 {
@@ -302,11 +311,6 @@ details.expander-card[open] .expander-icon {
 .expander-body .mb-4.rule-list-container {
     padding: 0 20px;
     margin-bottom: 0 !important;
-}
-
-.expander-body.collapsed {
-    padding-top: 0;
-    padding-bottom: 0;
 }
 
 /* Rules List */

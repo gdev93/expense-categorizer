@@ -9,6 +9,11 @@ class CostSummaryView(LoginRequiredMixin, ListView):
     template_name = 'costs/summary.html'
     context_object_name = 'logs'
 
+    def get_template_names(self):
+        if self.request.headers.get('HX-Request'):
+            return ['costs/components/summary_results.html']
+        return [self.template_name]
+
     def _get_year_and_month(self):
         try:
             get_year = self.request.GET.get('year')

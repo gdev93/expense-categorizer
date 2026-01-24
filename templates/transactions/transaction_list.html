@@ -11,7 +11,6 @@
     <link rel="stylesheet" href="{% static 'css/filters.css' %}">
     <link rel="stylesheet" href="{% static 'css/merchant-details.css' %}">
 {% endblock %}
-
 {% block content %}
     <div class="container mt-2">
 
@@ -41,25 +40,12 @@
         
         {% csrf_token %}
 
-        <!-- Summary Cards -->
-        {% if total_count > 0 %}
-            <div class="summary">
-                {% include "components/summary-card.html" with icon="payments" label="Importo Totale" value=total_amount|floatformat:2 currency="€" %}
-                {% include "components/summary-card.html" with icon="receipt_long" label="Totale Spese" value=total_count %}
-                <div class="desktop-only">
-                    {% include "components/summary-card.html" with icon="category" label="Categorie" value=category_count %}
-                </div>
-            </div>
-        {% endif %}
+        {% include "transactions/components/transaction_list_summary.html" %}
 
         <!-- Filters -->
         {% include "transactions/components/filter-form.html" %}
 
-        {% if view_type == 'merchant' %}
-            {% include "transactions/components/merchant-list-content.html" %}
-        {% else %}
-            {% include "transactions/components/transaction-list-content.html" %}
-        {% endif %}
+        {% include "transactions/components/transaction_list_results.html" %}
     </div>
 
 {{ categories|json_script:"category-data" }}
@@ -69,7 +55,7 @@
     const CATEGORY_OPTIONS = JSON.parse(document.getElementById('category-data').textContent)
     
     // For merchant view
-    const TRANSACTION_BY_MERCHANT_BY_CSV_URL = "{% url 'transactions_by_csv_by_merchant' %}"
+    const TRANSACTION_BY_MERCHANT_BY_CSV_URL = "{% url 'transactions_by_merchant' %}"
     const TRANSACTION_DETAIL_URL = "{% url 'transaction_detail' pk=0 %}";
 
     function selectCategory(item, categoryId) {
@@ -90,11 +76,7 @@
         container.classList.remove('is-open');
 
         // Submit form
-        if (typeof debounceFormSubmit === 'function') {
-            debounceFormSubmit(form);
-        } else {
-            form.submit();
-        }
+        form.submit();
     }
 </script>
 <script src="{% static 'js/clickable-transaction-form-input.js' %}"></script>

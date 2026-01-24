@@ -47,6 +47,8 @@ class TransactionListView(LoginRequiredMixin, ListView, TransactionFilterMixin):
         return self.paginate_by
 
     def get_template_names(self):
+        if self.request.headers.get('HX-Request'):
+            return ['transactions/components/transaction_list_htmx.html']
         return [self.template_name]
 
     def post(self, request, *args, **kwargs):
@@ -159,96 +161,5 @@ class TransactionListView(LoginRequiredMixin, ListView, TransactionFilterMixin):
             paginator = Paginator(categorized_merchants, 10)
             page_number = self.request.GET.get('page')
             context['merchant_summary'] = paginator.get_page(page_number)
-
-        return context
-
-class IncomeListView(LoginRequiredMixin, ListView):
-    """Display list of income transactions with filtering and pagination"""
-    model = Transaction
-    template_name = 'transactions/transaction_income_list.html'
-    context_object_name = 'transactions'
-    paginate_by = 50
-
-    def _get_selected_year(self, queryset):
-        get_year = self.request.GET.get('year')
-        if get_year:
-            try:
-                return int(get_year)
-            except (TypeError, ValueError):
-                raise BadRequest("Invalid year format.")
-        else:
-            # Fallback to most recent transaction year if no year provided
-            first_t = queryset.first()
-            return first_t.transaction_date.year if first_t else datetime.datetime.now().year
-
-    def get_queryset(self):
-        queryset = (Transaction.objects
-                    .filter(
-                        user=self.request.user,
-                        transaction_type='income'
-        ).order_by('-transaction_date', '-created_at'))
-
-        # Filter by amount
-        amount = self.request.GET.get('amount')
-        amount_operator = self.request.GET.get('amount_operator', 'eq')
-        if amount:
-            try:
-                amount_value = float(amount)
-                if amount_operator == 'eq':
-                    queryset = queryset.filter(amount=amount_value)
-                elif amount_operator == 'gt':
-                    queryset = queryset.filter(amount__gt=amount_value)
-                elif amount_operator == 'gte':
-                    queryset = queryset.filter(amount__gte=amount_value)
-                elif amount_operator == 'lt':
-                    queryset = queryset.filter(amount__lt=amount_value)
-                elif amount_operator == 'lte':
-                    queryset = queryset.filter(amount__lte=amount_value)
-            except (ValueError, TypeError):
-                raise BadRequest("Invalid amount format.")
-
-        # Year logic
-        selected_year = self._get_selected_year(queryset)
-        queryset = queryset.filter(transaction_date__year=selected_year)
-
-        # Filter by months
-        selected_months = self.request.GET.getlist('months')
-        single_month = self.request.GET.get('month')
-        if single_month and single_month not in selected_months:
-            selected_months.append(single_month)
-
-        if selected_months:
-            month_queries = Q()
-            for month_str in selected_months:
-                try:
-                    month = int(month_str)
-                    month_queries |= Q(transaction_date__month=month)
-                except (ValueError, TypeError):
-                    pass
-            if month_queries:
-                queryset = queryset.filter(month_queries)
-
-        # Search filter
-        search_query = self.request.GET.get('search')
-        if search_query:
-            queryset = queryset.filter(Q(description__icontains=search_query))
-
-        return queryset
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        user_transactions = self.object_list
-
-        context.update({
-            'total_count': user_transactions.count(),
-            'total_amount': user_transactions.filter(status="categorized").aggregate(total=Sum('amount'))['total'] or 0,
-            'selected_months': self.request.GET.getlist('months'),
-            'search_query': self.request.GET.get('search', ''),
-            'year': self._get_selected_year(user_transactions),
-        })
-
-        # Amount filter context
-        context['selected_amount'] = self.request.GET.get('amount', '')
-        context['selected_amount_operator'] = self.request.GET.get('amount_operator', 'eq')
 
         return context

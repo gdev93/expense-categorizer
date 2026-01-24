@@ -72,6 +72,11 @@ class CategoryListView(LoginRequiredMixin, CategoryEnrichedMixin, ListView):
     template_name = 'categories/categories.html'
     context_object_name = 'categories'
 
+    def get_template_names(self):
+        if self.request.headers.get('HX-Request'):
+            return ['categories/components/category_list_results.html']
+        return [self.template_name]
+
     def get_queryset(self):
         """
         Returns categories belonging to the logged-in user, annotated with:
@@ -178,13 +183,18 @@ class CategoryCreateView(SuccessMessageMixin, CreateView):
         return self.render_to_response(self.get_context_data(form=form))
 
 
-class CategoryDetailView(DetailView, CategoryEnrichedMixin, TransactionFilterMixin, View):
+class CategoryDetailView(DetailView, CategoryEnrichedMixin, TransactionFilterMixin):
     """
     A view to display the details of a specific Category,
     and list all associated transactions with pagination.
     """
     model = Category
     template_name = 'categories/category-detail.html'
+
+    def get_template_names(self):
+        if self.request.headers.get('HX-Request'):
+            return ['categories/components/category_detail_results.html']
+        return [self.template_name]
 
     def get_queryset(self):
         # Security: Only allow the user to view their own categories

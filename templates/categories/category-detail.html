@@ -24,21 +24,31 @@
                 </h2>
 
                 <!-- Filters for Associated Transactions -->
-                <form method="get" class="filters mb-4" id="transaction-filter-form">
+                <form method="get" class="filters mb-4"
+                      hx-get="{% url 'category_detail' category.id %}"
+                      hx-target="#category-detail-results"
+                      hx-swap="outerHTML"
+                      hx-indicator="#category-detail-results"
+                      hx-trigger="change delay:500ms, submit"
+                      id="transaction-filter-form">
                     <div class="filter-actions">
                         <button type="submit" class="btn btn-icon btn-subtle-primary" title="Filtra"><span class="material-icons">search</span></button>
-                        <a href="{% url 'category_detail' category.id %}" class="btn btn-icon btn-subtle-danger" title="Cancella"><span class="material-icons">clear</span></a>
+                        <a hx-get="{% url 'category_detail' category.id %}"
+                           hx-target="#category-detail-results"
+                           hx-swap="outerHTML"
+                           hx-indicator="#category-detail-results"
+                           class="btn btn-icon btn-subtle-danger" title="Cancella"><span class="material-icons">clear</span></a>
                     </div>
 
                     <div class="filter-group w-100-mobile">
                         <label for="search"> Ricerca</label>
                         <input type="text" name="search" id="search" placeholder="Cerca merchant o descrizione..."
-                               value="{{ search_query }}" onchange="debounceFormSubmit(this.form)">
+                               value="{{ search_query }}">
                     </div>
 
                     <div class="filter-group">
                         <label for="year"> Anno</label>
-                        <select name="year" id="year" onchange="debounceFormSubmit(this.form)">
+                        <select name="year" id="year">
                             <option value="">Tutti gli anni</option>
                             {% for available_year in available_years %}
                                 <option value="{{ available_year }}" {% if available_year == selected_year %}selected{% endif %}>
@@ -50,7 +60,7 @@
 
                     <div class="filter-group w-100-mobile">
                         <label for="months"> Mese/i</label>
-                        <select name="months" id="months" multiple size="1" onchange="debounceFormSubmit(this.form)">
+                        <select name="months" id="months" multiple size="1">
                             <option value="">Tutti i mesi</option>
                             {% for month in available_months %}
                                 <option value="{{ month.month_number }}"
@@ -66,52 +76,7 @@
 
                 </form>
 
-                <div class="data-list">
-                    {% if transactions %}
-                        {% for transaction in transactions %}
-                            <div class="data-list-item" onclick="window.location.href='{% url 'transaction_detail' transaction.id %}'">
-                                <div class="category-info">
-                                    <div class="category-name">
-                                        {{ transaction.transaction_date|date:"d M Y" }}
-                                        <span class="text-muted small">({{ transaction.merchant.name|default:"Nessun Mercante" }})</span>
-                                    </div>
-                                    <p class="category-description">
-                                        {{ transaction.description|default:"Nessuna descrizione"|truncatechars:100 }}
-                                    </p>
-                                </div>
-                                <div class="text-end">
-                            <span class="stat-amount-detail {{ transaction.transaction_type|lower }}">
-                                €{{ transaction.amount|floatformat:2 }}
-                            </span>
-                                </div>
-                            </div>
-                        {% endfor %}
-                    {% else %}
-                        <div class="empty-state-simple">
-                            Nessuna transazione registrata per questa categoria.
-                        </div>
-                    {% endif %}
-                </div>
-
-                {% if transactions.has_other_pages %}
-                    <div class="pagination">
-                        {% if transactions.has_previous %}
-                            <a href="?page={{ transactions.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_year %}&year={{ selected_year }}{% endif %}{% for m in selected_months %}&months={{ m }}{% endfor %}" class="btn btn-sm">Precedente</a>
-                        {% else %}
-                            <span class="disabled">Precedente</span>
-                        {% endif %}
-
-                        <span class="current">
-                    Pagina {{ transactions.number }} di {{ transactions.paginator.num_pages }}
-                </span>
-
-                        {% if transactions.has_next %}
-                            <a href="?page={{ transactions.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_year %}&year={{ selected_year }}{% endif %}{% for m in selected_months %}&months={{ m }}{% endfor %}" class="btn btn-sm">Successiva</a>
-                        {% else %}
-                            <span class="disabled">Successiva</span>
-                        {% endif %}
-                    </div>
-                {% endif %}
+                {% include "categories/components/category_detail_results.html" %}
             </div>
 
         </div>

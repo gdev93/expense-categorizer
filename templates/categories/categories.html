@@ -20,16 +20,26 @@
         </div>
     </div>
 
-    <form method="get" class="filters" action="{% url 'category_list' %}" id="main-filter-form">
+    <form method="get" class="filters"
+          hx-get="{% url 'category_list' %}"
+          hx-target="#category-results"
+          hx-swap="outerHTML"
+          hx-indicator="#category-results"
+          hx-trigger="change delay:500ms, submit"
+          id="main-filter-form">
         <div class="filter-actions">
             <button type="submit" class="btn btn-icon btn-subtle-primary" title="Filtra"><span class="material-icons">search</span></button>
-            <a href="{% url 'category_list' %}" class="btn btn-icon btn-subtle-danger" id="delete-category-search" title="Cancella"><span class="material-icons">clear</span></a>
+            <a hx-get="{% url 'category_list' %}"
+               hx-target="#category-results"
+               hx-swap="outerHTML"
+               hx-indicator="#category-results"
+               class="btn btn-icon btn-subtle-danger" id="delete-category-search" title="Cancella"><span class="material-icons">clear</span></a>
             <button type="button" class="btn btn-icon btn-subtle-success" onclick="exportCategories()" title="Esporta"><span class="material-icons">download</span></button>
         </div>
 
         <div class="filter-group w-100-mobile">
             <label for="categories">Categorie</label>
-            <select name="categories" id="categories" multiple size="1" onchange="debounceFormSubmit(this.form)">
+            <select name="categories" id="categories" multiple size="1">
                 <option value="">Tutte le Categorie</option>
                 {% for cat in all_categories %}
                     <option value="{{ cat.id }}"
@@ -45,7 +55,7 @@
 
         <div class="filter-group w-100-mobile">
             <label for="months">Mese/i</label>
-            <select name="months" id="months" multiple size="1" onchange="debounceFormSubmit(this.form)">
+            <select name="months" id="months" multiple size="1">
                 <option value="">Tutti i mesi</option>
                 {% for available_month in available_months %}
                     <option value="{{ available_month.month_number }}"
@@ -61,35 +71,7 @@
 
     </form>
 
-    <div class="category-layout-stacked">
-        <div class="category-list-section">
-            {% if categories %}
-            <div class="data-list">
-                {% for category in categories %}
-                    <div class="data-list-item" onclick="window.location.href='{% url 'category_detail' category.id %}?year={{ year }}{% for m in selected_months %}&months={{ m }}{% endfor %}'">
-                        <div class="list-item-info">
-                            <span class="category-name">{{ category.name }}</span>
-                            {% if category.description %}
-                                <p class="category-description">{{ category.description|truncatechars:100 }}</p>
-                            {% else %}
-                                <p class="category-description text-muted"><em>Nessuna descrizione</em></p>
-                            {% endif %}
-                        </div>
-
-                        <div class="list-item-stats">
-                            <span class="list-amount">€ {{ category.transaction_amount|floatformat:2|default:"0,00" }}</span>
-                            <span class="badge-count">{{ category.transaction_count|default:"0" }} transazioni</span>
-                        </div>
-                    </div>
-                {% endfor %}
-            </div>
-            {% else %}
-                <div class="empty-state-simple">
-                    <p>Non hai ancora creato nessuna categoria.</p>
-                </div>
-            {% endif %}
-        </div>
-    </div>
+    {% include "categories/components/category_list_results.html" %}
 </div>
 
 <script src="{% static 'js/categories.js' %}"></script>

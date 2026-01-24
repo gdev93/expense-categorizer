@@ -80,107 +80,47 @@
         <h1 class="header"> Tutti i tuoi caricamenti</h1>
 
         <!-- Filters -->
-        <form method="get" class="filters" id="upload-filter-form">
-            <div class="filter-actions">
-                <button type="submit" class="btn btn-icon btn-subtle-primary" title="Filtra"><span class="material-icons">search</span></button>
-                {% if request.GET.search or request.GET.status %}
-                    <a href="{% url 'transactions_upload' %}" class="btn btn-icon btn-subtle-danger" title="Cancella"><span class="material-icons">clear</span></a>
-                {% endif %}
-            </div>
+        <form method="get" class="filters" id="upload-filter-form"
+      hx-get="{% url 'transactions_upload' %}"
+      hx-target="#upload-results"
+      hx-swap="outerHTML"
+      hx-indicator="#upload-results"
+      hx-trigger="submit, change delay:500ms"
+      >
 
-            <div class="filter-group w-100-mobile">
-                <label for="search"> Ricerca</label>
-                <input type="text" name="search" id="search" placeholder="Cerca per nome file..."
-                       value="{{ request.GET.search|default:'' }}" onchange="debounceFormSubmit(this.form)"/>
-            </div>
+    <div class="filter-actions">
+        <button type="submit" class="btn btn-icon btn-subtle-primary" title="Filtra">
+            <span class="material-icons">search</span>
+        </button>
 
-            <div class="filter-group">
-                <label for="status"> Stato</label>
-                <select name="status" id="status" onchange="debounceFormSubmit(this.form)">
-                    <option value="">Tutti gli stati</option>
-                    <option value="ready" {% if request.GET.status == 'ready' %}selected{% endif %}>Completato</option>
-                    <option value="not_ready" {% if request.GET.status == 'not_ready' %}selected{% endif %}>In corso</option>
-                </select>
-            </div>
+        <a hx-get="{% url 'transactions_upload' %}"
+           hx-target="#upload-results"
+           hx-swap="outerHTML"
+           hx-indicator="#upload-results"
+           class="btn btn-icon btn-subtle-danger" title="Cancella">
+            <span class="material-icons">clear</span>
+        </a>
+    </div>
 
-        </form>
+    <div class="filter-group w-100-mobile">
+        <label for="search"><span class="material-icons"
+                                  style="font-size: 1.1em; vertical-align: middle; margin-right: 4px;">search</span>Ricerca</label>
+        <input type="text" name="search" id="search" placeholder="Cerca per nome file..."
+               value="{{ request.GET.search|default:'' }}" />
+    </div>
 
-        <div class="data-list uploaded-list-padding">
-    {% if uploads %}
-        {% for upload in uploads %}
-            <div class="data-list-item" onclick="window.location.href='{% url 'transactions_upload_detail' upload.id %}'">
+    <div class="filter-group">
+        <label for="status"><span class="material-icons"
+                                  style="font-size: 1.1em; vertical-align: middle; margin-right: 4px;">rule</span>Stato</label>
+        <select name="status" id="status">
+            <option value="">Tutti gli stati</option>
+            <option value="ready" {% if request.GET.status == 'ready' %}selected{% endif %}>Completato</option>
+            <option value="not_ready" {% if request.GET.status == 'not_ready' %}selected{% endif %}>In corso</option>
+        </select>
+    </div>
+</form>
 
-                <div class="list-item-info">
-                    <div class="file-info-container">
-                        <div class="file-text-content">
-                            <div class="file-name">
-                                {% if upload.file_name %}{{ upload.file_name }}{% else %}{{ upload.id }}_{{ upload.upload_date|date:"Ymd_His" }}.csv{% endif %}
-                            </div>
-                            <div class="file-date">
-                                 Caricato il {{ upload.upload_date|date:"d/m/Y H:i" }}
-                            </div>
-                            <div class="file-size text-muted">
-                                {% if upload.dimension %}
-                                     {{ upload.file_size_display }}
-                                {% endif %}
-                                {% if upload.processing_time %}
-                                     {{ upload.processing_time|format_processing_time }}
-                                {% else %}
-                                    In corso
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="list-item-stats">
-                    <span class="upload-status {% if upload.status != 'completed' %}status-pending{% else %}status-completato{% endif %}">
-                        {% if upload.status != 'completed' %}
-                        In corso
-                        {% else %}
-                        Completato
-                        {% endif %}
-                    </span>
-
-                    <div class="expense-count">
-                        <span class="count-number">{{ upload.transactions_count }}</span> Spese trovate
-                    </div>
-                    <div class="list-item-actions">
-                        <button type="button" class="btn btn-outline-success btn-sm" onclick="exportUpload({{ upload.id }}, event)">
-                            <span class="material-icons" style="font-size: 1.1em; vertical-align: middle; margin-right: 4px;">download</span> Esporta
-                        </button>
-                        <a href="{% url 'transactions_upload_delete' upload.id %}" class="btn btn-danger btn-sm" onclick="event.stopPropagation();">
-                            Elimina
-                        </a>
-                    </div>
-                </div>
-            </div>
-        {% endfor %}
-    {% else %}
-        <div class="empty-state">
-            <p class="text-muted"> Nessun caricamento trovato. Carica il tuo primo file CSV!</p>
-        </div>
-    {% endif %}
-</div>
-
-        <!-- Pagination -->
-        {% if is_paginated %}
-            <div class="pagination mt-4">
-                {% if page_obj.has_previous %}
-                    <a href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}" class="pagination-link">&laquo; Prima</a>
-                    <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}" class="pagination-link">Precedente</a>
-                {% endif %}
-
-                <span class="pagination-current">
-                    Pagina {{ page_obj.number }} di {{ page_obj.paginator.num_pages }}
-                </span>
-
-                {% if page_obj.has_next %}
-                    <a href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}" class="pagination-link">Successiva</a>
-                    <a href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}" class="pagination-link">Ultima &raquo;</a>
-                {% endif %}
-            </div>
-        {% endif %}
+        {% include "transactions/components/upload_list_results.html" %}
 
     </div>
     <script>

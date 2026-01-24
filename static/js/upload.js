@@ -89,7 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
             fileItem.innerHTML = `
                     <span class="file-item-name">${fileToUpload.name}</span>
                     <span class="file-item-size text-muted">(${formatBytes(fileToUpload.size)})</span>
-                    <span class="file-item-remove" title="Rimuovi">&times;</span>
+                    <span class="material-icons file-item-remove" title="Rimuovi">close</span>
                 `;
             fileListPreview.appendChild(fileItem);
         } else {

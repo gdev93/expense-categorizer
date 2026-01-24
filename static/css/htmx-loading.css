@@ -1,0 +1,45 @@
+/* htmx-loading.css */
+
+/* Hide by default */
+.htmx-indicator-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.6); /* Semi-transparent white */
+    z-index: 9999;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Show when HTMX is making a request */
+.htmx-request.htmx-indicator-overlay,
+.htmx-request .htmx-indicator-overlay {
+    display: flex;
+}
+
+/* Modern Spinner */
+.htmx-loader {
+    width: 48px;
+    height: 48px;
+    border: 5px solid #FFF;
+    border-bottom-color: #3b82f6; /* Adjust color to match your primary brand color */
+    border-radius: 50%;
+    display: inline-block;
+    box-sizing: border-box;
+    animation: rotation 1s linear infinite;
+}
+
+@keyframes rotation {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Optional: Fade the form slightly while loading */
+form.htmx-request {
+    opacity: 0.7;
+    transition: opacity 0.2s ease-in;
+    pointer-events: none; /* Prevent double-clicks while loading */
+}
