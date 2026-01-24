@@ -170,6 +170,16 @@ function toggleCategoryMenu(span) {
     container.classList.toggle('is-open', isOpening);
 }
 
+/**
+ * Toggles the visibility of the collapsible filter section.
+ */
+function toggleFilters() {
+    const collapsible = document.getElementById('filter-collapsible');
+    if (collapsible) {
+        collapsible.classList.toggle('show');
+    }
+}
+
 // Close menus when clicking outside
 document.addEventListener('click', function(event) {
     if (!event.target.closest('.category-pill-container')) {

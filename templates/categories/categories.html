@@ -24,51 +24,81 @@
           hx-get="{% url 'category_list' %}"
           hx-target="#category-results"
           hx-swap="outerHTML"
-          hx-indicator="#category-results"
-          hx-trigger="change delay:500ms, submit"
+          hx-indicator="#form-loader, #category-results"
+          hx-trigger="change, input delay:500ms from:#search, submit"
           id="main-filter-form">
-        <div class="filter-actions">
-            <button type="submit" class="btn btn-icon btn-subtle-primary" title="Filtra"><span class="material-icons">search</span></button>
-            <a hx-get="{% url 'category_list' %}"
-               hx-target="#category-results"
-               hx-swap="outerHTML"
-               hx-indicator="#category-results"
-               class="btn btn-icon btn-subtle-danger" id="delete-category-search" title="Cancella"><span class="material-icons">clear</span></a>
-            <button type="button" class="btn btn-icon btn-subtle-success" onclick="exportCategories()" title="Esporta"><span class="material-icons">download</span></button>
+
+        <div class="filter-main-row">
+            <div class="search-group">
+                <div class="search-input-wrapper">
+                    <span class="material-icons search-icon">search</span>
+                    <input type="text" name="search" id="search" placeholder="Cerca categoria..."
+                           aria-label="Ricerca"
+                           value="{{ search_query }}"/>
+                </div>
+            </div>
+
+            <div class="filter-actions-compact">
+                <button type="button" class="btn btn-subtle filter-toggle-btn" onclick="toggleFilters()"
+                        title="Mostra filtri">
+                    <span class="material-icons">filter_list</span>
+                    <span class="desktop-only">Filtri</span>
+                </button>
+
+                <button type="submit" class="btn btn-subtle-primary mobile-only" title="Filtra">
+                    <span class="material-icons htmx-hide-indicator">refresh</span>
+                    <div id="form-loader" class="htmx-indicator spinner-border-sm"></div>
+                </button>
+
+                <a href="{% url 'category_list' %}"
+                   hx-get="{% url 'category_list' %}"
+                   hx-target="#category-results"
+                   hx-swap="outerHTML"
+                   hx-indicator="#category-results"
+                   class="btn btn-icon btn-subtle-danger" id="delete-category-search" title="Cancella">
+                    <span class="material-icons">clear</span>
+                </a>
+
+                <button type="button" class="btn btn-icon btn-subtle-success" onclick="exportCategories()" title="Esporta">
+                    <span class="material-icons">download</span>
+                </button>
+            </div>
         </div>
 
-        <div class="filter-group w-100-mobile">
-            <label for="categories">Categorie</label>
-            <select name="categories" id="categories" multiple size="1">
-                <option value="">Tutte le Categorie</option>
-                {% for cat in all_categories %}
-                    <option value="{{ cat.id }}"
-                            {% if cat.id|stringformat:"s" in selected_categories %}selected{% endif %}>
-                        {{ cat.name }}
-                    </option>
-                {% endfor %}
-            </select>
-            <small class="form-text text-muted desktop-only" style="font-size: 0.75rem; margin-top: 4px;">
-                Tieni premuto Ctrl (Windows) o Cmd (Mac) per selezionare più categorie
-            </small>
-        </div>
+        <div class="filter-collapsible-content" id="filter-collapsible">
+            <div class="filter-grid">
+                <div class="filter-group">
+                    <label for="categories">
+                        <span class="material-icons">category</span>
+                        Categorie
+                    </label>
+                    <select name="categories" id="categories" multiple size="1">
+                        <option value="">Tutte le Categorie</option>
+                        {% for cat in all_categories %}
+                            <option value="{{ cat.id }}"
+                                    {% if cat.id|stringformat:"s" in selected_categories %}selected{% endif %}>
+                                {{ cat.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
 
-        <div class="filter-group w-100-mobile">
-            <label for="months">Mese/i</label>
-            <select name="months" id="months" multiple size="1">
-                <option value="">Tutti i mesi</option>
-                {% for available_month in available_months %}
-                    <option value="{{ available_month.month_number }}"
-                            {% if available_month.month_number|stringformat:"s" in selected_months %}selected{% endif %}>
-                        {{ available_month.label_it }}
-                    </option>
-                {% endfor %}
-            </select>
-            <small class="form-text text-muted desktop-only" style="font-size: 0.75rem; margin-top: 4px;">
-                Tieni premuto Ctrl (Windows) o Cmd (Mac) per selezionare più mesi
-            </small>
+                <div class="filter-group">
+                    <label for="months">
+                        <span class="material-icons">calendar_today</span>
+                        Mese/i
+                    </label>
+                    <select name="months" id="months" multiple size="1">
+                        {% for month in available_months %}
+                            <option value="{{ month.month_number }}"
+                                    {% if month.month_number|stringformat:"s" in selected_months %}selected{% endif %}>
+                                {{ month.label_it }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
         </div>
-
     </form>
 
     {% include "categories/components/category_list_results.html" %}

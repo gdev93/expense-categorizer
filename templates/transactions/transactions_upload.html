@@ -81,44 +81,61 @@
 
         <!-- Filters -->
         <form method="get" class="filters" id="upload-filter-form"
-      hx-get="{% url 'transactions_upload' %}"
-      hx-target="#upload-results"
-      hx-swap="outerHTML"
-      hx-indicator="#upload-results"
-      hx-trigger="submit, change delay:500ms"
-      >
+              hx-get="{% url 'transactions_upload' %}"
+              hx-target="#upload-results"
+              hx-swap="outerHTML"
+              hx-indicator="#form-loader, #upload-results"
+              hx-trigger="change, input delay:500ms from:#search, submit">
 
-    <div class="filter-actions">
-        <button type="submit" class="btn btn-icon btn-subtle-primary" title="Filtra">
-            <span class="material-icons">search</span>
-        </button>
+            <div class="filter-main-row">
+                <div class="search-group">
+                    <div class="search-input-wrapper">
+                        <span class="material-icons search-icon">search</span>
+                        <input type="text" name="search" id="search" placeholder="Cerca per nome file..."
+                               aria-label="Ricerca"
+                               value="{{ request.GET.search|default:'' }}"/>
+                    </div>
+                </div>
 
-        <a hx-get="{% url 'transactions_upload' %}"
-           hx-target="#upload-results"
-           hx-swap="outerHTML"
-           hx-indicator="#upload-results"
-           class="btn btn-icon btn-subtle-danger" title="Cancella">
-            <span class="material-icons">clear</span>
-        </a>
-    </div>
+                <div class="filter-actions-compact">
+                    <button type="button" class="btn btn-subtle filter-toggle-btn" onclick="toggleFilters()"
+                            title="Mostra filtri">
+                        <span class="material-icons">filter_list</span>
+                        <span class="desktop-only">Filtri</span>
+                    </button>
 
-    <div class="filter-group w-100-mobile">
-        <label for="search"><span class="material-icons"
-                                  style="font-size: 1.1em; vertical-align: middle; margin-right: 4px;">search</span>Ricerca</label>
-        <input type="text" name="search" id="search" placeholder="Cerca per nome file..."
-               value="{{ request.GET.search|default:'' }}" />
-    </div>
+                    <button type="submit" class="btn btn-subtle-primary mobile-only" title="Filtra">
+                        <span class="material-icons htmx-hide-indicator">refresh</span>
+                        <div id="form-loader" class="htmx-indicator spinner-border-sm"></div>
+                    </button>
 
-    <div class="filter-group">
-        <label for="status"><span class="material-icons"
-                                  style="font-size: 1.1em; vertical-align: middle; margin-right: 4px;">rule</span>Stato</label>
-        <select name="status" id="status">
-            <option value="">Tutti gli stati</option>
-            <option value="ready" {% if request.GET.status == 'ready' %}selected{% endif %}>Completato</option>
-            <option value="not_ready" {% if request.GET.status == 'not_ready' %}selected{% endif %}>In corso</option>
-        </select>
-    </div>
-</form>
+                    <a href="{% url 'transactions_upload' %}"
+                       hx-get="{% url 'transactions_upload' %}"
+                       hx-target="#upload-results"
+                       hx-swap="outerHTML"
+                       hx-indicator="#upload-results"
+                       class="btn btn-icon btn-subtle-danger" title="Cancella">
+                        <span class="material-icons">clear</span>
+                    </a>
+                </div>
+            </div>
+
+            <div class="filter-collapsible-content" id="filter-collapsible">
+                <div class="filter-grid">
+                    <div class="filter-group">
+                        <label for="status">
+                            <span class="material-icons">rule</span>
+                            Stato
+                        </label>
+                        <select name="status" id="status">
+                            <option value="">Tutti gli stati</option>
+                            <option value="ready" {% if request.GET.status == 'ready' %}selected{% endif %}>Completato</option>
+                            <option value="not_ready" {% if request.GET.status == 'not_ready' %}selected{% endif %}>In corso</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </form>
 
         {% include "transactions/components/upload_list_results.html" %}
 

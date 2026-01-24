@@ -86,6 +86,11 @@ class CategoryListView(LoginRequiredMixin, CategoryEnrichedMixin, ListView):
 
         # 1. Filter: Start with categories belonging to the current user
         user_categories = self.model.objects.filter(user=self.request.user)
+
+        search_query = self.request.GET.get('search')
+        if search_query:
+            user_categories = user_categories.filter(name__icontains=search_query)
+
         selected_category_ids = self.request.GET.getlist('categories')
         if any(selected_category_ids):
             user_categories = user_categories.filter(id__in=selected_category_ids)
@@ -105,6 +110,7 @@ class CategoryListView(LoginRequiredMixin, CategoryEnrichedMixin, ListView):
         selected_year, selected_months = self.get_year_and_months()
         context['all_categories'] = Category.objects.filter(user=self.request.user).order_by('name')
         context['selected_categories'] = self.request.GET.getlist('categories')
+        context['search_query'] = self.request.GET.get('search', '')
         context['year'] = selected_year
         context['selected_months'] = [str(m) for m in selected_months]
         return context

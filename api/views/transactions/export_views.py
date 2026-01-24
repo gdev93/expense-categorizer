@@ -54,9 +54,11 @@ class TransactionExportView(LoginRequiredMixin, View):
         if transaction_type:
             queryset = queryset.filter(transaction_type=transaction_type)
 
-        category_id = data.get('category')
-        if category_id:
-            queryset = queryset.filter(category_id=category_id)
+        category_ids = data.get('categories') or data.get('category')
+        if category_ids:
+            if isinstance(category_ids, (str, int)):
+                category_ids = [category_ids]
+            queryset = queryset.filter(category_id__in=category_ids)
 
         year = data.get('year')
         if year and not upload_ids:

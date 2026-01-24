@@ -28,52 +28,76 @@
                       hx-get="{% url 'category_detail' category.id %}"
                       hx-target="#category-detail-results"
                       hx-swap="outerHTML"
-                      hx-indicator="#category-detail-results"
-                      hx-trigger="change delay:500ms, submit"
+                      hx-indicator="#form-loader, #category-detail-results"
+                      hx-trigger="change, input delay:500ms from:#search, submit"
                       id="transaction-filter-form">
-                    <div class="filter-actions">
-                        <button type="submit" class="btn btn-icon btn-subtle-primary" title="Filtra"><span class="material-icons">search</span></button>
-                        <a hx-get="{% url 'category_detail' category.id %}"
-                           hx-target="#category-detail-results"
-                           hx-swap="outerHTML"
-                           hx-indicator="#category-detail-results"
-                           class="btn btn-icon btn-subtle-danger" title="Cancella"><span class="material-icons">clear</span></a>
+
+                    <div class="filter-main-row">
+                        <div class="search-group">
+                            <div class="search-input-wrapper">
+                                <span class="material-icons search-icon">search</span>
+                                <input type="text" name="search" id="search" placeholder="Descrizione o esercente..."
+                                       aria-label="Ricerca"
+                                       value="{{ search_query }}"/>
+                            </div>
+                        </div>
+
+                        <div class="filter-actions-compact">
+                            <button type="button" class="btn btn-subtle filter-toggle-btn" onclick="toggleFilters()"
+                                    title="Mostra filtri">
+                                <span class="material-icons">filter_list</span>
+                                <span class="desktop-only">Filtri</span>
+                            </button>
+
+                            <button type="submit" class="btn btn-subtle-primary mobile-only" title="Filtra">
+                                <span class="material-icons htmx-hide-indicator">refresh</span>
+                                <div id="form-loader" class="htmx-indicator spinner-border-sm"></div>
+                            </button>
+
+                            <a href="{% url 'category_detail' category.id %}"
+                               hx-get="{% url 'category_detail' category.id %}"
+                               hx-target="#category-detail-results"
+                               hx-swap="outerHTML"
+                               hx-indicator="#category-detail-results"
+                               class="btn btn-icon btn-subtle-danger" title="Cancella">
+                                <span class="material-icons">clear</span>
+                            </a>
+                        </div>
                     </div>
 
-                    <div class="filter-group w-100-mobile">
-                        <label for="search"> Ricerca</label>
-                        <input type="text" name="search" id="search" placeholder="Cerca merchant o descrizione..."
-                               value="{{ search_query }}">
-                    </div>
+                    <div class="filter-collapsible-content" id="filter-collapsible">
+                        <div class="filter-grid">
+                            <div class="filter-group">
+                                <label for="year">
+                                    <span class="material-icons">calendar_today</span>
+                                    Anno
+                                </label>
+                                <select name="year" id="year">
+                                    <option value="">Tutti gli anni</option>
+                                    {% for available_year in available_years %}
+                                        <option value="{{ available_year }}" {% if available_year == selected_year %}selected{% endif %}>
+                                            {{ available_year }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
 
-                    <div class="filter-group">
-                        <label for="year"> Anno</label>
-                        <select name="year" id="year">
-                            <option value="">Tutti gli anni</option>
-                            {% for available_year in available_years %}
-                                <option value="{{ available_year }}" {% if available_year == selected_year %}selected{% endif %}>
-                                    {{ available_year }}
-                                </option>
-                            {% endfor %}
-                        </select>
+                            <div class="filter-group">
+                                <label for="months">
+                                    <span class="material-icons">calendar_month</span>
+                                    Mese/i
+                                </label>
+                                <select name="months" id="months" multiple size="1">
+                                    {% for month in available_months %}
+                                        <option value="{{ month.month_number }}"
+                                                {% if month.month_number|stringformat:"s" in selected_months %}selected{% endif %}>
+                                            {{ month.label_it }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
                     </div>
-
-                    <div class="filter-group w-100-mobile">
-                        <label for="months"> Mese/i</label>
-                        <select name="months" id="months" multiple size="1">
-                            <option value="">Tutti i mesi</option>
-                            {% for month in available_months %}
-                                <option value="{{ month.month_number }}"
-                                        {% if month.month_number|stringformat:"s" in selected_months %}selected{% endif %}>
-                                    {{ month.label_it }}
-                                </option>
-                            {% endfor %}
-                        </select>
-                        <small class="form-text text-muted desktop-only" style="font-size: 0.75rem; margin-top: 4px;">
-                            Tieni premuto Ctrl (Windows) o Cmd (Mac) per selezionare più mesi
-                        </small>
-                    </div>
-
                 </form>
 
                 {% include "categories/components/category_detail_results.html" %}

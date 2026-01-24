@@ -16,7 +16,8 @@
         <select id="year-select{{ id_suffix }}"
                 name="year"
                 class="form-select"
-                form="main-filter-form">
+                form="main-filter-form"
+                hx-on:change="document.querySelectorAll('select[name=year]').forEach(s => s.value = this.value)">
             {% for available_year in available_years %}
                 <option value="{{ available_year }}" {% if available_year == year %}selected{% endif %}>
                     {{ available_year }}

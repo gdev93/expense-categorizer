@@ -20,7 +20,7 @@ from api.views.transactions.transaction_mixins import TransactionFilterMixin
 class TransactionListContextData:
     """Context data for transaction list view"""
     categories: list[dict[str, Any]]
-    selected_category: str
+    selected_categories: list[str]
     selected_status: str
     selected_upload_file: str
     search_query: str
@@ -124,7 +124,7 @@ class TransactionListView(LoginRequiredMixin, ListView, TransactionFilterMixin):
             )['total'] or 0,
             category_count=self.get_queryset().values('category').distinct().count(),
             rules=Rule.objects.filter(user=self.request.user, is_active=True),
-            selected_category=self.request.GET.get('category', ''),
+            selected_categories=self.request.GET.getlist('category') or self.request.GET.getlist('categories'),
             selected_months=self.request.GET.getlist('months')
         )
         context.update(transaction_list_context.to_context())

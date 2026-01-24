@@ -14,9 +14,9 @@ class TransactionFilterMixin(MonthYearFilterMixin, View):
         ).select_related('category', 'merchant', 'upload_file').order_by('-transaction_date', '-created_at')
 
         # Filter by category
-        category_id = self.request.GET.get('category')
-        if category_id:
-            queryset = queryset.filter(category_id=category_id)
+        category_ids = self.request.GET.getlist('category') or self.request.GET.getlist('categories')
+        if category_ids and any(category_ids):
+            queryset = queryset.filter(category_id__in=category_ids)
 
         # Filter by upload_file (from URL or GET)
         upload_file_id = self.kwargs.get('upload_file_id') or self.request.GET.get('upload_file')

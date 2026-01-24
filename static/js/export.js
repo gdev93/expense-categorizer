@@ -77,9 +77,9 @@ function exportToCsv() {
 
     const payload = {};
     for (const [key, value] of formData.entries()) {
-        if (key === 'months') {
-            if (!payload.months) payload.months = [];
-            payload.months.push(value);
+        if (key === 'months' || key === 'categories') {
+            if (!payload[key]) payload[key] = [];
+            payload[key].push(value);
         } else {
             payload[key] = value;
         }
