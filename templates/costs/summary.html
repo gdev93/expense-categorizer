@@ -10,14 +10,15 @@
 
 {% block content %}
     <div class="container mt-2">
-        {% include "components/header-with-year-select.html" with icon="assessment" title="Costi API Gemini" %}
+        {% include "components/header-with-year-select.html" with icon="assessment" title="Costi API Gemini" show_toggle=False %}
 
         <form id="main-filter-form"
               hx-get="{% url 'costs:summary' %}"
               hx-target="#cost-results"
               hx-swap="outerHTML"
               hx-indicator="#cost-results"
-              hx-trigger="change"></form>
+              hx-trigger="change, change from:[name='year']"
+              hx-include="[form='main-filter-form']"></form>
 
         {% include "costs/components/summary_results.html" %}
     </div>

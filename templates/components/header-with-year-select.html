@@ -2,7 +2,7 @@
 
 {% block header_content %}
     <div class="desktop-only">
-        {% include "components/year-select.html" with id_suffix="_desktop" %}
+        {% include "components/year-select.html" with id_suffix="_desktop" show_toggle=show_toggle %}
     </div>
     <div class="mobile-only">
         {% include "components/year-select.html" with id_suffix="_mobile" show_toggle=False %}
@@ -11,6 +11,6 @@
 
 {% block header_extra_title %}
     <div class="mobile-only">
-        {% include "components/year-select.html" with id_suffix="_mobile_toggle" show_year=False %}
+        {% include "components/year-select.html" with id_suffix="_mobile_toggle" show_year=False show_toggle=show_toggle %}
     </div>
 {% endblock %}

@@ -25,7 +25,8 @@
           hx-target="#category-results"
           hx-swap="outerHTML"
           hx-indicator="#form-loader, #category-results"
-          hx-trigger="change, input delay:500ms from:#search, submit"
+          hx-trigger="change, input delay:500ms from:#search, submit, change from:[name='year']"
+          hx-include="[form='main-filter-form']"
           id="main-filter-form">
 
         <div class="filter-main-row">
