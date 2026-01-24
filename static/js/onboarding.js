@@ -158,7 +158,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (!isOnTargetPage(window.location.pathname, config.targetUrl)) return;
 
-        let target = document.querySelector(config.selector);
+        let targets = document.querySelectorAll(config.selector);
+        // Try to find a visible target first
+        let target = Array.from(targets).find(t => t.offsetWidth > 0 && t.offsetHeight > 0);
+
+        // If no visible target, but we have hidden ones, try to show the first one
+        if (!target && targets.length > 0) {
+            const candidate = targets[0];
+            const details = candidate.closest('details');
+            if (details) {
+                details.open = true;
+                target = candidate;
+            }
+        }
 
         // If it's the final step and no transaction is present, show a fake one
         if (!target && step === 4) {
