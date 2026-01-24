@@ -25,38 +25,45 @@ class MonthYearFilterMixin(View):
             return cached_result.year, cached_result.months
 
         # 2. If NOT in cache, perform the parsing logic
-        try:
-            raw_year = self.request.GET.get('year')
-            raw_months = self.request.GET.getlist('months', [])
+        raw_year = self.request.GET.get('year')
+        raw_months = self.request.GET.getlist('months', [])
 
-            # Handle single month param
-            single_month = self.request.GET.get('month')
-            if single_month and single_month not in raw_months:
-                raw_months.append(single_month)
+        # Handle single month param
+        single_month = self.request.GET.get('month')
+        if single_month and single_month not in raw_months:
+            raw_months.append(single_month)
 
-            # Resolve Year
-            if raw_year:
+        # Resolve Year
+        if raw_year:
+            try:
                 selected_year = int(raw_year)
-            else:
-                last_t = Transaction.objects.filter(
-                    user=self.request.user,
-                    status='categorized'
-                ).order_by('-transaction_date').first()
-                selected_year = last_t.transaction_date.year if last_t else datetime.datetime.now().year
+            except (TypeError, ValueError):
+                # If invalid year passed, fallback to last transaction year or current year
+                selected_year = self._get_default_year()
+        else:
+            selected_year = self._get_default_year()
 
-            # Resolve Months
-            processed_months = [int(m) for m in raw_months]
+        # Resolve Months
+        processed_months = []
+        for m in raw_months:
+            if m:
+                try:
+                    processed_months.append(int(m))
+                except (TypeError, ValueError):
+                    pass
 
-            # 3. Save to cache before returning
-            result = YearMonthCacheValue(year=selected_year, months=processed_months)
-            cache.set(cache_key, result, timeout=3600)
+        # 3. Save to cache before returning
+        result = YearMonthCacheValue(year=selected_year, months=processed_months)
+        cache.set(cache_key, result, timeout=3600)
 
-            return result.year, result.months
+        return result.year, result.months
 
-        except (TypeError, ValueError):
-            # Fallback for bad data
-            fallback_year = datetime.datetime.now().year
-            return fallback_year, []
+    def _get_default_year(self):
+        last_t = Transaction.objects.filter(
+            user=self.request.user,
+            status='categorized'
+        ).order_by('-transaction_date').first()
+        return last_t.transaction_date.year if last_t else datetime.datetime.now().year
 
     # These are now helpers if you need to manually clear or set cache elsewhere
     def _make_cache_key(self, query_string: str):

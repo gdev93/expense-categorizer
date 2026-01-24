@@ -15,7 +15,7 @@
                 name="year"
                 class="form-select"
                 form="main-filter-form"
-                onchange="const monthSelect = document.getElementById('month-select') || document.getElementById('months'); if (monthSelect) monthSelect.value = ''; debounceFormSubmit(this.form)">
+                onchange="const ms = document.getElementById('month-select') || document.getElementById('months'); if (ms) { if (ms.multiple) { Array.from(ms.options).forEach(o => o.selected = false); } else { ms.value = ''; } } debounceFormSubmit(this.form || document.getElementById('main-filter-form'))">
             {% for available_year in available_years %}
                 <option value="{{ available_year }}" {% if available_year == year %}selected{% endif %}>
                     {{ available_year }}

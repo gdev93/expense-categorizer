@@ -63,3 +63,16 @@ class TestCategoryResetIssue:
         assert response.status_code == 200
         cat_2025_m1 = next(c for c in response.context['categories'] if c.name == "Food")
         assert cat_2025_m1.transaction_amount == Decimal("0.00")
+
+    def test_year_preservation_on_empty_month_parameter(self, client):
+        """
+        Verify that passing an empty months parameter (e.g. ?months=)
+        doesn't cause the year to reset to default.
+        """
+        client.login(username="testuser", password="password")
+        url = reverse('category_list')
+
+        # Current latest year in setup is 2025. We want to see if 2024 is preserved.
+        response = client.get(url, {'year': '2024', 'months': ['']})
+        assert response.status_code == 200
+        assert response.context['year'] == 2024

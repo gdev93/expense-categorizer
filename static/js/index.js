@@ -44,6 +44,40 @@ function smartBack() {
  * Also handles duplicate form parameters by disabling all but one element with the same name.
  */
 let isFormSubmitting = false;
+
+// Global listener to sync elements with the same name associated with the same form
+document.addEventListener('change', function(e) {
+    const el = e.target;
+    if (!el.name) return;
+
+    // We only care about elements that are part of a form (via form property or form attribute)
+    const formId = el.getAttribute('form') || (el.form ? el.form.id : null);
+    if (!formId) return;
+
+    // Find other elements with the same name associated with the same form
+    // either via the 'form' attribute or by being descendants of the form
+    const escapedName = CSS.escape(el.name);
+    const escapedFormId = CSS.escape(formId);
+    const otherEls = document.querySelectorAll(`[name="${escapedName}"][form="${escapedFormId}"], #${escapedFormId} [name="${escapedName}"]`);
+    
+    otherEls.forEach(other => {
+        if (other === el) return;
+        
+        if (el.type === 'radio' || el.type === 'checkbox') {
+            if (other.value === el.value) {
+                other.checked = el.checked;
+            }
+        } else if (el.tagName === 'SELECT' && el.multiple) {
+            const selectedValues = Array.from(el.options).filter(opt => opt.selected).map(opt => opt.value);
+            Array.from(other.options).forEach(opt => {
+                opt.selected = selectedValues.includes(opt.value);
+            });
+        } else {
+            other.value = el.value;
+        }
+    });
+});
+
 function debounceFormSubmit(form) {
     if (isFormSubmitting || !form) return;
     isFormSubmitting = true;
