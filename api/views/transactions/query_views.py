@@ -1,5 +1,5 @@
 from django.http import HttpRequest, JsonResponse
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, render
 from django.views import View
 
 from api.models import Merchant, UploadFile
@@ -27,6 +27,16 @@ class TransactionByMerchant(TransactionFilterMixin, View):
         if transactions_qs.exists():
             first_date = transactions_qs.last().transaction_date
             last_date = transactions_qs.first().transaction_date
+
+        if request.headers.get('HX-Request'):
+            return render(
+                request,
+                'transactions/components/merchant_transactions.html',
+                {
+                    'transactions': transactions_qs,
+                    'merchant': merchant
+                }
+            )
 
         # Convert QuerySet to list of dicts for JSON serialization
         # Add or remove fields here based on what you want to show in the UI

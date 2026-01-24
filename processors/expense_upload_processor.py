@@ -30,8 +30,8 @@ class ExpenseUploadProcessor:
     - Progress tracking and logging
     """
     pre_check_confidence_threshold = os.environ.get('PRE_CHECK_CONFIDENCE_THRESHOLD', 0.85)
-    csv_structure_sample_size_percentage = os.environ.get('CSV_STRUCTURE_SAMPLE_SIZE_PERCENTAGE', 0.1)
-    csv_structure_min_threshold = os.environ.get('CSV_STRUCTURE_MIN_THRESHOLD', 30)
+    file_structure_sample_size_percentage = os.environ.get('CSV_STRUCTURE_SAMPLE_SIZE_PERCENTAGE', 0.1)
+    file_structure_min_threshold = os.environ.get('CSV_STRUCTURE_MIN_THRESHOLD', 30)
 
 
     def __init__(self, user: User, user_rules: list[str] = None, available_categories: list[Category] | None = None, batch_helper:BatchingHelper | None = None):
@@ -39,16 +39,16 @@ class ExpenseUploadProcessor:
         self.batch_helper = batch_helper or BatchingHelper()
         self.agent = ExpenseCategorizerAgent(user_rules=user_rules, available_categories=available_categories)
         self.similarity_matcher = SimilarityMatcher(user, float(self.pre_check_confidence_threshold))
-        self.csv_structure_detector = CsvStructureDetector(
+        self.file_structure_detector = CsvStructureDetector(
             user,
             self.agent,
-            int(self.csv_structure_min_threshold),
-            float(self.csv_structure_sample_size_percentage)
+            int(self.file_structure_min_threshold),
+            float(self.file_structure_sample_size_percentage)
         )
 
     def process_transactions(self, transactions: list[Transaction], upload_file: UploadFile) -> UploadFile:
 
-        self.csv_structure_detector.setup_upload_file_structure(transactions, upload_file)
+        self.file_structure_detector.setup_upload_file_structure(transactions, upload_file)
 
         all_transactions_to_upload = self._process_prechecks(transactions, upload_file)
         transaction_batches = self.batch_helper.compute_batches(all_transactions_to_upload)
@@ -270,13 +270,13 @@ class ExpenseUploadProcessor:
                                    original_amount__isnull=True).update(status='uncategorized',
                                                                         transaction_type='income')
 
-def persist_uploaded_file(csv_data: list[dict[str, str]], user: User, csv_file: UploadedFile) -> UploadFile:
-    upload_file = UploadFile.objects.create(user=user, dimension=csv_file.size, file_name=csv_file.name)
+def persist_uploaded_file(file_data: list[dict[str, str]], user: User, file: UploadedFile) -> UploadFile:
+    upload_file = UploadFile.objects.create(user=user, dimension=file.size, file_name=file.name)
     all_pending_transactions = [Transaction(
         upload_file=upload_file,
         user=user,
         status='pending',
-        raw_data=csv_row,
-    ) for csv_row in csv_data]
+        raw_data=file_row,
+    ) for file_row in file_data]
     Transaction.objects.bulk_create(all_pending_transactions)
     return upload_file

@@ -579,6 +579,10 @@ details.expander-card[open] .expander-icon {
         font-size: 0.8rem;
     }
 
+    .transaction-description {
+        display: none;
+    }
+
     /* 3. Transaction Details & Form Grid */
     .detail-header {
         margin-bottom: 15px;

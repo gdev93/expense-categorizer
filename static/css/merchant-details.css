@@ -17,6 +17,38 @@
     border-top: 1px solid #f0f0f0;
 }
 
+.merchant-icon {
+    vertical-align: middle;
+    margin-right: 8px;
+    color: var(--primary-color);
+    font-size: 1.25rem;
+}
+
+.merchant-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 4px;
+}
+
+.list-item-chevron {
+    color: #cbd5e1;
+    transition: transform 0.3s ease, color 0.3s ease;
+    font-size: 1.4rem;
+    margin-left: 15px;
+    flex-shrink: 0;
+}
+
+.data-list-item.is-active {
+    border-color: var(--primary-color) !important;
+    background-color: #fffbeb !important;
+}
+
+.data-list-item.is-active .list-item-chevron {
+    transform: rotate(90deg);
+    color: var(--primary-color);
+}
+
 .expansion-content {
     padding: 15px 25px;
 }
@@ -25,47 +57,68 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 12px;
-    border-bottom: 1px solid #f0f0f0;
-    font-size: 0.9rem;
+    padding: 12px 16px;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 0.85rem;
     transition: all 0.2s ease;
-    border-radius: 6px;
-    margin-bottom: 4px;
     cursor: pointer;
+    background: transparent;
+    position: relative;
 }
 
 .mini-transaction-row:hover {
-    background-color: #f1f5f9;
+    background-color: #ffffff;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
     transform: translateX(4px);
-    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    border-radius: 8px;
+    border-color: transparent;
+    z-index: 2;
 }
 
 .mini-transaction-row:last-child {
     border-bottom: none;
-    margin-bottom: 0;
+}
+
+.mini-main-info {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex: 1;
+    min-width: 0;
 }
 
 .mini-date {
-    color: var(--secondary-color);
-    font-size: 0.8rem;
-    min-width: 85px;
-    font-weight: 500;
+    color: #64748b;
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    min-width: 100px;
 }
 
 .mini-desc {
-    flex-grow: 1;
-    color: var(--nav-text-color);
-    margin: 0 15px;
+    color: #334155;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    font-weight: 500;
+    flex: 1;
+}
+
+.mini-stats {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-left: 16px;
 }
 
 .mini-amount {
     font-weight: 700;
     color: var(--expense-color);
     white-space: nowrap;
-    min-width: 70px;
+    font-size: 0.95rem;
+    min-width: 75px;
     text-align: right;
 }
 
@@ -75,12 +128,41 @@
 
 .mini-chevron {
     color: #cbd5e1;
-    margin-left: 10px;
-    font-size: 0.8rem;
+    font-size: 1.1rem;
     transition: transform 0.2s;
 }
 
 .mini-transaction-row:hover .mini-chevron {
     color: var(--primary-color);
     transform: translateX(2px);
+}
+
+/* Mobile adjustments */
+@media (max-width: 600px) {
+    .expansion-content {
+        padding: 10px 12px;
+    }
+    .mini-transaction-row {
+        padding: 10px 8px;
+    }
+    .mini-main-info {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2px;
+    }
+    .mini-date {
+        min-width: auto;
+        font-size: 0.7rem;
+    }
+    .mini-desc {
+        display: none;
+    }
+    .mini-stats {
+        margin-left: 8px;
+        gap: 8px;
+    }
+    .mini-amount {
+        min-width: 65px;
+        font-size: 0.85rem;
+    }
 }

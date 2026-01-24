@@ -192,6 +192,10 @@
         align-self: flex-start;
         min-width: auto;
     }
+
+    .category-description {
+        display: none;
+    }
 }
 
 /* Sticky Header Container */
