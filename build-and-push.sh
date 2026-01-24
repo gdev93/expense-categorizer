@@ -1,4 +1,6 @@
 #!/bin/bash
+
+pytest
 # Set repository name
 REPO="giacomodev93/expense-categorizer"
 
