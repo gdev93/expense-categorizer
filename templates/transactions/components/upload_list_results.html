@@ -26,12 +26,15 @@
         <div class="data-list uploaded-list-padding">
         {% if uploads %}
             {% for upload in uploads %}
-                <div class="data-list-item" onclick="window.location.href='{% url 'transactions_upload_detail' upload.id %}'">
+                <div class="data-list-item {% if upload.status != 'completed' %}item-pending{% endif %}" onclick="window.location.href='{% url 'transactions_upload_detail' upload.id %}'">
                     <div class="list-item-info">
                         <div class="file-info-container">
                             <div class="file-text-content">
+                                {% if upload.status != 'completed' %}
+                                    <div class="upload-status-label">In corso</div>
+                                {% endif %}
                                 <div class="file-name">
-                                    {% if upload.file_name %}{{ upload.file_name }}{% else %}{{ upload.id }}_{{ upload.upload_date|date:"Ymd_His" }}.csv{% endif %}
+                                    {% if upload.file_name %}{{ upload.file_name }}{% else %}{{ upload.id }}_{{ upload.upload_date|date:"Ymd_His" }}{% endif %}
                                 </div>
                                 <div class="file-date">
                                      {{ upload.upload_date|date:"d/m/Y" }}
@@ -46,13 +49,8 @@
                     </div>
 
                     <div class="list-item-stats">
-                        <span class="upload-status {% if upload.status != 'completed' %}status-pending{% else %}status-completato{% endif %}">
-                            {% if upload.status != 'completed' %}
-                            In corso
-                            {% else %}
-                            Completato
-                            {% endif %}
-                        </span>
+                        {% if upload.status == 'completed' %}
+                        {% endif %}
 
                         <div class="expense-count desktop-only">
                             <span class="count-number">{{ upload.transactions_count }}</span> Spese trovate
@@ -79,9 +77,7 @@
                 </div>
             {% endfor %}
         {% else %}
-            <div class="empty-state">
-                <p class="text-muted"> Nessun caricamento trovato. Carica il tuo primo file CSV!</p>
-            </div>
+            {% include "components/empty-state.html" with icon="upload_file" title="Nessun caricamento trovato" description="Carica il tuo primo file Excel o CSV per iniziare." %}
         {% endif %}
     </div>
 

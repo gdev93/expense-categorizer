@@ -54,9 +54,5 @@
     {% endif %}
 {% else %}
     <!-- Empty State for Merchant View -->
-    <div class="empty-state">
-        <div class="empty-state-icon"></div>
-        <h3>Nessuna Transazione Trovata</h3>
-        <p>Non ci sono transazioni che corrispondono ai filtri selezionati.</p>
-    </div>
+    {% include "components/empty-state.html" with icon="store" title="Nessuna Transazione Trovata" description="Non ci sono transazioni che corrispondono ai filtri selezionati." %}
 {% endif %}

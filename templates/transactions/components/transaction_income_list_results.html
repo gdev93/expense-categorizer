@@ -89,7 +89,7 @@
             {% endif %}
 
         {% else %}
-            <p class="text-muted" style="margin-top: 16px;">Nessuna entrata trovata.</p>
+            {% include "components/empty-state.html" with icon="payments" title="Nessuna entrata" description="Nessuna entrata trovata per i criteri selezionati." %}
         {% endif %}
     </div>
 </div>

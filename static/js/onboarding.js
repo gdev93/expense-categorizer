@@ -78,7 +78,7 @@ document.addEventListener('DOMContentLoaded', function() {
             title: 'Personalizza le tue Spese',
             text: 'Questo passaggio si trova nella sezione di menu <b>Spese</b>. Puoi cambiare la categoria di una spesa cliccando sulla "pillola" colorata, oppure cliccare sulla riga per vedere i dettagli e gestire le regole.',
             targetUrl: '/transactions/',
-            hint: 'Clicca qui per cambiare categoria o sulla riga per i dettagli.',
+            hint: 'Clicca sulla riga per i dettagli, oppure il nome della categoria per cambiarla.',
             selector: '.data-list-item'
         }
     };

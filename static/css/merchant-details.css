@@ -41,7 +41,7 @@
 
 .data-list-item.is-active {
     border-color: var(--primary-color) !important;
-    background-color: #fffbeb !important;
+    background-color: #fff9c4 !important;
 }
 
 .data-list-item.is-active .list-item-chevron {

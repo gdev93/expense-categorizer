@@ -37,9 +37,7 @@
             {% endfor %}
         </div>
         {% else %}
-            <div class="empty-state-simple">
-                <p>Non hai ancora creato nessuna categoria.</p>
-            </div>
+            {% include "components/empty-state.html" with icon="category" title="Nessuna categoria" description="Non hai ancora creato nessuna categoria." %}
         {% endif %}
     </div>
 </div>

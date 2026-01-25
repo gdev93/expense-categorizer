@@ -1,5 +1,5 @@
 {% if not transactions %}
-    <p class="text-muted" style="padding: 10px;">Nessuna transazione trovata.</p>
+    {% include "components/empty-state.html" with icon="receipt_long" title="Nessuna transazione" description="Nessuna transazione trovata." extra_classes="empty-state-sm" %}
 {% else %}
     {% for t in transactions %}
         <div class="mini-transaction-row" onclick="window.location.href='{% url 'transaction_detail' pk=t.id %}'">

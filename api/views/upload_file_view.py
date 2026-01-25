@@ -9,23 +9,17 @@ from typing import List, Dict
 
 from django import forms
 from django.contrib import messages
-from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
-from django.contrib.postgres.aggregates import StringAgg
-from django.core.exceptions import BadRequest
-from django.core.paginator import Paginator
 from django.core.validators import FileExtensionValidator
 from django.db import transaction
-from django.db.models import Sum, Count, Exists, OuterRef, Q, Max, Case, When, Value, IntegerField
+from django.db.models import Sum, Count, Exists, OuterRef, Q, QuerySet
 from django.http import HttpResponse, JsonResponse
-from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.views import View
-from django.views.generic import FormView, ListView, DeleteView, DetailView
+from django.views.generic import FormView, ListView, DeleteView
 
 from api.models import Rule, Category
 from api.models import UploadFile, Transaction, Merchant, DefaultCategory
-from api.views.rule_view import create_rule
 from processors.expense_upload_processor import ExpenseUploadProcessor, persist_uploaded_file
 from processors.file_parsers import parse_uploaded_file, FileParserError
 
@@ -232,18 +226,7 @@ class UploadFileView(ListView, FormView):
         Returns:
             CsvProcessingResult with processing details
         """
-        upload_file_query = UploadFile.objects.filter(
-            user=self.request.user,
-            status__in=['pending', 'processing']
-        ).distinct()
 
-        if upload_file_query.exists():
-            return CsvProcessingResult(
-                upload_file=None,
-                rows_processed=0,
-                success=False,
-                error_message='There is already a pending upload'
-            )
 
         try:
             # Parse file using unified parser (handles both CSV and Excel)
@@ -338,7 +321,12 @@ class UploadFileView(ListView, FormView):
     def post(self, request, *args, **kwargs):
         """Handle POST requests (form submission)"""
         form = self.get_form()
-        if form.is_valid():
+        upload_file_query = UploadFile.objects.filter(
+            user=self.request.user, status__in=['pending', 'processing']
+        )
+        if upload_file_query.exists():
+            return self.form_invalid(form, upload_file_query)
+        elif form.is_valid():
             return self.form_valid(form)
         else:
             return self.form_invalid(form)
@@ -366,8 +354,11 @@ class UploadFileView(ListView, FormView):
 
         return super(FormView, self).form_valid(form)
 
-    def form_invalid(self, form):
+    def form_invalid(self, form: UploadFileForm, uncompleted_query_set: QuerySet[UploadFile, UploadFile] | None = None):
         """Handle invalid form submission"""
+        if uncompleted_query_set:
+            messages.error(self.request,
+                           "Ci sono ancora caricamenti in corso, cancellali oppure finisci di categorizzare le spese nella sezione Spese.")
         for field, errors in form.errors.items():
             for error in errors:
                 messages.error(self.request, error)

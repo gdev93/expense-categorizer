@@ -96,15 +96,6 @@
     line-height: 1.4;
 }
 
-.empty-state-simple {
-    text-align: center;
-    padding: 40px;
-    color: var(--secondary-color);
-    background: #f8f9fa;
-    border-radius: 8px;
-    border: 1px dashed #ced4da;
-}
-
 /* Category List Stats */
 .category-layout-stacked {
     display: flex;

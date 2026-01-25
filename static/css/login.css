@@ -68,7 +68,7 @@
     outline: none;
     border-color: var(--primary-hover-color, #E0A800); /* Darker Gold border */
     box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.4); /* Soft Gold focus ring */
-    background-color: #fffaf0; /* Light background on focus */
+    background-color: #fff9c4; /* Light background on focus */
 }
 
 .login-btn {

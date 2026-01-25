@@ -1,0 +1,21 @@
+<div class="empty-state {{ extra_classes }}">
+    {% if icon %}
+    <div class="empty-state-icon">
+        <span class="material-icons">{{ icon }}</span>
+    </div>
+    {% endif %}
+    
+    {% if title %}
+    <h3>{{ title }}</h3>
+    {% endif %}
+    
+    {% if description %}
+    <p class="text-muted">{{ description }}</p>
+    {% endif %}
+    
+    {% if button_text and button_url %}
+    <a href="{{ button_url }}" class="btn btn-primary mt-4">
+        {{ button_text }}
+    </a>
+    {% endif %}
+</div>

@@ -47,7 +47,7 @@
                         </div>
                     </div>
                 {% empty %}
-                    <p>Nessun log di utilizzo API trovato.</p>
+                    {% include "components/empty-state.html" with icon="assessment" title="Nessun dato" description="Nessun log di utilizzo API trovato." %}
                 {% endfor %}
             </div>
         </div>

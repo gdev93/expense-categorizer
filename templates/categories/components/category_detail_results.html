@@ -36,9 +36,7 @@
                 </div>
             {% endfor %}
         {% else %}
-            <div class="empty-state-simple">
-                Nessuna transazione registrata per questa categoria.
-            </div>
+            {% include "components/empty-state.html" with icon="receipt_long" title="Nessuna transazione" description="Nessuna transazione registrata per questa categoria." %}
         {% endif %}
     </div>
 
