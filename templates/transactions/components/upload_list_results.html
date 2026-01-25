@@ -87,13 +87,13 @@
                 <a href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}"
                    hx-get="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}"
                    hx-target="#upload-results"
-                   hx-swap="outerHTML"
+                   hx-swap="outerHTML settle:500ms""
                    hx-indicator="#upload-results"
                    class="pagination-link">&laquo; Prima</a>
                 <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}"
                    hx-get="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}"
                    hx-target="#upload-results"
-                   hx-swap="outerHTML"
+                   hx-swap="outerHTML settle:500ms""
                    hx-indicator="#upload-results"
                    class="pagination-link">Precedente</a>
             {% endif %}
@@ -106,13 +106,13 @@
                 <a href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}"
                    hx-get="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}"
                    hx-target="#upload-results"
-                   hx-swap="outerHTML"
+                   hx-swap="outerHTML settle:500ms""
                    hx-indicator="#upload-results"
                    class="pagination-link">Successiva</a>
                 <a href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}"
                    hx-get="?page={{ page_obj.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}"
                    hx-target="#upload-results"
-                   hx-swap="outerHTML"
+                   hx-swap="outerHTML settle:500ms""
                    hx-indicator="#upload-results"
                    class="pagination-link">Ultima &raquo;</a>
             {% endif %}

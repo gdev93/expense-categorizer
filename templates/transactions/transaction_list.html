@@ -24,11 +24,6 @@
                 </div>
             </div>
             <div class="header-actions">
-                {% if upload_file %}
-                    <a href="{% url 'transactions_upload_delete' upload_file.id %}" class="btn btn-danger">
-                        Elimina File
-                    </a>
-                {% endif %}
                 <div class="desktop-only">
                     {% include "components/year-select.html" with id_suffix="_desktop" %}
                 </div>

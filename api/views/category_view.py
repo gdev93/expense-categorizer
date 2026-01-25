@@ -74,7 +74,7 @@ class CategoryListView(LoginRequiredMixin, CategoryEnrichedMixin, ListView):
 
     def get_template_names(self):
         if self.request.headers.get('HX-Request'):
-            return ['categories/components/category_list_results.html']
+            return ['categories/categories_htmx.html']
         return [self.template_name]
 
     def get_queryset(self):

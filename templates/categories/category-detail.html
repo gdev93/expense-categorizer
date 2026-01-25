@@ -27,8 +27,8 @@
                 <form method="get" class="filters mb-4"
                       hx-get="{% url 'category_detail' category.id %}"
                       hx-target="#category-detail-results"
-                      hx-swap="outerHTML"
-                      hx-indicator="#form-loader, #category-detail-results"
+                      hx-swap="outerHTML settle:500ms""
+                      hx-indicator="#category-detail-results"
                       hx-trigger="change, input delay:500ms from:#search, submit"
                       id="transaction-filter-form">
 
@@ -49,16 +49,13 @@
                                 <span class="desktop-only">Filtri</span>
                             </button>
 
-                            <button type="submit" class="btn btn-subtle-primary mobile-only" title="Filtra">
-                                <span class="material-icons htmx-hide-indicator">refresh</span>
-                                <div id="form-loader" class="htmx-indicator spinner-border-sm"></div>
-                            </button>
 
                             <a href="{% url 'category_detail' category.id %}"
                                hx-get="{% url 'category_detail' category.id %}"
                                hx-target="#category-detail-results"
-                               hx-swap="outerHTML"
+                               hx-swap="outerHTML settle:500ms""
                                hx-indicator="#category-detail-results"
+                               hx-on::before-request="document.getElementById('transaction-filter-form').reset();"
                                class="btn btn-icon btn-subtle-danger" title="Cancella">
                                 <span class="material-icons">clear</span>
                             </a>

@@ -83,8 +83,8 @@
         <form method="get" class="filters" id="upload-filter-form"
               hx-get="{% url 'transactions_upload' %}"
               hx-target="#upload-results"
-              hx-swap="outerHTML"
-              hx-indicator="#form-loader, #upload-results"
+              hx-swap="outerHTML settle:500ms""
+              hx-indicator="#upload-results"
               hx-trigger="change, input delay:500ms from:#search, submit">
 
             <div class="filter-main-row">
@@ -104,16 +104,13 @@
                         <span class="desktop-only">Filtri</span>
                     </button>
 
-                    <button type="submit" class="btn btn-subtle-primary mobile-only" title="Filtra">
-                        <span class="material-icons htmx-hide-indicator">refresh</span>
-                        <div id="form-loader" class="htmx-indicator spinner-border-sm"></div>
-                    </button>
 
                     <a href="{% url 'transactions_upload' %}"
                        hx-get="{% url 'transactions_upload' %}"
                        hx-target="#upload-results"
-                       hx-swap="outerHTML"
+                       hx-swap="outerHTML settle:500ms""
                        hx-indicator="#upload-results"
+                       hx-on::before-request="document.getElementById('upload-filter-form').reset();"
                        class="btn btn-icon btn-subtle-danger" title="Cancella">
                         <span class="material-icons">clear</span>
                     </a>

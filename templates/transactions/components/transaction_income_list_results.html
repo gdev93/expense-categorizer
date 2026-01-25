@@ -54,12 +54,12 @@
                         <a href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% for month in selected_months %}&months={{ month }}{% endfor %}{% if year %}&year={{ year }}{% endif %}{% if selected_amount %}&amount={{ selected_amount }}&amount_operator={{ selected_amount_operator }}{% endif %}"
                            hx-get="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% for month in selected_months %}&months={{ month }}{% endfor %}{% if year %}&year={{ year }}{% endif %}{% if selected_amount %}&amount={{ selected_amount }}&amount_operator={{ selected_amount_operator }}{% endif %}"
                            hx-target="#income-results"
-                           hx-swap="outerHTML"
+                           hx-swap="outerHTML settle:500ms""
                            hx-indicator="#income-results">« Prima</a>
                         <a href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% for month in selected_months %}&months={{ month }}{% endfor %}{% if year %}&year={{ year }}{% endif %}{% if selected_amount %}&amount={{ selected_amount }}&amount_operator={{ selected_amount_operator }}{% endif %}"
                            hx-get="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% for month in selected_months %}&months={{ month }}{% endfor %}{% if year %}&year={{ year }}{% endif %}{% if selected_amount %}&amount={{ selected_amount }}&amount_operator={{ selected_amount_operator }}{% endif %}"
                            hx-target="#income-results"
-                           hx-swap="outerHTML"
+                           hx-swap="outerHTML settle:500ms""
                            hx-indicator="#income-results">‹ Precedente</a>
                     {% else %}
                         <span class="disabled">« Prima</span>
@@ -74,12 +74,12 @@
                         <a href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% for month in selected_months %}&months={{ month }}{% endfor %}{% if year %}&year={{ year }}{% endif %}{% if selected_amount %}&amount={{ selected_amount }}&amount_operator={{ selected_amount_operator }}{% endif %}"
                            hx-get="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% for month in selected_months %}&months={{ month }}{% endfor %}{% if year %}&year={{ year }}{% endif %}{% if selected_amount %}&amount={{ selected_amount }}&amount_operator={{ selected_amount_operator }}{% endif %}"
                            hx-target="#income-results"
-                           hx-swap="outerHTML"
+                           hx-swap="outerHTML settle:500ms""
                            hx-indicator="#income-results">Successiva ›</a>
                         <a href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% for month in selected_months %}&months={{ month }}{% endfor %}{% if year %}&year={{ year }}{% endif %}{% if selected_amount %}&amount={{ selected_amount }}&amount_operator={{ selected_amount_operator }}{% endif %}"
                            hx-get="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% for month in selected_months %}&months={{ month }}{% endfor %}{% if year %}&year={{ year }}{% endif %}{% if selected_amount %}&amount={{ selected_amount }}&amount_operator={{ selected_amount_operator }}{% endif %}"
                            hx-target="#income-results"
-                           hx-swap="outerHTML"
+                           hx-swap="outerHTML settle:500ms""
                            hx-indicator="#income-results">Ultima »</a>
                     {% else %}
                         <span class="disabled">Successiva ›</span>

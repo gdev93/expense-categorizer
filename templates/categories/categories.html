@@ -14,17 +14,13 @@
 {% block content %}
 <div class="container mt-2">
 
-    <div class="sticky-header-bar" id="stickyHeader">
-        <div class="header-main-content">
-            {% include "components/header-categories.html" with title="Categorie" icon="category"%}
-        </div>
-    </div>
+    {%  include 'categories/components/categories-summary.html' %}
 
     <form method="get" class="filters"
           hx-get="{% url 'category_list' %}"
           hx-target="#category-results"
-          hx-swap="outerHTML"
-          hx-indicator="#form-loader, #category-results"
+          hx-swap="outerHTML settle:500ms"
+          hx-indicator="#category-results"
           hx-trigger="change, input delay:500ms from:#search, submit, change from:[name='year']"
           hx-include="[form='main-filter-form']"
           id="main-filter-form">
@@ -46,16 +42,14 @@
                     <span class="desktop-only">Filtri</span>
                 </button>
 
-                <button type="submit" class="btn btn-subtle-primary mobile-only" title="Filtra">
-                    <span class="material-icons htmx-hide-indicator">refresh</span>
-                    <div id="form-loader" class="htmx-indicator spinner-border-sm"></div>
-                </button>
 
                 <a href="{% url 'category_list' %}"
                    hx-get="{% url 'category_list' %}"
                    hx-target="#category-results"
-                   hx-swap="outerHTML"
+                   hx-swap="outerHTML settle:500ms"
+                   hx-settle="1s"
                    hx-indicator="#category-results"
+                   hx-on::before-request="document.getElementById('main-filter-form').reset();"
                    class="btn btn-icon btn-subtle-danger" id="delete-category-search" title="Cancella">
                     <span class="material-icons">clear</span>
                 </a>

@@ -1,8 +1,8 @@
 <form method="get" class="filters" id="main-filter-form"
       hx-get="{% url 'transaction_list' %}"
       hx-target="#transaction-results"
-      hx-swap="outerHTML"
-      hx-indicator="#form-loader, #transaction-results"
+      hx-swap="outerHTML settle:500ms""
+      hx-indicator="#transaction-results"
       hx-trigger="change, input delay:500ms from:#search, input delay:500ms from:#amount, submit, change from:[name='year'], change from:[name='view_type']"
       hx-include="[form='main-filter-form']">
 
@@ -25,16 +25,13 @@
                 <span class="desktop-only">Filtri</span>
             </button>
 
-            <button type="submit" class="btn btn-subtle-primary mobile-only" title="Filtra">
-                <span class="material-icons htmx-hide-indicator">refresh</span>
-                <div id="form-loader" class="htmx-indicator spinner-border-sm"></div>
-            </button>
 
             <a href="{{ request.path }}"
                hx-get="{{ request.path }}"
                hx-target="#transaction-results"
-               hx-swap="outerHTML"
-               hx-indicator="#form-loader, #transaction-results"
+               hx-swap="outerHTML settle:500ms""
+               hx-indicator="#transaction-results"
+               hx-on::before-request="document.getElementById('main-filter-form').reset();"
                class="btn btn-icon btn-subtle-danger" title="Cancella">
                 <span class="material-icons">clear</span>
             </a>
