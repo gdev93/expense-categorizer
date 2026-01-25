@@ -52,7 +52,7 @@
             {% endif %}
         </div>
     {% endif %}
-{% else %}
+{% elif not uncategorized_merchants %}
     <!-- Empty State for Merchant View -->
     {% include "components/empty-state.html" with icon="store" title="Nessuna Transazione Trovata" description="Non ci sono transazioni che corrispondono ai filtri selezionati." %}
 {% endif %}

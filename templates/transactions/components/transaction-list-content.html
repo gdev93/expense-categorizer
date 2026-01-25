@@ -142,7 +142,7 @@
 </div>
 {% endif %}
 
-{% else %}
+{% elif not uncategorized_transaction %}
     <!-- Empty State -->
     {% url 'transactions_upload' as upload_url %}
     {% include "components/empty-state.html" with icon="receipt_long" title="Nessuna Transazione Trovata" description="Carica un file Excel o CSV per iniziare a tracciare le tue spese." button_text="Carica File" button_url=upload_url %}

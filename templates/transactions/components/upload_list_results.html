@@ -31,7 +31,10 @@
                         <div class="file-info-container">
                             <div class="file-text-content">
                                 {% if upload.status != 'completed' %}
-                                    <div class="upload-status-label">In corso</div>
+                                    <div class="upload-status-label">
+                                        <span class="material-icons spin-animation" style="font-size: 12px; vertical-align: middle; margin-right: 4px;">sync</span>
+                                        In corso
+                                    </div>
                                 {% endif %}
                                 <div class="file-name">
                                     {% if upload.file_name %}{{ upload.file_name }}{% else %}{{ upload.id }}_{{ upload.upload_date|date:"Ymd_His" }}{% endif %}

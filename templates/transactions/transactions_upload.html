@@ -17,20 +17,12 @@
         {% include "components/header.html" with icon="upload_file" title="Carica Estratti Conto" %}
 
         <div class="upload-area mb-3">
-            <p class="text-muted mb-5">
-                Seleziona un file in formato <strong>Excel</strong> o <strong>CSV</strong> da caricare per l'elaborazione.
-                {% if upload_context %}
-                    Dimensione massima: <strong>{{ upload_context.max_file_size_mb }}MB</strong>.
-                {% endif %}
-            </p>
-
-
             <form id="uploadForm" class="file-upload-form" method="POST" enctype="multipart/form-data">
                 {% csrf_token %}
 
                 <div class="drop-zone" id="dropZone">
                     <input type="file" id="fileInput" name="file" accept=".csv,.xlsx,.xls" hidden>
-                    <p class="drop-zone-text">Trascina qui il file o <strong class="primary-text-link" id="browseFiles">clicca
+                    <p class="drop-zone-text">Carica un file Excel o Csv. Trascina qui il file o <strong class="primary-text-link" id="browseFiles">clicca
                         per selezionare</strong></p>
                     <small class="text-muted">
                         Max 1 file,
