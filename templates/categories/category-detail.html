@@ -27,7 +27,7 @@
                 <form method="get" class="filters mb-4"
                       hx-get="{% url 'category_detail' category.id %}"
                       hx-target="#category-detail-results"
-                      hx-swap="outerHTML settle:500ms""
+                      hx-swap="outerHTML settle:500ms"
                       hx-indicator="#category-detail-results"
                       hx-trigger="change, input delay:500ms from:#search, submit"
                       id="transaction-filter-form">
@@ -53,10 +53,10 @@
                             <a href="{% url 'category_detail' category.id %}"
                                hx-get="{% url 'category_detail' category.id %}"
                                hx-target="#category-detail-results"
-                               hx-swap="outerHTML settle:500ms""
+                               hx-swap="outerHTML settle:500ms"
                                hx-indicator="#category-detail-results"
                                hx-on::before-request="document.getElementById('transaction-filter-form').reset();"
-                               class="btn btn-icon btn-subtle-danger" title="Cancella">
+                               class="btn btn-icon btn-subtle" title="Cancella">
                                 <span class="material-icons">clear</span>
                             </a>
                         </div>

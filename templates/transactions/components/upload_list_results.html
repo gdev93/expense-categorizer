@@ -12,7 +12,7 @@
                     </div>
                     <div class="list-item-stats">
                         <div class="skeleton-text" style="width: 100px; height: 24px; border-radius: 4px;"></div>
-                        <div class="skeleton-text" style="width: 120px; height: 18px;"></div>
+                        <div class="skeleton-text desktop-only" style="width: 120px; height: 18px;"></div>
                         <div style="display: flex; gap: 8px;">
                             <div class="skeleton-text" style="width: 80px; height: 32px; border-radius: 4px;"></div>
                             <div class="skeleton-text" style="width: 80px; height: 32px; border-radius: 4px;"></div>
@@ -34,16 +34,11 @@
                                     {% if upload.file_name %}{{ upload.file_name }}{% else %}{{ upload.id }}_{{ upload.upload_date|date:"Ymd_His" }}.csv{% endif %}
                                 </div>
                                 <div class="file-date">
-                                     Caricato il {{ upload.upload_date|date:"d/m/Y H:i" }}
+                                     {{ upload.upload_date|date:"d/m/Y" }}
                                 </div>
                                 <div class="file-size text-muted">
                                     {% if upload.dimension %}
                                          {{ upload.file_size_display }}
-                                    {% endif %}
-                                    {% if upload.processing_time %}
-                                         {{ upload.processing_time|format_processing_time }}
-                                    {% else %}
-                                        In corso
                                     {% endif %}
                                 </div>
                             </div>
@@ -59,15 +54,25 @@
                             {% endif %}
                         </span>
 
-                        <div class="expense-count">
+                        <div class="expense-count desktop-only">
                             <span class="count-number">{{ upload.transactions_count }}</span> Spese trovate
                         </div>
                         <div class="list-item-actions">
-                            <button type="button" class="btn btn-outline-success btn-sm" onclick="exportUpload({{ upload.id }}, event)">
-                                <span class="material-icons" style="font-size: 1.1em; vertical-align: middle; margin-right: 4px;">download</span> Esporta
+                            <button type="button" class="btn btn-icon btn-subtle" onclick="exportUpload({{ upload.id }}, event)" title="Esporta">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="7 10 12 15 17 10"></polyline>
+                                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                                </svg>
                             </button>
-                            <a href="{% url 'transactions_upload_delete' upload.id %}" class="btn btn-danger btn-sm" onclick="event.stopPropagation();">
-                                Elimina
+                            <a href="{% url 'transactions_upload_delete' upload.id %}" class="btn btn-icon btn-subtle-danger" title="Elimina" onclick="event.stopPropagation();">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M3 6h18"></path>
+                                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                                    <line x1="10" y1="11" x2="10" y2="17"></line>
+                                    <line x1="14" y1="11" x2="14" y2="17"></line>
+                                </svg>
                             </a>
                         </div>
                     </div>
@@ -87,13 +92,13 @@
                 <a href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}"
                    hx-get="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}"
                    hx-target="#upload-results"
-                   hx-swap="outerHTML settle:500ms""
+                   hx-swap="outerHTML settle:500ms"
                    hx-indicator="#upload-results"
                    class="pagination-link">&laquo; Prima</a>
                 <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}"
                    hx-get="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}"
                    hx-target="#upload-results"
-                   hx-swap="outerHTML settle:500ms""
+                   hx-swap="outerHTML settle:500ms"
                    hx-indicator="#upload-results"
                    class="pagination-link">Precedente</a>
             {% endif %}
@@ -106,13 +111,13 @@
                 <a href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}"
                    hx-get="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}"
                    hx-target="#upload-results"
-                   hx-swap="outerHTML settle:500ms""
+                   hx-swap="outerHTML settle:500ms"
                    hx-indicator="#upload-results"
                    class="pagination-link">Successiva</a>
                 <a href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}"
                    hx-get="?page={{ page_obj.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}"
                    hx-target="#upload-results"
-                   hx-swap="outerHTML settle:500ms""
+                   hx-swap="outerHTML settle:500ms"
                    hx-indicator="#upload-results"
                    class="pagination-link">Ultima &raquo;</a>
             {% endif %}

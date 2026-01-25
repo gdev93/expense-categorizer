@@ -47,7 +47,7 @@
             {% if transactions.has_previous %}
                 <a hx-get="?page={{ transactions.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_year %}&year={{ selected_year }}{% endif %}{% for m in selected_months %}&months={{ m }}{% endfor %}"
                    hx-target="#category-detail-results"
-                   hx-swap="outerHTML settle:500ms""
+                   hx-swap="outerHTML settle:500ms"
                    hx-indicator="#category-detail-results"
                    class="btn btn-sm">Precedente</a>
             {% else %}
@@ -61,7 +61,7 @@
             {% if transactions.has_next %}
                 <a hx-get="?page={{ transactions.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_year %}&year={{ selected_year }}{% endif %}{% for m in selected_months %}&months={{ m }}{% endfor %}"
                    hx-target="#category-detail-results"
-                   hx-swap="outerHTML settle:500ms""
+                   hx-swap="outerHTML settle:500ms"
                    hx-indicator="#category-detail-results"
                    class="btn btn-sm">Successiva</a>
             {% else %}

@@ -204,43 +204,40 @@ h3 { font-size: 18px; }
     min-width: 38px;
 }
 
-.btn-icon-danger {
-    background-color: #f8d7da;
-    color: #dc3545;
-    border: 1px solid #f5c6cb;
-    box-shadow: none;
-}
-
-.btn-icon-danger:hover {
-    background-color: #dc3545;
-    color: white;
-    border-color: #dc3545;
-}
-
-.btn-subtle,
-.btn-subtle-primary,
-.btn-subtle-danger,
-.btn-subtle-success {
+.btn-subtle {
     background-color: transparent;
     color: #000000 !important;
     box-shadow: none !important;
     transform: none !important;
 }
 
-.btn-subtle:hover,
-.btn-subtle-primary:hover,
-.btn-subtle-danger:hover,
-.btn-subtle-success:hover {
+.btn-subtle-danger {
+    background-color: transparent;
+    color: var(--danger-color) !important;
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+.btn-subtle:hover {
     background-color: rgba(0, 0, 0, 0.05);
     color: #000000 !important;
     transform: none !important;
     box-shadow: none !important;
 }
 
-.btn-subtle-primary .material-icons,
-.btn-subtle-danger .material-icons,
-.btn-subtle-success .material-icons {
+.btn-subtle-danger:hover {
+    background-color: #f8d7da;
+    color: var(--danger-color) !important;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+.btn-subtle .material-icons {
     color: #000000 !important;
+}
+
+.btn-subtle-danger .material-icons {
+    color: var(--danger-color) !important;
 }
 
 /* --- Buttons (Disabled State) --- */

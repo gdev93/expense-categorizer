@@ -83,7 +83,7 @@
         <form method="get" class="filters" id="upload-filter-form"
               hx-get="{% url 'transactions_upload' %}"
               hx-target="#upload-results"
-              hx-swap="outerHTML settle:500ms""
+              hx-swap="outerHTML settle:500ms"
               hx-indicator="#upload-results"
               hx-trigger="change, input delay:500ms from:#search, submit">
 
@@ -108,10 +108,10 @@
                     <a href="{% url 'transactions_upload' %}"
                        hx-get="{% url 'transactions_upload' %}"
                        hx-target="#upload-results"
-                       hx-swap="outerHTML settle:500ms""
+                       hx-swap="outerHTML settle:500ms"
                        hx-indicator="#upload-results"
                        hx-on::before-request="document.getElementById('upload-filter-form').reset();"
-                       class="btn btn-icon btn-subtle-danger" title="Cancella">
+                       class="btn btn-icon btn-subtle" title="Cancella">
                         <span class="material-icons">clear</span>
                     </a>
                 </div>

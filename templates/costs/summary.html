@@ -15,7 +15,7 @@
         <form id="main-filter-form"
               hx-get="{% url 'costs:summary' %}"
               hx-target="#cost-results"
-              hx-swap="outerHTML settle:500ms""
+              hx-swap="outerHTML settle:500ms"
               hx-indicator="#cost-results"
               hx-trigger="change, change from:[name='year']"
               hx-include="[form='main-filter-form']"></form>
