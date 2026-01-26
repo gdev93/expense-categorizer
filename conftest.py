@@ -16,7 +16,7 @@ def postgres_container():
         yield None
         return
 
-    postgres = PostgresContainer("postgres:16-alpine")
+    postgres = PostgresContainer("pgvector/pgvector:pg15")
     postgres.start()
     
     os.environ["DB_HOST"] = str(postgres.get_container_host_ip())
