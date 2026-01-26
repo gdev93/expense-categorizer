@@ -180,6 +180,7 @@ class TransactionCategorization:
 class AgentTransactionUpload:
     transaction_id: int
     raw_text: dict[str, Any]
+    rag_context: list[dict[str, Any]] = None
 
 
 
@@ -402,6 +403,11 @@ class ExpenseCategorizerAgent:
                - USA la tua conoscenza: se riconosci un brand italiano o internazionale (es. CONAD, LIDL, COOP, IKEA, DECATHLON, ZALANDO, NETFLIX, SPOTIFY, ENEL, ENI), assegna la categoria corretta.
                - CONSIDERA il contesto: addebiti SDD da società energetiche = Bollette, pagamenti a scuole/università = Scuola, addebiti bancari = Bollette, assicurazioni = Assicurazioni, ecc.
                - ANALIZZA OGNI PAROLA: spesso il tipo di spesa è nascosto nella descrizione (es. "BOOKING.COM" = Vacanze, "RYANAIR" = Trasporti, "FARMACIE COMUNALI" = Spese mediche).
+
+            3. **Esempi Simili dal Passato (RAG Context)**:
+               - Per ogni transazione potresti trovare una sezione "ESEMPI SIMILI DAL PASSATO".
+               - Questi sono esempi reali di transazioni passate dell'utente già categorizzate.
+               - **IMPORTANTE**: Se un esempio simile corrisponde bene alla transazione attuale, segui la stessa categorizzazione (categoria e merchant) per garantire coerenza con lo storico dell'utente.
         """
 
         # Formatta le transazioni
@@ -414,6 +420,12 @@ class ExpenseCategorizerAgent:
                     # Tronca i valori molto lunghi
                     display_value = str(value)[:200] + "..." if len(str(value)) > 200 else value
                     transactions_text += f"   - {column}: {display_value}\n"
+            
+            if tx.rag_context:
+                transactions_text += "   ESEMPI SIMILI DAL PASSATO:\n"
+                for ctx in tx.rag_context:
+                    transactions_text += f"     • Descrizione: {ctx['description']} | Mercante: {ctx['merchant']} | Categoria: {ctx['category']}\n"
+            
             transactions_text += "\n"
 
         # Build CSV structure hints section
@@ -646,12 +658,13 @@ class ExpenseCategorizerAgent:
     │ 6. REASONING (RAGIONAMENTO) (OBBLIGATORIO)          │
     └─────────────────────────────────────────────────────┘
        • Spiega in 1-2 frasi perché hai scelto questa categoria specifica tra quelle disponibili.
-       • Menziona gli elementi chiave che hanno guidato la decisione (merchant, tipo operazione, descrizione).
+       • Menziona gli elementi chiave che hanno guidato la decisione (merchant, tipo operazione, descrizione, ed eventuali esempi simili dal passato).
        • Esempi di buon reasoning:
          * "Categoria Alimentari per merchant ESSELUNGA, supermercato italiano tra i più noti"
          * "Categoria Trasporti per pagamento biglietto bus ATM Milano, confermato da descrizione"
          * "Categoria Bollette per addebito SDD ricorrente da ENEL ENERGIA, provider energia italiano"
          * "Categoria Sport per acquisto presso DECATHLON, negozio articoli sportivi"
+         * "Categoria scelta per coerenza con transazioni passate dell'utente per lo stesso merchant/descrizione"
 
     ═══════════════════════════════════════════════════════
     OUTPUT FORMAT

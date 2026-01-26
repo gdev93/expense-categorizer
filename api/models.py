@@ -7,6 +7,7 @@ from django.contrib.postgres.search import TrigramWordSimilarity
 from django.db import models
 from django.db.models import QuerySet
 from django.db.models.expressions import RawSQL
+from pgvector.django import VectorField, HnswIndex
 
 
 class DefaultCategory(models.Model):
@@ -259,6 +260,7 @@ class Transaction(models.Model):
     raw_data = models.JSONField(default=dict)
     categorized_by_agent = models.BooleanField(default=False)
     reasoning = models.TextField(blank=True)
+    embedding = VectorField(dimensions=384, null=True, blank=True)
 
     def save(self, *args, **kwargs):
         # Auto-normalize name for fuzzy matching
@@ -275,10 +277,22 @@ class Transaction(models.Model):
             models.Index(fields=['user', 'status']),
             GinIndex(fields=['merchant_raw_name'], name='trans_merch_raw_trgm_idx', opclasses=['gin_trgm_ops']),
             GinIndex(fields=['description'], name='trans_desc_trgm_idx', opclasses=['gin_trgm_ops']),
+            HnswIndex(name='idx_tx_embedding', fields=['embedding'], opclasses=['vector_cosine_ops']),
         ]
 
     def __str__(self):
         return f"{self.transaction_date} - {self.merchant_raw_name or self.merchant} - €{self.amount}"
+
+    @classmethod
+    def find_similar_by_embedding(cls, user, embedding, limit=5):
+        from pgvector.django import CosineDistance
+        return cls.objects.filter(
+            user=user,
+            embedding__isnull=False,
+            category__isnull=False
+        ).annotate(
+            distance=CosineDistance('embedding', embedding)
+        ).order_by('distance')[:limit]
 
 
 class Rule(models.Model):

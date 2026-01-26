@@ -103,74 +103,73 @@ def parse_uploaded_file(file) -> List[Dict[str, str]]:
 
 def read_excel(file_path) -> List[Dict[str, str]]:
     """
-    Reads a bank transaction Excel file by dynamically detecting the header row
-    using universal keywords, and cleans the resulting DataFrame.
-
-    Keywords are read from the 'BANK_KEYWORDS' environment variable (comma-separated).
-
-    Returns:
-        List of dictionaries representing rows (same format as parse_csv_file)
+    Reads a bank transaction Excel file, detecting the header dynamically,
+    and cleans the data to be strictly JSON-compliant for Postgres.
     """
-    # 1. Define Universal Keywords (Case-Insensitive)
+    # 1. Define Universal Keywords
     keyword_string = os.getenv('BANK_KEYWORDS', 'Importo,Valuta,Descrizione,Concetto,Movimento')
+    UNIVERSAL_KEYWORDS = [kw.strip() for kw in keyword_string.split(',') if kw.strip()]
 
-    # Clean the string and create the list of keywords
-    UNIVERSAL_KEYWORDS = [
-        kw.strip() for kw in keyword_string.split(',') if kw.strip()
-    ]
-
-    # Validate that we have keywords to search for
     if not UNIVERSAL_KEYWORDS:
-        raise ValueError(
-            "UNIVERSAL_KEYWORDS list is empty. Check the BANK_KEYWORDS environment variable or the default list.")
+        raise ValueError("UNIVERSAL_KEYWORDS list is empty.")
 
-    # 2. Attempt to Load the first 30 rows without a header to start the search
+    # 2. Load first 30 rows to find header
     try:
         temp_df = pd.read_excel(file_path, header=None, nrows=30, engine='openpyxl')
     except Exception as e:
         raise IOError(f"Failed to read Excel file {file_path}. Error: {e}")
 
-    # 3. Dynamically Find the Header Row Index
+    # 3. Dynamically Find Header Row
     header_index = -1
     for index, row in temp_df.iterrows():
-        # Clean the row: drop NaNs, convert to string, and lowercase for robust search
         row_string = ' '.join(row.dropna().astype(str).tolist()).lower()
-
-        # Check if any keyword is present in this row
         if any(keyword.lower() in row_string for keyword in UNIVERSAL_KEYWORDS):
             header_index = index
-            logger.info(
-                f"✅ Success: Header dynamically detected at row index: {header_index} using keywords: {UNIVERSAL_KEYWORDS}")
+            logger.info(f"✅ Header detected at row: {header_index}")
             break
 
     if header_index == -1:
-        # If no header is found, raise an error to stop processing
-        raise ValueError(f"Could not find the transaction header based on universal keywords: {UNIVERSAL_KEYWORDS}.")
+        raise ValueError(f"Could not find header with keywords: {UNIVERSAL_KEYWORDS}")
 
-    # 4. Load the Full Data using the Detected Header Index (without dtype=str)
+    # 4. Load Full Data
     df = pd.read_excel(file_path, header=header_index, engine='openpyxl')
 
-    # 5. Clean up the DataFrame
-
-    # Drop any unwanted 'Unnamed' columns
+    # 5. Drop Unnamed columns and whitespace from headers
     df = df.drop(columns=[col for col in df.columns if 'Unnamed:' in col], errors='ignore')
-
-    # Strip whitespace from column names
     df.columns = df.columns.str.strip()
 
-    # 6. Convert datetime columns to dd/mm/yyyy format and strip all values in one loop
+    # ---------------------------------------------------------
+    # 6. ROBUST CLEANING (Fixes the JSON/Postgres Error)
+    # ---------------------------------------------------------
+
+    # Helper function to clean individual cells
+    def clean_cell(x):
+        # If it is strictly None, return None
+        if x is None:
+            return None
+
+        # If it is a float/numpy NaN, return None
+        if pd.isna(x):
+            return None
+
+        # Convert to string and strip whitespace
+        s = str(x).strip()
+
+        # Check for empty strings or artifacts like "nan", "NaT"
+        if not s or s.lower() in ('nan', 'nat', 'none'):
+            return None
+
+        return s
+
     for col in df.columns:
+        # Handle Date Columns specifically before string conversion
         if pd.api.types.is_datetime64_any_dtype(df[col]):
+            # Format valid dates; NaT (Not a Time) will remain NaT or become NaN
             df[col] = df[col].dt.strftime('%d/%m/%Y')
-        else:
-            # Convert to string
-            df[col] = df[col].astype(str)
 
-        # Strip whitespace from all string values
-        df[col] = df[col].apply(lambda x: x.strip() if isinstance(x, str) else x)
+        # Apply the cleaner to every cell in the column
+        df[col] = df[col].apply(clean_cell)
 
-    df = df.where(pd.notna(df))
-
-    # 7. Convert DataFrame to list of dictionaries (same format as CSV parser)
+    # 7. Convert to Dictionary
     records: List[Dict[str, str]] = df.to_dict('records')  # type: ignore[assignment]
     return records

@@ -3,18 +3,32 @@ from processors.data_prechecks import RawTransactionParseResult
 
 class TransactionUpdater:
     @staticmethod
+    def _update_common_fields(tx: Transaction, parse_result: RawTransactionParseResult) -> Transaction:
+        tx.amount = abs(parse_result.amount)
+        tx.original_amount = parse_result.original_amount
+        tx.transaction_date = parse_result.date
+        tx.original_date = parse_result.date_original
+        tx.description = parse_result.description
+        tx.normalized_description = normalize_string(parse_result.description)
+        tx.operation_type = parse_result.operation_type
+        return tx
+
+    @staticmethod
     def update_transaction_with_parse_result(tx: Transaction,
                                             transaction_parse_result: RawTransactionParseResult) -> Transaction:
         """
-        Create an uncategorized transaction.
+        Update basic transaction fields from parse result.
         """
-        tx.amount = abs(transaction_parse_result.amount)
-        tx.original_amount = transaction_parse_result.original_amount
-        tx.transaction_date = transaction_parse_result.date
-        tx.original_date = transaction_parse_result.date_original
-        tx.description = transaction_parse_result.description
-        tx.normalized_description = normalize_string(transaction_parse_result.description)
-        return tx
+        return TransactionUpdater._update_common_fields(tx, transaction_parse_result)
+
+    @staticmethod
+    def update_income_transaction(tx: Transaction, parse_result: RawTransactionParseResult) -> Transaction:
+        """
+        Update income transaction fields.
+        """
+        tx.transaction_type = 'income'
+        tx.status = 'categorized'
+        return TransactionUpdater._update_common_fields(tx, parse_result)
 
     @staticmethod
     def update_categorized_transaction_with_category_merchant(tx: Transaction, category: Category, merchant: Merchant,
@@ -23,13 +37,7 @@ class TransactionUpdater:
         tx.merchant = merchant
         tx.merchant_raw_name = merchant.normalized_name
         tx.category = category
-        tx.transaction_date = transaction_parse_result.date
-        tx.original_date = transaction_parse_result.date_original
-        tx.description = transaction_parse_result.description
-        tx.normalized_description = normalize_string(transaction_parse_result.description)
-        tx.amount = abs(transaction_parse_result.amount)
-        tx.original_amount = transaction_parse_result.original_amount
-        return tx
+        return TransactionUpdater._update_common_fields(tx, transaction_parse_result)
 
     @staticmethod
     def update_categorized_transaction(
@@ -44,10 +52,4 @@ class TransactionUpdater:
         tx.merchant = reference_transaction.merchant
         tx.merchant_raw_name = reference_transaction.merchant.normalized_name
         tx.category = reference_transaction.category
-        tx.transaction_date = transaction_parse_result.date
-        tx.original_date = transaction_parse_result.date_original
-        tx.description = transaction_parse_result.description
-        tx.normalized_description = normalize_string(transaction_parse_result.description)
-        tx.amount = abs(transaction_parse_result.amount)
-        tx.original_amount = transaction_parse_result.original_amount
-        return tx
+        return TransactionUpdater._update_common_fields(tx, transaction_parse_result)

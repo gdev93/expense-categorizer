@@ -6,6 +6,8 @@ testcontainers[postgres]
 pytest-django
 babel
 google-genai
+fastembed==0.5.1
+pgvector
 gunicorn
 pandas
 openpyxl

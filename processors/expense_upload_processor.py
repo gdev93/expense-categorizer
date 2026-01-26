@@ -1,26 +1,27 @@
 import logging
 import os
 from concurrent.futures import ThreadPoolExecutor
-from typing import Any
 
 from django.contrib.auth.models import User
 from django.core.files.uploadedfile import UploadedFile
 from django.db import transaction, connections
+from django.db.models import Count, Max
 
 from agent.agent import ExpenseCategorizerAgent, AgentTransactionUpload, TransactionCategorization, GeminiResponse
 from api.models import Transaction, Category, Merchant, UploadFile, normalize_string
-from processors.data_prechecks import parse_raw_transaction, RawTransactionParseResult
-from processors.parser_utils import normalize_amount, parse_raw_date, parse_date_from_raw_data_with_no_suggestions
-from processors.similarity_matcher import SimilarityMatcher
-from processors.transaction_updater import TransactionUpdater
-from processors.csv_structure_detector import CsvStructureDetector
-from processors.batching_helper import BatchingHelper
 from costs.services import CostService
+from processors.batching_helper import BatchingHelper
+from processors.csv_structure_detector import CsvStructureDetector
+from processors.data_prechecks import parse_raw_transaction
+from processors.embeddings import EmbeddingEngine
+from processors.parser_utils import normalize_amount, parse_raw_date
+from processors.similarity_matcher import SimilarityMatcher, generate_embedding, SimilarityMatcherRAG, is_rag_reliable
+from processors.transaction_updater import TransactionUpdater
 
 logger = logging.getLogger(__name__)
 
 
-class ExpenseUploadProcessor:
+class ExpenseUploadProcessor(SimilarityMatcherRAG):
     """
     Handles the processing and persistence of uploaded expense transactions.
 
@@ -93,15 +94,7 @@ class ExpenseUploadProcessor:
                 all_transactions_to_upload.append(tx)
                 continue
             if transaction_parse_result.is_income:
-                tx.transaction_type = 'income'
-                tx.status = 'categorized'
-                tx.transaction_date = transaction_parse_result.date
-                tx.original_amount = transaction_parse_result.original_amount
-                tx.description = transaction_parse_result.description
-                tx.normalized_description = normalize_string(transaction_parse_result.description)
-                tx.original_date = transaction_parse_result.date_original
-                tx.amount = transaction_parse_result.amount
-                tx.operation_type = transaction_parse_result.operation_type
+                TransactionUpdater.update_income_transaction(tx, transaction_parse_result)
                 # income transactions are not categorized yet
                 all_transactions_as_income.append(tx)
                 continue
@@ -123,24 +116,28 @@ class ExpenseUploadProcessor:
                                                                                                  transaction_parse_result)
                 all_transactions_categorized.append(categorized_transaction)
             else:
-                reference_transaction = self.similarity_matcher.find_reference_transaction_from_raw(
-                                                                             transaction_parse_result)
-                if reference_transaction:
+                tx.embedding = generate_embedding(transaction_parse_result.description)
+                reference_transaction, _ = self.find_rag_context(tx.embedding, self.user)
+                if reference_transaction and is_rag_reliable(transaction_parse_result.description, reference_transaction.description,
+                                               reference_transaction.merchant.name):
+                    final_reference_transaction = self.similarity_matcher.find_most_frequent_transaction_for_merchant(reference_transaction.merchant)
                     categorized_transaction = TransactionUpdater.update_categorized_transaction(
                         tx,
                         transaction_parse_result,
-                        reference_transaction
+                        final_reference_transaction
                     )
                     all_transactions_categorized.append(categorized_transaction)
                     merchant_with_category[categorized_transaction.merchant.name] = categorized_transaction.merchant, categorized_transaction.category
                 else:
                     uncategorized_transaction = TransactionUpdater.update_transaction_with_parse_result(tx, transaction_parse_result)
                     all_transactions_to_upload.append(uncategorized_transaction)
+            if tx.embedding is None:
+                tx.embedding = generate_embedding(tx.description)
 
         Transaction.objects.bulk_update(all_transactions_categorized + all_transactions_to_upload + all_transactions_as_income,
                                         ['status', 'merchant', 'merchant_raw_name', 'category', 'transaction_date',
                                          'original_date', 'description', 'amount', 'original_amount',
-                                         'transaction_type', 'normalized_description','operation_type'])
+                                         'transaction_type', 'normalized_description','operation_type', 'embedding'])
         Transaction.objects.filter(user=self.user, id__in=[tx.id for tx in all_transactions_to_delete]).delete()
         logger.info(
             f"Found {len(all_transactions_categorized)} {'👌' if len(all_transactions_categorized) > 0 else '😩'} transactions that have similar merchant names."
@@ -148,8 +145,30 @@ class ExpenseUploadProcessor:
         return all_transactions_to_upload
 
     def _process_with_agent(self, batch: list[Transaction], upload_file: UploadFile) -> tuple[list[TransactionCategorization], GeminiResponse | None]:
-        agent_upload_transaction = [AgentTransactionUpload(transaction_id=tx.id, raw_text=tx.raw_data) for tx in
-                                    batch]
+        agent_upload_transaction = []
+        for tx in batch:
+            # Assicuriamoci che l'embedding sia presente
+            if tx.embedding is None:
+                tx.embedding = generate_embedding(tx.description or "")
+
+            _, useful_context = self.find_rag_context(tx.embedding, self.user)
+            rag_context_data = [
+                {
+                    'description': ctx_tx.description,
+                    'category': ctx_tx.category.name,
+                    'merchant': ctx_tx.merchant.name
+                }
+                for ctx_tx in useful_context
+            ]
+
+            agent_upload_transaction.append(
+                AgentTransactionUpload(
+                    transaction_id=tx.id,
+                    raw_text=tx.raw_data,
+                    rag_context=rag_context_data
+                )
+            )
+
         if agent_upload_transaction:
             try:
                 return self.agent.process_batch(agent_upload_transaction, upload_file)
@@ -161,6 +180,7 @@ class ExpenseUploadProcessor:
         return [], None
 
     def _persist_batch_results(self, batch: list[TransactionCategorization]):
+        transactions_to_update = []
         for tx_data in batch:
             tx_id = tx_data.transaction_id
             try:
@@ -172,25 +192,23 @@ class ExpenseUploadProcessor:
                 description = tx_data.description
                 merchant_name = tx_data.merchant
                 category_name = tx_data.category
-                if failure == 'true' or not merchant_name or not category_name:
+                if not merchant_name or not category_name:
                     Transaction.objects.filter(id=tx_id).update(status='uncategorized', failure_code=1)
                     continue
 
-                similar_transaction = self.similarity_matcher.find_similar_transaction_by_merchant(merchant_name=merchant_name)
-                if not similar_transaction:
-                    merchant, _ = Merchant.objects.get_or_create(name=merchant_name, user=self.user)
-                    category = Category.objects.filter(name__icontains=category_name.strip(), user=self.user).first()
-                    if not category:
-                        Transaction.objects.filter(id=tx_id).update(status='uncategorized', failure_code=1, merchant=merchant)
-                        continue
-                else:
-                    merchant = similar_transaction.merchant
-                    category = similar_transaction.category
+                merchant, _ = Merchant.objects.get_or_create(name=merchant_name, user=self.user)
+                category = Category.objects.filter(name__icontains=category_name.strip(), user=self.user).first()
+                if not category:
+                    Transaction.objects.filter(id=tx_id).update(status='uncategorized', failure_code=1, merchant=merchant)
+                    continue
 
-                # safety check
                 transaction_from_agent = Transaction.objects.filter(user=self.user,
                                                                    id=tx_id).first() or Transaction.objects.filter(
                     user=self.user, description=description).first()
+
+                if not transaction_from_agent:
+                    continue
+
                 transaction_from_agent.category = category
                 transaction_from_agent.merchant = merchant
                 transaction_from_agent.merchant_raw_name = merchant_name
@@ -206,11 +224,20 @@ class ExpenseUploadProcessor:
                 transaction_from_agent.normalized_description = normalize_string(transaction_from_agent.description)
                 transaction_from_agent.categorized_by_agent = True
                 transaction_from_agent.reasoning = tx_data.reasoning
-                transaction_from_agent.save()
+                if transaction_from_agent.embedding is None:
+                    transaction_from_agent.embedding = generate_embedding(transaction_from_agent.description)
+                transactions_to_update.append(transaction_from_agent)
 
             except Exception as e:
                 logger.error(f"⚠️  Failed to persist transaction {tx_id}: {str(e)}")
                 continue
+
+        if transactions_to_update:
+            Transaction.objects.bulk_update(transactions_to_update, [
+                'category', 'merchant', 'merchant_raw_name', 'original_date', 'original_amount',
+                'transaction_date', 'amount', 'status', 'modified_by_user', 'failure_code',
+                'description', 'normalized_description', 'categorized_by_agent', 'reasoning', 'embedding'
+            ])
 
 
 
@@ -227,44 +254,32 @@ class ExpenseUploadProcessor:
         )
 
         for tx in uncategorized_transactions:
-            # Get values from raw_data, handling None column names
-            original_amount = tx.raw_data.get(upload_file.expense_amount_column_name, '') if upload_file.expense_amount_column_name else '' or tx.raw_data.get(upload_file.income_amount_column_name, '') if upload_file.income_amount_column_name else ''
-            description = tx.raw_data.get(upload_file.description_column_name,
-                                          '') if upload_file.description_column_name else ''
-            merchant = tx.raw_data.get(upload_file.merchant_column_name, '') if upload_file.merchant_column_name else ''
-            original_date = tx.raw_data.get(upload_file.date_column_name, '') if upload_file.date_column_name else ''
+            parse_result = parse_raw_transaction(tx.raw_data, [upload_file])
+            if not parse_result.is_valid():
+                tx.status = 'uncategorized'
+                continue
 
-            if original_amount:
-                amount = normalize_amount(original_amount)
-                tx.amount = abs(amount)
-                tx.original_amount = original_amount
-
-            if original_date:
-                transaction_date = parse_raw_date(original_date)
-                tx.transaction_date = transaction_date
-                tx.original_date = original_date
-
-            tx.description = description
-            tx.normalized_description = normalize_string(description) if description else ''
-            tx.merchant_raw_name = merchant
+            TransactionUpdater.update_transaction_with_parse_result(tx, parse_result)
+            tx.merchant_raw_name = parse_result.merchant
 
             # Only try to find similar transactions if we have a description
-            if description:
-                similar_tx = self.similarity_matcher.find_reference_transaction_from_tx(tx)
-                if similar_tx:
-                    tx.category = similar_tx.category
-                    tx.merchant_raw_name = similar_tx.merchant_raw_name
-                    tx.merchant = similar_tx.merchant
-                    tx.status = 'categorized'
+            if tx.description:
+                similar_tx, _ = self.find_rag_context(generate_embedding(tx.description), self.user)
+                if similar_tx and is_rag_reliable(tx.description, similar_tx.description, similar_tx.merchant.name):
+                    similar_tx = self.similarity_matcher.find_most_frequent_transaction_for_merchant(similar_tx.merchant)
+                    TransactionUpdater.update_categorized_transaction(tx, parse_result, similar_tx)
+                    tx.embedding = similar_tx.embedding if any(similar_tx.embedding) else generate_embedding(tx.description)
                 else:
                     tx.status = 'uncategorized'
             else:
                 tx.status = 'uncategorized'
 
+        uncategorized_transactions_list = list(uncategorized_transactions)
+
         Transaction.objects.bulk_update(
-            uncategorized_transactions,
+            uncategorized_transactions_list,
             ['transaction_date', 'amount', 'original_amount', 'description',
-             'merchant_raw_name', 'original_date', 'category', 'status', 'merchant', 'normalized_description']
+             'merchant_raw_name', 'original_date', 'category', 'status', 'merchant', 'normalized_description', 'embedding']
         )
         Transaction.objects.filter(user=self.user, upload_file=upload_file, status__in=['pending', 'uncategorized'],
                                    original_amount__isnull=True).update(status='uncategorized',

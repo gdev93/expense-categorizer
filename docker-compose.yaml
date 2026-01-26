@@ -2,7 +2,7 @@ name: expenses-dev-db
 
 services:
   postgres:
-    image: postgres:15
+    image: pgvector/pgvector:pg15
     container_name: expenses_db_dev
     environment:
       POSTGRES_DB: expensesdb
