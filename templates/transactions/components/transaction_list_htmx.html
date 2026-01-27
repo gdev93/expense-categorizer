@@ -1,2 +1,10 @@
 {% include "transactions/components/transaction_list_summary.html" %}
 {% include "transactions/components/transaction_list_results.html" %}
+<select name="months" id="months" multiple size="1" hx-swap-oob="true">
+    {% for month in available_months %}
+        <option value="{{ month.month_number }}"
+                {% if month.month_number|stringformat:"s" in selected_months %}selected{% endif %}>
+            {{ month.label_it }}
+        </option>
+    {% endfor %}
+</select>

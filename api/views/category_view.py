@@ -199,7 +199,7 @@ class CategoryDetailView(DetailView, CategoryEnrichedMixin, TransactionFilterMix
 
     def get_template_names(self):
         if self.request.headers.get('HX-Request'):
-            return ['categories/components/category_detail_results.html']
+            return ['categories/category-details-htmx.html']
         return [self.template_name]
 
     def get_queryset(self):
