@@ -40,9 +40,9 @@ class Command(BaseCommand):
                 self.stdout.write(f"Resuming Upload ID: {upload.id} for user {upload.user}")
                 
                 # Fetch the transactions tied to this upload that are still pending
-                pending_txs = list(upload.transactions.filter(status='pending'))
+                pending_txs = upload.transactions.filter(status='pending').iterator()
                 
-                if pending_txs:
+                if upload.transactions.filter(status='pending').exists():
                     # Fetch user rules and categories
                     user_rules = list(
                         Rule.objects.filter(

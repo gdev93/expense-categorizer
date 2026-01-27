@@ -151,14 +151,14 @@
     <div id="categoryModal" class="app-modal" style="display: none;">
         <div class="app-modal-content">
             <div class="app-modal-header">
-                <h3>Aggiorna transazioni precedenti?</h3>
+                <h3>Aggiorna transazioni per lo stesso esercente?</h3>
             </div>
             <div class="app-modal-body">
                 <p>Vuoi applicare questa categoria a tutte le transazioni di <strong id="modal-merchant-name">{{ transaction.merchant.name|default:transaction.merchant_raw_name }}</strong>?</p>
             </div>
             <div class="app-modal-footer">
-                <button type="button" id="btnOnlyThis" class="btn btn-secondary">Solo questa</button>
-                <button type="button" id="btnApplyAll" class="btn btn-primary">Applica a tutte</button>
+                <button type="button" id="btnOnlyThis" class="btn btn-primary">Solo questa</button>
+                <button type="button" id="btnApplyAll" class="btn btn-secondary">Applica a tutte</button>
             </div>
         </div>
     </div>

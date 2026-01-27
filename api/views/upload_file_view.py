@@ -439,7 +439,7 @@ class UploadProcessView(View):
         )
 
 
-        upload_file = processor.process_transactions(list(transactions), upload_file)
+        upload_file = processor.process_transactions(transactions.iterator(), upload_file)
 
         # Calculate processing time and update record
         processing_time = int((time.time() - start_time) * 1000)

@@ -1,6 +1,8 @@
+import itertools
 import logging
 import os
 from concurrent.futures import ThreadPoolExecutor
+from typing import Iterable
 
 from django.contrib.auth.models import User
 from django.core.files.uploadedfile import UploadedFile
@@ -47,34 +49,54 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
             float(self.file_structure_sample_size_percentage)
         )
 
-    def process_transactions(self, transactions: list[Transaction], upload_file: UploadFile) -> UploadFile:
+    def process_transactions(self, transactions: Iterable[Transaction], upload_file: UploadFile) -> UploadFile:
 
-        self.file_structure_detector.setup_upload_file_structure(transactions, upload_file)
+        # Ensure we have an iterator
+        transactions_iter = iter(transactions)
 
-        all_transactions_to_upload = self._process_prechecks(transactions, upload_file)
-        transaction_batches = self.batch_helper.compute_batches(all_transactions_to_upload)
-        data_count = len(all_transactions_to_upload)
+        # 1. Take a sample for structure detection
+        sample = list(itertools.islice(transactions_iter, 50))
+        if sample:
+            self.file_structure_detector.setup_upload_file_structure(sample, upload_file)
+            # Recombine sample with the rest
+            transactions_iter = itertools.chain(sample, transactions_iter)
 
-        logger.info(f"🚀 Starting CSV Processing: {data_count} transactions")
+        logger.info(f"🚀 Starting CSV Processing for: {upload_file.file_name}")
+
+        # 2. Process pre-checks and batch for agent using generators to save memory
+        def get_transactions_to_upload():
+            while True:
+                chunk = list(itertools.islice(transactions_iter, 50))
+                if not chunk:
+                    break
+                yield from self._process_prechecks(chunk, upload_file)
+
+        def get_agent_batches():
+            to_upload_iter = get_transactions_to_upload()
+            while True:
+                batch = list(itertools.islice(to_upload_iter, self.batch_helper.batch_size))
+                if not batch:
+                    break
+                yield batch
 
         with ThreadPoolExecutor() as executor:
             # Parallelize the agent calls only
-            results = list(executor.map(lambda batch: self._process_with_agent(batch, upload_file), transaction_batches))
+            results = executor.map(lambda batch: self._process_with_agent(batch, upload_file), get_agent_batches())
 
-        # Process each batch's results synchronously
-        for batch_result, response in results:
-            if response:
-                CostService.log_api_usage(
-                    user=self.user,
-                    llm_model=response.model_name,
-                    input_tokens=response.prompt_tokens,
-                    output_tokens=response.candidate_tokens,
-                    number_of_transactions = len(batch_result),
-                    upload_file=upload_file
-                )
-            if batch_result:
-                with transaction.atomic():
-                    self._persist_batch_results(batch_result)
+            # Process each batch's results synchronously as they come
+            for batch_result, response in results:
+                if response:
+                    CostService.log_api_usage(
+                        user=self.user,
+                        llm_model=response.model_name,
+                        input_tokens=response.prompt_tokens,
+                        output_tokens=response.candidate_tokens,
+                        number_of_transactions = len(batch_result),
+                        upload_file=upload_file
+                    )
+                if batch_result:
+                    with transaction.atomic():
+                        self._persist_batch_results(batch_result)
 
         with transaction.atomic():
             self._post_process_transactions(upload_file)
@@ -88,8 +110,31 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
         all_transactions_categorized: list[Transaction] = []
         all_transactions_to_delete: list[Transaction] = []
         merchant_with_category: dict[str, tuple[Merchant, Category]] = {}
+
+        # 1. Pre-parse all and collect unique descriptions for bulk embedding
+        parsed_data = []
+        descriptions_to_embed = set()
         for tx in batch:
-            transaction_parse_result = parse_raw_transaction(tx.raw_data, [upload_file])
+            res = parse_raw_transaction(tx.raw_data, [upload_file])
+            parsed_data.append((tx, res))
+            if res.is_valid() and res.description:
+                descriptions_to_embed.add(res.description.strip())
+
+        # 2. Bulk embed all unique descriptions once
+        embedding_dict = {}
+        if descriptions_to_embed:
+            desc_list = list(descriptions_to_embed)
+            embeddings_gen = EmbeddingEngine.get_model().embed(desc_list)
+            for desc, emb in zip(desc_list, embeddings_gen):
+                embedding_dict[desc] = emb.tolist()
+
+        # Helper to get embedding from dict
+        def get_emb(desc):
+            if not desc: return None
+            return embedding_dict.get(desc.strip())
+
+        # 3. Process transactions using the pre-calculated embeddings
+        for tx, transaction_parse_result in parsed_data:
             if not transaction_parse_result.is_valid():
                 all_transactions_to_upload.append(tx)
                 continue
@@ -116,7 +161,7 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
                                                                                                  transaction_parse_result)
                 all_transactions_categorized.append(categorized_transaction)
             else:
-                tx.embedding = generate_embedding(transaction_parse_result.description)
+                tx.embedding = get_emb(transaction_parse_result.description)
                 reference_transaction, _ = self.find_rag_context(tx.embedding, self.user)
                 if reference_transaction and is_rag_reliable(transaction_parse_result.description, reference_transaction.description,
                                                reference_transaction.merchant.name):
@@ -132,7 +177,7 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
                     uncategorized_transaction = TransactionUpdater.update_transaction_with_parse_result(tx, transaction_parse_result)
                     all_transactions_to_upload.append(uncategorized_transaction)
             if tx.embedding is None:
-                tx.embedding = generate_embedding(tx.description)
+                tx.embedding = get_emb(tx.description)
 
         Transaction.objects.bulk_update(all_transactions_categorized + all_transactions_to_upload + all_transactions_as_income,
                                         ['status', 'merchant', 'merchant_raw_name', 'category', 'transaction_date',
@@ -253,45 +298,59 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
             status__in=['uncategorized', 'pending']
         )
 
-        for tx in uncategorized_transactions:
-            parse_result = parse_raw_transaction(tx.raw_data, [upload_file])
-            if not parse_result.is_valid():
-                tx.status = 'uncategorized'
-                continue
+        iterator = uncategorized_transactions.iterator()
+        while True:
+            chunk = list(itertools.islice(iterator, 50))
+            if not chunk:
+                break
 
-            TransactionUpdater.update_transaction_with_parse_result(tx, parse_result)
-            tx.merchant_raw_name = parse_result.merchant
+            for tx in chunk:
+                parse_result = parse_raw_transaction(tx.raw_data, [upload_file])
+                if not parse_result.is_valid():
+                    tx.status = 'uncategorized'
+                    continue
 
-            # Only try to find similar transactions if we have a description
-            if tx.description:
-                similar_tx, _ = self.find_rag_context(generate_embedding(tx.description), self.user)
-                if similar_tx and is_rag_reliable(tx.description, similar_tx.description, similar_tx.merchant.name):
-                    similar_tx = self.similarity_matcher.find_most_frequent_transaction_for_merchant(similar_tx.merchant)
-                    TransactionUpdater.update_categorized_transaction(tx, parse_result, similar_tx)
-                    tx.embedding = similar_tx.embedding if any(similar_tx.embedding) else generate_embedding(tx.description)
+                TransactionUpdater.update_transaction_with_parse_result(tx, parse_result)
+                tx.merchant_raw_name = parse_result.merchant
+
+                # Only try to find similar transactions if we have a description
+                if tx.description:
+                    similar_tx, _ = self.find_rag_context(generate_embedding(tx.description), self.user)
+                    if similar_tx and is_rag_reliable(tx.description, similar_tx.description, similar_tx.merchant.name):
+                        similar_tx = self.similarity_matcher.find_most_frequent_transaction_for_merchant(similar_tx.merchant)
+                        TransactionUpdater.update_categorized_transaction(tx, parse_result, similar_tx)
+                        tx.embedding = similar_tx.embedding if any(similar_tx.embedding) else generate_embedding(tx.description)
+                    else:
+                        tx.status = 'uncategorized'
                 else:
                     tx.status = 'uncategorized'
-            else:
-                tx.status = 'uncategorized'
 
-        uncategorized_transactions_list = list(uncategorized_transactions)
+            Transaction.objects.bulk_update(
+                chunk,
+                ['transaction_date', 'amount', 'original_amount', 'description',
+                 'merchant_raw_name', 'original_date', 'category', 'status', 'merchant', 'normalized_description', 'embedding']
+            )
 
-        Transaction.objects.bulk_update(
-            uncategorized_transactions_list,
-            ['transaction_date', 'amount', 'original_amount', 'description',
-             'merchant_raw_name', 'original_date', 'category', 'status', 'merchant', 'normalized_description', 'embedding']
-        )
         Transaction.objects.filter(user=self.user, upload_file=upload_file, status__in=['pending', 'uncategorized'],
                                    original_amount__isnull=True).update(status='uncategorized',
                                                                         transaction_type='income')
 
 def persist_uploaded_file(file_data: list[dict[str, str]], user: User, file: UploadedFile) -> UploadFile:
     upload_file = UploadFile.objects.create(user=user, dimension=file.size, file_name=file.name)
-    all_pending_transactions = [Transaction(
+
+    # Use a generator expression to avoid creating all Transaction objects at once
+    transactions_gen = (Transaction(
         upload_file=upload_file,
         user=user,
         status='pending',
         raw_data=file_row,
-    ) for file_row in file_data]
-    Transaction.objects.bulk_create(all_pending_transactions)
+    ) for file_row in file_data)
+
+    # Save in chunks of 50
+    while True:
+        chunk = list(itertools.islice(transactions_gen, 50))
+        if not chunk:
+            break
+        Transaction.objects.bulk_create(chunk)
+
     return upload_file

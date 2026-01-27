@@ -106,7 +106,7 @@ class TransactionDetailUpdateView(LoginRequiredMixin, UpdateView):
                 status='categorized'
             )
             if updated_count > 0:
-                messages.info(self.request, f"Aggiornate questa e altre {updated_count} transazioni precedenti per questo esercente.")
+                messages.info(self.request, f"Aggiornate questa e altre {updated_count} per questo esercente.")
         else:
             messages.success(self.request, "Spesa aggiornata con successo.")
 
