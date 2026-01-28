@@ -1,5 +1,6 @@
 import csv
 import io
+import logging
 import os
 import threading
 import time
@@ -400,6 +401,7 @@ class UploadProcessView(View):
     def post(self, request, *args, **kwargs):
         upload_file_query = UploadFile.objects.filter(user=self.request.user, status='pending').distinct()
         if not upload_file_query.exists():
+            logging.warning(f"No upload file found for processing for user {self.request.user.username}.")
             return HttpResponse(status=404)
         upload_file = upload_file_query.first()
         thread = threading.Thread(
@@ -419,11 +421,11 @@ class UploadProcessView(View):
         transactions = Transaction.objects.filter(upload_file=upload_file, user=user, status='pending')
         user_rules = list(
             Rule.objects.filter(
-                user=self.request.user,
+                user=user,
                 is_active=True
             ).values_list('text_content', flat=True)
         )
-        user_categories = Category.objects.filter(user=self.request.user)
+        user_categories = Category.objects.filter(user=user)
         if not user_categories.exists():
             for default_category in DefaultCategory.objects.all():
                 category = Category(user=user, name=default_category.name, description=default_category.description, is_default=True)
@@ -431,14 +433,14 @@ class UploadProcessView(View):
 
         # Process transactions using ExpenseUploadProcessor
         processor = ExpenseUploadProcessor(
-            user=self.request.user,
+            user=user,
             user_rules=user_rules,
             available_categories=list(
-                Category.objects.filter(user=self.request.user)
+                Category.objects.filter(user=user)
             )
         )
 
-
+        logging.info(f"{user}'s data {upload_file.file_name} is being processed.")
         upload_file = processor.process_transactions(transactions.iterator(), upload_file)
 
         # Calculate processing time and update record

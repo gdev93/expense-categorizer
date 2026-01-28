@@ -10,3 +10,4 @@ generate_exams_csv.py
 build-and-push.sh
 VERSION
 Dockerfile
+performance_tests

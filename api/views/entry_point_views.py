@@ -4,7 +4,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_not_required
 from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied, BadRequest
-from django.db import transaction
+from django.db import transaction, IntegrityError
 from django.shortcuts import render, redirect
 
 from api.models import Profile
