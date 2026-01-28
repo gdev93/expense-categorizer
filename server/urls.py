@@ -16,12 +16,16 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.views.generic import TemplateView
+from django.contrib.auth.decorators import login_not_required
+
 from api import urls as api_urls
 from costs import urls as costs_urls
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('costs/', include(costs_urls)),
+    path("robots.txt", login_not_required(TemplateView.as_view(template_name="robots.txt", content_type="text/plain"))),
     path("", include(api_urls), name="api")
 ]
 
