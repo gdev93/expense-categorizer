@@ -33,6 +33,7 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
     - Progress tracking and logging
     """
     pre_check_confidence_threshold = os.environ.get('PRE_CHECK_CONFIDENCE_THRESHOLD', 0.85)
+    pre_check_iterator_fetch_size = os.environ.get('PRE_CHECK_ITERATOR_FETCH_SIZE', 50)
     file_structure_sample_size_percentage = os.environ.get('CSV_STRUCTURE_SAMPLE_SIZE_PERCENTAGE', 0.1)
     file_structure_min_threshold = os.environ.get('CSV_STRUCTURE_MIN_THRESHOLD', 30)
 
@@ -55,7 +56,7 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
         transactions_iter = iter(transactions)
 
         # 1. Take a sample for structure detection
-        sample = list(itertools.islice(transactions_iter, 50))
+        sample = list(itertools.islice(transactions_iter, self.pre_check_iterator_fetch_size))
         if sample:
             self.file_structure_detector.setup_upload_file_structure(sample, upload_file)
             # Recombine sample with the rest
@@ -66,7 +67,7 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
         # 2. Process pre-checks and batch for agent using generators to save memory
         def get_transactions_to_upload():
             while True:
-                chunk = list(itertools.islice(transactions_iter, 50))
+                chunk = list(itertools.islice(transactions_iter, self.pre_check_iterator_fetch_size))
                 if not chunk:
                     break
                 yield from self._process_prechecks(chunk, upload_file)
@@ -300,7 +301,7 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
 
         iterator = uncategorized_transactions.iterator()
         while True:
-            chunk = list(itertools.islice(iterator, 50))
+            chunk = list(itertools.islice(iterator, self.pre_check_iterator_fetch_size))
             if not chunk:
                 break
 
@@ -346,9 +347,9 @@ def persist_uploaded_file(file_data: list[dict[str, str]], user: User, file: Upl
         raw_data=file_row,
     ) for file_row in file_data)
 
-    # Save in chunks of 50
+    # Save in chunks of self.pre_check_iterator_fetch_size
     while True:
-        chunk = list(itertools.islice(transactions_gen, 50))
+        chunk = list(itertools.islice(transactions_gen, ExpenseUploadProcessor.pre_check_iterator_fetch_size))
         if not chunk:
             break
         Transaction.objects.bulk_create(chunk)

@@ -88,9 +88,7 @@
 .filter-toggle-btn {
     display: flex !important;
     align-items: center;
-    gap: 6px;
-    width: auto !important;
-    padding: 0 12px !important;
+    justify-content: center;
     border: 1px solid transparent !important; /* Reserve space for border */
 }
 

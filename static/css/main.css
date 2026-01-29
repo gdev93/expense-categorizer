@@ -15,9 +15,9 @@
     --income-color: #28a745;        /* Green */
     --secondary-color: #6c757d;     /* Standard Gray */
     --danger-color: #dc3545;
-    --category-bg: #ffc107;         /* Yellow */
-    --category-text: #000000;       /* Black */
-    --category-border: #ffb300;     /* Darker Yellow Border */
+    --category-bg: #fff3cd;         /* Lighter Yellow */
+    --category-text: #856404;       /* Darker Yellow/Brown for contrast */
+    --category-border: #ffeeba;     /* Lighter Yellow Border */
 }
 
 * {
