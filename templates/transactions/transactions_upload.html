@@ -90,7 +90,9 @@
                 </div>
 
                 <div class="filter-actions-compact">
-                    <button type="button" class="btn btn-subtle filter-toggle-btn" onclick="toggleFilters()"
+                    <button type="button" 
+                            class="btn btn-subtle filter-toggle-btn {% if request.GET.search or request.GET.status %}filters-active{% endif %}" 
+                            onclick="toggleFilters()"
                             title="Mostra filtri">
                         <span class="material-icons">filter_list</span>
                         <span class="desktop-only">Filtri</span>
@@ -102,7 +104,7 @@
                        hx-target="#upload-results"
                        hx-swap="outerHTML settle:500ms"
                        hx-indicator="#upload-results"
-                       hx-on::before-request="document.getElementById('upload-filter-form').reset();"
+                       hx-on::before-request="clearFilters('upload-filter-form');"
                        class="btn btn-icon btn-subtle" title="Cancella">
                         <span class="material-icons">clear</span>
                     </a>

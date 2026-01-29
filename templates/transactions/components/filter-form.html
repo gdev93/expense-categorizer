@@ -19,7 +19,9 @@
         </div>
 
         <div class="filter-actions-compact">
-            <button type="button" class="btn btn-subtle filter-toggle-btn" onclick="toggleFilters()"
+            <button type="button" 
+                    class="btn btn-subtle filter-toggle-btn {% if search_query or selected_categories or selected_months or selected_upload_file or selected_amount %}filters-active{% endif %}" 
+                    onclick="toggleFilters()"
                     title="Mostra filtri">
                 <span class="material-icons">filter_list</span>
                 <span class="desktop-only">Filtri</span>
@@ -31,7 +33,7 @@
                hx-target="#transaction-results"
                hx-swap="outerHTML settle:500ms"
                hx-indicator="#transaction-results"
-               hx-on::before-request="document.getElementById('main-filter-form').reset();"
+               hx-on::before-request="clearFilters('main-filter-form');"
                class="btn btn-icon btn-subtle" title="Cancella">
                 <span class="material-icons">clear</span>
             </a>

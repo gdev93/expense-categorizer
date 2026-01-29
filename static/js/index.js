@@ -180,6 +180,94 @@ function toggleFilters() {
     }
 }
 
+/**
+ * Updates the visual state of filter toggle buttons based on whether filters are active.
+ */
+function updateFilterButtonsState() {
+    document.querySelectorAll('.filters').forEach(form => {
+        const toggleBtn = form.querySelector('.filter-toggle-btn');
+        if (!toggleBtn) return;
+
+        let hasActiveFilters = false;
+
+        // Check text/search inputs (search, amount)
+        form.querySelectorAll('input[type="text"], input[type="search"], input[type="number"]').forEach(input => {
+            if (input.value.trim() !== '') {
+                hasActiveFilters = true;
+            }
+        });
+
+        // Check select elements
+        form.querySelectorAll('select').forEach(select => {
+            // We ignore structural/contextual fields
+            if (select.name === 'year' || select.id === 'year' || select.name === 'view_type' || select.name === 'amount_operator') return;
+
+            if (select.multiple) {
+                if (Array.from(select.selectedOptions).some(opt => opt.value !== '')) {
+                    hasActiveFilters = true;
+                }
+            } else {
+                if (select.value !== '') {
+                    hasActiveFilters = true;
+                }
+            }
+        });
+
+        if (hasActiveFilters) {
+            toggleBtn.classList.add('filters-active');
+        } else {
+            toggleBtn.classList.remove('filters-active');
+        }
+    });
+}
+
+/**
+ * Truly clears all filter inputs in a form and updates the visual state.
+ * @param {string} formId - The ID of the form to clear.
+ */
+function clearFilters(formId) {
+    const form = document.getElementById(formId);
+    if (!form) return;
+
+    // form.elements includes all controls belonging to the form (even via form attribute)
+    Array.from(form.elements).forEach(el => {
+        // We preserve structural filters like year and view_type
+        if (el.name === 'view_type' || el.name === 'year' || el.id === 'year' || el.type === 'hidden') {
+            return;
+        }
+
+        if (el.tagName === 'INPUT') {
+            if (['text', 'search', 'number', 'date'].includes(el.type)) {
+                el.value = '';
+            }
+        } else if (el.tagName === 'SELECT') {
+            if (el.multiple) {
+                Array.from(el.options).forEach(opt => opt.selected = false);
+            } else {
+                el.selectedIndex = 0;
+            }
+
+            // Specific case for amount_operator which might default to 'eq'
+            if (el.name === 'amount_operator') {
+                el.value = 'eq';
+            }
+        }
+    });
+
+    // Update the filter button visual state
+    updateFilterButtonsState();
+}
+
+// Initial check and HTMX integration
+document.addEventListener('DOMContentLoaded', () => {
+    updateFilterButtonsState();
+    
+    // Update after any HTMX swap to catch changes from the server or user interaction
+    document.body.addEventListener('htmx:afterSwap', () => {
+        updateFilterButtonsState();
+    });
+});
+
 // Close menus when clicking outside
 document.addEventListener('click', function(event) {
     if (!event.target.closest('.category-pill-container')) {
