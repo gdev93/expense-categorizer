@@ -91,15 +91,16 @@
     gap: 6px;
     width: auto !important;
     padding: 0 12px !important;
+    border: 1px solid transparent !important; /* Reserve space for border */
 }
 
 .filter-toggle-btn.filters-active {
-    background-color: var(--primary-color) !important;
-    border: 1px solid var(--primary-hover-color) !important;
+    background-color: #fff9c4 !important; /* Lighter yellow */
+    border: 1px solid #ffeb3b !important;
 }
 
 .filter-toggle-btn.filters-active:hover {
-    background-color: var(--primary-hover-color) !important;
+    background-color: #fff176 !important;
 }
 
 /* Collapsible Content */
