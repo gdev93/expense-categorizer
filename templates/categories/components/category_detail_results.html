@@ -43,7 +43,7 @@
     {% if transactions.has_other_pages %}
         <div class="pagination">
             {% if transactions.has_previous %}
-                <a hx-get="?page={{ transactions.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_year %}&year={{ selected_year }}{% endif %}{% for m in selected_months %}&months={{ m }}{% endfor %}"
+                <a hx-get="?page={{ transactions.previous_page_number }}"
                    hx-target="#category-detail-results"
                    hx-swap="outerHTML settle:500ms"
                    hx-indicator="#category-detail-results"
@@ -57,7 +57,7 @@
             </span>
 
             {% if transactions.has_next %}
-                <a hx-get="?page={{ transactions.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_year %}&year={{ selected_year }}{% endif %}{% for m in selected_months %}&months={{ m }}{% endfor %}"
+                <a hx-get="?page={{ transactions.next_page_number }}"
                    hx-target="#category-detail-results"
                    hx-swap="outerHTML settle:500ms"
                    hx-indicator="#category-detail-results"

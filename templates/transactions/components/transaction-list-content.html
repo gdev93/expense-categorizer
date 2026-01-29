@@ -113,14 +113,11 @@
         {% endfor %}
     </div>
 
-    <!-- Pagination -->
     {% if is_paginated %}
 <div class="pagination">
 {% if page_obj.has_previous %}
-    <a href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_upload_file %}&upload_file={{ selected_upload_file }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}{% for month in selected_months %}&months={{ month }}{% endfor %}{% if year %}&year={{ year }}{% endif %}{% if selected_amount %}&amount={{ selected_amount }}&amount_operator={{ selected_amount_operator }}{% endif %}{% if view_type %}&view_type={{ view_type }}{% endif %}">«
-        Prima</a>
-    <a href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_upload_file %}&upload_file={{ selected_upload_file }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}{% for month in selected_months %}&months={{ month }}{% endfor %}{% if year %}&year={{ year }}{% endif %}{% if selected_amount %}&amount={{ selected_amount }}&amount_operator={{ selected_amount_operator }}{% endif %}{% if view_type %}&view_type={{ view_type }}{% endif %}">‹
-        Precedente</a>
+    <a href="?page=1">« Prima</a>
+    <a href="?page={{ page_obj.previous_page_number }}">‹ Precedente</a>
 {% else %}
     <span class="disabled">« Prima</span>
     <span class="disabled">‹ Precedente</span>
@@ -131,10 +128,8 @@
 </span>
 
 {% if page_obj.has_next %}
-    <a href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_upload_file %}&upload_file={{ selected_upload_file }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}{% for month in selected_months %}&months={{ month }}{% endfor %}{% if year %}&year={{ year }}{% endif %}{% if selected_amount %}&amount={{ selected_amount }}&amount_operator={{ selected_amount_operator }}{% endif %}{% if view_type %}&view_type={{ view_type }}{% endif %}">Successiva
-        ›</a>
-    <a href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_upload_file %}&upload_file={{ selected_upload_file }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}{% for month in selected_months %}&months={{ month }}{% endfor %}{% if year %}&year={{ year }}{% endif %}{% if selected_amount %}&amount={{ selected_amount }}&amount_operator={{ selected_amount_operator }}{% endif %}{% if view_type %}&view_type={{ view_type }}{% endif %}">Ultima
-        »</a>
+    <a href="?page={{ page_obj.next_page_number }}">Successiva ›</a>
+    <a href="?page={{ page_obj.paginator.num_pages }}">Ultima »</a>
 {% else %}
     <span class="disabled">Successiva ›</span>
     <span class="disabled">Ultima »</span>

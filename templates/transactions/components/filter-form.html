@@ -28,8 +28,8 @@
             </button>
 
 
-            <a href="{{ request.path }}"
-               hx-get="{{ request.path }}"
+            <a href="{{ request.path }}?reset=1"
+               hx-get="{{ request.path }}?reset=1"
                hx-target="#transaction-results"
                hx-swap="outerHTML settle:500ms"
                hx-indicator="#transaction-results"

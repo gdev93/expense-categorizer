@@ -53,8 +53,8 @@
                             </button>
 
 
-                            <a href="{% url 'category_detail' category.id %}"
-                               hx-get="{% url 'category_detail' category.id %}"
+                            <a href="{% url 'category_detail' category.id %}?reset=1"
+                               hx-get="{% url 'category_detail' category.id %}?reset=1"
                                hx-target="#category-detail-results"
                                hx-swap="outerHTML settle:500ms"
                                hx-indicator="#category-detail-results"

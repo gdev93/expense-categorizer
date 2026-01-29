@@ -36,7 +36,7 @@
     {% if merchant_summary.has_other_pages %}
         <div class="pagination">
             {% if merchant_summary.has_previous %}
-                <a href="?page={{ merchant_summary.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_upload_file %}&upload_file={{ selected_upload_file }}{% endif %}{% if view_type %}&view_type={{ view_type }}{% endif %}{% if year %}&year={{ year }}{% endif %}{% if selected_amount %}&amount={{ selected_amount }}&amount_operator={{ selected_amount_operator }}{% endif %}{% for month in selected_months %}&months={{ month }}{% endfor %}">&laquo; Precedente</a>
+                <a href="?page={{ merchant_summary.previous_page_number }}">&laquo; Precedente</a>
             {% else %}
                 <span class="disabled">&laquo; Precedente</span>
             {% endif %}
@@ -46,7 +46,7 @@
             </span>
 
             {% if merchant_summary.has_next %}
-                <a href="?page={{ merchant_summary.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_upload_file %}&upload_file={{ selected_upload_file }}{% endif %}{% if view_type %}&view_type={{ view_type }}{% endif %}{% if year %}&year={{ year }}{% endif %}{% if selected_amount %}&amount={{ selected_amount }}&amount_operator={{ selected_amount_operator }}{% endif %}{% for month in selected_months %}&months={{ month }}{% endfor %}">Successivo &raquo;</a>
+                <a href="?page={{ merchant_summary.next_page_number }}">Successivo &raquo;</a>
             {% else %}
                 <span class="disabled">Successivo &raquo;</span>
             {% endif %}

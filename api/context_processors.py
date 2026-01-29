@@ -45,7 +45,8 @@ def available_months_context(request):
         }
 
     # Determine target year using a consistent fallback
-    selected_year_str = request.GET.get('year')
+    # Check GET first, then Session, then fallback
+    selected_year_str = request.GET.get('year') or request.session.get('filter_year')
     if selected_year_str:
         try:
             selected_year = int(selected_year_str)

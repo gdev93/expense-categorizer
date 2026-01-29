@@ -7,68 +7,122 @@ from api.views.mixins import MonthYearFilterMixin
 
 
 class TransactionFilterMixin(MonthYearFilterMixin, View):
+    def get_transaction_filters(self):
+        """
+        Retrieves filters from GET parameters or session.
+        Returns a dictionary of filters.
+        """
+        filters = {}
+
+        # 1. Category
+        if 'category' in self.request.GET or 'categories' in self.request.GET:
+            filters['category_ids'] = self.request.GET.getlist('category') or self.request.GET.getlist('categories')
+            self.request.session['filter_category'] = filters['category_ids']
+        else:
+            filters['category_ids'] = self.request.session.get('filter_category', [])
+
+        # 2. Upload File (Don't put in session as it's often page-specific)
+        filters['upload_file_id'] = self.kwargs.get('upload_file_id') or self.request.GET.get('upload_file')
+
+        # 3. Amount
+        if 'amount' in self.request.GET:
+            filters['amount'] = self.request.GET.get('amount')
+            self.request.session['filter_amount'] = filters['amount']
+        else:
+            filters['amount'] = self.request.session.get('filter_amount')
+
+        if 'amount_operator' in self.request.GET:
+            filters['amount_operator'] = self.request.GET.get('amount_operator', 'eq')
+            self.request.session['filter_amount_operator'] = filters['amount_operator']
+        else:
+            filters['amount_operator'] = self.request.session.get('filter_amount_operator', 'eq')
+
+        # 4. Search
+        if 'search' in self.request.GET:
+            filters['search'] = self.request.GET.get('search')
+            self.request.session['filter_search'] = filters['search']
+        else:
+            filters['search'] = self.request.session.get('filter_search', '')
+
+        # 5. View Type
+        if 'view_type' in self.request.GET:
+            filters['view_type'] = self.request.GET.get('view_type', 'list')
+            self.request.session['filter_view_type'] = filters['view_type']
+        else:
+            filters['view_type'] = self.request.session.get('filter_view_type', 'list')
+
+        # 6. Status
+        if 'status' in self.request.GET:
+            filters['status'] = self.request.GET.get('status', '')
+            self.request.session['filter_status'] = filters['status']
+        else:
+            filters['status'] = self.request.session.get('filter_status', '')
+
+        # 7. Year and Months (from MonthYearFilterMixin)
+        filters['year'], filters['months'] = self.get_year_and_months()
+
+        return filters
+
     def get_transaction_filter_query(self):
         queryset = Transaction.objects.filter(
             user=self.request.user,
             transaction_type='expense',
         ).select_related('category', 'merchant', 'upload_file').order_by('-transaction_date', '-created_at')
 
-        # Filter by category
-        category_ids = self.request.GET.getlist('category') or self.request.GET.getlist('categories')
-        if category_ids and any(category_ids):
-            queryset = queryset.filter(category_id__in=category_ids)
+        filters = self.get_transaction_filters()
 
-        # Filter by upload_file (from URL or GET)
-        upload_file_id = self.kwargs.get('upload_file_id') or self.request.GET.get('upload_file')
-        if upload_file_id:
-            queryset = queryset.filter(upload_file_id=upload_file_id)
+        # Filter by category
+        if filters['category_ids'] and any(filters['category_ids']):
+            queryset = queryset.filter(category_id__in=filters['category_ids'])
+
+        # Filter by upload_file
+        if filters['upload_file_id']:
+            queryset = queryset.filter(upload_file_id=filters['upload_file_id'])
 
         # Filter by amount
-        amount = self.request.GET.get('amount')
-        amount_operator = self.request.GET.get('amount_operator', 'eq')
-        if amount:
+        if filters['amount']:
             try:
-                amount_value = float(amount)
-                if amount_operator == 'eq':
+                amount_value = float(filters['amount'])
+                op = filters['amount_operator']
+                if op == 'eq':
                     queryset = queryset.filter(amount=amount_value)
-                elif amount_operator == 'gt':
+                elif op == 'gt':
                     queryset = queryset.filter(amount__gt=amount_value)
-                elif amount_operator == 'gte':
+                elif op == 'gte':
                     queryset = queryset.filter(amount__gte=amount_value)
-                elif amount_operator == 'lt':
+                elif op == 'lt':
                     queryset = queryset.filter(amount__lt=amount_value)
-                elif amount_operator == 'lte':
+                elif op == 'lte':
                     queryset = queryset.filter(amount__lte=amount_value)
             except (ValueError, TypeError):
                 raise BadRequest("Invalid amount format.")
 
         # Search filter
-        search_query = self.request.GET.get('search')
-        if search_query:
+        if filters['search']:
             queryset = queryset.filter(
-                Q(merchant__name__icontains=search_query) |
-                Q(merchant_raw_name__icontains=search_query) |
-                Q(description__icontains=search_query)
+                Q(merchant__name__icontains=filters['search']) |
+                Q(merchant_raw_name__icontains=filters['search']) |
+                Q(description__icontains=filters['search'])
             )
 
-        selected_year, selected_months = self.get_year_and_months()
-        if not upload_file_id:
-            queryset = queryset.filter(transaction_date__year=selected_year)
+        # Year and Month filters
+        if not filters['upload_file_id']:
+            queryset = queryset.filter(transaction_date__year=filters['year'])
 
-        if any(selected_months):
+        if any(filters['months']):
             month_queries = Q()
-            for month_str in selected_months:
-                try:
-                    month = int(month_str)
-                    month_queries |= Q(transaction_date__month=month)
-                except (ValueError, TypeError):
-                    pass
+            for month in filters['months']:
+                month_queries |= Q(transaction_date__month=month)
             if month_queries:
                 queryset = queryset.filter(month_queries)
 
+        # Status filter
+        if filters['status']:
+            queryset = queryset.filter(status=filters['status'])
+
         # For the main list view, we only want categorized transactions
         # to avoid duplication with the uncategorized section in the template.
-        if self.request.GET.get('view_type', 'list') == 'list':
+        if filters['view_type'] == 'list':
             return queryset.filter(category__isnull=False, merchant_id__isnull=False)
 
         return queryset

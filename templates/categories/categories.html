@@ -45,8 +45,8 @@
                 </button>
 
 
-                <a href="{% url 'category_list' %}"
-                   hx-get="{% url 'category_list' %}"
+                <a href="{% url 'category_list' %}?reset=1"
+                   hx-get="{% url 'category_list' %}?reset=1"
                    hx-target="#category-results"
                    hx-swap="outerHTML settle:500ms"
                    hx-settle="1s"

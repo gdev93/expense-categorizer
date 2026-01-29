@@ -15,48 +15,58 @@ class YearMonthCacheValue:
 
 class MonthYearFilterMixin(View):
     def get_year_and_months(self):
-        # 1. Generate a cache key based on the RAW request to skip parsing
-        # We use the user ID and the full GET query string
-        query_string = self.request.GET.urlencode()
-        cache_key = f"filter_cache_{self.request.user.id}_{query_string}"
+        # 1. Handle Reset
+        if self.request.GET.get('reset') == '1':
+            keys_to_clear = [
+                'filter_year', 'filter_months', 'filter_category', 
+                'filter_upload_file', 'filter_amount', 'filter_amount_operator',
+                'filter_search', 'filter_view_type', 'filter_status',
+                'filter_category_search', 'filter_category_selected'
+            ]
+            for key in keys_to_clear:
+                if key in self.request.session:
+                    del self.request.session[key]
 
-        cached_result = cache.get(cache_key)
-        if cached_result:
-            return cached_result.year, cached_result.months
+        # 2. Determine raw year and months from GET or Session
+        has_year_in_get = 'year' in self.request.GET
+        has_months_in_get = 'months' in self.request.GET or 'month' in self.request.GET
 
-        # 2. If NOT in cache, perform the parsing logic
-        raw_year = self.request.GET.get('year')
-        raw_months = self.request.GET.getlist('months', [])
+        if has_year_in_get:
+            raw_year = self.request.GET.get('year')
+            self.request.session['filter_year'] = raw_year
+        else:
+            raw_year = self.request.session.get('filter_year')
 
-        # Handle single month param
-        single_month = self.request.GET.get('month')
-        if single_month and single_month not in raw_months:
-            raw_months.append(single_month)
+        if has_months_in_get:
+            raw_months = self.request.GET.getlist('months', [])
+            single_month = self.request.GET.get('month')
+            if single_month and single_month not in raw_months:
+                raw_months.append(single_month)
+            self.request.session['filter_months'] = raw_months
+        else:
+            raw_months = self.request.session.get('filter_months', [])
 
+        # 2. Parsing logic
         # Resolve Year
         if raw_year:
             try:
                 selected_year = int(raw_year)
             except (TypeError, ValueError):
-                # If invalid year passed, fallback to last transaction year or current year
                 selected_year = self._get_default_year()
         else:
             selected_year = self._get_default_year()
 
         # Resolve Months
         processed_months = []
-        for m in raw_months:
-            if m:
-                try:
-                    processed_months.append(int(m))
-                except (TypeError, ValueError):
-                    pass
+        if raw_months:
+            for m in raw_months:
+                if m:
+                    try:
+                        processed_months.append(int(m))
+                    except (TypeError, ValueError):
+                        pass
 
-        # 3. Save to cache before returning
-        result = YearMonthCacheValue(year=selected_year, months=processed_months)
-        cache.set(cache_key, result, timeout=3600)
-
-        return result.year, result.months
+        return selected_year, processed_months
 
     def _get_default_year(self):
         last_t = Transaction.objects.filter(

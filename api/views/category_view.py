@@ -44,11 +44,28 @@ class CategoryForm(forms.ModelForm):
 
 
 class CategoryEnrichedMixin(MonthYearFilterMixin):
+    def get_category_filters(self):
+        filters = {}
+        if 'search' in self.request.GET:
+            filters['search'] = self.request.GET.get('search')
+            self.request.session['filter_category_search'] = filters['search']
+        else:
+            filters['search'] = self.request.session.get('filter_category_search', '')
+
+        if 'categories' in self.request.GET:
+            filters['selected_category_ids'] = self.request.GET.getlist('categories')
+            self.request.session['filter_category_selected'] = filters['selected_category_ids']
+        else:
+            filters['selected_category_ids'] = self.request.session.get('filter_category_selected', [])
+
+        filters['year'], filters['months'] = self.get_year_and_months()
+        return filters
+
     def get_enriched_category_queryset(self, base_category_queryset:QuerySet[Category,Category]):
-        selected_year, selected_months = self.get_year_and_months()
-        filter_q = Q(transactions__transaction_date__year=selected_year)
-        if selected_months:
-            filter_q &= Q(transactions__transaction_date__month__in=selected_months)
+        filters = self.get_category_filters()
+        filter_q = Q(transactions__transaction_date__year=filters['year'])
+        if filters['months']:
+            filter_q &= Q(transactions__transaction_date__month__in=filters['months'])
 
         enriched_categories = base_category_queryset.annotate(
             transaction_count=Count(
@@ -87,13 +104,12 @@ class CategoryListView(LoginRequiredMixin, CategoryEnrichedMixin, ListView):
         # 1. Filter: Start with categories belonging to the current user
         user_categories = self.model.objects.filter(user=self.request.user)
 
-        search_query = self.request.GET.get('search')
-        if search_query:
-            user_categories = user_categories.filter(name__icontains=search_query)
+        filters = self.get_category_filters()
+        if filters['search']:
+            user_categories = user_categories.filter(name__icontains=filters['search'])
 
-        selected_category_ids = self.request.GET.getlist('categories')
-        if any(selected_category_ids):
-            user_categories = user_categories.filter(id__in=selected_category_ids)
+        if any(filters['selected_category_ids']):
+            user_categories = user_categories.filter(id__in=filters['selected_category_ids'])
 
         return self.get_enriched_category_queryset(user_categories)
 
@@ -107,19 +123,20 @@ class CategoryListView(LoginRequiredMixin, CategoryEnrichedMixin, ListView):
         categories = context['categories']
 
         context['total'] = sum([category.transaction_amount for category in categories]) if categories else 0
-        selected_year, selected_months = self.get_year_and_months()
+        filters = self.get_category_filters()
         context['all_categories'] = Category.objects.filter(user=self.request.user).order_by('name')
-        context['selected_categories'] = self.request.GET.getlist('categories')
-        context['search_query'] = self.request.GET.get('search', '')
-        context['year'] = selected_year
-        context['selected_months'] = [str(m) for m in selected_months]
+        context['selected_categories'] = filters['selected_category_ids']
+        context['search_query'] = filters['search']
+        context['year'] = filters['year']
+        context['selected_months'] = [str(m) for m in filters['months']]
         return context
 
 
 class CategoryExportView(LoginRequiredMixin, CategoryEnrichedMixin, View):
     def get(self, request, *args, **kwargs):
-        selected_year, selected_months = self.get_year_and_months()
-        selected_category_ids = request.GET.getlist('categories')
+        filters = self.get_category_filters()
+        selected_year = filters['year']
+        selected_category_ids = filters['selected_category_ids']
         base_query = Category.objects.filter(user=request.user)
         if any(selected_category_ids):
             base_query = base_query.filter(id__in=selected_category_ids)
@@ -206,16 +223,11 @@ class CategoryDetailView(DetailView, CategoryEnrichedMixin, TransactionFilterMix
         # Security: Only allow the user to view their own categories
         return Category.objects.filter(user=self.request.user)
 
-    def _get_filters(self):
-        search_query = self.request.GET.get('search', '')
-        selected_year, processed_months = self.get_year_and_months()
-        return search_query, selected_year, processed_months
-
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
         category = self.object
-        search_query, selected_year, selected_months = self._get_filters()
+        filters = self.get_transaction_filters()
         base_query = Category.objects.filter(id=category.pk, user=self.request.user)
         # 2. Fetch Aggregated Summary Data for the Summary Card
         summary = self.get_enriched_category_queryset(base_query).first()
@@ -231,9 +243,10 @@ class CategoryDetailView(DetailView, CategoryEnrichedMixin, TransactionFilterMix
         transactions = paginator.page(page_number)
 
         context['transactions'] = transactions
-        context['search_query'] = search_query
-        context['selected_year'] = selected_year
-        context['selected_months'] = [str(m) for m in selected_months]
+        context['search_query'] = filters['search']
+        context['year'] = filters['year']
+        context['selected_year'] = filters['year']
+        context['selected_months'] = [str(m) for m in filters['months']]
 
         return context
 

@@ -89,7 +89,8 @@ class TransactionListView(LoginRequiredMixin, ListView, TransactionFilterMixin):
     def get_context_data(self, **kwargs):
         """Add extra context data"""
         context = super().get_context_data(**kwargs)
-        view_type = self.request.GET.get('view_type', 'list')
+        filters = self.get_transaction_filters()
+        view_type = filters['view_type']
         context['view_type'] = view_type
 
         # Use the unpaginated queryset for summary statistics
@@ -106,7 +107,7 @@ class TransactionListView(LoginRequiredMixin, ListView, TransactionFilterMixin):
             transaction_type='expense'
         ).select_related('upload_file')
 
-        upload_file_id = self.kwargs.get('upload_file_id') or self.request.GET.get('upload_file', '')
+        upload_file_id = filters['upload_file_id']
         if upload_file_id:
             uncategorized_transaction = uncategorized_transaction.filter(upload_file_id=upload_file_id)
             context['upload_file'] = get_object_or_404(UploadFile, id=upload_file_id, user=self.request.user)
@@ -114,9 +115,9 @@ class TransactionListView(LoginRequiredMixin, ListView, TransactionFilterMixin):
 
         transaction_list_context = TransactionListContextData(
             categories=categories,
-            selected_status=self.request.GET.get('status', ''),
-            selected_upload_file=upload_file_id,
-            search_query=self.request.GET.get('search', ''),
+            selected_status=filters['status'],
+            selected_upload_file=upload_file_id or '',
+            search_query=filters['search'],
             uncategorized_transaction=uncategorized_transaction,
             total_count=self.get_queryset().count(),
             total_amount=self.get_queryset().aggregate(
@@ -124,16 +125,16 @@ class TransactionListView(LoginRequiredMixin, ListView, TransactionFilterMixin):
             )['total'] or 0,
             category_count=self.get_queryset().values('category').distinct().count(),
             rules=Rule.objects.filter(user=self.request.user, is_active=True),
-            selected_categories=self.request.GET.getlist('category') or self.request.GET.getlist('categories'),
-            selected_months=self.request.GET.getlist('months')
+            selected_categories=filters['category_ids'],
+            selected_months=filters['months']
         )
         context.update(transaction_list_context.to_context())
 
-        year, months = self.get_year_and_months()
         # Add amount filter context
-        context['selected_amount'] = self.request.GET.get('amount', '')
-        context['selected_amount_operator'] = self.request.GET.get('amount_operator', 'eq')
-        context['year'] = year
+        context['selected_amount'] = filters['amount'] or ''
+        context['selected_amount_operator'] = filters['amount_operator']
+        context['year'] = filters['year']
+        context['selected_months'] = [str(m) for m in filters['months']]
 
         if view_type == 'merchant':
             # Aggregate transactions by merchant

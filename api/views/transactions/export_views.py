@@ -7,105 +7,45 @@ from django.views import View
 from api.models import Transaction
 from exporters.exporters import generate_transaction_csv
 
-class TransactionExportView(LoginRequiredMixin, View):
+from api.views.transactions.transaction_mixins import TransactionFilterMixin
+
+class TransactionExportView(LoginRequiredMixin, TransactionFilterMixin, View):
     """
     API view to export transactions as a memory-efficient CSV stream.
     """
+    def get(self, request, *args, **kwargs):
+        # We now support GET too, which will use session filters
+        return self._export(request)
+
     def post(self, request, *args, **kwargs):
-        # Extract parameters from POST body
+        # Update session filters if POST data is provided
         try:
-            # Handle both JSON and form data
             if request.content_type == 'application/json':
                 data = json.loads(request.body)
             else:
                 data = request.POST
-        except (json.JSONDecodeError, AttributeError):
-            data = {}
-
-        # 1. Selector Layer: Filter transactions for the authenticated user
-        queryset = Transaction.objects.filter(user=request.user)
-
-        # 2. Apply filters from Design Document
-        upload_ids = data.get('upload_ids', [])
-        upload_file_id = data.get('upload_file')
-        
-        # Support both 'upload_ids' (list/json) and 'upload_file' (single ID from form)
-        if upload_file_id and not upload_ids:
-            upload_ids = [upload_file_id]
-
-        if upload_ids:
-            if isinstance(upload_ids, str):
-                try:
-                    upload_ids = json.loads(upload_ids)
-                except json.JSONDecodeError:
-                    upload_ids = [upload_ids]
-            queryset = queryset.filter(upload_file_id__in=upload_ids)
-        
-        start_date = data.get('start_date')
-        if start_date:
-            queryset = queryset.filter(transaction_date__gte=start_date)
             
-        end_date = data.get('end_date')
-        if end_date:
-            queryset = queryset.filter(transaction_date__lte=end_date)
+            # Update session with POST data to keep it consistent
+            for key in ['year', 'search', 'amount', 'amount_operator', 'status', 'view_type']:
+                if key in data:
+                    request.session[f'filter_{key}'] = data[key]
+            if 'months' in data:
+                request.session['filter_months'] = data['months']
+            if 'category' in data or 'categories' in data:
+                request.session['filter_category'] = data.get('category') or data.get('categories')
+            if 'upload_file' in data:
+                request.session['filter_upload_file'] = data['upload_file']
 
-        # 3. Apply additional filters from current UI (to match TransactionListView)
-        transaction_type = data.get('transaction_type')
-        if transaction_type:
-            queryset = queryset.filter(transaction_type=transaction_type)
+        except (json.JSONDecodeError, AttributeError):
+            pass
 
-        category_ids = data.get('categories') or data.get('category')
-        if category_ids:
-            if isinstance(category_ids, (str, int)):
-                category_ids = [category_ids]
-            queryset = queryset.filter(category_id__in=category_ids)
+        return self._export(request)
 
-        year = data.get('year')
-        if year and not upload_ids:
-            queryset = queryset.filter(transaction_date__year=year)
-
-        months = data.get('months')
-        if months:
-            if isinstance(months, str):
-                months = [months]
-            month_queries = Q()
-            for m in months:
-                try:
-                    month_queries |= Q(transaction_date__month=int(m))
-                except (ValueError, TypeError):
-                    pass
-            if month_queries:
-                queryset = queryset.filter(month_queries)
-
-        search_query = data.get('search')
-        if search_query:
-            queryset = queryset.filter(
-                Q(merchant_raw_name__icontains=search_query) |
-                Q(description__icontains=search_query)
-            )
-
-        amount = data.get('amount')
-        amount_operator = data.get('amount_operator', 'eq')
-        if amount:
-            try:
-                amount_value = float(amount)
-                if amount_operator == 'eq':
-                    queryset = queryset.filter(amount=amount_value)
-                elif amount_operator == 'gt':
-                    queryset = queryset.filter(amount__gt=amount_value)
-                elif amount_operator == 'gte':
-                    queryset = queryset.filter(amount__gte=amount_value)
-                elif amount_operator == 'lt':
-                    queryset = queryset.filter(amount__lt=amount_value)
-                elif amount_operator == 'lte':
-                    queryset = queryset.filter(amount__lte=amount_value)
-            except (ValueError, TypeError):
-                pass
-        only_expense = data.get('only_expense', True)
-        if only_expense:
-            queryset = queryset.filter(transaction_type='expense')
+    def _export(self, request):
+        queryset = self.get_transaction_filter_query()
+        
         # Optimize query: select_related for file metadata and .iterator() for memory efficiency
-        iterator = queryset.select_related('upload_file').order_by('-transaction_date', '-created_at').iterator()
+        iterator = queryset.select_related('upload_file', 'category', 'merchant').iterator()
 
         # Exporter Layer: Use the generator to stream the response
         response = StreamingHttpResponse(
