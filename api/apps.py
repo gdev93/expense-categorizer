@@ -1,4 +1,6 @@
 from django.apps import AppConfig
+from django.db.models.signals import post_save
+
 
 
 class ApiConfig(AppConfig):
@@ -9,6 +11,8 @@ class ApiConfig(AppConfig):
         import threading
         import logging
         from processors.embeddings import EmbeddingEngine
+        from api.signals import create_file_structure_metadata
+        post_save.connect(create_file_structure_metadata)
 
         def initialize_embeddings():
             try:

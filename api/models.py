@@ -1,4 +1,5 @@
 # models.py
+import hashlib
 import re
 
 from django.contrib.auth.models import User
@@ -109,6 +110,71 @@ class Merchant(models.Model):
         # Auto-normalize name for fuzzy matching
         self.normalized_name = normalize_string(self.name)
         super().save(*args, **kwargs)
+
+
+class FileStructureMetadata(models.Model):
+    description_column_name = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text="The header name in the CSV that corresponds to the transaction description."
+    )
+    income_amount_column_name = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text="The header name in the CSV for the transaction amount."
+    )
+    expense_amount_column_name = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text="The header name in the CSV for the transaction amount."
+    )
+    date_column_name = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text="The header name in the CSV for the transaction date."
+    )
+    merchant_column_name = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text="The header name in the CSV for the merchant or payee name."
+    )
+    operation_type_column_name = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text="The header name in the CSV for the operation type."
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    notes = models.TextField(blank=True, help_text='Agent description of the csv structure')
+
+    row_hash = models.CharField(max_length=64, db_index=True)
+
+    class Meta:
+        # Constraints to ensure uniqueness per user and tuple content
+        constraints = [
+            models.UniqueConstraint(
+                fields=['row_hash'],
+                name='unique_user_transaction_row'
+            )
+        ]
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+
+    @staticmethod
+    def generate_tuple_hash(keys):
+        """
+        Generates a SHA-256 hash based on the raw CSV keys (headers).
+        """
+        sorted_keys = sorted(list(keys))
+        data_payload = "|".join(sorted_keys)
+        return hashlib.sha256(data_payload.encode('utf-8')).hexdigest()
 
 
 class UploadFile(models.Model):
