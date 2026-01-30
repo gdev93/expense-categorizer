@@ -55,7 +55,7 @@ def parse_excel_file(file) -> List[Dict[str, str]]:
             os.unlink(tmp_path)
 
     except Exception as e:
-        raise FileParserError(f'Error parsing Excel file: {str(e)}')
+        raise FileParserError(f'Errore durante l\'analisi del file Excel: {str(e)}')
 
 
 def parse_csv_file(file) -> List[Dict[str, str]]:
@@ -79,7 +79,7 @@ def parse_csv_file(file) -> List[Dict[str, str]]:
         reader = csv.DictReader(io_string, dialect=dialect)
         return list(reader)
     except Exception as e:
-        raise FileParserError(f'Error parsing CSV file: {str(e)}')
+        raise FileParserError(f'Errore durante l\'analisi del file CSV: {str(e)}')
 
 
 def parse_uploaded_file(file) -> List[Dict[str, str]]:
@@ -103,7 +103,7 @@ def parse_uploaded_file(file) -> List[Dict[str, str]]:
     elif filename.endswith(('.xlsx', '.xls')):
         return parse_excel_file(file)
     else:
-        raise FileParserError(f'Unsupported file type: {filename}')
+        raise FileParserError(f'Tipo di file non supportato: {filename}')
 
 
 def read_excel(file_path) -> List[Dict[str, str]]:
@@ -126,7 +126,7 @@ def read_excel(file_path) -> List[Dict[str, str]]:
     try:
         temp_df = pd.read_excel(file_path, header=None, nrows=30, engine='openpyxl')
     except Exception as e:
-        raise IOError(f"Failed to read Excel file {file_path}. Error: {e}")
+        raise IOError(f"Impossibile leggere il file Excel {file_path}. Errore: {e}")
 
     # 3. Fetch all FileStructureMetadata records that have required columns
     valid_metadata = FileStructureMetadata.objects.filter(
@@ -191,7 +191,7 @@ def read_excel(file_path) -> List[Dict[str, str]]:
                 break
 
     if header_index == -1:
-        raise ValueError(f"Could not find header with FileStructureMetadata or keywords: {UNIVERSAL_KEYWORDS}")
+        raise ValueError(f"Impossibile trovare l'intestazione con FileStructureMetadata o parole chiave: {UNIVERSAL_KEYWORDS}")
 
     # 6. Load Full Data
     df = pd.read_excel(file_path, header=header_index, engine='openpyxl')

@@ -54,7 +54,7 @@ function downloadExport(payload, csrfToken, button) {
     })
     .catch(error => {
         console.error('Error exporting transactions:', error);
-        alert('Si è verificato un errore durante l\'esportazione.');
+        showAlert('Si è verificato un errore durante l\'esportazione.');
     })
     .finally(() => {
         if (button) {

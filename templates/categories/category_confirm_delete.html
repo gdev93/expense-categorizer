@@ -269,11 +269,11 @@
                         
                         if (selectedRadio && selectedRadio.value === '' && !newCatName) {
                             e.preventDefault();
-                            alert('Per favore, inserisci un nome per la nuova categoria.');
+                            showAlert('Per favore, inserisci un nome per la nuova categoria.');
                             newCatNameField.focus();
                         } else if (!selectedRadio) {
                             e.preventDefault();
-                            alert('Per favore, seleziona una categoria esistente o creane una nuova.');
+                            showAlert('Per favore, seleziona una categoria esistente o creane una nuova.');
                         }
                     });
                 </script>

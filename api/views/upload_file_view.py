@@ -239,7 +239,7 @@ class UploadFileView(ListView, FormView):
                     upload_file=None,
                     rows_processed=0,
                     success=False,
-                    error_message='The file is empty.'
+                    error_message='Il file è vuoto.'
                 )
 
             # Create a preliminary UploadFile record for detection

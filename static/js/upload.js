@@ -112,12 +112,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const isValidType = ALLOWED_TYPES.some(type => fileNameLower.endsWith(type));
 
         if (!isValidType) {
-            alert(`Errore: Il file "${file.name}" non è un tipo supportato (${ALLOWED_TYPES.join(', ')}).`);
+            showAlert(`Il file "${file.name}" non è un tipo supportato (${ALLOWED_TYPES.join(', ')}).`);
             return;
         }
 
         if (file.size > MAX_FILE_SIZE_MB) {
-            alert(`Errore: Il file "${file.name}" supera la dimensione massima di 10MB.`);
+            showAlert(`Il file "${file.name}" supera la dimensione massima di 10MB.`);
             return;
         }
 
@@ -125,12 +125,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const uploadCheck = await checkUploadAvailability();
 
         if (!uploadCheck.canUpload) {
-            alert('⚠️ ATTENZIONE: C\'è un caricamento CSV in corso!\n\n' +
+            showAlert('⚠️ ATTENZIONE: C\'è un caricamento in corso!\n\n' +
                 'Non è possibile caricare un nuovo file mentre è in corso l\'elaborazione di un altro upload.\n\n' +
                 'È importante che tu:\n' +
                 '• Completi l\'elaborazione in corso, oppure\n' +
                 '• Elimini il caricamento in sospeso\n\n' +
-                'Riprova dopo aver gestito il caricamento in corso.');
+                'Riprova dopo aver gestito il caricamento in corso.', 'warning');
             return;
         }
 
@@ -346,7 +346,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Controlla se è possibile caricare prima di procedere
         const uploadCheck = await checkUploadAvailability();
         if (!uploadCheck.canUpload) {
-            alert('Non è possibile caricare un nuovo file mentre è in corso l\'elaborazione di un altro upload.');
+            showAlert('Non è possibile caricare un nuovo file mentre è in corso l\'elaborazione di un altro upload.', 'warning');
             updateFileList();
             return;
         }
@@ -372,7 +372,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (!response.ok) {
                 const errorData = await response.json();
-                alert(`Errore di Caricamento: ${errorData.error || 'Si è verificato un errore sul server.'}`);
+                showAlert(`${errorData.error || 'Si è verificato un errore sul server.'}`);
                 submitUpload.disabled = false;
                 submitUpload.classList.remove('btn-disabled');
             } else {
@@ -384,7 +384,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (error) {
             console.error('Errore di Rete:', error);
-            alert('Errore di connessione. Controlla la tua rete.');
+            showAlert('Errore di connessione. Controlla la tua rete.');
             submitUpload.disabled = false;
             submitUpload.classList.remove('btn-disabled');
         } finally {

@@ -109,6 +109,6 @@ async function submitCategoryChange(newCategoryId, newCategoryName, transactionI
     } catch (error) {
         console.error("Error updating transaction category:", error);
         span.style.backgroundColor = '#f8d7da';
-        alert("Failed to update transaction category. Check console for details.");
+        showAlert("Failed to update transaction category. Check console for details.");
     }
 }

@@ -74,6 +74,6 @@ async function submitEdit(inputElement, parentDiv) {
 
     } catch (error) {
         console.error("Error updating category:", error);
-        alert("Failed to update category. Check console for details.");
+        showAlert("Failed to update category. Check console for details.");
     }
 }

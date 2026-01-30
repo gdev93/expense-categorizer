@@ -268,6 +268,40 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
+/**
+ * Shows an alert message styled like Django messages.
+ * @param {string} message - The message to display.
+ * @param {string} type - The type of alert (success, danger, warning, info).
+ */
+function showAlert(message, type = 'danger') {
+    let container = document.querySelector('.messages-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.className = 'messages-container';
+        const mainContent = document.querySelector('.main-content');
+        if (mainContent) {
+            mainContent.prepend(container);
+        } else {
+            document.body.prepend(container);
+        }
+    }
+
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type}`;
+    alertDiv.setAttribute('role', 'alert');
+    
+    const formattedMessage = message.replace(/\n/g, '<br>');
+    
+    alertDiv.innerHTML = `
+        ${formattedMessage}
+        <button type="button" class="close-btn" onclick="this.parentElement.remove();">
+            <span class="material-icons">close</span>
+        </button>
+    `;
+    
+    container.appendChild(alertDiv);
+}
+
 // Close menus when clicking outside
 document.addEventListener('click', function(event) {
     if (!event.target.closest('.category-pill-container')) {
