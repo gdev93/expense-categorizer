@@ -21,6 +21,7 @@ from django.views.generic import FormView, ListView, DeleteView
 
 from api.models import Rule, Category
 from api.models import UploadFile, Transaction, Merchant, DefaultCategory
+from processors.csv_structure_detector import CsvStructureDetector
 from processors.expense_upload_processor import ExpenseUploadProcessor, persist_uploaded_file
 from processors.file_parsers import parse_uploaded_file, FileParserError
 
@@ -241,8 +242,35 @@ class UploadFileView(ListView, FormView):
                     error_message='The file is empty.'
                 )
 
+            # Create a preliminary UploadFile record for detection
+            # We use the processor to detect the structure before persisting all transactions
+            # This allows us to fail early if mandatory columns are missing
+            upload_file_obj = UploadFile.objects.create(user=self.request.user, file_name=uploaded_file.name)
+            upload_file_obj = CsvStructureDetector().setup_upload_file_structure(file_data, upload_file_obj, self.request.user)
+
+            # Validate mandatory columns
+            if not (upload_file_obj.date_column_name and
+                    upload_file_obj.description_column_name and
+                    (upload_file_obj.income_amount_column_name or upload_file_obj.expense_amount_column_name)):
+
+                missing = []
+                if not upload_file_obj.date_column_name: missing.append('data')
+                if not upload_file_obj.description_column_name: missing.append('descrizione')
+                if not (upload_file_obj.income_amount_column_name or upload_file_obj.expense_amount_column_name):
+                    missing.append('importo (entrata o uscita)')
+
+                error_msg = f"Struttura del file non riconosciuta. Colonne obbligatorie mancanti: {', '.join(missing)}."
+                upload_file_obj.delete()
+
+                return CsvProcessingResult(
+                    upload_file=None,
+                    rows_processed=0,
+                    success=False,
+                    error_message=error_msg
+                )
+
             with transaction.atomic():
-                upload_file = persist_uploaded_file(file_data, self.request.user, uploaded_file)
+                upload_file = persist_uploaded_file(file_data, self.request.user, uploaded_file, upload_file_obj)
 
             if not upload_file:
                 raise Exception("Failed to persist CSV upload record.")

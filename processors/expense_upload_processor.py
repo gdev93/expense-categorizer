@@ -34,8 +34,6 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
     """
     pre_check_confidence_threshold = os.environ.get('PRE_CHECK_CONFIDENCE_THRESHOLD', 0.85)
     pre_check_iterator_fetch_size = os.environ.get('PRE_CHECK_ITERATOR_FETCH_SIZE', 50)
-    file_structure_sample_size_percentage = os.environ.get('CSV_STRUCTURE_SAMPLE_SIZE_PERCENTAGE', 0.1)
-    file_structure_min_threshold = os.environ.get('CSV_STRUCTURE_MIN_THRESHOLD', 30)
     rag_identical_threshold = os.environ.get('RAG_IDENTICAL_THRESHOLD', 0.02) # 98% sure
     rag_reliable_threshold = os.environ.get('RAG_RELIABLE_THRESHOLD', 0.15) # very likely
     rag_context_threshold = os.environ.get('RAG_CONTEXT_THRESHOLD', 0.35) # context for gemini
@@ -45,24 +43,11 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
         self.batch_helper = batch_helper or BatchingHelper()
         self.agent = ExpenseCategorizerAgent(user_rules=user_rules, available_categories=available_categories)
         self.similarity_matcher = SimilarityMatcher(user, float(self.pre_check_confidence_threshold))
-        self.file_structure_detector = CsvStructureDetector(
-            user,
-            self.agent,
-            int(self.file_structure_min_threshold),
-            float(self.file_structure_sample_size_percentage)
-        )
 
     def process_transactions(self, transactions: Iterable[Transaction], upload_file: UploadFile) -> UploadFile:
 
         # Ensure we have an iterator
         transactions_iter = iter(transactions)
-
-        # 1. Take a sample for structure detection
-        sample = list(itertools.islice(transactions_iter, self.pre_check_iterator_fetch_size))
-        if sample:
-            self.file_structure_detector.setup_upload_file_structure(sample, upload_file)
-            # Recombine sample with the rest
-            transactions_iter = itertools.chain(sample, transactions_iter)
 
         logger.info(f"🚀 Starting CSV Processing for: {upload_file.file_name}")
 
@@ -385,8 +370,13 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
                                    original_amount__isnull=True).update(status='uncategorized',
                                                                         transaction_type='income')
 
-def persist_uploaded_file(file_data: list[dict[str, str]], user: User, file: UploadedFile) -> UploadFile:
-    upload_file = UploadFile.objects.create(user=user, dimension=file.size, file_name=file.name)
+def persist_uploaded_file(file_data: list[dict[str, str]], user: User, file: UploadedFile, upload_file: UploadFile = None) -> UploadFile:
+    if upload_file is None:
+        upload_file = UploadFile.objects.create(user=user, dimension=file.size, file_name=file.name)
+    else:
+        upload_file.dimension = file.size
+        upload_file.file_name = file.name
+        upload_file.save()
 
     # Use a generator expression to avoid creating all Transaction objects at once
     transactions_gen = (Transaction(
