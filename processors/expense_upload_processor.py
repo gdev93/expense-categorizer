@@ -188,7 +188,7 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
                     if ref_tx:
                         dist = getattr(ref_tx, 'distance', 1.0)
                         # Reliability logic
-                        is_trusted = dist <= self.rag_identical_threshold
+                        is_trusted = dist <= self.rag_identical_threshold and is_rag_reliable(res.description, ref_tx.description, ref_tx.merchant.name)
                         is_likely = dist <= self.rag_reliable_threshold and is_rag_reliable(
                             res.description, ref_tx.description, ref_tx.merchant.name
                         )
