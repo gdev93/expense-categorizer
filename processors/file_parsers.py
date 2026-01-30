@@ -8,9 +8,14 @@ import os
 import logging
 from typing import List, Dict
 import pandas as pd
+from django.db.models import Q
+
+from api.models import FileStructureMetadata
 
 logger = logging.getLogger(__name__)
 
+
+FILE_STRUCTURE_METADATA_BATCH_SIZE = 50
 
 class FileParserError(Exception):
     """Exception raised for file parsing errors"""
@@ -105,8 +110,12 @@ def read_excel(file_path) -> List[Dict[str, str]]:
     """
     Reads a bank transaction Excel file, detecting the header dynamically,
     and cleans the data to be strictly JSON-compliant for Postgres.
+
+    Header detection priority:
+    1. FileStructureMetadata - checks if row columns match stored metadata columns
+    2. Universal keywords - fallback if no metadata match found
     """
-    # 1. Define Universal Keywords
+    # 1. Define Universal Keywords (for fallback only)
     keyword_string = os.getenv('BANK_KEYWORDS', 'Importo,Valuta,Descrizione,Concetto,Movimento')
     UNIVERSAL_KEYWORDS = [kw.strip() for kw in keyword_string.split(',') if kw.strip()]
 
@@ -119,30 +128,79 @@ def read_excel(file_path) -> List[Dict[str, str]]:
     except Exception as e:
         raise IOError(f"Failed to read Excel file {file_path}. Error: {e}")
 
-    # 3. Dynamically Find Header Row
+    # 3. Fetch all FileStructureMetadata records that have required columns
+    valid_metadata = FileStructureMetadata.objects.filter(
+        date_column_name__isnull=False,
+        description_column_name__isnull=False
+    ).filter(
+        Q(income_amount_column_name__isnull=False) | Q(expense_amount_column_name__isnull=False)
+    )
+
+    logger.info(f"Found {valid_metadata.count()} valid FileStructureMetadata records to check")
+
+    # 4. Try to find header using FileStructureMetadata
     header_index = -1
+    matched_metadata = None
+
     for index, row in temp_df.iterrows():
-        row_string = ' '.join(row.dropna().astype(str).tolist()).lower()
-        if any(keyword.lower() in row_string for keyword in UNIVERSAL_KEYWORDS):
-            header_index = index
-            logger.info(f"✅ Header detected at row: {header_index}")
+        # Get potential column names from this row
+        potential_columns = [str(val).strip() for val in row.dropna().tolist() if str(val).strip()]
+
+        if not potential_columns:
+            continue
+
+        # Convert to set for faster lookups
+        potential_columns_set = set(potential_columns)
+
+        # Check against each metadata record
+        for metadata in valid_metadata:
+            # Collect required columns from metadata
+            required_columns = []
+
+            if metadata.date_column_name:
+                required_columns.append(metadata.date_column_name)
+            if metadata.description_column_name:
+                required_columns.append(metadata.description_column_name)
+            if metadata.expense_amount_column_name:
+                required_columns.append(metadata.expense_amount_column_name)
+            if metadata.income_amount_column_name:
+                required_columns.append(metadata.income_amount_column_name)
+
+            # Check if all required columns are present in the row
+            if all(col in potential_columns_set for col in required_columns):
+                header_index = index
+                matched_metadata = metadata
+                logger.info(f"✅ Header detected via FileStructureMetadata at row {header_index}")
+                logger.info(f"   Date: {metadata.date_column_name}, "
+                            f"Description: {metadata.description_column_name}, "
+                            f"Income: {metadata.income_amount_column_name}, "
+                            f"Expense: {metadata.expense_amount_column_name}")
+                break
+
+        if header_index != -1:
             break
 
+    # 5. Fallback to keyword matching if no metadata match
     if header_index == -1:
-        raise ValueError(f"Could not find header with keywords: {UNIVERSAL_KEYWORDS}")
+        logger.info("⚠️  No FileStructureMetadata match found, falling back to keyword matching")
+        for index, row in temp_df.iterrows():
+            row_string = ' '.join(row.dropna().astype(str).tolist()).lower()
+            if any(keyword.lower() in row_string for keyword in UNIVERSAL_KEYWORDS):
+                header_index = index
+                logger.info(f"✅ Header detected via keywords at row: {header_index}")
+                break
 
-    # 4. Load Full Data
+    if header_index == -1:
+        raise ValueError(f"Could not find header with FileStructureMetadata or keywords: {UNIVERSAL_KEYWORDS}")
+
+    # 6. Load Full Data
     df = pd.read_excel(file_path, header=header_index, engine='openpyxl')
 
-    # 5. Drop Unnamed columns and whitespace from headers
+    # 7. Drop Unnamed columns and whitespace from headers
     df = df.drop(columns=[col for col in df.columns if 'Unnamed:' in col], errors='ignore')
     df.columns = df.columns.str.strip()
 
-    # ---------------------------------------------------------
-    # 6. ROBUST CLEANING (Fixes the JSON/Postgres Error)
-    # ---------------------------------------------------------
-
-    # Helper function to clean individual cells
+    # 8. ROBUST CLEANING (Fixes the JSON/Postgres Error)
     def clean_cell(x):
         # If it is strictly None, return None
         if x is None:
@@ -170,6 +228,6 @@ def read_excel(file_path) -> List[Dict[str, str]]:
         # Apply the cleaner to every cell in the column
         df[col] = df[col].apply(clean_cell)
 
-    # 7. Convert to Dictionary
+    # 9. Convert to Dictionary
     records: List[Dict[str, str]] = df.to_dict('records')  # type: ignore[assignment]
     return records

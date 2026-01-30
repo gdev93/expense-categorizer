@@ -364,6 +364,9 @@ document.addEventListener('DOMContentLoaded', () => {
             // 1. UPLOAD DEL FILE
             const response = await fetch(uploadForm.action, {
                 method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
                 body: formData
             });
 

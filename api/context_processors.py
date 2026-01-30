@@ -58,7 +58,7 @@ def available_months_context(request):
     if selected_year is None:
         # Fallback to the most recent transaction year
         last_t = Transaction.objects.filter(user=request.user, status='categorized').order_by('-transaction_date').first()
-        selected_year = last_t.transaction_date.year if last_t else datetime.now().year
+        selected_year = last_t.transaction_date.year if last_t and last_t.transaction_date else datetime.now().year
 
     # Gather distinct months for the selected year
     dates = (Transaction.objects.filter(

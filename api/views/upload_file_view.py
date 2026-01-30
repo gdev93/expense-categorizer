@@ -364,6 +364,14 @@ class UploadFileView(ListView, FormView):
             for error in errors:
                 messages.error(self.request, error)
 
+        if self.request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            all_errors = []
+            storage = messages.get_messages(self.request)
+            for message in storage:
+                all_errors.append(str(message))
+
+            return JsonResponse({'error': " ".join(all_errors)}, status=400)
+
         # Need to manually get the list context for rendering
         self.object_list = self.get_queryset()
         return self.render_to_response(self.get_context_data(form=form))

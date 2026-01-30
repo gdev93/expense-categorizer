@@ -11,8 +11,7 @@ class ApiConfig(AppConfig):
         import threading
         import logging
         from processors.embeddings import EmbeddingEngine
-        from api.signals import create_file_structure_metadata
-        post_save.connect(create_file_structure_metadata)
+        import api.signals  # noqa: F401
 
         def initialize_embeddings():
             try:
