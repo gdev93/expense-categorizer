@@ -10,7 +10,7 @@ from django.db import transaction, connections
 from django.db.models import Count, Max, Q
 
 from agent.agent import ExpenseCategorizerAgent, AgentTransactionUpload, TransactionCategorization, GeminiResponse
-from api.models import Transaction, Category, Merchant, UploadFile, normalize_string
+from api.models import Transaction, Category, Merchant, UploadFile, normalize_string, FileStructureMetadata
 from costs.services import CostService
 from processors.batching_helper import BatchingHelper
 from processors.csv_structure_detector import CsvStructureDetector
@@ -18,12 +18,13 @@ from processors.data_prechecks import parse_raw_transaction
 from processors.embeddings import EmbeddingEngine
 from processors.parser_utils import normalize_amount, parse_raw_date
 from processors.similarity_matcher import SimilarityMatcher, generate_embedding, SimilarityMatcherRAG, is_rag_reliable
+from processors.template_learner import TemplateLearner
 from processors.transaction_updater import TransactionUpdater
 
 logger = logging.getLogger(__name__)
 
 
-class ExpenseUploadProcessor(SimilarityMatcherRAG):
+class ExpenseUploadProcessor(SimilarityMatcherRAG, BatchingHelper, TemplateLearner):
     """
     Handles the processing and persistence of uploaded expense transactions.
 
@@ -38,13 +39,21 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
     rag_reliable_threshold = os.environ.get('RAG_RELIABLE_THRESHOLD', 0.15) # very likely
     rag_context_threshold = os.environ.get('RAG_CONTEXT_THRESHOLD', 0.35) # context for gemini
 
-    def __init__(self, user: User, user_rules: list[str] = None, available_categories: list[Category] | None = None, batch_helper:BatchingHelper | None = None):
+    def __init__(self, user: User, user_rules: list[str] = None, available_categories: list[Category] | None = None):
         self.user = user
-        self.batch_helper = batch_helper or BatchingHelper()
         self.agent = ExpenseCategorizerAgent(user_rules=user_rules, available_categories=available_categories)
         self.similarity_matcher = SimilarityMatcher(user, float(self.pre_check_confidence_threshold))
 
     def process_transactions(self, transactions: Iterable[Transaction], upload_file: UploadFile) -> UploadFile:
+        # Check and populate template_blacklist if empty
+        first_tx = transactions[0] if isinstance(transactions, list) and transactions else upload_file.transactions.first()
+        if first_tx:
+            row_hash = FileStructureMetadata.generate_tuple_hash(first_tx.raw_data.keys())
+            file_structure = FileStructureMetadata.objects.filter(row_hash=row_hash).first()
+            if file_structure and not file_structure.template_blacklist:
+                logger.info(f"Template blacklist for structure {row_hash} is empty. Running TemplateLearner...")
+                file_structure.template_blacklist = self.find_template_words(transactions)
+                file_structure.save()
 
         # Ensure we have an iterator
         transactions_iter = iter(transactions)

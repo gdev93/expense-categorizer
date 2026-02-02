@@ -4,9 +4,6 @@ from typing import Any
 class BatchingHelper:
     batch_size = int(os.environ.get('AGENT_BATCH_SIZE', 15))
 
-    def __init__(self, batch_size: int = batch_size):
-        self.batch_size = batch_size
-
     def compute_batches(self, data: list[Any]) -> list[list[Any]]:
         """
         Create "smart" batches:

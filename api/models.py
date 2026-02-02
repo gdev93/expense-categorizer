@@ -3,6 +3,7 @@ import hashlib
 import re
 
 from django.contrib.auth.models import User
+from django.contrib.postgres.fields import ArrayField
 from django.contrib.postgres.indexes import GinIndex
 from django.contrib.postgres.search import TrigramWordSimilarity
 from django.db import models
@@ -154,6 +155,13 @@ class FileStructureMetadata(models.Model):
     notes = models.TextField(blank=True, help_text='Agent description of the csv structure')
 
     row_hash = models.CharField(max_length=64, db_index=True)
+
+    template_blacklist = ArrayField(
+        models.CharField(max_length=255),
+        default=list,
+        blank=True,
+        help_text="Frequently occurring noise words for this file structure."
+    )
 
     class Meta:
         # Constraints to ensure uniqueness per user and tuple content
