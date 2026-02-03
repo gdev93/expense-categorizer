@@ -1,54 +1,86 @@
+import logging
+import os
 import re
+from collections import Counter
 from typing import Iterable
 
-from api.models import Transaction, FileStructureMetadata
+from api.models import Transaction
 
 
-def _normalize_description(text) -> str:
+def _normalize_description(text: str) -> str:
     """
-    Uses regex to remove dates, times, and long numeric IDs from the description.
+    Initial normalization: removes dates, times, and numeric noise.
     """
     if not text:
         return ""
 
-    # Remove dates (DD/MM/YYYY, DD-MM-YYYY, YYYY/MM/DD, etc.)
+    # 1. Remove dates (various formats)
     text = re.sub(r'\d{2,4}[/-]\d{2}[/-]\d{2,4}', ' ', text)
 
-    # Remove times (HH:MM:SS, HH:MM)
-    text = re.sub(r'\d{2}:\d{2}(:\d{2})?', ' ', text)
+    # 2. Remove times
+    text = re.sub(r'\d{1,2}:\d{2}(:\d{2})?', ' ', text)
 
-    # Remove long numeric IDs (typically 8+ digits)
-    text = re.sub(r'\d{8,}', ' ', text)
+    # 3. Remove amounts (e.g., 10.99 or 10,99)
+    text = re.sub(r'\d+[.,]\d+', ' ', text)
+
+    # 4. Remove PANs, masked cards or long IDs (10+ characters)
+    text = re.sub(r'[a-zA-Z0-9\*xX]{10,}', ' ', text).strip()
 
     # Replace multiple spaces with a single space
-    text = re.sub(r'\s+', ' ', text).strip()
+    text = re.sub(r'\s+', ' ', text)
 
     return text
 
 
 class TemplateLearner:
     """
-    Identifies 'noise' words in transaction descriptions that appear frequently
-    for a specific file structure.
+    Identifies 'noise' tokens specific to a file structure based on statistical frequency.
+    Settings are controlled via environment variables.
     """
+
+    min_sample_size = int(os.getenv('TEMPLATE_MIN_SAMPLE_SIZE', 150))
+    frequency_threshold = float(os.getenv('TEMPLATE_FREQUENCY_THRESHOLD', 0.35))
 
     def find_template_words(self, transactions: Iterable[Transaction]) -> list[str]:
         """
-        Fetches categorized transactions for the file structure, counts word frequencies,
-        and identifies candidate blacklist words.
+        Analyzes categorized transactions to find recurring tokens
+        that do not belong to the Merchant name.
         """
-        # 1. Fetch transactions that match this structure and have been categorized (as they are more reliable)
-        # We find transactions associated with UploadFiles that match this structure's row_hash
-        if not any(transactions):
+        word_counter = Counter()
+        valid_transactions_count = 0
+
+        for tx in transactions:
+            if not tx.merchant or not tx.description:
+                continue
+
+            # A. Normalize and Tokenize Description
+            clean_desc = _normalize_description(tx.description).lower()
+            desc_tokens = set(clean_desc.split())
+
+            # B. Tokenize Merchant Name
+            merchant_tokens = set(tx.merchant.name.lower().split())
+
+            # C. Subtraction (Residue = Description - Merchant)
+            residue_tokens = desc_tokens - merchant_tokens
+
+            # Filter out very short tokens
+            filtered_residue = [word for word in residue_tokens if len(word) > 2]
+
+            if filtered_residue:
+                word_counter.update(filtered_residue)
+                valid_transactions_count += 1
+
+        # D. Sample size check
+        if valid_transactions_count < self.min_sample_size:
+            logging.info(f"TemplateLearner: Not enough data ({valid_transactions_count}/{self.min_sample_size})")
             return []
 
-        # PLACEHOLDER FOR CORE LOGIC
-        # In a real implementation, we would:
-        # 1. Tokenize and normalize descriptions
-        # 2. Count word frequencies
-        # 3. Filter words that appear in more than `threshold` * `count` transactions
+        # E. Frequency-based selection
+        cutoff_limit = valid_transactions_count * self.frequency_threshold
 
-        # Scaffolding returns an empty list or some dummy candidates as placeholder
-        candidate_words = []
+        candidate_words = [
+            word for word, count in word_counter.items()
+            if count >= cutoff_limit
+        ]
 
-        return candidate_words
+        return sorted(candidate_words)

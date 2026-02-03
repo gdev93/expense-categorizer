@@ -461,6 +461,7 @@ class ExpenseCategorizerAgent:
         critical_rules = [
             "IGNORA transazioni la cui descrizione contiene 'Saldo'. Non devono essere categorizzate e non devono apparire nell'output JSON.",
             "IGNORA transazioni che sono Accrediti (denaro IN) o con importo positivo. Non devono essere categorizzate e non devono apparire nell'output JSON. Il tuo compito è solo categorizzare le SPESE (USCITE).",
+            "In caso di incertezza o se non riesci a categorizzare una transazione, spiega SEMPRE il motivo dettagliatamente nel campo 'reasoning'.",
         ]
         dynamic_user_rules = [f"{i}. {rule}" for i, rule in enumerate(self.user_rules, 1)]
         all_user_rules = critical_rules + dynamic_user_rules
@@ -659,6 +660,7 @@ class ExpenseCategorizerAgent:
     └─────────────────────────────────────────────────────┘
        • Spiega in 1-2 frasi perché hai scelto questa categoria specifica tra quelle disponibili.
        • Menziona gli elementi chiave che hanno guidato la decisione (merchant, tipo operazione, descrizione, ed eventuali esempi simili dal passato).
+       • Se la categorizzazione è incerta o impossibile, usa questo campo per spiegare nel dettaglio le ragioni del fallimento o del dubbio.
        • Esempi di buon reasoning:
          * "Categoria Alimentari per merchant ESSELUNGA, supermercato italiano tra i più noti"
          * "Categoria Trasporti per pagamento biglietto bus ATM Milano, confermato da descrizione"

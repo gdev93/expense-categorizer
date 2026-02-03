@@ -18,7 +18,7 @@ from processors.data_prechecks import parse_raw_transaction
 from processors.embeddings import EmbeddingEngine
 from processors.parser_utils import normalize_amount, parse_raw_date
 from processors.similarity_matcher import SimilarityMatcher, generate_embedding, SimilarityMatcherRAG, is_rag_reliable
-from processors.template_learner import TemplateLearner
+from processors.template_learner import TemplateLearner, _normalize_description
 from processors.transaction_updater import TransactionUpdater
 
 logger = logging.getLogger(__name__)
@@ -45,16 +45,6 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG, BatchingHelper, TemplateLearn
         self.similarity_matcher = SimilarityMatcher(user, float(self.pre_check_confidence_threshold))
 
     def process_transactions(self, transactions: Iterable[Transaction], upload_file: UploadFile) -> UploadFile:
-        # Check and populate template_blacklist if empty
-        first_tx = transactions[0] if isinstance(transactions, list) and transactions else upload_file.transactions.first()
-        if first_tx:
-            row_hash = FileStructureMetadata.generate_tuple_hash(first_tx.raw_data.keys())
-            file_structure = FileStructureMetadata.objects.filter(row_hash=row_hash).first()
-            if file_structure and not file_structure.template_blacklist:
-                logger.info(f"Template blacklist for structure {row_hash} is empty. Running TemplateLearner...")
-                file_structure.template_blacklist = self.find_template_words(transactions)
-                file_structure.save()
-
         # Ensure we have an iterator
         transactions_iter = iter(transactions)
 
@@ -71,7 +61,7 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG, BatchingHelper, TemplateLearn
         def get_agent_batches():
             to_upload_iter = get_transactions_to_upload()
             while True:
-                batch = list(itertools.islice(to_upload_iter, self.batch_helper.batch_size))
+                batch = list(itertools.islice(to_upload_iter, self.batch_size))
                 if not batch:
                     break
                 yield batch
@@ -106,6 +96,25 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG, BatchingHelper, TemplateLearn
 
         return upload_file
 
+    def _clean_description_for_embedding(self, description: str, blacklist: list[str]) -> str:
+        """
+        Cleans the description by removing noise words and blacklist tokens.
+        """
+        if not description:
+            return ""
+
+        if not any(blacklist):
+            return description
+
+        # 1. Basic normalization (dates, times, IDs, lowercase)
+        normalized = _normalize_description(description)
+
+        # 2. Remove blacklist tokens
+        words = normalized.split()
+        cleaned_words = [w for w in words if w not in blacklist]
+
+        return " ".join(cleaned_words)
+
     def _process_prechecks(self, batch: list[Transaction], upload_file: UploadFile) -> list[Transaction]:
         all_transactions_to_upload: list[Transaction] = []
         all_transactions_as_income: list[Transaction] = []
@@ -116,6 +125,14 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG, BatchingHelper, TemplateLearn
         parsed_data = []
         merchant_names_to_fetch = set()
         descriptions_to_embed = set()
+        desc_cleaning_map = {} # Map original stripped description to cleaned version
+
+        file_metadata = None
+        if batch:
+            row_hash = FileStructureMetadata.generate_tuple_hash(batch[0].raw_data.keys())
+            file_metadata = FileStructureMetadata.objects.filter(row_hash=row_hash).first()
+
+        blacklist = file_metadata.template_blacklist if file_metadata else []
 
         for tx in batch:
             res = parse_raw_transaction(tx.raw_data, [upload_file])
@@ -124,7 +141,10 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG, BatchingHelper, TemplateLearn
                 if res.merchant:
                     merchant_names_to_fetch.add(res.merchant)
                 if res.description:
-                    descriptions_to_embed.add(res.description.strip())
+                    orig_desc = res.description.strip()
+                    cleaned_desc = self._clean_description_for_embedding(orig_desc, blacklist)
+                    desc_cleaning_map[orig_desc] = cleaned_desc
+                    descriptions_to_embed.add(cleaned_desc)
 
         # 2. Batch Level 1 & 2: Fetch Known Merchants
         # Fetching by name or normalized_name to handle exact and fuzzy-ish matches
@@ -182,13 +202,15 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG, BatchingHelper, TemplateLearn
                 ref_tx = self.similarity_matcher.find_most_frequent_transaction_for_merchant(merchant_obj)
                 if ref_tx:
                     TransactionUpdater.update_categorized_transaction(tx, res, ref_tx)
-                    tx.embedding = embedding_dict.get(res.description.strip())
+                    cleaned_desc = desc_cleaning_map.get(res.description.strip()) if res.description else None
+                    tx.embedding = embedding_dict.get(cleaned_desc)
                     all_transactions_categorized.append(tx)
                     categorized = True
 
             # Level B: Vector RAG (if not found by merchant name)
             if not categorized and res.description:
-                tx.embedding = embedding_dict.get(res.description.strip())
+                cleaned_desc = desc_cleaning_map.get(res.description.strip())
+                tx.embedding = embedding_dict.get(cleaned_desc)
                 if tx.embedding:
                     # find_rag_context is inherited from SimilarityMatcherRAG
                     ref_tx, useful_context = self.find_rag_context(tx.embedding, self.user)
@@ -212,7 +234,8 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG, BatchingHelper, TemplateLearn
             # Level C: Fallback to Agent
             if not categorized:
                 uncategorized_tx = TransactionUpdater.update_transaction_with_parse_result(tx, res)
-                uncategorized_tx.embedding = embedding_dict.get(res.description.strip()) if res.description else None
+                cleaned_desc = desc_cleaning_map.get(res.description.strip()) if res.description else None
+                uncategorized_tx.embedding = embedding_dict.get(cleaned_desc) if cleaned_desc else None
                 all_transactions_to_upload.append(uncategorized_tx)
 
         # 5. Bulk Persistence
@@ -231,6 +254,14 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG, BatchingHelper, TemplateLearn
         return all_transactions_to_upload
 
     def _process_with_agent(self, batch: list[Transaction], upload_file: UploadFile) -> tuple[list[TransactionCategorization], GeminiResponse | None]:
+        # Get metadata for cleaning
+        row_hash = None
+        if batch:
+            row_hash = FileStructureMetadata.generate_tuple_hash(batch[0].raw_data.keys())
+
+        file_metadata = FileStructureMetadata.objects.filter(row_hash=row_hash).first() if row_hash else None
+        blacklist = file_metadata.template_blacklist if file_metadata else []
+
         agent_upload_transaction = []
         for tx in batch:
             # Check if we already have the context from _process_prechecks
@@ -239,7 +270,8 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG, BatchingHelper, TemplateLearn
             if useful_context is None:
                 # Assicuriamoci che l'embedding sia presente
                 if tx.embedding is None:
-                    tx.embedding = generate_embedding(tx.description or "")
+                    cleaned_desc = self._clean_description_for_embedding(tx.description or "", blacklist)
+                    tx.embedding = generate_embedding(cleaned_desc)
                 _, useful_context = self.find_rag_context(tx.embedding, self.user)
             rag_context_data = [
                 {
@@ -270,6 +302,8 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG, BatchingHelper, TemplateLearn
 
     def _persist_batch_results(self, batch: list[TransactionCategorization]):
         transactions_to_update = []
+        blacklist_cache = {}  # hash -> blacklist
+
         for tx_data in batch:
             tx_id = tx_data.transaction_id
             try:
@@ -282,7 +316,7 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG, BatchingHelper, TemplateLearn
                 merchant_name = tx_data.merchant
                 category_name = tx_data.category
                 if not merchant_name or not category_name:
-                    Transaction.objects.filter(id=tx_id).update(status='uncategorized', failure_code=1)
+                    Transaction.objects.filter(id=tx_id, description=tx_data.description).update(status='uncategorized', failure_code=1, reasoning=tx_data.reasoning)
                     continue
 
                 merchant, _ = Merchant.objects.get_or_create(name=merchant_name, user=self.user)
@@ -314,7 +348,14 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG, BatchingHelper, TemplateLearn
                 transaction_from_agent.categorized_by_agent = True
                 transaction_from_agent.reasoning = tx_data.reasoning
                 if transaction_from_agent.embedding is None:
-                    transaction_from_agent.embedding = generate_embedding(transaction_from_agent.description)
+                    row_hash = FileStructureMetadata.generate_tuple_hash(transaction_from_agent.raw_data.keys())
+                    if row_hash not in blacklist_cache:
+                        meta = FileStructureMetadata.objects.filter(row_hash=row_hash).first()
+                        blacklist_cache[row_hash] = meta.template_blacklist if meta else []
+                    
+                    blacklist = blacklist_cache[row_hash]
+                    cleaned_desc = self._clean_description_for_embedding(transaction_from_agent.description, blacklist)
+                    transaction_from_agent.embedding = generate_embedding(cleaned_desc)
                 transactions_to_update.append(transaction_from_agent)
 
             except Exception as e:
@@ -334,8 +375,86 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG, BatchingHelper, TemplateLearn
         """Post-process transactions after batch processing to identify column mappings and categorize uncategorized transactions."""
         self._categorize_remaining_transactions(upload_file)
 
+        # Check and populate template_blacklist if empty
+        first_tx = upload_file.transactions.first()
+        if first_tx:
+            row_hash = FileStructureMetadata.generate_tuple_hash(first_tx.raw_data.keys())
+            file_structure = FileStructureMetadata.objects.filter(row_hash=row_hash).first()
+            if file_structure and not file_structure.template_blacklist:
+                logger.info(f"Template blacklist for structure {row_hash} is empty. Running TemplateLearner...")
+                # We use all transactions of the file to have the best sample
+                all_txs = self.user.transactions.select_related('merchant').all()
+                new_blacklist = self.find_template_words(all_txs)
+                if new_blacklist:
+                    file_structure.template_blacklist = new_blacklist
+                    file_structure.save()
+                    logger.info(f"Populated template blacklist for {row_hash}: {new_blacklist}")
+                    
+                    # Update embeddings for all transactions with this structure for this user
+                    self._update_embeddings_for_structure(row_hash, new_blacklist)
+
+    def _update_embeddings_for_structure(self, row_hash: str, blacklist: list[str]) -> None:
+        """
+        Updates the embeddings of all transactions for the current user 
+        that belong to the specified file structure.
+        """
+        logger.info(f"Updating embeddings for structure {row_hash} and user {self.user.id}")
+        
+        # 1. Find all UploadFiles for this user
+        upload_files = UploadFile.objects.filter(user=self.user)
+        
+        for upload_file in upload_files:
+            # 2. Check the row_hash of the first transaction of this upload file
+            first_tx = upload_file.transactions.only('raw_data').first()
+            if not first_tx:
+                continue
+            
+            current_row_hash = FileStructureMetadata.generate_tuple_hash(first_tx.raw_data.keys())
+            if current_row_hash != row_hash:
+                continue
+                
+            logger.info(f"Re-embedding transactions for UploadFile {upload_file.id} ({upload_file.file_name})")
+            
+            # 3. Iterate through transactions in batches
+            transactions_qs = upload_file.transactions.only('id', 'description', 'embedding').all()
+            fetch_size = int(self.pre_check_iterator_fetch_size)
+            iterator = transactions_qs.iterator(chunk_size=fetch_size)
+            
+            while True:
+                chunk = list(itertools.islice(iterator, fetch_size))
+                if not chunk:
+                    break
+                
+                # 4. Prepare descriptions for embedding
+                tx_to_update = []
+                descriptions_to_embed = []
+                
+                for tx in chunk:
+                    if tx.description:
+                        cleaned_desc = self._clean_description_for_embedding(tx.description, blacklist)
+                        descriptions_to_embed.append(cleaned_desc)
+                        tx_to_update.append(tx)
+                
+                if descriptions_to_embed:
+                    # 5. Generate embeddings in batch
+                    embeddings_gen = EmbeddingEngine.get_model().embed(descriptions_to_embed)
+                    for tx, emb in zip(tx_to_update, embeddings_gen):
+                        tx.embedding = emb.tolist()
+                    
+                    # 6. Bulk update
+                    Transaction.objects.bulk_update(tx_to_update, ['embedding'])
+
     def _categorize_remaining_transactions(self, upload_file: UploadFile) -> None:
         """Process uncategorized transactions by parsing their data and attempting to categorize them using similar transactions."""
+        # Get metadata for cleaning
+        first_tx = upload_file.transactions.first()
+        file_metadata = None
+        if first_tx:
+            row_hash = FileStructureMetadata.generate_tuple_hash(first_tx.raw_data.keys())
+            file_metadata = FileStructureMetadata.objects.filter(row_hash=row_hash).first()
+
+        blacklist = file_metadata.template_blacklist if file_metadata else []
+
         uncategorized_transactions = Transaction.objects.filter(
             user=self.user,
             upload_file=upload_file,
@@ -359,13 +478,16 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG, BatchingHelper, TemplateLearn
 
                 # Only try to find similar transactions if we have a description
                 if tx.description:
-                    similar_tx, _ = self.find_rag_context(generate_embedding(tx.description), self.user)
+                    cleaned_desc = self._clean_description_for_embedding(tx.description, blacklist)
+                    embedding = generate_embedding(cleaned_desc)
+                    similar_tx, _ = self.find_rag_context(embedding, self.user)
                     if similar_tx and is_rag_reliable(tx.description, similar_tx.description, similar_tx.merchant.name):
                         similar_tx = self.similarity_matcher.find_most_frequent_transaction_for_merchant(similar_tx.merchant)
                         TransactionUpdater.update_categorized_transaction(tx, parse_result, similar_tx)
-                        tx.embedding = similar_tx.embedding if any(similar_tx.embedding) else generate_embedding(tx.description)
+                        tx.embedding = similar_tx.embedding if any(similar_tx.embedding) else embedding
                     else:
                         tx.status = 'uncategorized'
+                        tx.embedding = embedding
                 else:
                     tx.status = 'uncategorized'
 
