@@ -199,7 +199,16 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
                             TransactionUpdater.update_categorized_transaction(tx, res, final_ref or ref_tx)
                             all_transactions_categorized.append(tx)
                             categorized = True
-
+                    elif any(useful_context):
+                        for ctx_tx in useful_context:
+                            merchant_name = ctx_tx.merchant.name.lower()
+                            description_to_check = res.description.lower()
+                            if merchant_name in description_to_check:
+                                final_ref = self.similarity_matcher.find_most_frequent_transaction_for_merchant(ctx_tx.merchant)
+                                TransactionUpdater.update_categorized_transaction(tx, res, final_ref or ctx_tx)
+                                all_transactions_categorized.append(tx)
+                                categorized = True
+                                break
             # Level C: Fallback to Agent
             if not categorized:
                 uncategorized_tx = TransactionUpdater.update_transaction_with_parse_result(tx, res)
