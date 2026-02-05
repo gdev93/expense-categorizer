@@ -1,25 +1,24 @@
 {% extends "main/index.html" %}
 {% load static %}
 
-{% block title %}Dettaglio Transazione{% endblock %}
+{% block title %}Modifica Spesa{% endblock %}
 
 {% block extra_css %}
     <link rel="stylesheet" href="{% static 'css/transactions.css' %}">
-    <link rel="stylesheet" href="{% static 'css/categories.css' %}">
 {% endblock %}
 
 {% block content %}
     <div class="container mt-2">
         <div class="header">
             <div class="header-title-container">
-                <h1><span class="material-icons" style="vertical-align: middle; margin-right: 8px;">info</span> Dettaglio Transazione</h1>
+                <h1><span class="material-icons" style="vertical-align: middle; margin-right: 8px;">edit</span> Modifica Spesa</h1>
             </div>
         </div>
 
-        <div class="mt-4 mt-4-mobile">
+        <div class="mt-4">
             <div class="detail-card">
                 <div class="detail-body">
-                    {% include "transactions/components/transaction_detail_form.html" %}
+                    {% include "transactions/components/transaction_form.html" with is_update=True %}
                 </div>
             </div>
         </div>

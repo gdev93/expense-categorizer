@@ -38,10 +38,9 @@ class TransactionCreateView(LoginRequiredMixin, View):
         if merchant_id:
             merchant = get_object_or_404(Merchant, id=merchant_id, user=user)
         elif merchant_name:
-            merchant, created = Merchant.objects.get_or_create(
-                name=merchant_name,
-                user=user
-            )
+            merchant = Merchant.objects.filter(name=merchant_name, user=user).first()
+            if not merchant:
+                merchant = Merchant.objects.create(name=merchant_name, user=user)
         else:
             merchant = None
 
@@ -60,4 +59,16 @@ class TransactionCreateView(LoginRequiredMixin, View):
         )
 
         messages.success(request, "Spesa aggiunta con successo.")
+
+        apply_to_all = request.POST.get('apply_to_all') in ['on', 'true']
+        if apply_to_all and merchant:
+            Transaction.objects.filter(
+                user=user,
+                merchant=merchant
+            ).update(
+                category=category,
+                status='categorized',
+                modified_by_user=True
+            )
+
         return redirect('transaction_detail', pk=new_transaction.pk)

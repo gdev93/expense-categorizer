@@ -97,10 +97,11 @@ class TransactionDetailUpdateView(LoginRequiredMixin, UpdateView):
         form.instance.status = 'categorized'
         self.object = form.save()
 
+        message_only_one = "Spesa aggiornata con successo."
         # Apply to all transactions of the same merchant if requested
         apply_to_all = self.request.POST.get('apply_to_all') in ['on', 'true']
         if apply_to_all and self.object.merchant:
-            Transaction.objects.filter(
+            count = Transaction.objects.filter(
                 user=self.request.user,
                 merchant=self.object.merchant
             ).update(
@@ -108,8 +109,11 @@ class TransactionDetailUpdateView(LoginRequiredMixin, UpdateView):
                 status='categorized',
                 modified_by_user=True
             )
+            message_count_greater_than_one = f"Questa spesa e {"un'" if count == 1 else ''} altr{'a' if count == 1 else 'a'} sono state modificate con successo."
+            messages.success(self.request, message_only_one if count == 1 else message_count_greater_than_one)
+        else:
+            messages.success(self.request, message_only_one)
 
-        messages.success(self.request, "Spesa aggiornata con successo.")
 
         # Advance onboarding if at step 4
         profile = getattr(self.request.user, 'profile', None)

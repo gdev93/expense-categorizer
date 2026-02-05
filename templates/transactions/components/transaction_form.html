@@ -1,0 +1,87 @@
+<form method="post" action="{% if is_update %}{% url 'transaction_detail' transaction.id %}{% else %}{% url 'transaction_create' %}{% endif %}" class="transaction-form-content" id="transaction-form">
+    {% csrf_token %}
+    
+    <div class="form-grid">
+        <div class="form-group col-span-2-mobile" style="position: relative;">
+            <label class="field-label" for="id_merchant_name">
+                <span class="material-icons">store</span> Nome Esercente
+            </label>
+            {% if not is_update %}
+                <input type="hidden" name="merchant_id" id="id_merchant_id" value="" />
+            {% endif %}
+            <input type="text" name="{% if is_update %}merchant_raw_name{% else %}merchant_name{% endif %}" id="id_merchant_name"
+                   class="form-control" 
+                   value="{% if is_update %}{{ transaction.merchant.name|default:transaction.merchant_raw_name }}{% endif %}" 
+                   placeholder="es: Amazon, Starbucks..." required
+                   hx-get="{% url 'merchant_search' %}"
+                   hx-trigger="keyup changed delay:500ms"
+                   hx-target="#merchant-search-results"
+                   autocomplete="off" />
+            <div id="merchant-search-results" class="merchant-search-results-container"></div>
+        </div>
+
+        <div class="form-group">
+            <label class="field-label" for="id_amount">
+                <span class="material-icons">payments</span> Importo (€)
+            </label>
+            <input type="number" name="amount" id="id_amount" step="0.01"
+                   class="form-control" 
+                   value="{% if is_update %}{{ transaction.amount|floatformat:2 }}{% endif %}" 
+                   placeholder="0.00" required />
+        </div>
+
+        <div class="form-group">
+            <label class="field-label" for="id_transaction_date">
+                <span class="material-icons">calendar_today</span> Data Operazione
+            </label>
+            <input type="date" name="transaction_date" id="id_transaction_date"
+                   class="form-control" 
+                   value="{% if is_update %}{{ transaction.transaction_date|date:'Y-m-d' }}{% endif %}" 
+                   required />
+        </div>
+
+        <div class="form-group col-span-2-mobile">
+            <label class="field-label" for="id_category_name">
+                <span class="material-icons">category</span> Categoria
+            </label>
+            <input type="text" name="category_name" id="id_category_name" list="category-list"
+                   class="form-control" 
+                   value="{% if is_update %}{{ transaction.category.name|default:'' }}{% endif %}" 
+                   required
+                   placeholder="Seleziona o scrivi..." autocomplete="off" />
+            <datalist id="category-list">
+                {% for cat in categories %}
+                    <option value="{{ cat.name }}">
+                {% endfor %}
+            </datalist>
+        </div>
+    </div>
+
+    {% if is_update and transaction.merchant %}
+    <div class="form-group mt-2 mb-4">
+        <label class="field-label" style="display: flex; align-items: center; cursor: pointer; font-weight: normal; font-size: 0.95rem; color: #64748b; text-transform: none;">
+            <input type="checkbox" name="apply_to_all" id="id_apply_to_all" style="margin-right: 10px; width: 18px; height: 18px;">
+            <span>Applica questa categoria a tutte le transazioni di <strong>{{ transaction.merchant.name|default:transaction.merchant_raw_name }}</strong></span>
+        </label>
+    </div>
+    {% endif %}
+
+    <div class="form-group mb-4">
+        <label class="field-label" for="id_description">
+            <span class="material-icons">description</span> Descrizione (Opzionale)
+        </label>
+        <textarea id="id_description" name="description" class="form-control description-textarea" rows="3" placeholder="Aggiungi una nota...">{% if is_update %}{{ transaction.description|default:"" }}{% endif %}</textarea>
+    </div>
+
+    <div class="form-actions mt-4">
+        <button type="submit" class="btn btn-primary w-100-mobile">
+            <span class="material-icons" style="vertical-align: middle; margin-right: 4px;">save</span> Salva
+        </button>
+        {% if is_update %}
+            <button type="submit" name="delete" class="btn btn-danger w-100-mobile"
+                    onclick="return confirm('Sei sicuro di voler eliminare questa transazione? Questa azione non è reversibile.')">
+                <span class="material-icons" style="vertical-align: middle; margin-right: 4px;">delete</span> Elimina
+            </button>
+        {% endif %}
+    </div>
+</form>
