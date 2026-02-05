@@ -78,4 +78,47 @@ const EXPORT_DOWNLOAD_ENDPOINT = "{% url 'transaction_export' %}"
 <script src="{% static 'js/expander.js' %}"></script>
 <script src="{% static 'js/scroll-handler.js' %}"></script>
 <script src="{% static 'js/export.js' %}"></script>
+
+<script>
+    function openCreateModal() {
+        const modal = document.getElementById('createTransactionModal');
+        if (modal) {
+            modal.style.display = "flex";
+            document.body.classList.add('modal-open');
+        }
+    }
+
+    function closeCreateModal() {
+        const modal = document.getElementById('createTransactionModal');
+        if (modal) {
+            modal.style.display = "none";
+            document.body.classList.remove('modal-open');
+        }
+    }
+
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+        const modal = document.getElementById('createTransactionModal');
+        if (event.target === modal) {
+            closeCreateModal();
+        }
+    }
+</script>
+
+{% block modals %}
+    <!-- Modal for creating a new transaction -->
+    <div id="createTransactionModal" class="app-modal app-modal-full-mobile" style="display: none;">
+        <div class="app-modal-content">
+            <div class="app-modal-header">
+                <h3 style="margin: 0;">Aggiungi Nuova Spesa</h3>
+                <button type="button" class="close-btn" onclick="closeCreateModal();"><span class="material-icons">close</span></button>
+            </div>
+            <div class="app-modal-body" id="create-transaction-modal-body">
+                <div style="text-align: center; padding: 20px;">
+                    <div class="skeleton-text" style="width: 100%; height: 200px;">Caricamento form...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
 {% endblock %}

@@ -671,6 +671,44 @@ input:focus,
     gap: 12px;
 }
 
+/* Full screen modal on mobile */
+@media (max-width: 767px) {
+    .app-modal-full-mobile {
+        align-items: flex-start;
+    }
+
+    .app-modal-full-mobile .app-modal-content {
+        width: 100% !important;
+        max-width: none !important;
+        height: 100% !important;
+        border-radius: 0 !important;
+        padding: 20px !important;
+        margin: 0 !important;
+        overflow-y: auto !important;
+        display: flex;
+        flex-direction: column;
+        background-color: #fff !important;
+    }
+
+    .app-modal-full-mobile .app-modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 15px;
+        margin-bottom: 20px;
+    }
+
+    .app-modal-full-mobile .app-modal-header .close-btn {
+        position: static;
+        transform: none;
+    }
+
+    .app-modal-full-mobile .app-modal-body {
+        flex: 1;
+    }
+}
+
 .messages-container .alert {
     max-width: 400px;
     width: 100%;
@@ -691,6 +729,10 @@ input:focus,
         transform: translateY(0);
         opacity: 1;
     }
+}
+
+body.modal-open {
+    overflow: hidden;
 }
 
 .close-btn {

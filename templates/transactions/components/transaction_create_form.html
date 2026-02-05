@@ -1,0 +1,73 @@
+<form method="post" action="{% url 'transaction_create' %}" class="category-form" id="transaction-create-form">
+    {% csrf_token %}
+    
+    <div class="form-grid">
+        <div class="form-group col-span-2-mobile">
+            <label class="field-label" for="id_merchant_raw_name">
+                <span class="material-icons">store</span> Nome Esercente
+            </label>
+            <input type="text" name="merchant_raw_name" id="id_merchant_raw_name"
+                   class="form-control" placeholder="es: Amazon, Starbucks..." required />
+        </div>
+
+        <div class="form-group">
+            <label class="field-label" for="id_amount">
+                <span class="material-icons">payments</span> Importo (€)
+            </label>
+            <input type="number" name="amount" id="id_amount" step="0.01"
+                   class="form-control" placeholder="0.00" required />
+        </div>
+
+        <div class="form-group">
+            <label class="field-label" for="id_transaction_date">
+                <span class="material-icons">calendar_today</span> Data Operazione
+            </label>
+            <input type="date" name="transaction_date" id="id_transaction_date"
+                   class="form-control" required />
+        </div>
+    </div>
+
+    <div class="form-group mb-4">
+        <label class="field-label" for="id_description">
+            <span class="material-icons">description</span> Descrizione (Opzionale)
+        </label>
+        <textarea id="id_description" name="description" class="form-control description-textarea" rows="3" placeholder="Aggiungi una nota..."></textarea>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="section-title">
+        <span class="material-icons">category</span> Categorizzazione
+    </div>
+
+    <div class="form-group mb-3">
+        <label class="field-label" for="id_category">Seleziona Categoria</label>
+        <select name="category" id="id_category" class="form-control" required>
+            <option value="">Seleziona Categoria</option>
+            {% for cat in categories %}
+                <option value="{{ cat.id }}">
+                    {{ cat.name }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="new-category-box">
+        <label class="field-label field-label-highlight" for="id_new_category_name">
+            <span class="material-icons">add_circle</span> Crea Nuova Categoria
+        </label>
+        <input type="text" name="new_category_name" id="id_new_category_name"
+               class="form-control" placeholder="Inserisci nome (es: Regali, Salute...)" />
+    </div>
+
+    <div class="form-actions mt-4">
+        <button type="submit" class="btn btn-primary w-100-mobile">
+            <span class="material-icons" style="vertical-align: middle; margin-right: 4px;">save</span> Salva Spesa
+        </button>
+    </div>
+</form>
+
+<script>
+    // Imposta la data di oggi come predefinita
+    document.getElementById('id_transaction_date').valueAsDate = new Date();
+</script>

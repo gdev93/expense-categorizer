@@ -200,15 +200,21 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
                             all_transactions_categorized.append(tx)
                             categorized = True
                     elif any(useful_context):
+                        final_ref = None
+                        earliest_index = float('inf')
                         for ctx_tx in useful_context:
                             merchant_name = ctx_tx.merchant.name.lower()
                             description_to_check = res.description.lower()
-                            if merchant_name in description_to_check:
-                                final_ref = self.similarity_matcher.find_most_frequent_transaction_for_merchant(ctx_tx.merchant)
-                                TransactionUpdater.update_categorized_transaction(tx, res, final_ref or ctx_tx)
-                                all_transactions_categorized.append(tx)
-                                categorized = True
-                                break
+                            pos = description_to_check.find(merchant_name)
+                            # Merchant candidates have precedence if they show in the first part of the description
+                            if pos != -1 and pos < earliest_index:
+                                earliest_index = pos
+                                final_ref = ctx_tx
+                        if final_ref:
+                            final_ref = self.similarity_matcher.find_most_frequent_transaction_for_merchant(final_ref.merchant)
+                            TransactionUpdater.update_categorized_transaction(tx, res, final_ref)
+                            all_transactions_categorized.append(tx)
+                            categorized = True
             # Level C: Fallback to Agent
             if not categorized:
                 uncategorized_tx = TransactionUpdater.update_transaction_with_parse_result(tx, res)

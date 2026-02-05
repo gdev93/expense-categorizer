@@ -729,8 +729,39 @@ details.expander-card[open] .expander-icon {
     color: var(--primary-hover-color);
 }
 
-.category-dropdown-item.active {
+    .category-dropdown-item.active {
     background-color: #fff3e0;
     color: #e65100;
     font-weight: 600;
+}
+
+/* Header with action button */
+.header-with-action {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* FAB button for mobile */
+.btn-fab {
+    display: flex;
+    text-align: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background-color: var(--primary-color);
+    color: var(--nav-text-color);
+    border: none;
+    box-shadow: none;
+    cursor: pointer;
+    transition: transform 0.2s, background-color 0.2s;
+}
+
+.btn-fab .material-icons {
+    font-size: 18px;
+}
+
+.btn-fab:active {
+    transform: scale(0.9);
+    background-color: var(--primary-hover-color);
 }
