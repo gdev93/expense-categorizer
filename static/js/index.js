@@ -1,43 +1,3 @@
-/**
- * Smart back button functionality.
- * If the previous page in history is the same as the current page (e.g., after a redirect or reload),
- * it goes back one more step.
- */
-(function() {
-    try {
-        const lastBackPath = sessionStorage.getItem('lastBackPath');
-        if (lastBackPath) {
-            if (lastBackPath === window.location.pathname) {
-                window.history.back();
-                // If we are still here, navigation didn't happen
-                setTimeout(() => {
-                    if (window.location.pathname === lastBackPath) {
-                        sessionStorage.removeItem('lastBackPath');
-                    }
-                }, 500);
-            } else {
-                sessionStorage.removeItem('lastBackPath');
-            }
-        }
-    } catch (e) {}
-})();
-
-function smartBack() {
-    const currentPath = window.location.pathname;
-    try {
-        sessionStorage.setItem('lastBackPath', currentPath);
-    } catch (e) {}
-    window.history.back();
-
-    // Fallback: clear after a short delay if navigation didn't happen (no unload)
-    setTimeout(() => {
-        if (window.location.pathname === currentPath) {
-            try {
-                sessionStorage.removeItem('lastBackPath');
-            } catch (e) {}
-        }
-    }, 500);
-}
 
 document.addEventListener('DOMContentLoaded', function() {
     const menuToggle = document.getElementById('menuToggle');
@@ -302,74 +262,6 @@ function showAlert(message, type = 'danger') {
     container.appendChild(alertDiv);
 }
 
-/**
- * Modal management
- */
-function isMobile() {
-    return window.innerWidth <= 767;
-}
-
-function handleTransactionClick(event, url) {
-    if (isMobile()) {
-        window.location.href = url;
-    } else {
-        const modalBody = document.getElementById('detail-transaction-modal-body');
-        if (modalBody) {
-            htmx.ajax('GET', url, {target: '#detail-transaction-modal-body'});
-            openDetailModal();
-        } else {
-            window.location.href = url;
-        }
-    }
-}
-
-function handleCreateClick(event, url) {
-    if (isMobile()) {
-        window.location.href = url;
-    } else {
-        const modalBody = document.getElementById('create-transaction-modal-body');
-        if (modalBody) {
-            htmx.ajax('GET', url, {target: '#create-transaction-modal-body'});
-            openCreateModal();
-        } else {
-            window.location.href = url;
-        }
-    }
-}
-
-function openCreateModal() {
-    const modal = document.getElementById('createTransactionModal');
-    if (modal) {
-        modal.style.display = "flex";
-        document.body.classList.add('modal-open');
-    }
-}
-
-function closeCreateModal() {
-    const modal = document.getElementById('createTransactionModal');
-    if (modal) {
-        modal.style.display = "none";
-        document.body.classList.remove('modal-open');
-    }
-}
-
-function openDetailModal() {
-    const modal = document.getElementById('detailTransactionModal');
-    if (modal) {
-        modal.style.display = "flex";
-        document.body.classList.add('modal-open');
-    }
-}
-
-function closeDetailModal() {
-    const modal = document.getElementById('detailTransactionModal');
-    if (modal) {
-        modal.style.display = "none";
-        document.body.classList.remove('modal-open');
-    }
-}
-
-// Close menus when clicking outside
 window.addEventListener('click', function(event) {
     if (!event.target.closest('.category-pill-container')) {
         document.querySelectorAll('.category-dropdown-menu.show').forEach(menu => {
@@ -378,16 +270,6 @@ window.addEventListener('click', function(event) {
             const container = menu.closest('.category-pill-container');
             if (container) container.classList.remove('is-open');
         });
-    }
-
-    const createModal = document.getElementById('createTransactionModal');
-    if (event.target === createModal) {
-        closeCreateModal();
-    }
-
-    const detailModal = document.getElementById('detailTransactionModal');
-    if (event.target === detailModal) {
-        closeDetailModal();
     }
 
     // Also close merchant search results when clicking outside

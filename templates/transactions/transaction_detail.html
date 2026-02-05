@@ -14,24 +14,10 @@
             <div class="header-title-container">
                 <h1><span class="material-icons" style="vertical-align: middle; margin-right: 8px;">info</span> Dettaglio Transazione</h1>
             </div>
-            <div class="header-actions">
-                <div class="d-flex align-items-center gap-3">
-                    <a href="#" onclick="smartBack(); return false;" class="btn btn-secondary">
-                        Indietro
-                    </a>
-                </div>
-            </div>
         </div>
 
         <div class="mt-4 mt-4-mobile">
             <div class="detail-card">
-                <div class="detail-header">
-                    <h2>Informazioni Generali</h2>
-                    <span class="transaction-status status-{{ transaction.status }}">
-                        {{ transaction.get_status_display }}
-                    </span>
-                </div>
-
                 <div class="detail-body">
                     {% include "transactions/components/transaction_detail_form.html" %}
                 </div>

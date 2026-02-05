@@ -153,3 +153,38 @@ class TestTransactionApplyAll:
         # Verify other user's transaction is NOT updated
         t_other.refresh_from_db()
         assert t_other.category == self.other_cat
+
+    def test_apply_to_all_on_create(self, client):
+        client.login(username="testuser", password="password")
+
+        # Create existing transactions for the same merchant
+        t1 = Transaction.objects.create(
+            user=self.user,
+            merchant=self.merchant,
+            merchant_raw_name="Amazon",
+            category=self.cat2,
+            transaction_date=datetime.date(2025, 1, 1),
+            amount=10.0,
+            status='categorized',
+            upload_file=self.upload
+        )
+
+        # Create a new transaction for the same merchant and set "apply_to_all"
+        url = reverse('transaction_create')
+        data = {
+            'merchant_name': 'Amazon',
+            'amount': '20.00',
+            'transaction_date': '2025-01-02',
+            'category': self.cat1.id,
+            'apply_to_all': 'on'
+        }
+        response = client.post(url, data)
+
+        assert response.status_code == 302
+
+        # Verify both new and existing transactions are updated
+        t1.refresh_from_db()
+        assert t1.category == self.cat1
+
+        new_t = Transaction.objects.get(amount=20, user=self.user)
+        assert new_t.category == self.cat1

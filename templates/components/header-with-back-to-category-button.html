@@ -11,11 +11,6 @@
 
 {% block header_content %}
     <div style="display: flex; align-items: center; gap: 0.75rem;">
-        {% if not hide_back %}
-        <a href="#" onclick="smartBack(); return false;" class="btn btn-secondary">
-            {% if back_label %}{{ back_label }}{% else %}Indietro{% endif %}
-        </a>
-        {% endif %}
         {% if edit_url %}
         <a href="{{ edit_url }}" class="btn btn-primary">
             Modifica

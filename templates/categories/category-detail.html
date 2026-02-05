@@ -13,7 +13,7 @@
     <div class="container mt-2">
 
         {% url 'category_update' category.id as edit_url %}
-        {% include "components/header-with-back-to-category-button.html" with title=category_summary.name total=category_summary.transaction_amount edit_url=edit_url hide_back=True %}
+        {% include "components/header-with-back-to-category-button.html" with title=category_summary.name total=category_summary.transaction_amount edit_url=edit_url %}
 
         <div class="category-layout-stacked">
 

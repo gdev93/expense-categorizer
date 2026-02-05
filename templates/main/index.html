@@ -117,35 +117,6 @@
 
     <div class="overlay" id="overlay"></div>
     {% block modals %}
-        <!-- Modal for creating a new transaction -->
-        <div id="createTransactionModal" class="app-modal app-modal-full-mobile" style="display: none;">
-            <div class="app-modal-content">
-                <div class="app-modal-header">
-                    <h3 style="margin: 0;">Aggiungi Nuova Spesa</h3>
-                    <button type="button" class="close-btn" onclick="closeCreateModal();"><span class="material-icons">close</span></button>
-                </div>
-                <div class="app-modal-body" id="create-transaction-modal-body">
-                    <div style="text-align: center; padding: 20px;">
-                        <div class="skeleton-text" style="width: 100%; height: 200px;">Caricamento form...</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modal for editing a transaction -->
-        <div id="detailTransactionModal" class="app-modal app-modal-full-mobile" style="display: none;">
-            <div class="app-modal-content">
-                <div class="app-modal-header">
-                    <h3 style="margin: 0;">Dettaglio Spesa</h3>
-                    <button type="button" class="close-btn" onclick="closeDetailModal();"><span class="material-icons">close</span></button>
-                </div>
-                <div class="app-modal-body" id="detail-transaction-modal-body">
-                    <div style="text-align: center; padding: 20px;">
-                        <div class="skeleton-text" style="width: 100%; height: 200px;">Caricamento dettaglio...</div>
-                    </div>
-                </div>
-            </div>
-        </div>
     {% endblock %}
 
     <script src="{% static 'js/index.js' %}"></script>

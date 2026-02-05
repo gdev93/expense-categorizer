@@ -32,8 +32,6 @@ class TransactionDetailUpdateView(LoginRequiredMixin, UpdateView):
     def get(self, request, *args, **kwargs):
         self.object = self.get_object()
         context = self.get_context_data(object=self.object)
-        if request.headers.get('HX-Request') and request.headers.get('HX-Target') == 'detail-transaction-modal-body':
-            return render(request, 'transactions/components/transaction_detail_form.html', context)
         return self.render_to_response(context)
 
     def post(self, request, *args, **kwargs):
@@ -100,22 +98,19 @@ class TransactionDetailUpdateView(LoginRequiredMixin, UpdateView):
         form.instance.status = 'categorized'
         self.object = form.save()
 
-        if self.request.POST.get('apply_to_all') == 'true' and self.object.merchant:
-            # Update previous transactions with the same merchant and same user
-            updated_count = Transaction.objects.filter(
+        # Apply to all transactions of the same merchant if requested
+        apply_to_all = self.request.POST.get('apply_to_all') in ['on', 'true']
+        if apply_to_all and self.object.merchant:
+            Transaction.objects.filter(
                 user=self.request.user,
-                merchant=self.object.merchant,
-            ).exclude(
-                pk=self.object.pk
+                merchant=self.object.merchant
             ).update(
-                category=self.object.category,
-                modified_by_user=True,
-                status='categorized'
+                category=new_category,
+                status='categorized',
+                modified_by_user=True
             )
-            if updated_count > 0:
-                messages.info(self.request, f"Aggiornate questa e altre {updated_count} per questo esercente.")
-        else:
-            messages.success(self.request, "Spesa aggiornata con successo.")
+
+        messages.success(self.request, "Spesa aggiornata con successo.")
 
         # Advance onboarding if at step 4
         profile = getattr(self.request.user, 'profile', None)
