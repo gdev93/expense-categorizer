@@ -2,12 +2,18 @@
     {% csrf_token %}
     
     <div class="form-grid">
-        <div class="form-group col-span-2-mobile">
-            <label class="field-label" for="id_merchant_raw_name">
+        <div class="form-group col-span-2-mobile" style="position: relative;">
+            <label class="field-label" for="id_merchant_name">
                 <span class="material-icons">store</span> Nome Esercente
             </label>
-            <input type="text" name="merchant_raw_name" id="id_merchant_raw_name"
-                   class="form-control" placeholder="es: Amazon, Starbucks..." required />
+            <input type="hidden" name="merchant_id" id="id_merchant_id" value="" />
+            <input type="text" name="merchant_name" id="id_merchant_name"
+                   class="form-control" placeholder="es: Amazon, Starbucks..." required
+                   hx-get="{% url 'merchant_search' %}"
+                   hx-trigger="keyup changed delay:500ms"
+                   hx-target="#merchant-search-results"
+                   autocomplete="off" />
+            <div id="merchant-search-results" class="merchant-search-results-container"></div>
         </div>
 
         <div class="form-group">

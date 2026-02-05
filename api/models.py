@@ -283,7 +283,8 @@ class Transaction(models.Model):
         UploadFile,
         on_delete=models.CASCADE,
         related_name='transactions',
-        null=False
+        null=True,
+        blank=True
     )
     # Relationships
     user = models.ForeignKey(

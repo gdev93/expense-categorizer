@@ -43,19 +43,56 @@ function closeCreateModal() {
     }
 }
 
+/**
+ * Merchant search selection
+ */
+function selectMerchant(name, id) {
+    const input = document.getElementById('id_merchant_name');
+    const idInput = document.getElementById('id_merchant_id');
+    const container = document.getElementById('merchant-search-results');
+    if (input) {
+        input.value = name;
+        // Trigger a change event so HTMX or other listeners know it changed
+        input.dispatchEvent(new Event('change'));
+    }
+    if (idInput) {
+        idInput.value = id || '';
+    }
+    if (container) {
+        container.innerHTML = '';
+    }
+}
+
 // Global click listener for closing the create modal when clicking outside
 window.addEventListener('click', function(event) {
     const modal = document.getElementById('createTransactionModal');
     if (event.target === modal) {
         closeCreateModal();
     }
+    
+    // Also close merchant search results when clicking outside
+    const searchContainer = document.getElementById('merchant-search-results');
+    const searchInput = document.getElementById('id_merchant_name');
+    if (searchContainer && !searchContainer.contains(event.target) && event.target !== searchInput) {
+        searchContainer.innerHTML = '';
+    }
 });
 
-// Initialize default date for transaction forms
+// Initialize default date and merchant search listeners for transaction forms
 document.addEventListener('DOMContentLoaded', function() {
     const dateInput = document.getElementById('id_transaction_date');
     // Only set if it's empty (e.g. on create form)
     if (dateInput && !dateInput.value) {
         dateInput.valueAsDate = new Date();
+    }
+
+    // Add listener to clear merchant_id when merchant_name is modified manually
+    const merchantNameInput = document.getElementById('id_merchant_name');
+    const merchantIdInput = document.getElementById('id_merchant_id');
+    if (merchantNameInput && merchantIdInput) {
+        merchantNameInput.addEventListener('input', function() {
+            // When typing manually, clear the previously selected ID
+            merchantIdInput.value = '';
+        });
     }
 });

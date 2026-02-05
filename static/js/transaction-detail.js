@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('transaction-form');
     const categorySelect = document.getElementById('id_category');
     const newCategoryInput = document.getElementById('id_new_category_name');
-    const merchantInput = document.getElementById('id_merchant_raw_name');
+    const merchantInput = document.getElementById('id_merchant_name');
 
     if (!form || !categorySelect || !newCategoryInput) return;
 

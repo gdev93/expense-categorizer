@@ -765,3 +765,37 @@ details.expander-card[open] .expander-icon {
     transform: scale(0.9);
     background-color: var(--primary-hover-color);
 }
+
+/* Merchant Search Autocomplete */
+.merchant-search-results-container {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 1050;
+    background: white;
+    border: 1px solid #ddd;
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.merchant-search-result-item {
+    padding: 10px 15px;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    transition: background-color 0.2s;
+}
+
+.merchant-search-result-item:hover {
+    background-color: #f8f9fa;
+    color: var(--primary-hover-color);
+}
+
+.merchant-search-result-item:last-child {
+    border-radius: 0 0 8px 8px;
+}

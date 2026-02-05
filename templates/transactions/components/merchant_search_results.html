@@ -1,0 +1,10 @@
+{% if merchants %}
+    <div class="merchant-search-results-list">
+        {% for merchant in merchants %}
+            <div class="merchant-search-result-item" onclick="selectMerchant('{{ merchant.name|escapejs }}', '{{ merchant.id }}')">
+                <span class="material-icons" style="font-size: 16px; margin-right: 8px; color: #6c757d;">store</span>
+                {{ merchant.name }}
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}

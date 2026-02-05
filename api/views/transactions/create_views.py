@@ -1,65 +1,65 @@
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import transaction
-from django.db.models import Q
-from django.shortcuts import redirect
-from django.urls import reverse
-from django.views.generic import CreateView
+from django.shortcuts import redirect, render, get_object_or_404
+from django.views import View
 
 from api.models import Transaction, Category, Merchant
 
-class TransactionCreateView(LoginRequiredMixin, CreateView):
-    model = Transaction
-    template_name = 'transactions/transaction_create.html'
-    fields = [
-        'transaction_date',
-        'amount',
-        'merchant_raw_name',
-        'description',
-        'category'
-    ]
 
-    def get_template_names(self):
-        if self.request.headers.get('HX-Request'):
-            return ['transactions/components/transaction_create_form.html']
-        return [self.template_name]
+class TransactionCreateView(LoginRequiredMixin, View):
 
-    def get_queryset(self):
-        return self.model.objects.filter(user=self.request.user)
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['categories'] = Category.objects.filter(
-            Q(user=self.request.user)
-        ).distinct()
-        return context
+    def get(self, request, *args, **kwargs):
+        categories = Category.objects.filter(user=request.user)
+        return render(request, 'transactions/components/transaction_create_form.html', {'categories': categories})
 
     @transaction.atomic
-    def form_valid(self, form):
-        form.instance.user = self.request.user
-        
-        new_category_name = self.request.POST.get('new_category_name', '').strip()
+    def post(self, request, *args, **kwargs):
+        user = request.user
+        amount = request.POST.get('amount')
+        merchant_id = request.POST.get('merchant_id')
+        merchant_name = request.POST.get('merchant_name', '').strip()
+        transaction_date = request.POST.get('transaction_date', '')
+        description = request.POST.get('description', '')
+        category_id = request.POST.get('category')
+        new_category_name = request.POST.get('new_category_name', '').strip()
+
+        # 1. Handle Category
         if new_category_name:
-            new_category, created = Category.objects.get_or_create(
+            category, created = Category.objects.get_or_create(
                 name=new_category_name,
-                user=self.request.user,
+                user=user,
                 defaults={'is_default': False}
             )
+        elif category_id:
+            category = get_object_or_404(Category, id=category_id, user=user)
         else:
-            new_category = form.cleaned_data.get('category')
+            category = None
 
-        merchant_name = self.request.POST.get('merchant_raw_name', '').strip()
-        if merchant_name:
-            merchant_db = Merchant.objects.filter(name=merchant_name, user=self.request.user).first()
-            if not merchant_db:
-                merchant_db = Merchant.objects.create(name=merchant_name, user=self.request.user)
-            form.instance.merchant = merchant_db
+        # 2. Handle Merchant
+        if merchant_id:
+            merchant = get_object_or_404(Merchant, id=merchant_id, user=user)
+        elif merchant_name:
+            merchant, created = Merchant.objects.get_or_create(
+                name=merchant_name,
+                user=user
+            )
+        else:
+            merchant = None
 
-        form.instance.category = new_category
-        form.instance.modified_by_user = True
-        form.instance.status = 'categorized'
-        
-        self.object = form.save()
-        messages.success(self.request, "Spesa aggiunta con successo.")
-        
-        return redirect(reverse('transaction_list'))
+        # 3. Create Transaction
+        new_transaction = Transaction.objects.create(
+            user=user,
+            amount=amount if amount else None,
+            merchant=merchant,
+            merchant_raw_name=merchant_name,
+            transaction_date=transaction_date if transaction_date else None,
+            description=description,
+            category=category,
+            status='categorized',
+            modified_by_user=True,
+            upload_file=None
+        )
+
+        messages.success(request, "Spesa aggiunta con successo.")
+        return redirect('transaction_detail', pk=new_transaction.pk)
