@@ -48,27 +48,6 @@
     const BASE_EDIT_TRANSACTION_URL = '{% url 'update_transaction_category' %}';
     const EDIT_TRANSACTION_CATEGORY_CSRF_TOKEN = "{{ csrf_token }}";
     const CATEGORY_OPTIONS = JSON.parse(document.getElementById('category-data').textContent)
-    
-    function selectCategory(item, categoryId) {
-        const container = item.closest('.category-pill-container');
-        const input = container.querySelector('input[name="new_category_id"]');
-        const form = container.closest('form');
-        const span = container.querySelector('.transaction-category');
-        const menu = container.querySelector('.category-dropdown-menu');
-
-        input.value = categoryId;
-        span.textContent = item.textContent.trim();
-
-        // Close menu
-        if (menu) {
-            menu.classList.remove('show');
-            menu.classList.remove('open-above');
-        }
-        container.classList.remove('is-open');
-
-        // Submit form
-        form.submit();
-    }
 </script>
 <script src="{% static 'js/clickable-transaction-form-input.js' %}"></script>
 
@@ -78,32 +57,7 @@ const EXPORT_DOWNLOAD_ENDPOINT = "{% url 'transaction_export' %}"
 <script src="{% static 'js/expander.js' %}"></script>
 <script src="{% static 'js/scroll-handler.js' %}"></script>
 <script src="{% static 'js/export.js' %}"></script>
-
-<script>
-    function openCreateModal() {
-        const modal = document.getElementById('createTransactionModal');
-        if (modal) {
-            modal.style.display = "flex";
-            document.body.classList.add('modal-open');
-        }
-    }
-
-    function closeCreateModal() {
-        const modal = document.getElementById('createTransactionModal');
-        if (modal) {
-            modal.style.display = "none";
-            document.body.classList.remove('modal-open');
-        }
-    }
-
-    // Close modal when clicking outside
-    window.onclick = function(event) {
-        const modal = document.getElementById('createTransactionModal');
-        if (event.target === modal) {
-            closeCreateModal();
-        }
-    }
-</script>
+<script src="{% static 'js/transactions.js' %}"></script>
 
 {% block modals %}
     <!-- Modal for creating a new transaction -->
