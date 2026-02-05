@@ -31,6 +31,20 @@
             <input type="date" name="transaction_date" id="id_transaction_date"
                    class="form-control" required />
         </div>
+
+        <div class="form-group">
+            <label class="field-label" for="id_category_name">
+                <span class="material-icons">category</span> Categoria
+            </label>
+            <input type="text" name="category_name" id="id_category_name" list="category-list"
+                   class="form-control" required
+                   placeholder="Seleziona o scrivi..." autocomplete="off" />
+            <datalist id="category-list">
+                {% for cat in categories %}
+                    <option value="{{ cat.name }}">
+                {% endfor %}
+            </datalist>
+        </div>
     </div>
 
     <div class="form-group mb-4">
@@ -38,32 +52,6 @@
             <span class="material-icons">description</span> Descrizione (Opzionale)
         </label>
         <textarea id="id_description" name="description" class="form-control description-textarea" rows="3" placeholder="Aggiungi una nota..."></textarea>
-    </div>
-
-    <div class="divider"></div>
-
-    <div class="section-title">
-        <span class="material-icons">category</span> Categorizzazione
-    </div>
-
-    <div class="form-group mb-3 mt-3">
-        <label class="field-label" for="id_category">Seleziona Categoria</label>
-        <select name="category" id="id_category" class="form-control" required>
-            <option value="">Seleziona Categoria</option>
-            {% for cat in categories %}
-                <option value="{{ cat.id }}">
-                    {{ cat.name }}
-                </option>
-            {% endfor %}
-        </select>
-    </div>
-
-    <div class="new-category-box">
-        <label class="field-label field-label-highlight" for="id_new_category_name">
-            <span class="material-icons">add_circle</span> Crea Nuova Categoria
-        </label>
-        <input type="text" name="new_category_name" id="id_new_category_name"
-               class="form-control" placeholder="Inserisci nome (es: Regali, Salute...)" />
     </div>
 
     <div class="form-actions mt-4">

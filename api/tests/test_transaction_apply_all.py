@@ -84,7 +84,7 @@ class TestTransactionApplyAll:
             'amount': '30.00',
             'merchant_raw_name': 'Amazon',
             'description': 'Target transaction',
-            'category': self.cat1.id,
+            'category_name': self.cat1.name,
             'apply_to_all': 'true'
         })
         
@@ -142,7 +142,7 @@ class TestTransactionApplyAll:
             'amount': '30.00',
             'merchant_raw_name': 'Amazon',
             'description': 'My transaction',
-            'category': self.cat1.id,
+            'category_name': self.cat1.name,
             'apply_to_all': 'true'
         })
         
@@ -175,7 +175,7 @@ class TestTransactionApplyAll:
             'merchant_name': 'Amazon',
             'amount': '20.00',
             'transaction_date': '2025-01-02',
-            'category': self.cat1.id,
+            'category_name': self.cat1.name,
             'apply_to_all': 'on'
         }
         response = client.post(url, data)

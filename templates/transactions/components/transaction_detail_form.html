@@ -39,54 +39,36 @@
             <input type="date" name="transaction_date" id="id_transaction_date"
                    class="form-control" value="{{ transaction.transaction_date|date:'Y-m-d' }}" required />
         </div>
+
+        <div class="form-group">
+            <label class="field-label" for="id_category_name">
+                <span class="material-icons">category</span> Categoria
+            </label>
+            <input type="text" name="category_name" id="id_category_name" list="category-list"
+                   class="form-control" value="{{ transaction.category.name|default:'' }}" required
+                   placeholder="Seleziona o scrivi..." autocomplete="off" />
+            <datalist id="category-list">
+                {% for cat in categories %}
+                    <option value="{{ cat.name }}">
+                {% endfor %}
+            </datalist>
+        </div>
     </div>
+
+    {% if transaction.merchant %}
+    <div class="form-group mt-2 mb-4">
+        <label class="field-label" style="display: flex; align-items: center; cursor: pointer; font-weight: normal; font-size: 0.95rem; color: #4b5563;">
+            <input type="checkbox" name="apply_to_all" id="id_apply_to_all" style="margin-right: 10px; width: 18px; height: 18px;">
+            <span>Applica questa categoria a tutte le transazioni di <strong>{{ transaction.merchant.name|default:transaction.merchant_raw_name }}</strong></span>
+        </label>
+    </div>
+    {% endif %}
 
     <div class="form-group mb-4">
         <label class="field-label" for="id_description">
             <span class="material-icons">description</span> Descrizione Originale (Banca)
         </label>
         <textarea id="id_description" name="description" class="form-control description-textarea" rows="3">{{ transaction.description|default:"" }}</textarea>
-    </div>
-
-    <div class="divider"></div>
-
-    <div class="section-title">
-        <span class="material-icons">category</span> Categorizzazione
-    </div>
-
-    <div class="form-group mb-3">
-        <label class="field-label" for="id_category">Seleziona<span class="desktop-only"> Categoria</span></label>
-        <select name="category" id="id_category" class="form-control" required>
-            <option value="">Seleziona Categoria</option>
-            {% for cat in categories %}
-                <option value="{{ cat.id }}"
-                        {% if transaction.category.id == cat.id %}selected{% endif %}>
-                    {{ cat.name }}
-                </option>
-            {% endfor %}
-        </select>
-        <small class="form-text text-muted">
-            Scegli una delle categorie esistenti per questa spesa.
-        </small>
-        {% if transaction.merchant %}
-        <div class="form-group mt-2 mb-3">
-            <label class="field-label" style="display: flex; align-items: center; cursor: pointer; font-weight: normal; font-size: 0.95rem; color: #4b5563;">
-                <input type="checkbox" name="apply_to_all" id="id_apply_to_all" style="margin-right: 10px; width: 18px; height: 18px;">
-                <span>Applica questa categoria a tutte le transazioni di <strong>{{ transaction.merchant.name|default:transaction.merchant_raw_name }}</strong></span>
-            </label>
-        </div>
-        {% endif %}
-    </div>
-
-    <div class="new-category-box">
-        <label class="field-label field-label-highlight" for="id_new_category_name">
-            <span class="material-icons">add_circle</span> Crea Nuova Categoria
-        </label>
-        <input type="text" name="new_category_name" id="id_new_category_name"
-               class="form-control" placeholder="Inserisci nome (es: Regali, Salute...)" />
-        <small class="form-text help-text-highlight">
-            Se compilato, verrà creata una nuova categoria e assegnata automaticamente.
-        </small>
     </div>
 
     <div class="form-actions mt-4">

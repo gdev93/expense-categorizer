@@ -22,18 +22,15 @@ class TransactionCreateView(LoginRequiredMixin, View):
         merchant_name = request.POST.get('merchant_name', '').strip()
         transaction_date = request.POST.get('transaction_date', '')
         description = request.POST.get('description', '')
-        category_id = request.POST.get('category')
-        new_category_name = request.POST.get('new_category_name', '').strip()
+        category_name = request.POST.get('category_name', '').strip()
 
         # 1. Handle Category
-        if new_category_name:
+        if category_name:
             category, created = Category.objects.get_or_create(
-                name=new_category_name,
+                name=category_name,
                 user=user,
                 defaults={'is_default': False}
             )
-        elif category_id:
-            category = get_object_or_404(Category, id=category_id, user=user)
         else:
             category = None
 

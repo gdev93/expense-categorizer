@@ -509,6 +509,10 @@ details.expander-card[open] .expander-icon {
         font-weight: 500;
         white-space: nowrap;
     }
+
+    .description-textarea {
+        min-height: 100px;
+    }
 }
 
 /* Mobile Specific Adjustments (The Fixes) */

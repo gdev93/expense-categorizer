@@ -74,17 +74,16 @@ class TransactionDetailUpdateView(LoginRequiredMixin, UpdateView):
         set the modified_by_user flag, and most importantly,
         **return the rendered template instead of a redirect.**
         """
-        new_category_name = self.request.POST.get('new_category_name', '').strip()
+        category_name = self.request.POST.get('category_name', '').strip()
+        new_category = None
 
-        if new_category_name:
+        if category_name:
             new_category, created = Category.objects.get_or_create(
-                name=new_category_name,
+                name=category_name,
                 user=self.request.user,  # Assigns the new category to the current user
                 defaults={'is_default': False}
             )
 
-        else:
-            new_category = form.instance.category
         merchant_name = self.request.POST.get('merchant_raw_name', '').strip()
 
         if merchant_name:
