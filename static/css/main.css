@@ -204,6 +204,23 @@ h3 { font-size: 18px; }
     min-width: 38px;
 }
 
+/* Allows an icon button to show text and expand on desktop */
+.btn-icon.btn-expand-desktop {
+    gap: 8px;
+}
+
+@media (min-width: 768px) {
+    .btn-icon.btn-expand-desktop {
+        width: auto;
+        padding: 0 16px;
+    }
+    
+    .btn-icon.btn-expand-desktop svg {
+        width: 20px;
+        height: 20px;
+    }
+}
+
 .btn-subtle {
     background-color: transparent;
     color: #000000 !important;

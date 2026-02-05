@@ -2,6 +2,7 @@ import datetime
 from dataclasses import dataclass, asdict, field
 from typing import Any
 
+from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.postgres.aggregates import StringAgg
 from django.core.exceptions import BadRequest
@@ -74,6 +75,8 @@ class TransactionListView(LoginRequiredMixin, ListView, TransactionFilterMixin):
         transactions_to_update.update(category=new_category, status='categorized', modified_by_user=True)
 
         create_rule(merchant, new_category, self.request.user)
+
+        messages.success(self.request, f"Tutte le spese di '{merchant.name}' sono state categorizzate come '{new_category.name}'.")
 
         # Advance onboarding if at step 4
         profile = getattr(self.request.user, 'profile', None)

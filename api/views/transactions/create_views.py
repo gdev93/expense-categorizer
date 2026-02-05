@@ -58,11 +58,9 @@ class TransactionCreateView(LoginRequiredMixin, View):
             upload_file=None
         )
 
-        messages.success(request, "Spesa aggiunta con successo.")
-
         apply_to_all = request.POST.get('apply_to_all') in ['on', 'true']
         if apply_to_all and merchant:
-            Transaction.objects.filter(
+            count = Transaction.objects.filter(
                 user=user,
                 merchant=merchant
             ).update(
@@ -70,5 +68,12 @@ class TransactionCreateView(LoginRequiredMixin, View):
                 status='categorized',
                 modified_by_user=True
             )
+            
+            if count > 1:
+                messages.success(request, f"Spesa aggiunta e altre {count - 1} transazioni di '{merchant.name}' sono state aggiornate.")
+            else:
+                messages.success(request, "Spesa aggiunta con successo.")
+        else:
+            messages.success(request, "Spesa aggiunta con successo.")
 
         return redirect('transaction_detail', pk=new_transaction.pk)

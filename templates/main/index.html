@@ -53,15 +53,15 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="{% url 'transactions_upload' %}" class="nav-link" data-page="/transactions/upload/">
-                        <span class="nav-icon material-icons">upload_file</span>
-                        <span class="nav-text">Caricamento dati</span>
-                    </a>
-                </li>
-                <li class="nav-item">
                     <a href="{% url 'category_list' %}" class="nav-link">
                         <span class="nav-icon material-icons">category</span>
                         <span class="nav-text">Categorie di spesa</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{% url 'transactions_upload' %}" class="nav-link" data-page="/transactions/upload/">
+                        <span class="nav-icon material-icons">upload_file</span>
+                        <span class="nav-text">Caricamento dati</span>
                     </a>
                 </li>
                 {% if not is_free_trial %}
@@ -101,16 +101,7 @@
 
     <main class="main-content">
         {% include 'components/onboarding.html' %}
-        {% if messages %}
-        <div class="messages-container">
-            {% for message in messages %}
-            <div class="alert alert-{{ message.tags }}" role="alert">
-                {{ message }}
-                <button type="button" class="close-btn" onclick="this.parentElement.style.display='none';"><span class="material-icons">close</span></button>
-            </div>
-            {% endfor %}
-        </div>
-        {% endif %}
+        {% include 'components/messages.html' %}
         {% block content %}
         {% endblock %}
     </main>

@@ -13,12 +13,32 @@ class TransactionFilterMixin(MonthYearFilterMixin, View):
         Returns a dictionary of filters.
         """
         filters = {}
+        reset_filters = self.request.GET.get('reset') == "1"
+
+        if reset_filters:
+            # Clear session variables used for filtering
+            session_keys = [
+                'filter_category',
+                'filter_amount',
+                'filter_amount_operator',
+                'filter_search',
+                'filter_view_type',
+                'filter_status'
+            ]
+            for key in session_keys:
+                if key in self.request.session:
+                    del self.request.session[key]
+
+            # Do NOT return early.
+            # Let the code below run to populate 'filters' with default/empty values
+            # so the query builder doesn't crash with a KeyError.
 
         # 1. Category
         if 'category' in self.request.GET or 'categories' in self.request.GET:
             filters['category_ids'] = self.request.GET.getlist('category') or self.request.GET.getlist('categories')
             self.request.session['filter_category'] = filters['category_ids']
         else:
+            # If reset, session is empty, so this defaults to []
             filters['category_ids'] = self.request.session.get('filter_category', [])
 
         # 2. Upload File (Don't put in session as it's often page-specific)
@@ -59,6 +79,7 @@ class TransactionFilterMixin(MonthYearFilterMixin, View):
             filters['status'] = self.request.session.get('filter_status', '')
 
         # 7. Year and Months (from MonthYearFilterMixin)
+        # Note: If you want reset to clear dates too, ensure this mixin handles defaults correctly.
         filters['year'], filters['months'] = self.get_year_and_months()
 
         return filters
@@ -72,18 +93,19 @@ class TransactionFilterMixin(MonthYearFilterMixin, View):
         filters = self.get_transaction_filters()
 
         # Filter by category
-        if filters['category_ids'] and any(filters['category_ids']):
+        # Safe to check because 'category_ids' now always exists (even if empty)
+        if filters.get('category_ids') and any(filters['category_ids']):
             queryset = queryset.filter(category_id__in=filters['category_ids'])
 
         # Filter by upload_file
-        if filters['upload_file_id']:
+        if filters.get('upload_file_id'):
             queryset = queryset.filter(upload_file_id=filters['upload_file_id'])
 
         # Filter by amount
-        if filters['amount']:
+        if filters.get('amount'):
             try:
                 amount_value = float(filters['amount'])
-                op = filters['amount_operator']
+                op = filters.get('amount_operator', 'eq')
                 if op == 'eq':
                     queryset = queryset.filter(amount=amount_value)
                 elif op == 'gt':
@@ -95,10 +117,11 @@ class TransactionFilterMixin(MonthYearFilterMixin, View):
                 elif op == 'lte':
                     queryset = queryset.filter(amount__lte=amount_value)
             except (ValueError, TypeError):
-                raise BadRequest("Invalid amount format.")
+                # Optionally log this error
+                pass
 
-        # Search filter
-        if filters['search']:
+                # Search filter
+        if filters.get('search'):
             queryset = queryset.filter(
                 Q(merchant__name__icontains=filters['search']) |
                 Q(merchant_raw_name__icontains=filters['search']) |
@@ -106,10 +129,11 @@ class TransactionFilterMixin(MonthYearFilterMixin, View):
             )
 
         # Year and Month filters
-        if not filters['upload_file_id']:
+        # Using .get() prevents KeyError if for some reason keys are missing
+        if filters.get('year') and not filters.get('upload_file_id'):
             queryset = queryset.filter(transaction_date__year=filters['year'])
 
-        if any(filters['months']):
+        if filters.get('months') and any(filters['months']):
             month_queries = Q()
             for month in filters['months']:
                 month_queries |= Q(transaction_date__month=month)
@@ -117,12 +141,11 @@ class TransactionFilterMixin(MonthYearFilterMixin, View):
                 queryset = queryset.filter(month_queries)
 
         # Status filter
-        if filters['status']:
+        if filters.get('status'):
             queryset = queryset.filter(status=filters['status'])
 
         # For the main list view, we only want categorized transactions
-        # to avoid duplication with the uncategorized section in the template.
-        if filters['view_type'] == 'list':
+        if filters.get('view_type') == 'list':
             return queryset.filter(category__isnull=False, merchant_id__isnull=False)
 
         return queryset

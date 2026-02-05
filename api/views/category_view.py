@@ -45,20 +45,32 @@ class CategoryForm(forms.ModelForm):
 
 class CategoryEnrichedMixin(MonthYearFilterMixin):
     def get_category_filters(self):
+        # Check if a reset was requested
+        year, months = self.get_year_and_months()
+        if self.request.GET.get('reset') == '1':
+            self.request.session.pop('filter_category_search', None)
+            self.request.session.pop('filter_category_selected', None)
+            # If your Mixin stores months/years in session, clear them here too
+            return {'search': '', 'selected_category_ids': [], 'year': year, 'months': months}
+
         filters = {}
+
+        # Search Filter
         if 'search' in self.request.GET:
             filters['search'] = self.request.GET.get('search')
             self.request.session['filter_category_search'] = filters['search']
         else:
             filters['search'] = self.request.session.get('filter_category_search', '')
 
+        # Categories Filter
         if 'categories' in self.request.GET:
             filters['selected_category_ids'] = self.request.GET.getlist('categories')
             self.request.session['filter_category_selected'] = filters['selected_category_ids']
         else:
             filters['selected_category_ids'] = self.request.session.get('filter_category_selected', [])
 
-        filters['year'], filters['months'] = self.get_year_and_months()
+        filters['year']=year
+        filters['months']=months
         return filters
 
     def get_enriched_category_queryset(self, base_category_queryset:QuerySet[Category,Category]):

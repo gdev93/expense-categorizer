@@ -311,12 +311,12 @@ class Transaction(models.Model):
     # Processing metadata
     merchant_raw_name = models.CharField(max_length=255, blank=True, null=True)  # Original from CSV
     # Core transaction data
-    transaction_date = models.DateField(null=True)
+    transaction_date = models.DateField(null=True, blank=True)
     original_date = models.CharField(max_length=255, blank=True, null=True)
-    amount = models.DecimalField(max_digits=10, decimal_places=2, null=True)
+    amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     original_amount = models.CharField(max_length=50, blank=True, null=True)  # Raw from CSV
-    description = models.TextField(null=True)  # Raw description from bank
-    normalized_description = models.TextField(null=True)
+    description = models.TextField(null=True, blank=True)  # Raw description from bank
+    normalized_description = models.TextField(null=True, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     confidence_score = models.FloatField(null=True, blank=True)  # LLM/matching confidence
     failure_code = models.CharField(max_length=20, null=True, blank=True)

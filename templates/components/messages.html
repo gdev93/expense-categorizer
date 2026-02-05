@@ -1,0 +1,12 @@
+{% if messages %}
+<div class="messages-container" id="messages-container" hx-swap-oob="true">
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }}" role="alert">
+        {{ message|safe }}
+        <button type="button" class="close-btn" onclick="this.parentElement.remove();"><span class="material-icons">close</span></button>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="messages-container" id="messages-container" hx-swap-oob="true"></div>
+{% endif %}

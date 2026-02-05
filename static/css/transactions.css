@@ -597,14 +597,15 @@ details.expander-card[open] .expander-icon {
     }
 
     .form-actions {
+        display: flex !important;
         margin-top: 10px !important;
         padding-top: 0 !important;
         margin-bottom: 20px !important;
-        flex-direction: column;
+        flex-direction: row;
     }
 
     .form-actions .btn {
-        width: 100%;
+        flex: 1;
         padding: 0 20px !important;
         height: 40px !important;
         font-size: 0.95rem !important;

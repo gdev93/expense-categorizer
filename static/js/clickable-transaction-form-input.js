@@ -100,8 +100,11 @@ async function submitCategoryChange(newCategoryId, newCategoryName, transactionI
             return;
         }
 
+        const data = await response.json();
+
         // Success: visual feedback
         span.style.backgroundColor = '#d4edda';
+        showAlert(data.message || "Categoria aggiornata con successo.", "success");
         setTimeout(() => {
             span.style.backgroundColor = '';
         }, 800);
@@ -109,6 +112,6 @@ async function submitCategoryChange(newCategoryId, newCategoryName, transactionI
     } catch (error) {
         console.error("Error updating transaction category:", error);
         span.style.backgroundColor = '#f8d7da';
-        showAlert("Failed to update transaction category. Check console for details.");
+        showAlert("Errore durante l'aggiornamento della categoria. Controlla la console per i dettagli.");
     }
 }

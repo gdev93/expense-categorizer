@@ -13,6 +13,11 @@
             <div class="header-title-container">
                 <h1><span class="material-icons" style="vertical-align: middle; margin-right: 8px;">add_circle</span> Nuova Spesa</h1>
             </div>
+            <div class="header-actions">
+                <button type="submit" form="transaction-form" class="btn btn-primary desktop-only">
+                    <span class="material-icons" style="vertical-align: middle; margin-right: 4px;">save</span> Salva
+                </button>
+            </div>
         </div>
 
     <div class="mt-4">
@@ -23,4 +28,8 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{% static 'js/transactions.js' %}"></script>
 {% endblock %}

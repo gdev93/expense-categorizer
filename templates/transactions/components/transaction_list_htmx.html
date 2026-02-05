@@ -1,5 +1,6 @@
 {% include "transactions/components/transaction_list_summary.html" %}
 {% include "transactions/components/transaction_list_results.html" %}
+{% include "components/messages.html" %}
 <select name="months" id="months" multiple size="1" hx-swap-oob="true">
     {% for month in available_months %}
         <option value="{{ month.month_number }}"

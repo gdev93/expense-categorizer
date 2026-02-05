@@ -1,10 +1,11 @@
 import os
+
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import transaction
 from django.db.models import Q
 from django.http import HttpRequest, HttpResponse, JsonResponse
-from django.shortcuts import get_object_or_404, redirect, render
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.views import View
 from django.views.generic import UpdateView
@@ -65,6 +66,7 @@ class TransactionDetailUpdateView(LoginRequiredMixin, UpdateView):
         context['categories'] = Category.objects.filter(
             Q(user=self.request.user)
         ).distinct()
+        context["is_update"] = True
         return context
 
     @transaction.atomic
@@ -97,7 +99,6 @@ class TransactionDetailUpdateView(LoginRequiredMixin, UpdateView):
         form.instance.status = 'categorized'
         self.object = form.save()
 
-        message_only_one = "Spesa aggiornata con successo."
         # Apply to all transactions of the same merchant if requested
         apply_to_all = self.request.POST.get('apply_to_all') in ['on', 'true']
         if apply_to_all and self.object.merchant:
@@ -109,10 +110,13 @@ class TransactionDetailUpdateView(LoginRequiredMixin, UpdateView):
                 status='categorized',
                 modified_by_user=True
             )
-            message_count_greater_than_one = f"Questa spesa e {"un'" if count == 1 else ''} altr{'a' if count == 1 else 'a'} sono state modificate con successo."
-            messages.success(self.request, message_only_one if count == 1 else message_count_greater_than_one)
+            
+            if count > 1:
+                messages.success(self.request, f"Questa spesa e altre {count - 1} transazioni di '{self.object.merchant.name}' sono state aggiornate.")
+            else:
+                messages.success(self.request, "Spesa aggiornata con successo.")
         else:
-            messages.success(self.request, message_only_one)
+            messages.success(self.request, "Spesa aggiornata con successo.")
 
 
         # Advance onboarding if at step 4
@@ -122,6 +126,11 @@ class TransactionDetailUpdateView(LoginRequiredMixin, UpdateView):
             profile.save()
 
         return redirect(reverse('transaction_detail', kwargs={'pk': self.object.pk}))
+
+    def form_invalid(self, form):
+        """Handle invalid form submission by adding an error message."""
+        messages.error(self.request, "Errore durante l'aggiornamento della spesa. Controlla i dati inseriti.")
+        return super().form_invalid(form)
 
 class EditTransactionCategory(View):
 
@@ -163,7 +172,7 @@ class EditTransactionCategory(View):
         # 5. Return success response (JSON for AJAX)
         return JsonResponse({
             'success': True,
-            'message': 'Category updated successfully.',
+            'message': 'Categoria aggiornata con successo.',
             'transaction_id': expense.id,
             'new_category_name': new_category.name,  # Return updated data for client-side update
             'new_category_id': new_category.id

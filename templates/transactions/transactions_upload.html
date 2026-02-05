@@ -99,15 +99,17 @@
                     </button>
 
 
-                    <a href="{% url 'transactions_upload' %}"
+                    <button
                        hx-get="{% url 'transactions_upload' %}"
                        hx-target="#upload-results"
                        hx-swap="outerHTML settle:500ms"
                        hx-indicator="#upload-results"
                        hx-on::before-request="clearFilters('upload-filter-form');"
+                       hx-disinherit="*"
+                       hx-sync="closest form:replace"
                        class="btn btn-icon btn-subtle" title="Cancella">
                         <span class="material-icons">clear</span>
-                    </a>
+                    </button>
                 </div>
             </div>
 

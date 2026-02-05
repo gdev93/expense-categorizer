@@ -53,15 +53,17 @@
                             </button>
 
 
-                            <a href="{% url 'category_detail' category.id %}?reset=1"
+                            <button
                                hx-get="{% url 'category_detail' category.id %}?reset=1"
                                hx-target="#category-detail-results"
                                hx-swap="outerHTML settle:500ms"
                                hx-indicator="#category-detail-results"
                                hx-on::before-request="clearFilters('transaction-filter-form');"
+                               hx-disinherit="*"
+                               hx-sync="closest form:replace"
                                class="btn btn-icon btn-subtle" title="Cancella">
                                 <span class="material-icons">clear</span>
-                            </a>
+                            </button>
                         </div>
                     </div>
 
