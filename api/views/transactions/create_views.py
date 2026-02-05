@@ -11,7 +11,10 @@ class TransactionCreateView(LoginRequiredMixin, View):
 
     def get(self, request, *args, **kwargs):
         categories = Category.objects.filter(user=request.user)
-        return render(request, 'transactions/components/transaction_create_form.html', {'categories': categories})
+        context = {'categories': categories}
+        if request.headers.get('HX-Request') and request.headers.get('HX-Target') == 'create-transaction-modal-body':
+            return render(request, 'transactions/components/transaction_create_form.html', context)
+        return render(request, 'transactions/transaction_create.html', context)
 
     @transaction.atomic
     def post(self, request, *args, **kwargs):

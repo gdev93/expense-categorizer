@@ -302,8 +302,75 @@ function showAlert(message, type = 'danger') {
     container.appendChild(alertDiv);
 }
 
+/**
+ * Modal management
+ */
+function isMobile() {
+    return window.innerWidth <= 767;
+}
+
+function handleTransactionClick(event, url) {
+    if (isMobile()) {
+        window.location.href = url;
+    } else {
+        const modalBody = document.getElementById('detail-transaction-modal-body');
+        if (modalBody) {
+            htmx.ajax('GET', url, {target: '#detail-transaction-modal-body'});
+            openDetailModal();
+        } else {
+            window.location.href = url;
+        }
+    }
+}
+
+function handleCreateClick(event, url) {
+    if (isMobile()) {
+        window.location.href = url;
+    } else {
+        const modalBody = document.getElementById('create-transaction-modal-body');
+        if (modalBody) {
+            htmx.ajax('GET', url, {target: '#create-transaction-modal-body'});
+            openCreateModal();
+        } else {
+            window.location.href = url;
+        }
+    }
+}
+
+function openCreateModal() {
+    const modal = document.getElementById('createTransactionModal');
+    if (modal) {
+        modal.style.display = "flex";
+        document.body.classList.add('modal-open');
+    }
+}
+
+function closeCreateModal() {
+    const modal = document.getElementById('createTransactionModal');
+    if (modal) {
+        modal.style.display = "none";
+        document.body.classList.remove('modal-open');
+    }
+}
+
+function openDetailModal() {
+    const modal = document.getElementById('detailTransactionModal');
+    if (modal) {
+        modal.style.display = "flex";
+        document.body.classList.add('modal-open');
+    }
+}
+
+function closeDetailModal() {
+    const modal = document.getElementById('detailTransactionModal');
+    if (modal) {
+        modal.style.display = "none";
+        document.body.classList.remove('modal-open');
+    }
+}
+
 // Close menus when clicking outside
-document.addEventListener('click', function(event) {
+window.addEventListener('click', function(event) {
     if (!event.target.closest('.category-pill-container')) {
         document.querySelectorAll('.category-dropdown-menu.show').forEach(menu => {
             menu.classList.remove('show');
@@ -312,4 +379,41 @@ document.addEventListener('click', function(event) {
             if (container) container.classList.remove('is-open');
         });
     }
+
+    const createModal = document.getElementById('createTransactionModal');
+    if (event.target === createModal) {
+        closeCreateModal();
+    }
+
+    const detailModal = document.getElementById('detailTransactionModal');
+    if (event.target === detailModal) {
+        closeDetailModal();
+    }
+
+    // Also close merchant search results when clicking outside
+    const searchContainer = document.getElementById('merchant-search-results');
+    const searchInput = document.getElementById('id_merchant_name');
+    if (searchContainer && !searchContainer.contains(event.target) && event.target !== searchInput) {
+        searchContainer.innerHTML = '';
+    }
 });
+
+/**
+ * Merchant search selection
+ */
+function selectMerchant(name, id) {
+    const input = document.getElementById('id_merchant_name');
+    const idInput = document.getElementById('id_merchant_id');
+    const container = document.getElementById('merchant-search-results');
+    if (input) {
+        input.value = name;
+        // Trigger a change event so HTMX or other listeners know it changed
+        input.dispatchEvent(new Event('change'));
+    }
+    if (idInput) {
+        idInput.value = id || '';
+    }
+    if (container) {
+        container.innerHTML = '';
+    }
+}

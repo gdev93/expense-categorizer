@@ -1,0 +1,31 @@
+{% extends "main/index.html" %}
+{% load static %}
+
+{% block title %}Aggiungi Spesa{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/transactions.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container mt-2">
+    <div class="header">
+        <div class="header-title-container">
+            <h1><span class="material-icons" style="vertical-align: middle; margin-right: 8px;">add_circle</span> Aggiungi Nuova Spesa</h1>
+        </div>
+        <div class="header-actions">
+            <a href="#" onclick="smartBack(); return false;" class="btn btn-secondary">
+                Indietro
+            </a>
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <div class="detail-card">
+             <div class="detail-body">
+                {% include "transactions/components/transaction_create_form.html" %}
+             </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

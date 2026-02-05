@@ -18,7 +18,8 @@
         <div class="data-list">
         {% if transactions %}
             {% for transaction in transactions %}
-                <div class="data-list-item" onclick="window.location.href='{% url 'transaction_detail' transaction.id %}'">
+                <div class="data-list-item" 
+                     onclick="handleTransactionClick(event, '{% url 'transaction_detail' transaction.id %}')">
                     <div class="category-info">
                         <div class="category-name">
                             {{ transaction.transaction_date|date:"d M Y" }}

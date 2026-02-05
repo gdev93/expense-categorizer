@@ -1,0 +1,183 @@
+<form method="post" action="{% url 'transaction_detail' transaction.id %}" class="category-form" id="transaction-form">
+    {% csrf_token %}
+    <input type="hidden" name="apply_to_all" id="apply_to_all" value="false">
+
+    <div class="text-center amount-section">
+        <div class="amount-highlight {% if transaction.transaction_type == 'income' %}is-income{% endif %}">
+            € {{ transaction.amount|floatformat:2 }}
+        </div>
+        <div class="amount-date">
+            <span class="material-icons" style="font-size: 1.1em; vertical-align: middle; margin-right: 4px;">calendar_today</span> {{ transaction.transaction_date|date:"d F Y" }}
+        </div>
+    </div>
+
+    <div class="form-grid">
+        <div class="form-group col-span-2-mobile" style="position: relative;">
+            <label class="field-label" for="id_merchant_name">
+                <span class="material-icons">store</span> Nome Esercente
+            </label>
+            <input type="text" name="merchant_raw_name" id="id_merchant_name"
+                   class="form-control" value="{{ transaction.merchant.name|default:transaction.merchant_raw_name }}" required
+                   hx-get="{% url 'merchant_search' %}"
+                   hx-trigger="keyup changed delay:500ms"
+                   hx-target="#merchant-search-results"
+                   autocomplete="off" />
+            <div id="merchant-search-results" class="merchant-search-results-container"></div>
+        </div>
+
+        <div class="form-group">
+            <label class="field-label" for="id_amount">
+                <span class="material-icons">payments</span> Importo (€)
+            </label>
+            <input type="number" name="amount" id="id_amount" step="0.01"
+                   class="form-control" value="{{ transaction.amount|floatformat:2 }}" required />
+        </div>
+
+        <div class="form-group">
+            <label class="field-label" for="id_transaction_date">
+                <span class="material-icons">calendar_today</span> Data Operazione
+            </label>
+            <input type="date" name="transaction_date" id="id_transaction_date"
+                   class="form-control" value="{{ transaction.transaction_date|date:'Y-m-d' }}" required />
+        </div>
+    </div>
+
+    <div class="form-group mb-4">
+        <label class="field-label" for="id_description">
+            <span class="material-icons">description</span> Descrizione Originale (Banca)
+        </label>
+        <textarea id="id_description" name="description" class="form-control description-textarea" rows="3">{{ transaction.description|default:"" }}</textarea>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="section-title">
+        <span class="material-icons">category</span> Categorizzazione
+    </div>
+
+    <div class="form-group mb-3">
+        <label class="field-label" for="id_category">Seleziona<span class="desktop-only"> Categoria</span></label>
+        <select name="category" id="id_category" class="form-control" required>
+            <option value="">Seleziona Categoria</option>
+            {% for cat in categories %}
+                <option value="{{ cat.id }}"
+                        {% if transaction.category.id == cat.id %}selected{% endif %}>
+                    {{ cat.name }}
+                </option>
+            {% endfor %}
+        </select>
+        <small class="form-text text-muted">
+            Scegli una delle categorie esistenti per questa spesa.
+        </small>
+    </div>
+
+    <div class="new-category-box">
+        <label class="field-label field-label-highlight" for="id_new_category_name">
+            <span class="material-icons">add_circle</span> Crea Nuova Categoria
+        </label>
+        <input type="text" name="new_category_name" id="id_new_category_name"
+               class="form-control" placeholder="Inserisci nome (es: Regali, Salute...)" />
+        <small class="form-text help-text-highlight">
+            Se compilato, verrà creata una nuova categoria e assegnata automaticamente.
+        </small>
+    </div>
+
+    <div class="form-actions mt-4">
+        <button type="submit" class="btn btn-primary w-100-mobile">
+            <span class="material-icons" style="vertical-align: middle; margin-right: 4px;">save</span> Salva Modifiche
+        </button>
+        <button type="submit" name="delete" class="btn btn-danger w-100-mobile"
+                onclick="return confirm('Sei sicuro di voler eliminare questa transazione? Questa azione non è reversibile.')">
+            <span class="material-icons" style="vertical-align: middle; margin-right: 4px;">delete</span> Elimina
+        </button>
+    </div>
+</form>
+
+<!-- Modal for applying category to all previous transactions -->
+<div id="categoryModal" class="app-modal" style="display: none;">
+    <div class="app-modal-content">
+        <div class="app-modal-header">
+            <h3>Aggiorna transazioni per lo stesso esercente?</h3>
+        </div>
+        <div class="app-modal-body">
+            <p>Vuoi applicare questa categoria a tutte le transazioni di <strong id="modal-merchant-name">{{ transaction.merchant.name|default:transaction.merchant_raw_name }}</strong>?</p>
+        </div>
+        <div class="app-modal-footer">
+            <button type="button" id="btnOnlyThis" class="btn btn-primary">Solo questa</button>
+            <button type="button" id="btnApplyAll" class="btn btn-secondary">Applica a tutte</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Re-initialize the detail logic if loaded via HTMX
+    (function() {
+        const initDetailLogic = function() {
+            const form = document.getElementById('transaction-form');
+            const categorySelect = document.getElementById('id_category');
+            const newCategoryInput = document.getElementById('id_new_category_name');
+            const merchantInput = document.getElementById('id_merchant_name');
+
+            if (!form || !categorySelect || !newCategoryInput) return;
+
+            const originalCategoryId = categorySelect.value;
+            const modal = document.getElementById('categoryModal');
+            const btnOnlyThis = document.getElementById('btnOnlyThis');
+            const btnApplyAll = document.getElementById('btnApplyAll');
+            const applyToAllInput = document.getElementById('apply_to_all');
+
+            let shouldShowModal = true;
+
+            form.addEventListener('submit', function(e) {
+                if (e.submitter && e.submitter.name === 'delete') {
+                    return;
+                }
+
+                const currentCategoryId = categorySelect.value;
+                const newCategoryName = newCategoryInput.value.trim();
+                const currentMerchantName = merchantInput ? merchantInput.value.trim() : '';
+                const categoryChanged = currentCategoryId !== originalCategoryId || newCategoryName !== '';
+
+                if (categoryChanged && shouldShowModal && modal) {
+                    const modalMerchantName = document.getElementById('modal-merchant-name');
+                    if (modalMerchantName) {
+                        modalMerchantName.textContent = currentMerchantName;
+                    }
+
+                    e.preventDefault();
+                    modal.style.setProperty('display', 'flex', 'important');
+                }
+            });
+
+            if (btnOnlyThis) {
+                btnOnlyThis.onclick = function() {
+                    if (applyToAllInput) applyToAllInput.value = "false";
+                    shouldShowModal = false;
+                    if (modal) modal.style.display = "none";
+                    form.submit();
+                }
+            }
+
+            if (btnApplyAll) {
+                btnApplyAll.onclick = function() {
+                    if (applyToAllInput) applyToAllInput.value = "true";
+                    shouldShowModal = false;
+                    if (modal) modal.style.display = "none";
+                    form.submit();
+                }
+            }
+            
+            window.addEventListener('click', function(event) {
+                if (modal && event.target == modal) {
+                    modal.style.display = "none";
+                }
+            });
+        };
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initDetailLogic);
+        } else {
+            initDetailLogic();
+        }
+    })();
+</script>

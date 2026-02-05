@@ -19,28 +19,11 @@
                     <a href="#" onclick="smartBack(); return false;" class="btn btn-secondary">
                         Indietro
                     </a>
-                    <button type="submit" form="transaction-form" name="delete" class="btn btn-icon btn-subtle-danger" title="Elimina"
-                            onclick="return confirm('Sei sicuro di voler eliminare questa transazione? Questa azione non è reversibile.')">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M3 6h18"></path>
-                            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
-                            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
-                            <line x1="10" y1="11" x2="10" y2="17"></line>
-                            <line x1="14" y1="11" x2="14" y2="17"></line>
-                        </svg>
-                    </button>
                 </div>
             </div>
         </div>
 
         <div class="mt-4 mt-4-mobile">
-            <div class="mobile-only">
-                <div class="form-actions mb-4">
-                    <button type="submit" form="transaction-form" class="btn btn-primary">
-                        <span class="material-icons" style="vertical-align: middle; margin-right: 4px;">save</span> Salva Modifiche
-                    </button>
-                </div>
-            </div>
             <div class="detail-card">
                 <div class="detail-header">
                     <h2>Informazioni Generali</h2>
@@ -50,120 +33,12 @@
                 </div>
 
                 <div class="detail-body">
-                    <form method="post" action="{% url 'transaction_detail' transaction.id %}" class="category-form" id="transaction-form">
-                        {% csrf_token %}
-                        <input type="hidden" name="apply_to_all" id="apply_to_all" value="false">
-
-                        <div class="text-center amount-section">
-                            <div class="amount-highlight {% if transaction.transaction_type == 'income' %}is-income{% endif %}">
-                                € {{ transaction.amount|floatformat:2 }}
-                            </div>
-                            <div class="amount-date">
-                                <span class="material-icons" style="font-size: 1.1em; vertical-align: middle; margin-right: 4px;">calendar_today</span> {{ transaction.transaction_date|date:"d F Y" }}
-                            </div>
-                        </div>
-
-                        <div class="form-grid">
-                            <div class="form-group col-span-2-mobile">
-                                <label class="field-label" for="id_merchant_name">
-                                    <span class="material-icons">store</span> Nome Esercente
-                                </label>
-                                <input type="text" name="merchant_raw_name" id="id_merchant_name"
-                                       class="form-control" value="{{ transaction.merchant.name|default:"" }}" required />
-                            </div>
-
-                            <div class="form-group">
-                                <label class="field-label" for="id_amount">
-                                    <span class="material-icons">payments</span> Importo (€)
-                                </label>
-                                <input type="number" name="amount" id="id_amount" step="0.01"
-                                       class="form-control" value="{{ transaction.amount|floatformat:2 }}" required />
-                            </div>
-
-                            <div class="form-group">
-                                <label class="field-label" for="id_transaction_date">
-                                    <span class="material-icons">calendar_today</span> Data Operazione
-                                </label>
-                                <input type="date" name="transaction_date" id="id_transaction_date"
-                                       class="form-control" value="{{ transaction.transaction_date|date:'Y-m-d' }}" required />
-                            </div>
-
-                            
-                        </div>
-
-                        <div class="form-group mb-4">
-                            <label class="field-label" for="id_description">
-                                <span class="material-icons">description</span> Descrizione Originale (Banca)
-                            </label>
-                            <textarea id="id_description" name="description" class="form-control description-textarea" rows="3">{{ transaction.description|default:"" }}</textarea>
-                        </div>
-
-                        <div class="divider"></div>
-
-                        <div class="section-title">
-                            <span class="material-icons">category</span> Categorizzazione
-                        </div>
-
-                        <div class="form-group mb-3">
-                            <label class="field-label" for="id_category">Seleziona<span class="desktop-only"> Categoria</span></label>
-                            <select name="category" id="id_category" class="form-control" required>
-                                <option value="">Seleziona Categoria</option>
-                                {% for cat in categories %}
-                                    <option value="{{ cat.id }}"
-                                            {% if transaction.category.id == cat.id %}selected{% endif %}>
-                                        {{ cat.name }}
-                                    </option>
-                                {% endfor %}
-                            </select>
-                            <small class="form-text text-muted">
-                                Scegli una delle categorie esistenti per questa spesa.
-                            </small>
-                        </div>
-
-                        <div class="new-category-box">
-                            <label class="field-label field-label-highlight" for="id_new_category_name">
-                                <span class="material-icons">add_circle</span> Crea Nuova Categoria
-                            </label>
-                            <input type="text" name="new_category_name" id="id_new_category_name"
-                                   class="form-control" placeholder="Inserisci nome (es: Regali, Salute...)" />
-                            <small class="form-text help-text-highlight">
-                                Se compilato, verrà creata una nuova categoria e assegnata automaticamente.
-                            </small>
-                        </div>
-
-                        <div class="desktop-only">
-                            <div class="form-actions">
-                                <button type="submit" class="btn btn-primary">
-                                    <span class="material-icons" style="vertical-align: middle; margin-right: 4px;">save</span> Salva Modifiche
-                                </button>
-                            </div>
-                        </div>
-                    </form>
+                    {% include "transactions/components/transaction_detail_form.html" %}
                 </div>
-            </div>
-        </div>
-    </div>
-
-{% endblock %}
-
-{% block modals %}
-    <!-- Modal for applying category to all previous transactions -->
-    <div id="categoryModal" class="app-modal" style="display: none;">
-        <div class="app-modal-content">
-            <div class="app-modal-header">
-                <h3>Aggiorna transazioni per lo stesso esercente?</h3>
-            </div>
-            <div class="app-modal-body">
-                <p>Vuoi applicare questa categoria a tutte le transazioni di <strong id="modal-merchant-name">{{ transaction.merchant.name|default:transaction.merchant_raw_name }}</strong>?</p>
-            </div>
-            <div class="app-modal-footer">
-                <button type="button" id="btnOnlyThis" class="btn btn-primary">Solo questa</button>
-                <button type="button" id="btnApplyAll" class="btn btn-secondary">Applica a tutte</button>
             </div>
         </div>
     </div>
 {% endblock %}
 
 {% block extra_js %}
-    <script src="{% static 'js/transaction-detail.js' %}"></script>
 {% endblock %}

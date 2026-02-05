@@ -24,59 +24,7 @@ function selectCategory(item, categoryId) {
     if (form) form.submit();
 }
 
-/**
- * Modal management for creating new transactions
- */
-function openCreateModal() {
-    const modal = document.getElementById('createTransactionModal');
-    if (modal) {
-        modal.style.display = "flex";
-        document.body.classList.add('modal-open');
-    }
-}
 
-function closeCreateModal() {
-    const modal = document.getElementById('createTransactionModal');
-    if (modal) {
-        modal.style.display = "none";
-        document.body.classList.remove('modal-open');
-    }
-}
-
-/**
- * Merchant search selection
- */
-function selectMerchant(name, id) {
-    const input = document.getElementById('id_merchant_name');
-    const idInput = document.getElementById('id_merchant_id');
-    const container = document.getElementById('merchant-search-results');
-    if (input) {
-        input.value = name;
-        // Trigger a change event so HTMX or other listeners know it changed
-        input.dispatchEvent(new Event('change'));
-    }
-    if (idInput) {
-        idInput.value = id || '';
-    }
-    if (container) {
-        container.innerHTML = '';
-    }
-}
-
-// Global click listener for closing the create modal when clicking outside
-window.addEventListener('click', function(event) {
-    const modal = document.getElementById('createTransactionModal');
-    if (event.target === modal) {
-        closeCreateModal();
-    }
-    
-    // Also close merchant search results when clicking outside
-    const searchContainer = document.getElementById('merchant-search-results');
-    const searchInput = document.getElementById('id_merchant_name');
-    if (searchContainer && !searchContainer.contains(event.target) && event.target !== searchInput) {
-        searchContainer.innerHTML = '';
-    }
-});
 
 // Initialize default date and merchant search listeners for transaction forms
 document.addEventListener('DOMContentLoaded', function() {

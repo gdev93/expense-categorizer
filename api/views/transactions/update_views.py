@@ -4,7 +4,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import transaction
 from django.db.models import Q
 from django.http import HttpRequest, HttpResponse, JsonResponse
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views import View
 from django.views.generic import UpdateView
@@ -28,6 +28,13 @@ class TransactionDetailUpdateView(LoginRequiredMixin, UpdateView):
         'description',
         'category'
     ]
+
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        context = self.get_context_data(object=self.object)
+        if request.headers.get('HX-Request') and request.headers.get('HX-Target') == 'detail-transaction-modal-body':
+            return render(request, 'transactions/components/transaction_detail_form.html', context)
+        return self.render_to_response(context)
 
     def post(self, request, *args, **kwargs):
         """Handle both updates and deletes"""

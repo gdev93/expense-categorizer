@@ -28,15 +28,11 @@
     <div class="header-with-action mb-3">
         <h2 class="mb-0"> Spese Categorizzate</h2>
         <button class="btn btn-primary desktop-only" 
-                hx-get="{% url 'transaction_create' %}" 
-                hx-target="#create-transaction-modal-body"
-                onclick="openCreateModal()">
+                onclick="handleCreateClick(event, '{% url 'transaction_create' %}')">
             <span class="material-icons" style="vertical-align: middle; margin-right: 4px;">add_circle</span> Aggiungi Spesa
         </button>
         <button class="btn-fab mobile-only" 
-                hx-get="{% url 'transaction_create' %}" 
-                hx-target="#create-transaction-modal-body"
-                onclick="openCreateModal()">
+                onclick="handleCreateClick(event, '{% url 'transaction_create' %}')">
             <span class="material-icons">add</span>
         </button>
     </div>
