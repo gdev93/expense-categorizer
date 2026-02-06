@@ -144,7 +144,7 @@
 
 /* Card Selector */
 .card-selector {
-    display: block;
+    display: block !important;
     cursor: pointer;
     position: relative;
     width: 100%;
@@ -166,6 +166,7 @@
     border-radius: 12px;
     transition: all 0.2s ease;
     height: 52px;
+    width: 100%;
 }
 
 .card-selector .card-info {
