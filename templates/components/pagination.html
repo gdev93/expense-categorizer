@@ -1,0 +1,43 @@
+{% if page_obj.has_other_pages or is_paginated %}
+<div class="pagination {{ extra_classes|default:'' }}">
+    {% if page_obj.has_previous %}
+        <a href="?page=1&{{ request.GET.urlencode }}"
+           hx-get="?page=1&{{ request.GET.urlencode }}"
+           hx-target="{{ hx_target }}"
+           hx-swap="outerHTML settle:500ms"
+           hx-indicator="{{ hx_target }}"
+           class="pagination-link">« Prima</a>
+        <a href="?page={{ page_obj.previous_page_number }}&{{ request.GET.urlencode }}"
+           hx-get="?page={{ page_obj.previous_page_number }}&{{ request.GET.urlencode }}"
+           hx-target="{{ hx_target }}"
+           hx-swap="outerHTML settle:500ms"
+           hx-indicator="{{ hx_target }}"
+           class="pagination-link">‹ Precedente</a>
+    {% else %}
+        <span class="disabled">« Prima</span>
+        <span class="disabled">‹ Precedente</span>
+    {% endif %}
+
+    <span class="pagination-current">
+        Pagina {{ page_obj.number }} di {{ page_obj.paginator.num_pages }}
+    </span>
+
+    {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}&{{ request.GET.urlencode }}"
+           hx-get="?page={{ page_obj.next_page_number }}&{{ request.GET.urlencode }}"
+           hx-target="{{ hx_target }}"
+           hx-swap="outerHTML settle:500ms"
+           hx-indicator="{{ hx_target }}"
+           class="pagination-link">Successiva ›</a>
+        <a href="?page={{ page_obj.paginator.num_pages }}&{{ request.GET.urlencode }}"
+           hx-get="?page={{ page_obj.paginator.num_pages }}&{{ request.GET.urlencode }}"
+           hx-target="{{ hx_target }}"
+           hx-swap="outerHTML settle:500ms"
+           hx-indicator="{{ hx_target }}"
+           class="pagination-link">Ultima »</a>
+    {% else %}
+        <span class="disabled">Successiva ›</span>
+        <span class="disabled">Ultima »</span>
+    {% endif %}
+</div>
+{% endif %}

@@ -123,45 +123,7 @@
         {% endfor %}
     </div>
 
-    {% if is_paginated %}
-<div class="pagination">
-{% if page_obj.has_previous %}
-    <a href="?page=1&{{ request.GET.urlencode }}"
-       hx-get="?page=1&{{ request.GET.urlencode }}"
-       hx-target="#transaction-results"
-       hx-swap="outerHTML settle:500ms"
-       hx-indicator="#transaction-results">« Prima</a>
-    <a href="?page={{ page_obj.previous_page_number }}&{{ request.GET.urlencode }}"
-       hx-get="?page={{ page_obj.previous_page_number }}&{{ request.GET.urlencode }}"
-       hx-target="#transaction-results"
-       hx-swap="outerHTML settle:500ms"
-       hx-indicator="#transaction-results">‹ Precedente</a>
-{% else %}
-    <span class="disabled">« Prima</span>
-    <span class="disabled">‹ Precedente</span>
-{% endif %}
-
-<span class="current">
-    Pagina {{ page_obj.number }} di {{ page_obj.paginator.num_pages }}
-</span>
-
-{% if page_obj.has_next %}
-    <a href="?page={{ page_obj.next_page_number }}&{{ request.GET.urlencode }}"
-       hx-get="?page={{ page_obj.next_page_number }}&{{ request.GET.urlencode }}"
-       hx-target="#transaction-results"
-       hx-swap="outerHTML settle:500ms"
-       hx-indicator="#transaction-results">Successiva ›</a>
-    <a href="?page={{ page_obj.paginator.num_pages }}&{{ request.GET.urlencode }}"
-       hx-get="?page={{ page_obj.paginator.num_pages }}&{{ request.GET.urlencode }}"
-       hx-target="#transaction-results"
-       hx-swap="outerHTML settle:500ms"
-       hx-indicator="#transaction-results">Ultima »</a>
-{% else %}
-    <span class="disabled">Successiva ›</span>
-    <span class="disabled">Ultima »</span>
-{% endif %}
-</div>
-{% endif %}
+    {% include "components/pagination.html" with hx_target="#transaction-results" %}
 
 {% elif not uncategorized_transaction %}
     <!-- Empty State -->

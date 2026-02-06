@@ -41,32 +41,6 @@
         {% endif %}
     </div>
 
-    {% if transactions.has_other_pages %}
-        <div class="pagination">
-            {% if transactions.has_previous %}
-                <a hx-get="?page={{ transactions.previous_page_number }}"
-                   hx-target="#category-detail-results"
-                   hx-swap="outerHTML settle:500ms"
-                   hx-indicator="#category-detail-results"
-                   class="btn btn-sm">Precedente</a>
-            {% else %}
-                <span class="disabled">Precedente</span>
-            {% endif %}
-
-            <span class="current">
-                Pagina {{ transactions.number }} di {{ transactions.paginator.num_pages }}
-            </span>
-
-            {% if transactions.has_next %}
-                <a hx-get="?page={{ transactions.next_page_number }}"
-                   hx-target="#category-detail-results"
-                   hx-swap="outerHTML settle:500ms"
-                   hx-indicator="#category-detail-results"
-                   class="btn btn-sm">Successiva</a>
-            {% else %}
-                <span class="disabled">Successiva</span>
-            {% endif %}
-        </div>
-    {% endif %}
+    {% include "components/pagination.html" with page_obj=transactions hx_target="#category-detail-results" %}
     </div>
 </div>

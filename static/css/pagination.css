@@ -8,7 +8,8 @@
 }
 
 .pagination a,
-.pagination span {
+.pagination span,
+.pagination .pagination-link {
     padding: 8px 12px;
     border: 1px solid #ced4da;
     border-radius: 4px;
@@ -20,11 +21,13 @@
     white-space: nowrap;
 }
 
-.pagination a:hover {
+.pagination a:hover,
+.pagination .pagination-link:hover {
     background: #e9ecef;
 }
 
-.pagination .current {
+.pagination .current,
+.pagination .pagination-current {
     background: var(--primary-color); /* Gold */
     color: var(--nav-bg-color); /* White/Light text */
     border-color: var(--primary-color);
@@ -48,7 +51,8 @@
     }
 
     /* 1. Move "Page X of Y" to the top and make it a label */
-    .pagination .current {
+    .pagination .current,
+    .pagination .pagination-current {
         width: 100%; /* Force full width */
         order: -1;   /* Move to the visual top */
         text-align: center;
@@ -63,6 +67,7 @@
 
     /* 2. Make Navigation Buttons share the row equally */
     .pagination a,
+    .pagination .pagination-link,
     .pagination span.disabled {
         flex: 1; /* Grow to fill available space */
         text-align: center;

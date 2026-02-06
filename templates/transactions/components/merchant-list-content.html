@@ -43,33 +43,7 @@
         {% endfor %}
     </div>
 
-    {% if merchant_summary.has_other_pages %}
-        <div class="pagination">
-            {% if merchant_summary.has_previous %}
-                <a href="?page={{ merchant_summary.previous_page_number }}&{{ request.GET.urlencode }}"
-                   hx-get="?page={{ merchant_summary.previous_page_number }}&{{ request.GET.urlencode }}"
-                   hx-target="#transaction-results"
-                   hx-swap="outerHTML settle:500ms"
-                   hx-indicator="#transaction-results">&laquo; Precedente</a>
-            {% else %}
-                <span class="disabled">&laquo; Precedente</span>
-            {% endif %}
-
-            <span class="current">
-                Pagina {{ merchant_summary.number }} di {{ merchant_summary.paginator.num_pages }}
-            </span>
-
-            {% if merchant_summary.has_next %}
-                <a href="?page={{ merchant_summary.next_page_number }}&{{ request.GET.urlencode }}"
-                   hx-get="?page={{ merchant_summary.next_page_number }}&{{ request.GET.urlencode }}"
-                   hx-target="#transaction-results"
-                   hx-swap="outerHTML settle:500ms"
-                   hx-indicator="#transaction-results">Successivo &raquo;</a>
-            {% else %}
-                <span class="disabled">Successivo &raquo;</span>
-            {% endif %}
-        </div>
-    {% endif %}
+    {% include "components/pagination.html" with page_obj=merchant_summary hx_target="#transaction-results" %}
 {% elif not uncategorized_merchants %}
     <!-- Empty State for Merchant View -->
     {% include "components/empty-state.html" with icon="store" title="Nessuna Transazione Trovata" description="Non ci sono transazioni che corrispondono ai filtri selezionati." %}
