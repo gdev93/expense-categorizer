@@ -1,151 +1,180 @@
-from django.core.exceptions import BadRequest
-from django.db.models import Q
+from dataclasses import dataclass, field
+from typing import List, Optional
+from django.db.models import Q, QuerySet
+from django.http import HttpRequest
 from django.views import View
-
 from api.models import Transaction
 from api.views.mixins import MonthYearFilterMixin
 
 
+@dataclass
+class TransactionFilterState:
+    """
+    Data container for transaction filters.
+    Handles extraction from request and session management.
+    """
+    year: int
+    months: List[int]
+    category_ids: List[str] = field(default_factory=list)
+    upload_file_id: Optional[str] = None
+    amount: Optional[float] = None
+    amount_operator: str = 'eq'
+    search: str = ''
+    view_type: str = 'list'
+    status: str = ''
+    manual_insert: bool = False
+
+    @classmethod
+    def from_request(cls, request: HttpRequest, year: int, months: List[int],
+                     upload_file_id: Optional[str] = None) -> 'TransactionFilterState':
+        """
+        Factory method to build the filter state from GET params or Session.
+        It also handles the side effect of updating the session.
+        """
+        reset = request.GET.get('reset') == "1"
+
+        # Session keys mapping
+        session_map = {
+            'category_ids': 'filter_category',
+            'amount': 'filter_amount',
+            'amount_operator': 'filter_amount_operator',
+            'search': 'filter_search',
+            'view_type': 'filter_view_type',
+            'status': 'filter_status',
+            'manual_insert': 'filter_manual_insert',
+        }
+
+        if reset:
+            for key in session_map.values():
+                if key in request.session:
+                    del request.session[key]
+
+        # Helper to extract value (GET > Session > Default) and update session
+        def get_value(param_name, session_key, default, cast_func=None):
+            value = default
+
+            # Check GET first
+            if param_name in request.GET:
+                raw_value = request.GET.get(param_name)
+                # Handle boolean specifically for checkboxes usually sending 'on' or 'true'
+                if cast_func == bool:
+                    value = raw_value in ('true', 'on', '1')
+                else:
+                    value = raw_value
+                request.session[session_key] = value
+            # Fallback to session (if not reset)
+            elif not reset and session_key in request.session:
+                value = request.session[session_key]
+
+            # Apply casting if provided and value is not None
+            if cast_func and value is not None and cast_func != bool:
+                try:
+                    return cast_func(value)
+                except (ValueError, TypeError):
+                    return default
+            return value
+
+        # 1. Category (Special case: list handling)
+        category_ids = []
+        if 'category' in request.GET or 'categories' in request.GET:
+            category_ids = request.GET.getlist('category') or request.GET.getlist('categories')
+            request.session['filter_category'] = category_ids
+        elif not reset:
+            category_ids = request.session.get('filter_category', [])
+
+        # 2. Upload File (Not stored in session usually, passed from View kwargs)
+        file_id = upload_file_id or request.GET.get('upload_file')
+
+        # 3. Build the object
+        return cls(
+            year=year,
+            months=months,
+            category_ids=category_ids,
+            upload_file_id=file_id,
+            amount=get_value('amount', 'filter_amount', None, float),
+            amount_operator=get_value('amount_operator', 'filter_amount_operator', 'eq', str),
+            search=get_value('search', 'filter_search', '', str),
+            view_type=get_value('view_type', 'filter_view_type', 'list', str),
+            status=get_value('status', 'filter_status', '', str),
+            manual_insert=get_value('manual_insert', 'filter_manual_insert', False, bool)
+        )
+
+
 class TransactionFilterMixin(MonthYearFilterMixin, View):
-    def get_transaction_filters(self):
+
+    def get_transaction_filters(self) -> TransactionFilterState:
         """
-        Retrieves filters from GET parameters or session.
-        Returns a dictionary of filters.
+        Delegates the logic to the dataclass factory method.
         """
-        filters = {}
-        reset_filters = self.request.GET.get('reset') == "1"
+        # Get date filters from the inherited mixin
+        year, months = self.get_year_and_months()
 
-        if reset_filters:
-            # Clear session variables used for filtering
-            session_keys = [
-                'filter_category',
-                'filter_amount',
-                'filter_amount_operator',
-                'filter_search',
-                'filter_view_type',
-                'filter_status'
-            ]
-            for key in session_keys:
-                if key in self.request.session:
-                    del self.request.session[key]
+        # Get optional kwargs if available (e.g., from URL path)
+        upload_file_id = self.kwargs.get('upload_file_id')
 
-            # Do NOT return early.
-            # Let the code below run to populate 'filters' with default/empty values
-            # so the query builder doesn't crash with a KeyError.
+        return TransactionFilterState.from_request(
+            request=self.request,
+            year=year,
+            months=months,
+            upload_file_id=upload_file_id
+        )
 
-        # 1. Category
-        if 'category' in self.request.GET or 'categories' in self.request.GET:
-            filters['category_ids'] = self.request.GET.getlist('category') or self.request.GET.getlist('categories')
-            self.request.session['filter_category'] = filters['category_ids']
-        else:
-            # If reset, session is empty, so this defaults to []
-            filters['category_ids'] = self.request.session.get('filter_category', [])
-
-        # 2. Upload File (Don't put in session as it's often page-specific)
-        filters['upload_file_id'] = self.kwargs.get('upload_file_id') or self.request.GET.get('upload_file')
-
-        # 3. Amount
-        if 'amount' in self.request.GET:
-            filters['amount'] = self.request.GET.get('amount')
-            self.request.session['filter_amount'] = filters['amount']
-        else:
-            filters['amount'] = self.request.session.get('filter_amount')
-
-        if 'amount_operator' in self.request.GET:
-            filters['amount_operator'] = self.request.GET.get('amount_operator', 'eq')
-            self.request.session['filter_amount_operator'] = filters['amount_operator']
-        else:
-            filters['amount_operator'] = self.request.session.get('filter_amount_operator', 'eq')
-
-        # 4. Search
-        if 'search' in self.request.GET:
-            filters['search'] = self.request.GET.get('search')
-            self.request.session['filter_search'] = filters['search']
-        else:
-            filters['search'] = self.request.session.get('filter_search', '')
-
-        # 5. View Type
-        if 'view_type' in self.request.GET:
-            filters['view_type'] = self.request.GET.get('view_type', 'list')
-            self.request.session['filter_view_type'] = filters['view_type']
-        else:
-            filters['view_type'] = self.request.session.get('filter_view_type', 'list')
-
-        # 6. Status
-        if 'status' in self.request.GET:
-            filters['status'] = self.request.GET.get('status', '')
-            self.request.session['filter_status'] = filters['status']
-        else:
-            filters['status'] = self.request.session.get('filter_status', '')
-
-        # 7. Year and Months (from MonthYearFilterMixin)
-        # Note: If you want reset to clear dates too, ensure this mixin handles defaults correctly.
-        filters['year'], filters['months'] = self.get_year_and_months()
-
-        return filters
-
-    def get_transaction_filter_query(self):
+    def get_transaction_filter_query(self) -> QuerySet:
         queryset = Transaction.objects.filter(
             user=self.request.user,
             transaction_type='expense',
         ).select_related('category', 'merchant', 'upload_file').order_by('-transaction_date', '-created_at')
 
+        # Retrieve the dataclass instance
         filters = self.get_transaction_filters()
 
-        # Filter by category
-        # Safe to check because 'category_ids' now always exists (even if empty)
-        if filters.get('category_ids') and any(filters['category_ids']):
-            queryset = queryset.filter(category_id__in=filters['category_ids'])
+        # 1. Filter by Category
+        if filters.category_ids:
+            queryset = queryset.filter(category_id__in=filters.category_ids)
 
-        # Filter by upload_file
-        if filters.get('upload_file_id'):
-            queryset = queryset.filter(upload_file_id=filters['upload_file_id'])
+        # 2. Filter by Upload File
+        if filters.upload_file_id:
+            queryset = queryset.filter(upload_file_id=filters.upload_file_id)
 
-        # Filter by amount
-        if filters.get('amount'):
-            try:
-                amount_value = float(filters['amount'])
-                op = filters.get('amount_operator', 'eq')
-                if op == 'eq':
-                    queryset = queryset.filter(amount=amount_value)
-                elif op == 'gt':
-                    queryset = queryset.filter(amount__gt=amount_value)
-                elif op == 'gte':
-                    queryset = queryset.filter(amount__gte=amount_value)
-                elif op == 'lt':
-                    queryset = queryset.filter(amount__lt=amount_value)
-                elif op == 'lte':
-                    queryset = queryset.filter(amount__lte=amount_value)
-            except (ValueError, TypeError):
-                # Optionally log this error
-                pass
+        # 3. Filter by Amount
+        if filters.amount is not None:
+            if filters.amount_operator == 'gt':
+                queryset = queryset.filter(amount__gt=filters.amount)
+            elif filters.amount_operator == 'gte':
+                queryset = queryset.filter(amount__gte=filters.amount)
+            elif filters.amount_operator == 'lt':
+                queryset = queryset.filter(amount__lt=filters.amount)
+            elif filters.amount_operator == 'lte':
+                queryset = queryset.filter(amount__lte=filters.amount)
+            else:
+                queryset = queryset.filter(amount=filters.amount)
 
-                # Search filter
-        if filters.get('search'):
+        # 4. Filter by Search
+        if filters.search:
             queryset = queryset.filter(
-                Q(merchant__name__icontains=filters['search']) |
-                Q(merchant_raw_name__icontains=filters['search']) |
-                Q(description__icontains=filters['search'])
+                Q(merchant__name__icontains=filters.search) |
+                Q(merchant_raw_name__icontains=filters.search) |
+                Q(description__icontains=filters.search)
             )
 
-        # Year and Month filters
-        # Using .get() prevents KeyError if for some reason keys are missing
-        if filters.get('year') and not filters.get('upload_file_id'):
-            queryset = queryset.filter(transaction_date__year=filters['year'])
+        # 5. Filter by Date
+        # Only apply year filter if we are not looking at a specific file
+        if filters.year and not filters.upload_file_id:
+            queryset = queryset.filter(transaction_date__year=filters.year)
 
-        if filters.get('months') and any(filters['months']):
-            month_queries = Q()
-            for month in filters['months']:
-                month_queries |= Q(transaction_date__month=month)
-            if month_queries:
-                queryset = queryset.filter(month_queries)
+        if filters.months:
+            queryset = queryset.filter(transaction_date__month__in=filters.months)
 
-        # Status filter
-        if filters.get('status'):
-            queryset = queryset.filter(status=filters['status'])
+        # 6. Filter by Status
+        if filters.status:
+            queryset = queryset.filter(status=filters.status)
 
-        # For the main list view, we only want categorized transactions
-        if filters.get('view_type') == 'list':
+        # 7. Filter by Manual Insert
+        if filters.manual_insert:
+            queryset = queryset.filter(manual_insert=True)
+
+        # 8. View Type logic
+        if filters.view_type == 'list':
             return queryset.filter(category__isnull=False, merchant_id__isnull=False)
 
         return queryset

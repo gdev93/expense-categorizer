@@ -157,6 +157,13 @@ function updateFilterButtonsState() {
             }
         });
 
+        // Check checkboxes
+        form.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+            if (checkbox.checked) {
+                hasActiveFilters = true;
+            }
+        });
+
         // Check select elements
         form.querySelectorAll('select').forEach(select => {
             // We ignore structural/contextual fields
@@ -199,6 +206,8 @@ function clearFilters(formId) {
         if (el.tagName === 'INPUT') {
             if (['text', 'search', 'number', 'date'].includes(el.type)) {
                 el.value = '';
+            } else if (el.type === 'checkbox') {
+                el.checked = false;
             }
         } else if (el.tagName === 'SELECT') {
             if (el.multiple) {

@@ -267,10 +267,10 @@ class CategoryDetailView(DetailView, CategoryEnrichedMixin, TransactionFilterMix
         transactions = paginator.page(page_number)
 
         context['transactions'] = transactions
-        context['search_query'] = filters['search']
-        context['year'] = filters['year']
-        context['selected_year'] = filters['year']
-        context['selected_months'] = [str(m) for m in filters['months']]
+        context['search_query'] = filters.search
+        context['year'] = filters.year
+        context['selected_year'] = filters.year
+        context['selected_months'] = [str(m) for m in filters.months]
 
         return context
 

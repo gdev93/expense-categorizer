@@ -30,7 +30,8 @@ class TransactionListContextData:
     total_amount: float
     category_count: int
     rules: QuerySet[Rule, Rule]  # QuerySet
-    selected_months: list[str] = field(default_factory=list)
+    selected_manual_insert: bool = False
+    selected_months: list[int] = field(default_factory=list)
     def to_context(self) -> dict[str, Any]:
         """Convert dataclass to context dictionary"""
         return asdict(self)
@@ -93,7 +94,7 @@ class TransactionListView(LoginRequiredMixin, ListView, TransactionFilterMixin):
         """Add extra context data"""
         context = super().get_context_data(**kwargs)
         filters = self.get_transaction_filters()
-        view_type = filters['view_type']
+        view_type = filters.view_type
         context['view_type'] = view_type
 
         # Use the unpaginated queryset for summary statistics
@@ -110,7 +111,7 @@ class TransactionListView(LoginRequiredMixin, ListView, TransactionFilterMixin):
             transaction_type='expense'
         ).select_related('upload_file')
 
-        upload_file_id = filters['upload_file_id']
+        upload_file_id = filters.upload_file_id
         if upload_file_id:
             uncategorized_transaction = uncategorized_transaction.filter(upload_file_id=upload_file_id)
             context['upload_file'] = get_object_or_404(UploadFile, id=upload_file_id, user=self.request.user)
@@ -118,9 +119,9 @@ class TransactionListView(LoginRequiredMixin, ListView, TransactionFilterMixin):
 
         transaction_list_context = TransactionListContextData(
             categories=categories,
-            selected_status=filters['status'],
+            selected_status=filters.status,
             selected_upload_file=upload_file_id or '',
-            search_query=filters['search'],
+            search_query=filters.search,
             uncategorized_transaction=uncategorized_transaction,
             total_count=self.get_queryset().count(),
             total_amount=self.get_queryset().aggregate(
@@ -128,16 +129,17 @@ class TransactionListView(LoginRequiredMixin, ListView, TransactionFilterMixin):
             )['total'] or 0,
             category_count=self.get_queryset().values('category').distinct().count(),
             rules=Rule.objects.filter(user=self.request.user, is_active=True),
-            selected_categories=filters['category_ids'],
-            selected_months=filters['months']
+            selected_categories=filters.category_ids,
+            selected_months=filters.months,
+            selected_manual_insert=filters.manual_insert
         )
         context.update(transaction_list_context.to_context())
 
         # Add amount filter context
-        context['selected_amount'] = filters['amount'] or ''
-        context['selected_amount_operator'] = filters['amount_operator']
-        context['year'] = filters['year']
-        context['selected_months'] = [str(m) for m in filters['months']]
+        context['selected_amount'] = filters.amount or ''
+        context['selected_amount_operator'] = filters.amount_operator
+        context['year'] = filters.year
+        context['selected_months'] = [str(m) for m in filters.months]
 
         if view_type == 'merchant':
             # Aggregate transactions by merchant

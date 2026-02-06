@@ -1,7 +1,7 @@
 /**
  * Handles category selection in merchant view (form submission)
  */
-function selectCategory(item, categoryId) {
+function selectQuickCategory(item, categoryId) {
     const container = item.closest('.category-pill-container');
     if (!container) return;
     

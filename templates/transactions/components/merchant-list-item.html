@@ -46,7 +46,7 @@
                         <div class="category-dropdown-menu">
                             {% for cat in categories %}
                                 <div class="category-dropdown-item {% if cat.id == item.category_id %}active{% endif %}"
-                                     onclick="selectCategory(this, '{{ cat.id }}')">
+                                     onclick="selectQuickCategory(this, '{{ cat.id }}')">
                                     {{ cat.name }}
                                 </div>
                             {% endfor %}

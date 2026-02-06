@@ -20,7 +20,7 @@
 
         <div class="filter-actions-compact">
             <button type="button" 
-                    class="btn btn-icon btn-subtle filter-toggle-btn {% if search_query or selected_categories or selected_months or selected_upload_file or selected_amount %}filters-active{% endif %}" 
+                    class="btn btn-icon btn-subtle filter-toggle-btn {% if search_query or selected_categories or selected_months or selected_upload_file or selected_amount or selected_manual_insert %}filters-active{% endif %}" 
                     onclick="toggleFilters()"
                     title="Mostra filtri">
                 <span class="material-icons">filter_list</span>
@@ -115,6 +115,18 @@
                            step="0.01"
                            min="0"
                            value="{{ selected_amount }}"/>
+                </div>
+            </div>
+
+            <div class="filter-group">
+                 <label for="manual_insert">
+                    <span class="material-icons" style="font-size: 1.1em; vertical-align: middle; margin-right: 4px;">edit_note</span>
+                    Inserimento Manuale
+                </label>
+                <div style="display: flex; align-items: center; height: 38px;">
+                    <input type="checkbox" name="manual_insert" id="manual_insert" value="true" 
+                           {% if selected_manual_insert %}checked{% endif %} 
+                           style="width: 20px; height: 20px; cursor: pointer;">
                 </div>
             </div>
         </div>

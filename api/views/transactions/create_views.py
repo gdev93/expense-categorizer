@@ -54,7 +54,8 @@ class TransactionCreateView(LoginRequiredMixin, View):
             category=category,
             status='categorized',
             modified_by_user=True,
-            upload_file=None
+            upload_file=None,
+            manual_insert=True
         )
 
         apply_to_all = request.POST.get('apply_to_all') in ['on', 'true']
