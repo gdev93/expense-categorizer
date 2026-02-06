@@ -66,12 +66,14 @@
     </div>
     {% endif %}
 
+    {% if is_update %}
     <div class="form-group mb-4">
         <label class="field-label" for="id_description">
             <span class="material-icons">description</span> Descrizione (Opzionale)
         </label>
-        <textarea id="id_description" name="description" class="form-control description-textarea" rows="3" placeholder="Aggiungi una nota...">{% if is_update %}{{ transaction.description|default:"" }}{% endif %}</textarea>
+        <textarea id="id_description" name="description" class="form-control description-textarea" rows="3" readonly>{% if is_update %}{{ transaction.description|default:"" }}{% endif %}</textarea>
     </div>
+    {% endif %}
 
     <div class="form-actions mobile-only gap-3 justify-content-center " id="transaction-form-actions">
         <button type="submit" class="btn btn-primary">

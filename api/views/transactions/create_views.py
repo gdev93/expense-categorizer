@@ -21,7 +21,6 @@ class TransactionCreateView(LoginRequiredMixin, View):
         merchant_id = request.POST.get('merchant_id')
         merchant_name = request.POST.get('merchant_name', '').strip()
         transaction_date = request.POST.get('transaction_date', '')
-        description = request.POST.get('description', '')
         category_name = request.POST.get('category_name', '').strip()
 
         # 1. Handle Category
@@ -51,7 +50,7 @@ class TransactionCreateView(LoginRequiredMixin, View):
             merchant=merchant,
             merchant_raw_name=merchant_name,
             transaction_date=transaction_date if transaction_date else None,
-            description=description,
+            description=f"Operazione in data {transaction_date} di importo {amount} presso {merchant_name}",
             category=category,
             status='categorized',
             modified_by_user=True,
