@@ -23,27 +23,7 @@
 
             <div class="data-list" id="scroll-target">
                 {% for transaction in transactions %}
-                    <div class="data-list-item">
-                        <div class="list-item-info">
-                            <div class="transaction-date">
-                                 {{ transaction.transaction_date|date:"d/m/Y" }}
-                            </div>
-                        <div class="transaction-merchant">
-                                {{ transaction.operation_type }}
-                            </div>
-                            {% if transaction.description %}
-                                <div class="transaction-description" title="{{ transaction.description }}">
-                                    {{ transaction.description|truncatewords:15 }}
-                                </div>
-                            {% endif %}
-                        </div>
-
-                        <div class="list-item-stats">
-                            <div class="list-amount is-income">
-                                €{{ transaction.amount|floatformat:2 }}
-                            </div>
-                        </div>
-                    </div>
+                    {% include "transactions/components/transaction_item.html" with transaction=transaction hide_category=True show_description=True %}
                 {% endfor %}
             </div>
 

@@ -1,0 +1,50 @@
+<div class="data-list-item" onclick="window.location.href='{% url 'transaction_detail' transaction.id %}'">
+    <div class="list-item-info">
+        <div class="transaction-date">
+             {{ transaction.transaction_date|date:"d/m/Y" }}
+        </div>
+        <div class="transaction-merchant">
+            {% if transaction.transaction_type == 'income' %}
+                {{ transaction.operation_type|default:transaction.merchant.name|default:"Entrata" }}
+            {% else %}
+                {{ transaction.merchant.name|default:"Merchant Sconosciuto" }}
+            {% endif %}
+        </div>
+        {% if show_description and transaction.description %}
+            <div class="transaction-description" title="{{ transaction.description }}">
+                {{ transaction.description|truncatewords:15 }}
+            </div>
+        {% endif %}
+        {% if transaction.upload_file %}
+            <div class="transaction-file-name">
+                 {{ transaction.upload_file.file_name }}
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="list-item-stats">
+        {% if not hide_category %}
+            <div onclick="event.stopPropagation()" style="display: inline-block;">
+                {% if transaction.category %}
+                    <span class="transaction-category"
+                          data-transaction-id="{{ transaction.id }}"
+                          data-current-category-id="{{ transaction.category.id }}"
+                          onclick="makeSelectable(this,event)">
+                        {{ transaction.category.name }}
+                    </span>
+                {% else %}
+                    <span class="transaction-category"
+                          data-transaction-id="{{ transaction.id }}"
+                          data-current-category-id=""
+                          onclick="makeSelectable(this,event)">
+                        Seleziona<span class="desktop-only"> Categoria</span>
+                    </span>
+                {% endif %}
+            </div>
+        {% endif %}
+
+        <div class="list-amount {% if transaction.transaction_type == 'income' or transaction.original_amount|slice:':1' == '+' %}is-income{% endif %}">
+            €{% if transaction.amount is not None %}{{ transaction.amount|floatformat:2 }}{% else %}{% if transaction.original_amount|slice:":1" == '+' %}{{ transaction.original_amount|slice:"1:" }}{% else %}{{ transaction.original_amount }}{% endif %}{% endif %}
+        </div>
+    </div>
+</div>

@@ -18,23 +18,7 @@
         <div class="data-list">
         {% if transactions %}
             {% for transaction in transactions %}
-                <div class="data-list-item" 
-                     onclick="window.location.href='{% url 'transaction_detail' transaction.id %}'">
-                    <div class="category-info">
-                        <div class="category-name">
-                            {{ transaction.transaction_date|date:"d M Y" }}
-                            <span class="text-muted small">({{ transaction.merchant.name|default:"Nessun Mercante" }})</span>
-                        </div>
-                        <p class="category-description">
-                            {{ transaction.description|default:"Nessuna descrizione"|truncatechars:100 }}
-                        </p>
-                    </div>
-                    <div class="text-end">
-                <span class="stat-amount-detail {{ transaction.transaction_type|lower }}">
-                    €{{ transaction.amount|floatformat:2 }}
-                </span>
-                    </div>
-                </div>
+                {% include "transactions/components/transaction_item.html" with transaction=transaction hide_category=True show_description=True %}
             {% endfor %}
         {% else %}
             {% include "components/empty-state.html" with icon="receipt_long" title="Nessuna transazione" description="Nessuna transazione registrata per questa categoria." %}
