@@ -119,14 +119,13 @@
             </div>
 
             <div class="filter-group">
-                 <label for="manual_insert">
+                <label for="manual_insert">
                     <span class="material-icons" style="font-size: 1.1em; vertical-align: middle; margin-right: 4px;">edit_note</span>
                     Inserimento Manuale
                 </label>
-                <div style="display: flex; align-items: center; height: 38px;">
+                <div class="checkbox-control">
                     <input type="checkbox" name="manual_insert" id="manual_insert" value="true" 
-                           {% if selected_manual_insert %}checked{% endif %} 
-                           style="width: 20px; height: 20px; cursor: pointer;">
+                           {% if selected_manual_insert %}checked{% endif %}>
                 </div>
             </div>
         </div>

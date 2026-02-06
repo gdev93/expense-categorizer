@@ -142,6 +142,20 @@
     color: #adb5bd;
 }
 
+/* Checkbox specific */
+.checkbox-control {
+    height: 38px;
+    display: flex;
+    align-items: center;
+}
+
+.checkbox-control input[type="checkbox"] {
+    width: 14px !important;
+    height: 14px !important;
+    margin: 0 !important;
+    cursor: pointer;
+}
+
 .filters select,
 .filters input {
     height: 38px;

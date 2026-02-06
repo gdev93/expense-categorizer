@@ -60,7 +60,7 @@
     {% if is_update and transaction.merchant %}
     <div class="form-group mt-2 mb-4">
         <label class="field-label" style="display: flex; align-items: center; cursor: pointer; font-weight: normal; font-size: 0.95rem; color: #64748b; text-transform: none;">
-            <input type="checkbox" name="apply_to_all" id="id_apply_to_all" style="margin-right: 10px; width: 18px; height: 18px;">
+            <input type="checkbox" name="apply_to_all" id="id_apply_to_all" style="margin-right: 10px; width: 14px; height: 14px;">
             <span>Applica questa categoria a tutte le transazioni di <strong>{{ transaction.merchant.name|default:transaction.merchant_raw_name }}</strong></span>
         </label>
     </div>
