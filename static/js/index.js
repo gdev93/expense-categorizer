@@ -110,6 +110,7 @@ function toggleMultiselect(id, event) {
     }
 }
 
+
 /**
  * Updates the trigger text and visual state of a custom multiselect.
  * @param {string} id - The ID of the multiselect container.
@@ -124,7 +125,7 @@ function updateMultiselect(id) {
 
     const selectedCheckboxes = Array.from(checkboxes).filter(cb => cb.checked);
     const selectedCount = selectedCheckboxes.length;
-    
+
     const placeholder = el.getAttribute('data-placeholder') || 'Seleziona';
     const pluralText = el.getAttribute('data-plural-text') || 'selezionati';
 
@@ -135,7 +136,7 @@ function updateMultiselect(id) {
         // Search for existing hidden input with this name that IS NOT one of our checkboxes
         // (though checkboxes are type="checkbox", we want to be sure)
         let hiddenInput = el.querySelector(`input[type="hidden"][name="${name}"]`);
-        
+
         if (selectedCount === 0) {
             if (!hiddenInput) {
                 hiddenInput = document.createElement('input');
@@ -177,8 +178,10 @@ function updateMultiselect(id) {
     } else {
         triggerText.textContent = `${selectedCount} ${pluralText}`;
     }
-}
 
+    // Close the multiselect dropdown after selection
+    el.classList.remove('is-open');
+}
 /**
  * Initializes all multiselect components on the page.
  */
