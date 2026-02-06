@@ -1,5 +1,4 @@
 <div id="transaction-summary" hx-swap-oob="true">
-    {% if total_count > 0 %}
         <div class="summary">
             {% include "components/summary-card.html" with icon="payments" label="Importo Totale" value=total_amount|floatformat:2 currency="€" %}
             {% include "components/summary-card.html" with icon="receipt_long" label="Totale Spese" value=total_count %}
@@ -7,5 +6,4 @@
                 {% include "components/summary-card.html" with icon="category" label="Categorie" value=category_count %}
             </div>
         </div>
-    {% endif %}
 </div>

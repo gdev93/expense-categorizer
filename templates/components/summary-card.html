@@ -7,7 +7,7 @@
         {% if label %}<h3>{{ label }}</h3>{% endif %}
         {% if value is not None %}
             <p class="card-value">
-                {% if value == 0 or value == 0.0 %}
+                {% if value == 0 or value == "0.00" %}
                     —
                 {% else %}
                     {{ currency }}{{ value }}
