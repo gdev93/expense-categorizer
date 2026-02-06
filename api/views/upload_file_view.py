@@ -215,7 +215,24 @@ class UploadFileView(ListView, FormView):
         elif status_filter == 'not_ready':
             queryset = queryset.exclude(status='completed')
 
-        return queryset
+        return queryset.annotate(
+            has_pending=Exists(
+                Transaction.objects.filter(
+                    upload_file=OuterRef('pk'),
+                    status__in=['pending','uncategorized'],
+                    user=self.request.user,
+                    transaction_type='expense'
+                )
+            )
+        ).annotate(
+            transactions_count=Count(
+                'transactions',
+                filter=Q(
+                    transactions__transaction_type='expense',
+                    transactions__user=self.request.user,
+                )
+            )
+        )
 
     def _process_upload_file(self, uploaded_file) -> CsvProcessingResult:
         """
@@ -307,35 +324,22 @@ class UploadFileView(ListView, FormView):
             allowed_formats=['CSV', 'XLSX', 'XLS']
         )
 
-        # Convert uploads to display dataclass
-        uploads_list = context.get(self.context_object_name, [])
-        queryset = self.get_queryset().annotate(
-            has_pending=Exists(
-                Transaction.objects.filter(
-                    upload_file=OuterRef('pk'),
-                    status__in=['pending','uncategorized'],
-                    user=self.request.user,
-                    transaction_type='expense'
-                )
-            )
-        ).annotate(
-            transactions_count=Count(
-                'transactions',
-                filter=Q(
-                    transactions__transaction_type='expense',
-                    transactions__user=self.request.user,
-                )
-            )
-        )
+        # The queryset in context (recent_uploads) is already paginated and annotated via get_queryset
+        context['uploads'] = context[self.context_object_name]
 
-        context['uploads'] = queryset
+        # Use the unpaginated queryset for summary statistics
+        full_queryset = self.get_queryset()
 
         # Add statistics
-        total_uploads = queryset.count()
-        total_size = queryset.aggregate(total=Sum('dimension'))['total'] or 0
-        total_transactions = sum(
-            upload.transactions.count() for upload in uploads_list
-        )
+        total_uploads = full_queryset.count()
+        total_size = full_queryset.aggregate(total=Sum('dimension'))['total'] or 0
+
+        # total_transactions should be on the full queryset of current user expenses
+        total_transactions = Transaction.objects.filter(
+            user=self.request.user,
+            transaction_type='expense',
+            upload_file__in=full_queryset
+        ).count()
 
         context['statistics'] = UploadStatistics(
             total_uploads=total_uploads,
@@ -343,7 +347,7 @@ class UploadFileView(ListView, FormView):
             total_size_mb=round(total_size / (1024 * 1024), 2),
             total_transactions=total_transactions,
         )
-        context['has_pending'] = queryset.filter(has_pending=True).exists()
+        context['has_pending'] = full_queryset.filter(has_pending=True).exists()
 
         return context
 

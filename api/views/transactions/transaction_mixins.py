@@ -175,6 +175,9 @@ class TransactionFilterMixin(MonthYearFilterMixin, View):
 
         # 8. View Type logic
         if filters.view_type == 'list':
+            # If a status filter is explicitly applied, we don't want to force-exclude uncategorized
+            if filters.status:
+                return queryset
             return queryset.filter(category__isnull=False, merchant_id__isnull=False)
 
         return queryset

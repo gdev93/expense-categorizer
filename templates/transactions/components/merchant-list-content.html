@@ -46,7 +46,11 @@
     {% if merchant_summary.has_other_pages %}
         <div class="pagination">
             {% if merchant_summary.has_previous %}
-                <a href="?page={{ merchant_summary.previous_page_number }}">&laquo; Precedente</a>
+                <a href="?page={{ merchant_summary.previous_page_number }}&{{ request.GET.urlencode }}"
+                   hx-get="?page={{ merchant_summary.previous_page_number }}&{{ request.GET.urlencode }}"
+                   hx-target="#transaction-results"
+                   hx-swap="outerHTML settle:500ms"
+                   hx-indicator="#transaction-results">&laquo; Precedente</a>
             {% else %}
                 <span class="disabled">&laquo; Precedente</span>
             {% endif %}
@@ -56,7 +60,11 @@
             </span>
 
             {% if merchant_summary.has_next %}
-                <a href="?page={{ merchant_summary.next_page_number }}">Successivo &raquo;</a>
+                <a href="?page={{ merchant_summary.next_page_number }}&{{ request.GET.urlencode }}"
+                   hx-get="?page={{ merchant_summary.next_page_number }}&{{ request.GET.urlencode }}"
+                   hx-target="#transaction-results"
+                   hx-swap="outerHTML settle:500ms"
+                   hx-indicator="#transaction-results">Successivo &raquo;</a>
             {% else %}
                 <span class="disabled">Successivo &raquo;</span>
             {% endif %}
