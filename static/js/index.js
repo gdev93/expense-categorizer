@@ -89,17 +89,25 @@ setActiveNavItem();
 /**
  * Toggles the custom multiselect dropdown menu.
  * @param {string} id - The ID of the multiselect container.
+ * @param {Event} event - The click event.
  */
-function toggleMultiselect(id) {
+function toggleMultiselect(id, event) {
+    if (event) event.stopPropagation();
+    
     const el = document.getElementById(id);
     if (!el) return;
+
+    const wasOpen = el.classList.contains('is-open');
     
     // Close all other multiselects to prevent overlap
     document.querySelectorAll('.custom-multiselect').forEach(m => {
-        if (m.id !== id) m.classList.remove('is-open');
+        m.classList.remove('is-open');
     });
     
-    el.classList.toggle('is-open');
+    // Toggle current
+    if (!wasOpen) {
+        el.classList.add('is-open');
+    }
 }
 
 /**
