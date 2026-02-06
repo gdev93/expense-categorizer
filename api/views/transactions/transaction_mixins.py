@@ -77,7 +77,7 @@ class TransactionFilterState:
         # 1. Category (Special case: list handling)
         category_ids = []
         if 'category' in request.GET or 'categories' in request.GET:
-            category_ids = request.GET.getlist('category') or request.GET.getlist('categories')
+            category_ids = [cid for cid in (request.GET.getlist('category') or request.GET.getlist('categories')) if cid]
             request.session['filter_category'] = category_ids
         elif not reset:
             category_ids = request.session.get('filter_category', [])

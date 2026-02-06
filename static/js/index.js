@@ -120,6 +120,31 @@ function updateMultiselect(id) {
     const placeholder = el.getAttribute('data-placeholder') || 'Seleziona';
     const pluralText = el.getAttribute('data-plural-text') || 'selezionati';
 
+    // Handle hidden input to ensure parameter is sent when nothing is selected
+    const firstCheckbox = checkboxes[0];
+    if (firstCheckbox && firstCheckbox.name) {
+        const name = firstCheckbox.name;
+        // Search for existing hidden input with this name that IS NOT one of our checkboxes
+        // (though checkboxes are type="checkbox", we want to be sure)
+        let hiddenInput = el.querySelector(`input[type="hidden"][name="${name}"]`);
+        
+        if (selectedCount === 0) {
+            if (!hiddenInput) {
+                hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.name = name;
+                hiddenInput.value = '';
+                // If checkboxes are associated with a form via 'form' attribute
+                if (firstCheckbox.hasAttribute('form')) {
+                    hiddenInput.setAttribute('form', firstCheckbox.getAttribute('form'));
+                }
+                el.appendChild(hiddenInput);
+            }
+        } else if (hiddenInput) {
+            hiddenInput.remove();
+        }
+    }
+
     // Update visual state of individual items
     checkboxes.forEach(cb => {
         const item = cb.closest('.multiselect-item');

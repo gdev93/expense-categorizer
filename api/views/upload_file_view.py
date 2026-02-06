@@ -209,7 +209,7 @@ class UploadFileView(ListView, FormView):
             queryset = queryset.filter(file_name__icontains=search_query)
 
         # Filter by status
-        status_filters = self.request.GET.getlist('status')
+        status_filters = [sf for sf in self.request.GET.getlist('status') if sf]
         if status_filters:
             q_objects = Q()
             for sf in status_filters:
