@@ -278,6 +278,13 @@ window.addEventListener('click', function(event) {
     if (searchContainer && !searchContainer.contains(event.target) && event.target !== searchInput) {
         searchContainer.innerHTML = '';
     }
+
+    // Also close category search results when clicking outside
+    const categoryContainer = document.getElementById('category-search-results');
+    const categoryInput = document.getElementById('id_category_name');
+    if (categoryContainer && !categoryContainer.contains(event.target) && event.target !== categoryInput) {
+        categoryContainer.innerHTML = '';
+    }
 });
 
 /**
@@ -294,6 +301,21 @@ function selectMerchant(name, id) {
     }
     if (idInput) {
         idInput.value = id || '';
+    }
+    if (container) {
+        container.innerHTML = '';
+    }
+}
+
+/**
+ * Category search selection
+ */
+function selectCategory(name) {
+    const input = document.getElementById('id_category_name');
+    const container = document.getElementById('category-search-results');
+    if (input) {
+        input.value = name;
+        input.dispatchEvent(new Event('change'));
     }
     if (container) {
         container.innerHTML = '';

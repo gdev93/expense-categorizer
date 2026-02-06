@@ -22,6 +22,18 @@ from api.views.transactions.transaction_mixins import TransactionFilterMixin
 logger = logging.getLogger(__name__)
 
 
+class CategorySearchView(LoginRequiredMixin, ListView):
+    model = Category
+    template_name = 'transactions/components/category_search_results.html'
+    context_object_name = 'categories'
+
+    def get_queryset(self):
+        search_term = self.request.GET.get('category_name') or ''
+        return Category.objects.filter(
+            user=self.request.user,
+            name__icontains=search_term
+        ).order_by('name')
+
 class CategoryForm(forms.ModelForm):
     class Meta:
         model = Category

@@ -40,20 +40,20 @@
                    required />
         </div>
 
-        <div class="form-group col-span-2-mobile">
+        <div class="form-group col-span-2-mobile" style="position: relative;">
             <label class="field-label" for="id_category_name">
                 <span class="material-icons">category</span> Categoria
             </label>
-            <input type="text" name="category_name" id="id_category_name" list="category-list"
+            <input type="text" name="category_name" id="id_category_name"
                    class="form-control"
                    value="{% if is_update %}{{ transaction.category.name|default:'' }}{% endif %}"
                    required
-                   placeholder="Seleziona o scrivi..." autocomplete="off" />
-            <datalist id="category-list">
-                {% for cat in categories %}
-                    <option value="{{ cat.name }}">
-                {% endfor %}
-            </datalist>
+                   placeholder="Seleziona o scrivi..." 
+                   hx-get="{% url 'category_search' %}"
+                   hx-trigger="keyup changed delay:200ms, focus"
+                   hx-target="#category-search-results"
+                   autocomplete="off" />
+            <div id="category-search-results" class="merchant-search-results-container"></div>
         </div>
     </div>
 

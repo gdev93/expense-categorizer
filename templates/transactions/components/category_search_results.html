@@ -1,0 +1,9 @@
+{% if categories %}
+    <div class="merchant-search-results-list">
+        {% for category in categories %}
+            <div class="merchant-search-result-item" onclick="selectCategory('{{ category.name|escapejs }}')">
+                {{ category.name }}
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
