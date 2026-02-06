@@ -86,18 +86,29 @@
                             </div>
 
                             <div class="filter-group">
-                                <label for="months">
-                                    <span class="material-icons">calendar_month</span>
+                                <label>
+                                    <span class="material-icons" style="font-size: 1.1em; vertical-align: middle; margin-right: 4px;">calendar_month</span>
                                     Mese/i
                                 </label>
-                                <select name="months" id="months" multiple size="1">
-                                    {% for month in available_months %}
-                                        <option value="{{ month.month_number }}"
-                                                {% if month.month_number|stringformat:"s" in selected_months %}selected{% endif %}>
-                                            {{ month.label_it }}
-                                        </option>
-                                    {% endfor %}
-                                </select>
+                                <div class="custom-multiselect" id="months-multiselect"
+                                     data-placeholder="Tutti i Mesi"
+                                     data-plural-text="mesi selezionati">
+                                    <div class="multiselect-trigger" onclick="toggleMultiselect('months-multiselect')">
+                                        <span class="trigger-text">Tutti i Mesi</span>
+                                        <span class="material-icons">expand_more</span>
+                                    </div>
+                                    <div class="multiselect-menu">
+                                        {% for month in available_months %}
+                                            <label class="multiselect-item {% if month.month_number|stringformat:"s" in selected_months %}is-selected{% endif %}">
+                                                <input type="checkbox" name="months" value="{{ month.month_number }}"
+                                                       {% if month.month_number|stringformat:"s" in selected_months %}checked{% endif %}
+                                                       onchange="updateMultiselect('months-multiselect')">
+                                                <span class="material-icons">event</span>
+                                                {{ month.label_it }}
+                                            </label>
+                                        {% endfor %}
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>

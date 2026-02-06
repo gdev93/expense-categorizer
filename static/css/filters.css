@@ -293,6 +293,122 @@
     font-weight: 600;
 }
 
+/* Custom Multiselect */
+.custom-multiselect {
+    position: relative;
+    width: 100%;
+}
+
+.multiselect-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 12px;
+    cursor: pointer;
+    min-height: 40px;
+    transition: all 0.2s ease;
+}
+
+.multiselect-trigger:hover {
+    border-color: var(--primary-color);
+}
+
+.multiselect-trigger .trigger-text {
+    font-size: 14px;
+    color: #495057;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-right: 8px;
+}
+
+.multiselect-trigger .material-icons {
+    font-size: 20px;
+    color: #adb5bd;
+    transition: transform 0.3s ease;
+}
+
+.custom-multiselect.is-open .multiselect-trigger {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.15);
+}
+
+.custom-multiselect.is-open .multiselect-trigger .material-icons {
+    transform: rotate(180deg);
+}
+
+.multiselect-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    z-index: 1000;
+    max-height: 300px;
+    overflow-y: auto;
+    display: none;
+    padding: 8px 0;
+    border: 1px solid #f1f3f5;
+    animation: multiselectFadeIn 0.2s ease-out;
+}
+
+@keyframes multiselectFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.custom-multiselect.is-open .multiselect-menu {
+    display: block;
+}
+
+.multiselect-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-left: 4px solid transparent;
+    font-size: 14px;
+    color: #495057;
+    margin-bottom: 2px;
+}
+
+.multiselect-item:hover {
+    background-color: #f8f9fa;
+}
+
+.multiselect-item input[type="checkbox"] {
+    display: none;
+}
+
+.multiselect-item .material-icons {
+    font-size: 18px;
+    margin-right: 10px;
+    color: #adb5bd;
+}
+
+.multiselect-item.is-selected {
+    background-color: #fff9c4; /* Giallo chiaro richiesto */
+    border-left-color: #ffc107; /* Giallo scuro richiesto */
+    color: #212529;
+    font-weight: 500;
+}
+
+.multiselect-item.is-selected .material-icons {
+    color: #ffc107;
+}
+
 /* Amount Wrapper */
 .amount-filter-wrapper {
     display: flex;

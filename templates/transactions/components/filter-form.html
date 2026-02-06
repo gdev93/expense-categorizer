@@ -53,31 +53,52 @@
     <div class="filter-collapsible-content" id="filter-collapsible">
         <div class="filter-grid">
             <div class="filter-group">
-                <label for="categories"><span class="material-icons"
+                <label><span class="material-icons"
                                             style="font-size: 1.1em; vertical-align: middle; margin-right: 4px;">category</span>
                     Categorie</label>
-                <select name="categories" id="categories" multiple size="1">
-                    <option value="">Tutte le Categorie</option>
-                    {% for cat in categories %}
-                        <option value="{{ cat.id }}"
-                                {% if cat.id|stringformat:"s" in selected_categories or cat.id in selected_categories %}selected{% endif %}>
-                            {{ cat.name }}
-                        </option>
-                    {% endfor %}
-                </select>
+                <div class="custom-multiselect" id="categories-multiselect"
+                     data-placeholder="Tutte le Categorie"
+                     data-plural-text="categorie selezionate">
+                    <div class="multiselect-trigger" onclick="toggleMultiselect('categories-multiselect')">
+                        <span class="trigger-text">Tutte le Categorie</span>
+                        <span class="material-icons">expand_more</span>
+                    </div>
+                    <div class="multiselect-menu">
+                        {% for cat in categories %}
+                            <label class="multiselect-item {% if cat.id|stringformat:"s" in selected_categories or cat.id in selected_categories %}is-selected{% endif %}">
+                                <input type="checkbox" name="categories" value="{{ cat.id }}"
+                                       {% if cat.id|stringformat:"s" in selected_categories or cat.id in selected_categories %}checked{% endif %}
+                                       onchange="updateMultiselect('categories-multiselect')">
+                                <span class="material-icons">label</span>
+                                {{ cat.name }}
+                            </label>
+                        {% endfor %}
+                    </div>
+                </div>
             </div>
 
             <div class="filter-group">
-                <label for="months"><span class="material-icons" style="font-size: 1.1em; vertical-align: middle; margin-right: 4px;">calendar_today</span>
+                <label><span class="material-icons" style="font-size: 1.1em; vertical-align: middle; margin-right: 4px;">calendar_today</span>
                     Mese/i</label>
-                <select name="months" id="months" multiple size="1">
-                    {% for month in available_months %}
-                        <option value="{{ month.month_number }}"
-                                {% if month.month_number|stringformat:"s" in selected_months %}selected{% endif %}>
-                            {{ month.label_it }}
-                        </option>
-                    {% endfor %}
-                </select>
+                <div class="custom-multiselect" id="months-multiselect"
+                     data-placeholder="Tutti i Mesi"
+                     data-plural-text="mesi selezionati">
+                    <div class="multiselect-trigger" onclick="toggleMultiselect('months-multiselect')">
+                        <span class="trigger-text">Tutti i Mesi</span>
+                        <span class="material-icons">expand_more</span>
+                    </div>
+                    <div class="multiselect-menu">
+                        {% for month in available_months %}
+                            <label class="multiselect-item {% if month.month_number|stringformat:"s" in selected_months %}is-selected{% endif %}">
+                                <input type="checkbox" name="months" value="{{ month.month_number }}"
+                                       {% if month.month_number|stringformat:"s" in selected_months %}checked{% endif %}
+                                       onchange="updateMultiselect('months-multiselect')">
+                                <span class="material-icons">event</span>
+                                {{ month.label_it }}
+                            </label>
+                        {% endfor %}
+                    </div>
+                </div>
             </div>
 
             <div class="filter-group">

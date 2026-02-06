@@ -87,6 +87,75 @@ document.querySelectorAll('.nav-link').forEach(link => {
 setActiveNavItem();
 
 /**
+ * Toggles the custom multiselect dropdown menu.
+ * @param {string} id - The ID of the multiselect container.
+ */
+function toggleMultiselect(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    
+    // Close all other multiselects to prevent overlap
+    document.querySelectorAll('.custom-multiselect').forEach(m => {
+        if (m.id !== id) m.classList.remove('is-open');
+    });
+    
+    el.classList.toggle('is-open');
+}
+
+/**
+ * Updates the trigger text and visual state of a custom multiselect.
+ * @param {string} id - The ID of the multiselect container.
+ */
+function updateMultiselect(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+
+    const checkboxes = el.querySelectorAll('input[type="checkbox"]');
+    const triggerText = el.querySelector('.trigger-text');
+    if (!triggerText) return;
+
+    const selectedCheckboxes = Array.from(checkboxes).filter(cb => cb.checked);
+    const selectedCount = selectedCheckboxes.length;
+    
+    const placeholder = el.getAttribute('data-placeholder') || 'Seleziona';
+    const pluralText = el.getAttribute('data-plural-text') || 'selezionati';
+
+    // Update visual state of individual items
+    checkboxes.forEach(cb => {
+        const item = cb.closest('.multiselect-item');
+        if (item) {
+            if (cb.checked) {
+                item.classList.add('is-selected');
+            } else {
+                item.classList.remove('is-selected');
+            }
+        }
+    });
+
+    // Update the trigger display text
+    if (selectedCount === 0) {
+        triggerText.textContent = placeholder;
+    } else if (selectedCount === 1) {
+        const item = selectedCheckboxes[0].closest('.multiselect-item');
+        const labelText = item ? item.textContent.trim() : '';
+        // Remove Material Icon text from the string (it's the first word usually)
+        const cleanedText = labelText.replace(/^(label|event|calendar_today|calendar_month|rule|check_circle|sync)/, '').trim();
+        triggerText.textContent = cleanedText;
+    } else {
+        triggerText.textContent = `${selectedCount} ${pluralText}`;
+    }
+}
+
+/**
+ * Initializes all multiselect components on the page.
+ */
+function initAllMultiselects() {
+    document.querySelectorAll('.custom-multiselect').forEach(el => {
+        if (el.id) updateMultiselect(el.id);
+    });
+}
+
+/**
  * Category Dropdown Menu logic
  */
 function toggleCategoryMenu(span) {
@@ -225,15 +294,18 @@ function clearFilters(formId) {
 
     // Update the filter button visual state
     updateFilterButtonsState();
+    initAllMultiselects();
 }
 
 // Initial check and HTMX integration
 document.addEventListener('DOMContentLoaded', () => {
     updateFilterButtonsState();
+    initAllMultiselects();
     
     // Update after any HTMX swap to catch changes from the server or user interaction
     document.body.addEventListener('htmx:afterSwap', () => {
         updateFilterButtonsState();
+        initAllMultiselects();
     });
 });
 
@@ -272,6 +344,12 @@ function showAlert(message, type = 'danger') {
 }
 
 window.addEventListener('click', function(event) {
+    if (!event.target.closest('.custom-multiselect')) {
+        document.querySelectorAll('.custom-multiselect').forEach(m => {
+            m.classList.remove('is-open');
+        });
+    }
+
     if (!event.target.closest('.category-pill-container')) {
         document.querySelectorAll('.category-dropdown-menu.show').forEach(menu => {
             menu.classList.remove('show');

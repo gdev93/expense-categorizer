@@ -209,11 +209,15 @@ class UploadFileView(ListView, FormView):
             queryset = queryset.filter(file_name__icontains=search_query)
 
         # Filter by status
-        status_filter = self.request.GET.get('status')
-        if status_filter == 'ready':
-            queryset = queryset.filter(status='completed')
-        elif status_filter == 'not_ready':
-            queryset = queryset.exclude(status='completed')
+        status_filters = self.request.GET.getlist('status')
+        if status_filters:
+            q_objects = Q()
+            for sf in status_filters:
+                if sf == 'ready':
+                    q_objects |= Q(status='completed')
+                elif sf == 'not_ready':
+                    q_objects |= ~Q(status='completed')
+            queryset = queryset.filter(q_objects)
 
         return queryset.annotate(
             has_pending=Exists(
@@ -348,6 +352,7 @@ class UploadFileView(ListView, FormView):
             total_transactions=total_transactions,
         )
         context['has_pending'] = full_queryset.filter(has_pending=True).exists()
+        context['selected_status'] = self.request.GET.getlist('status')
 
         return context
 

@@ -1,1 +1,25 @@
 {% include "transactions/components/upload_list_results.html" %}
+<div class="custom-multiselect" id="status-multiselect" hx-swap-oob="true"
+     data-placeholder="Tutti gli stati"
+     data-plural-text="stati selezionati">
+    <div class="multiselect-trigger" onclick="toggleMultiselect('status-multiselect')">
+        <span class="trigger-text">Tutti gli stati</span>
+        <span class="material-icons">expand_more</span>
+    </div>
+    <div class="multiselect-menu">
+        <label class="multiselect-item {% if 'ready' in selected_status %}is-selected{% endif %}">
+            <input type="checkbox" name="status" value="ready"
+                   {% if 'ready' in selected_status %}checked{% endif %}
+                   onchange="updateMultiselect('status-multiselect')">
+            <span class="material-icons">check_circle</span>
+            Completato
+        </label>
+        <label class="multiselect-item {% if 'not_ready' in selected_status %}is-selected{% endif %}">
+            <input type="checkbox" name="status" value="not_ready"
+                   {% if 'not_ready' in selected_status %}checked{% endif %}
+                   onchange="updateMultiselect('status-multiselect')">
+            <span class="material-icons">sync</span>
+            In corso
+        </label>
+    </div>
+</div>

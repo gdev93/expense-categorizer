@@ -1,9 +1,20 @@
 {% include "categories/components/category_detail_results.html" %}
-<select name="months" id="months" multiple size="1" hx-swap-oob="true">
-                                    {% for month in available_months %}
-                                        <option value="{{ month.month_number }}"
-                                                {% if month.month_number|stringformat:"s" in selected_months %}selected{% endif %}>
-                                            {{ month.label_it }}
-                                        </option>
-                                    {% endfor %}
-                                </select>
+<div class="custom-multiselect" id="months-multiselect" hx-swap-oob="true"
+     data-placeholder="Tutti i Mesi"
+     data-plural-text="mesi selezionati">
+    <div class="multiselect-trigger" onclick="toggleMultiselect('months-multiselect')">
+        <span class="trigger-text">Tutti i Mesi</span>
+        <span class="material-icons">expand_more</span>
+    </div>
+    <div class="multiselect-menu">
+        {% for month in available_months %}
+            <label class="multiselect-item {% if month.month_number|stringformat:"s" in selected_months %}is-selected{% endif %}">
+                <input type="checkbox" name="months" value="{{ month.month_number }}"
+                       {% if month.month_number|stringformat:"s" in selected_months %}checked{% endif %}
+                       onchange="updateMultiselect('months-multiselect')">
+                <span class="material-icons">event</span>
+                {{ month.label_it }}
+            </label>
+        {% endfor %}
+    </div>
+</div>
