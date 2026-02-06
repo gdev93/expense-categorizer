@@ -119,14 +119,25 @@
             </div>
 
             <div class="filter-group">
-                <label for="manual_insert">
-                    <span class="material-icons" style="font-size: 1.1em; vertical-align: middle; margin-right: 4px;">edit_note</span>
-                    Inserimento Manuale
-                </label>
-                <div class="checkbox-control">
+                <label class="card-selector" for="manual_insert">
                     <input type="checkbox" name="manual_insert" id="manual_insert" value="true" 
                            {% if selected_manual_insert %}checked{% endif %}>
-                </div>
+                    <div class="card-content">
+                        <div class="card-info">
+                            <div class="card-icon-box">
+                                <span class="material-icons">edit_note</span>
+                            </div>
+                            <div class="card-text">
+                                <b>Inserimento Manuale</b>
+                                <span>Solo aggiunte a mano</span>
+                            </div>
+                        </div>
+                        <div class="status-icon-container">
+                            <span class="material-icons status-icon checked">check_circle</span>
+                            <span class="material-icons status-icon unchecked">radio_button_unchecked</span>
+                        </div>
+                    </div>
+                </label>
             </div>
         </div>
     </div>

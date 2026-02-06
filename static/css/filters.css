@@ -142,18 +142,114 @@
     color: #adb5bd;
 }
 
-/* Checkbox specific */
-.checkbox-control {
-    height: 38px;
+/* Card Selector */
+.card-selector {
+    display: block;
+    cursor: pointer;
+    position: relative;
+    width: 100%;
+    font-weight: normal !important;
+    margin: 0 !important;
+}
+
+.card-selector input {
+    display: none;
+}
+
+.card-selector .card-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 12px;
+    transition: all 0.2s ease;
+    height: 52px;
+}
+
+.card-selector .card-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.card-selector .card-icon-box {
+    width: 32px;
+    height: 32px;
+    background: var(--background-color);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--secondary-color);
+    transition: all 0.2s ease;
+}
+
+.card-selector .card-icon-box .material-icons {
+    font-size: 18px !important;
+    color: inherit !important;
+    margin: 0 !important;
+}
+
+.card-selector .card-text {
+    display: flex;
+    flex-direction: column;
+}
+
+.card-selector .card-text b {
+    font-size: 13px;
+    color: var(--text-color);
+    line-height: 1.2;
+    margin: 0;
+}
+
+.card-selector .card-text span {
+    font-size: 11px;
+    color: var(--secondary-color);
+    line-height: 1.1;
+}
+
+.card-selector .status-icon-container {
     display: flex;
     align-items: center;
 }
 
-.checkbox-control input[type="checkbox"] {
-    width: 14px !important;
-    height: 14px !important;
-    margin: 0 !important;
-    cursor: pointer;
+.card-selector .status-icon {
+    font-size: 18px !important;
+    color: #adb5bd;
+    transition: all 0.2s ease;
+}
+
+.card-selector .status-icon.checked {
+    color: var(--primary-color);
+    display: none;
+}
+
+/* State: Hover */
+.card-selector:hover .card-content {
+    border-color: var(--primary-color);
+}
+
+/* State: Checked */
+.card-selector input:checked + .card-content {
+    border-color: var(--primary-color);
+    background: var(--nav-link-active-bg);
+    box-shadow: 0 4px 12px rgba(255, 193, 7, 0.15);
+    transform: translateY(-1px);
+}
+
+.card-selector input:checked + .card-content .card-icon-box {
+    background: var(--primary-color);
+    color: var(--nav-text-color);
+}
+
+.card-selector input:checked + .card-content .status-icon.checked {
+    display: block;
+}
+
+.card-selector input:checked + .card-content .status-icon.unchecked {
+    display: none;
 }
 
 .filters select,
