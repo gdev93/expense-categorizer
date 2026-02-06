@@ -183,7 +183,7 @@ class UploadFileView(ListView, FormView):
     # ListView attributes
     model = UploadFile
     context_object_name = 'recent_uploads'
-    paginate_by = 10
+    paginate_by = 5
 
     # FormView attributes
     form_class = UploadFileForm

@@ -79,12 +79,6 @@ class TransactionListView(LoginRequiredMixin, ListView, TransactionFilterMixin):
 
         messages.success(self.request, f"Tutte le spese di '{merchant.name}' sono state categorizzate come '{new_category.name}'.")
 
-        # Advance onboarding if at step 4
-        profile = getattr(self.request.user, 'profile', None)
-        if profile and profile.onboarding_step < 5:
-            profile.onboarding_step = 5
-            profile.save()
-
         return redirect(request.META.get('HTTP_REFERER', 'transaction_list'))
 
     def get_queryset(self):
