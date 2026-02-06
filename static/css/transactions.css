@@ -399,8 +399,23 @@ details.expander-card[open] .expander-icon {
    ========================================= */
 
 .detail-card {
-    overflow: hidden;
     margin-bottom: 2rem;
+}
+
+.transaction-form-content {
+    min-height: 400px;
+    display: flex;
+    flex-direction: column;
+}
+
+.transaction-form-content .form-actions {
+    margin-top: auto;
+}
+
+@media (max-width: 767px) {
+    .transaction-form-content {
+        min-height: 520px;
+    }
 }
 
 .detail-header {
