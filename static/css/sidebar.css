@@ -10,6 +10,7 @@
     width: 330px;
     max-width: 85vw;
     height: 100vh;
+    height: 100dvh;
     background-color: var(--nav-bg-color);
     box-shadow: 2px 0 6px rgba(0, 0, 0, 0.1);
     transition: left 0.3s ease;
@@ -18,6 +19,8 @@
     padding-top: 25px;
     display: flex;
     flex-direction: column;
+    bottom: 0;
+    overflow: hidden;
 }
 
 .sidebar.active {
@@ -27,11 +30,14 @@
 .sidebar-nav {
     flex: 1;
     overflow-y: auto;
+    min-height: 0;
 }
 
 .sidebar-footer {
+    flex-shrink: 0;
     border-top: 1px solid #e9ecef;
     padding: 20px 15px;
+    padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
 }
 
 .logout-button {
@@ -47,6 +53,7 @@
 
 /* User Info Section */
 .sidebar-user-info {
+    flex-shrink: 0;
     padding: 10px 15px;
     border-bottom: 1px solid #e9ecef;
     margin-bottom: 5px;

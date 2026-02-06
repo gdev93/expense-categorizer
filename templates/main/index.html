@@ -6,6 +6,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="preload" href="{% static 'fonts/material-icons.woff2' %}" as="font" type="font/woff2" crossorigin>
+    <link rel="icon" type="image/svg+xml" href="{% static 'images/favicon.svg' %}">
     <title>{% block title %}Contabilità familiare{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'css/main.css' %}">
     <link rel="stylesheet" href="{% static 'css/appbar.css' %}">
@@ -92,7 +93,7 @@
             <form id="logout-form" action="{% url 'logout_user' %}" method="post" style="display: none;">
                 {% csrf_token %}
             </form>
-            <button id="logoutBtn" class="btn btn-secondary logout-button">
+            <button id="logoutBtn" class="btn btn-secondary logout-button btn-full-width">
                 <span class="nav-icon material-icons">logout</span>
                 <span class="nav-text">Esci</span>
             </button>
