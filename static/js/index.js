@@ -272,7 +272,7 @@ function updateFilterButtonsState() {
         // Check select elements
         form.querySelectorAll('select').forEach(select => {
             // We ignore structural/contextual fields
-            if (select.name === 'year' || select.id === 'year' || select.name === 'view_type' || select.name === 'amount_operator') return;
+            if (select.name === 'year' || select.id === 'year' || select.name === 'view_type' || select.name === 'amount_operator' || select.name === 'paginate_by') return;
 
             if (select.multiple) {
                 if (Array.from(select.selectedOptions).some(opt => opt.value !== '')) {
@@ -304,7 +304,7 @@ function clearFilters(formId) {
     // form.elements includes all controls belonging to the form (even via form attribute)
     Array.from(form.elements).forEach(el => {
         // We preserve structural filters like year and view_type
-        if (el.name === 'view_type' || el.name === 'year' || el.id === 'year' || el.type === 'hidden') {
+        if (el.name === 'view_type' || el.name === 'year' || el.id === 'year' || el.name === 'paginate_by' || el.type === 'hidden') {
             return;
         }
 
