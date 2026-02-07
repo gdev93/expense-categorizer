@@ -202,6 +202,7 @@ h3 { font-size: 18px; }
     align-items: center;
     justify-content: center;
     min-width: 38px;
+    color: var(--secondary-color);
 }
 
 /* Allows an icon button to show text and expand on desktop */

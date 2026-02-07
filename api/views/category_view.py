@@ -261,7 +261,7 @@ class CategoryDetailView(DetailView, CategoryEnrichedMixin, TransactionFilterMix
         transaction_list = self.get_transaction_filter_query().filter(category=category)
 
         # Pagination logic
-        paginator = Paginator(transaction_list, 20)  # Show 20 transactions per page
+        paginator = Paginator(transaction_list, filters.paginate_by)
         page_number = self.request.GET.get('page') or 1
 
         transactions = paginator.page(page_number)
@@ -271,6 +271,7 @@ class CategoryDetailView(DetailView, CategoryEnrichedMixin, TransactionFilterMix
         context['year'] = filters.year
         context['selected_year'] = filters.year
         context['selected_months'] = [str(m) for m in filters.months]
+        context['paginate_by'] = filters.paginate_by
 
         return context
 

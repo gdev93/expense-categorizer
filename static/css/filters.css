@@ -70,6 +70,7 @@
     display: flex;
     gap: 6px;
     align-items: center;
+    flex-shrink: 0;
 }
 
 .filter-actions-compact .btn {
@@ -120,6 +121,12 @@
     gap: 15px;
 }
 
+@media (min-width: 768px) {
+    .filter-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
 /* Filter Groups */
 .filter-group {
     display: flex;
@@ -143,20 +150,23 @@
 }
 
 /* Card Selector */
-.card-selector {
+.card-selector, .card-selector-static {
     display: block !important;
-    cursor: pointer;
     position: relative;
     width: 100%;
-    font-weight: normal !important;
     margin: 0 !important;
+    font-weight: normal !important;
+}
+
+.card-selector {
+    cursor: pointer;
 }
 
 .card-selector input {
     display: none;
 }
 
-.card-selector .card-content {
+.card-selector .card-content, .card-selector-static .card-content {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -165,17 +175,21 @@
     border: 1px solid #dee2e6;
     border-radius: 12px;
     transition: all 0.2s ease;
-    height: 52px;
+    min-height: 52px;
+    height: auto;
     width: 100%;
+    gap: 8px;
 }
 
-.card-selector .card-info {
+.card-selector .card-info, .card-selector-static .card-info {
     display: flex;
     align-items: center;
     gap: 10px;
+    min-width: 0;
+    flex: 1;
 }
 
-.card-selector .card-icon-box {
+.card-selector .card-icon-box, .card-selector-static .card-icon-box {
     width: 32px;
     height: 32px;
     background: var(--background-color);
@@ -187,28 +201,35 @@
     transition: all 0.2s ease;
 }
 
-.card-selector .card-icon-box .material-icons {
+.card-selector .card-icon-box .material-icons, .card-selector-static .card-icon-box .material-icons {
     font-size: 18px !important;
     color: inherit !important;
     margin: 0 !important;
 }
 
-.card-selector .card-text {
+.card-selector .card-text, .card-selector-static .card-text {
     display: flex;
     flex-direction: column;
+    min-width: 0;
 }
 
-.card-selector .card-text b {
+.card-selector .card-text b, .card-selector-static .card-text b {
     font-size: 13px;
     color: var(--text-color);
     line-height: 1.2;
     margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.card-selector .card-text span {
+.card-selector .card-text span, .card-selector-static .card-text span {
     font-size: 11px;
     color: var(--secondary-color);
     line-height: 1.1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .card-selector .status-icon-container {
@@ -251,6 +272,41 @@
 
 .card-selector input:checked + .card-content .status-icon.unchecked {
     display: none;
+}
+
+.card-action {
+    min-width: 0;
+    flex-shrink: 1;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.card-select {
+    border: none !important;
+    background: transparent !important;
+    padding: 0 20px 0 0 !important;
+    font-weight: 600;
+    color: var(--secondary-color);
+    width: auto !important;
+    max-width: 180px;
+    cursor: pointer;
+    text-align: right;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23000000' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important;
+    background-position: right center !important;
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.card-select:focus {
+    box-shadow: none !important;
+    outline: none !important;
 }
 
 .filters select,
@@ -427,6 +483,77 @@
     flex: 1;
 }
 
+.amount-card-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+}
+
+.amount-input-card {
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    font-weight: 600;
+    color: var(--secondary-color);
+    width: 60px !important;
+    max-width: 80px;
+    text-align: right;
+    font-size: 14px;
+}
+
+.amount-input-card:focus {
+    box-shadow: none !important;
+    outline: none !important;
+}
+
+/* Hide spin buttons for number input in card */
+.amount-input-card::-webkit-outer-spin-button,
+.amount-input-card::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.amount-input-card {
+    -moz-appearance: textfield;
+}
+
+/* Multiselect in Card */
+.card-selector-static .custom-multiselect,
+.card-selector .custom-multiselect {
+    position: static;
+}
+
+.card-multiselect-trigger {
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    min-height: unset !important;
+    box-shadow: none !important;
+    justify-content: flex-end !important;
+    gap: 4px;
+}
+
+.custom-multiselect.is-open .card-multiselect-trigger {
+    box-shadow: none !important;
+}
+
+.card-multiselect-trigger .trigger-text {
+    font-weight: 600;
+    color: var(--secondary-color) !important;
+    text-align: right;
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 180px;
+}
+
+.card-multiselect-trigger .material-icons {
+    color: var(--secondary-color) !important;
+    margin: 0 !important;
+}
+
 /* View Toggle (preserved) */
 .view-toggle {
     display: inline-flex;
@@ -492,10 +619,6 @@
 
 /* Responsive Behaviors */
 @media (min-width: 992px) {
-    .filter-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-    
     .filter-collapsible-content {
         display: flex; /* Always visible on desktop */
     }
@@ -524,5 +647,25 @@
     .filter-actions-compact .btn {
         width: 38px;
         height: 38px;
+    }
+
+    .card-selector .card-content, .card-selector-static .card-content {
+        padding: 8px 10px;
+    }
+
+    .card-selector .card-info, .card-selector-static .card-info {
+        gap: 8px;
+    }
+
+    .card-selector .card-text span, .card-selector-static .card-text span {
+        display: none; /* Hide subtitle on mobile to save space */
+    }
+
+    .card-select, .card-multiselect-trigger .trigger-text {
+        max-width: 120px;
+    }
+
+    .amount-input-card {
+        width: 50px !important;
     }
 }

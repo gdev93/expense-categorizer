@@ -1,14 +1,15 @@
+{% load query_tags %}
 {% if page_obj.has_other_pages or is_paginated %}
 <div class="pagination {{ extra_classes|default:'' }}">
     {% if page_obj.has_previous %}
-        <a href="?page=1&{{ request.GET.urlencode }}"
-           hx-get="?page=1&{{ request.GET.urlencode }}"
+        <a href="?{% query_transform page=1 %}"
+           hx-get="?{% query_transform page=1 %}"
            hx-target="{{ hx_target }}"
            hx-swap="outerHTML settle:500ms"
            hx-indicator="{{ hx_target }}"
            class="pagination-link">« Prima</a>
-        <a href="?page={{ page_obj.previous_page_number }}&{{ request.GET.urlencode }}"
-           hx-get="?page={{ page_obj.previous_page_number }}&{{ request.GET.urlencode }}"
+        <a href="?{% query_transform page=page_obj.previous_page_number %}"
+           hx-get="?{% query_transform page=page_obj.previous_page_number %}"
            hx-target="{{ hx_target }}"
            hx-swap="outerHTML settle:500ms"
            hx-indicator="{{ hx_target }}"
@@ -23,14 +24,14 @@
     </span>
 
     {% if page_obj.has_next %}
-        <a href="?page={{ page_obj.next_page_number }}&{{ request.GET.urlencode }}"
-           hx-get="?page={{ page_obj.next_page_number }}&{{ request.GET.urlencode }}"
+        <a href="?{% query_transform page=page_obj.next_page_number %}"
+           hx-get="?{% query_transform page=page_obj.next_page_number %}"
            hx-target="{{ hx_target }}"
            hx-swap="outerHTML settle:500ms"
            hx-indicator="{{ hx_target }}"
            class="pagination-link">Successiva ›</a>
-        <a href="?page={{ page_obj.paginator.num_pages }}&{{ request.GET.urlencode }}"
-           hx-get="?page={{ page_obj.paginator.num_pages }}&{{ request.GET.urlencode }}"
+        <a href="?{% query_transform page=page_obj.paginator.num_pages %}"
+           hx-get="?{% query_transform page=page_obj.paginator.num_pages %}"
            hx-target="{{ hx_target }}"
            hx-swap="outerHTML settle:500ms"
            hx-indicator="{{ hx_target }}"

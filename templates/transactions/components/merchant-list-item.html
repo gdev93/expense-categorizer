@@ -1,7 +1,8 @@
+{% load query_tags %}
 {% with m_id=item.merchant__id|default:"none" %}
 <div class="merchant-group">
     <div class="data-list-item merchant-clickable"
-         hx-get="{% url 'transactions_by_merchant' %}?merchant_id={{ m_id }}&{{ request.GET.urlencode }}"
+         hx-get="{% url 'transactions_by_merchant' %}?{% query_transform merchant_id=m_id page=None %}"
          hx-target="#details-{{ m_id }} .expansion-content"
          hx-indicator="#details-{{ m_id }} .htmx-indicator"
          hx-trigger="load-transactions"

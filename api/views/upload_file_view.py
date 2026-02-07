@@ -183,7 +183,6 @@ class UploadFileView(ListView, FormView):
     # ListView attributes
     model = UploadFile
     context_object_name = 'recent_uploads'
-    paginate_by = 5
 
     # FormView attributes
     form_class = UploadFileForm
@@ -191,6 +190,9 @@ class UploadFileView(ListView, FormView):
 
     # Shared attributes
     template_name = 'transactions/transactions_upload.html'
+
+    def get_paginate_by(self, queryset):
+        return self.request.GET.get('paginate_by', 25)
 
     def get_template_names(self):
         if self.request.headers.get('HX-Request'):

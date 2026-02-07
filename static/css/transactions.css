@@ -62,12 +62,6 @@
     display: block;
 }
 
-/* Search Group Specifics */
-.search-group {
-    min-width: 300px;
-    flex-grow: 1.5;
-    margin-bottom: 0;
-}
 
 /* =========================================
    3. TRANSACTION LIST ITEMS

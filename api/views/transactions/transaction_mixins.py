@@ -1,3 +1,4 @@
+import os
 from dataclasses import dataclass, field
 from typing import List, Optional
 from django.db.models import Q, QuerySet
@@ -23,6 +24,7 @@ class TransactionFilterState:
     view_type: str = 'list'
     status: str = ''
     manual_insert: bool = False
+    paginate_by: int = 25
 
     @classmethod
     def from_request(cls, request: HttpRequest, year: int, months: List[int],
@@ -42,6 +44,7 @@ class TransactionFilterState:
             'view_type': 'filter_view_type',
             'status': 'filter_status',
             'manual_insert': 'filter_manual_insert',
+            'paginate_by': 'filter_paginate_by',
         }
 
         if reset:
@@ -85,7 +88,13 @@ class TransactionFilterState:
         # 2. Upload File (Not stored in session usually, passed from View kwargs)
         file_id = upload_file_id or request.GET.get('upload_file')
 
-        # 3. Build the object
+        # 3. Determine default pagination based on device
+        user_agent = request.META.get('HTTP_USER_AGENT', '').lower()
+        is_mobile = any(keyword in user_agent for keyword in
+                        ['mobile', 'android', 'iphone', 'ipad', 'ipod', 'blackberry', 'iemobile', 'opera mini'])
+        default_pagination = 10 if is_mobile else int(os.environ.get('DEFAULT_PAGINATION', 25))
+
+        # 4. Build the object
         return cls(
             year=year,
             months=months,
@@ -96,7 +105,8 @@ class TransactionFilterState:
             search=get_value('search', 'filter_search', '', str),
             view_type=get_value('view_type', 'filter_view_type', 'list', str),
             status=get_value('status', 'filter_status', '', str),
-            manual_insert=get_value('manual_insert', 'filter_manual_insert', False, bool)
+            manual_insert=get_value('manual_insert', 'filter_manual_insert', False, bool),
+            paginate_by=get_value('paginate_by', 'filter_paginate_by', default_pagination, int)
         )
 
 
