@@ -1,4 +1,5 @@
 import datetime
+import os
 from dataclasses import dataclass, asdict, field
 from typing import Any
 
@@ -6,7 +7,6 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.postgres.aggregates import StringAgg
 from django.core.exceptions import BadRequest
-from django.core.paginator import Paginator
 from django.db.models import Q, Sum, Count, Max, Case, When, Value, IntegerField
 from django.db.models import QuerySet
 from django.shortcuts import get_object_or_404, redirect
@@ -29,9 +29,15 @@ class TransactionListContextData:
     total_count: int
     total_amount: float
     category_count: int
-    rules: QuerySet[Rule, Rule]  # QuerySet
+    merchant_summary: QuerySet[Any]
     selected_manual_insert: bool = False
-    selected_months: list[int] = field(default_factory=list)
+    selected_months: list[str] = field(default_factory=list)
+    view_type: str = 'list'
+    upload_file: UploadFile | None = None,
+    selected_amount: float | None = None,
+    selected_amount_operator: str = 'eq',
+    year: int = datetime.datetime.now().year
+
     def to_context(self) -> dict[str, Any]:
         """Convert dataclass to context dictionary"""
         return asdict(self)
@@ -41,12 +47,7 @@ class TransactionListView(LoginRequiredMixin, ListView, TransactionFilterMixin):
     model = Transaction
     template_name = 'transactions/transaction_list.html'
     context_object_name = 'transactions'
-    paginate_by = 20
-
-    def get_paginate_by(self, queryset):
-        if self.request.GET.get('view_type') == 'merchant':
-            return None
-        return self.paginate_by
+    paginate_by = os.getenv('PAGE_SIZE', 5)
 
     def get_template_names(self):
         if self.request.headers.get('HX-Request'):
@@ -82,62 +83,9 @@ class TransactionListView(LoginRequiredMixin, ListView, TransactionFilterMixin):
         return redirect(request.META.get('HTTP_REFERER', 'transaction_list'))
 
     def get_queryset(self):
-        return self.get_transaction_filter_query()
-
-    def get_context_data(self, **kwargs):
-        """Add extra context data"""
-        context = super().get_context_data(**kwargs)
         filters = self.get_transaction_filters()
-        view_type = filters.view_type
-        context['view_type'] = view_type
-
-        # Use the unpaginated queryset for summary statistics
-        user_transactions = self.object_list
-
-        # Get all categories for filter dropdown
-        categories = list(Category.objects.filter(
-            Q(user=self.request.user) | Q(user__isnull=True)
-        ).order_by('name').values('id', 'name'))
-
-        uncategorized_transaction = Transaction.objects.filter(
-            user=self.request.user,
-            status='uncategorized',
-            transaction_type='expense'
-        ).select_related('upload_file')
-
-        upload_file_id = filters.upload_file_id
-        if upload_file_id:
-            uncategorized_transaction = uncategorized_transaction.filter(upload_file_id=upload_file_id)
-            context['upload_file'] = get_object_or_404(UploadFile, id=upload_file_id, user=self.request.user)
-
-
-        transaction_list_context = TransactionListContextData(
-            categories=categories,
-            selected_status=filters.status,
-            selected_upload_file=upload_file_id or '',
-            search_query=filters.search,
-            uncategorized_transaction=uncategorized_transaction,
-            total_count=self.get_queryset().count(),
-            total_amount=self.get_queryset().aggregate(
-                total=Sum('amount')
-            )['total'] or 0,
-            category_count=self.get_queryset().values('category').distinct().count(),
-            rules=Rule.objects.filter(user=self.request.user, is_active=True),
-            selected_categories=filters.category_ids,
-            selected_months=filters.months,
-            selected_manual_insert=filters.manual_insert
-        )
-        context.update(transaction_list_context.to_context())
-
-        # Add amount filter context
-        context['selected_amount'] = filters.amount or ''
-        context['selected_amount_operator'] = filters.amount_operator
-        context['year'] = filters.year
-        context['selected_months'] = [str(m) for m in filters.months]
-
-        if view_type == 'merchant':
-            # Aggregate transactions by merchant
-            merchant_group = user_transactions.values(
+        if filters.view_type == 'merchant':
+            return self.get_transaction_filter_query().values(
                 'merchant__id',
                 'merchant__name'
             ).annotate(
@@ -153,13 +101,48 @@ class TransactionListView(LoginRequiredMixin, ListView, TransactionFilterMixin):
                 categories_list=StringAgg('category__name', delimiter=', ', distinct=True),
                 category_id=Max('category__id')
             ).order_by('-is_uncategorized', '-number_of_transactions', 'merchant__name')
+        return self.get_transaction_filter_query()
 
-            context['uncategorized_merchants'] = merchant_group.filter(is_uncategorized=1)
-            categorized_merchants = merchant_group.filter(is_uncategorized=0)
+    def get_context_data(self, **kwargs):
+        """Add extra context data"""
+        context = super().get_context_data(**kwargs)
+        filters = self.get_transaction_filters()
+        categories = list(Category.objects.filter(
+            Q(user=self.request.user) | Q(user__isnull=True)
+        ).order_by('name').values('id', 'name'))
+        uncategorized_transaction = Transaction.objects.filter(
+            user=self.request.user,
+            status='uncategorized',
+            transaction_type='expense'
+        ).select_related('upload_file')
 
-            # Paginate merchants
-            paginator = Paginator(categorized_merchants, 10)
-            page_number = self.request.GET.get('page')
-            context['merchant_summary'] = paginator.get_page(page_number)
+        upload_file_id = filters.upload_file_id
+        if upload_file_id:
+            uncategorized_transaction = uncategorized_transaction.filter(upload_file_id=upload_file_id)
+            upload_file = get_object_or_404(UploadFile, id=upload_file_id, user=self.request.user)
+        else:
+            upload_file = None
 
+        transaction_list_context = TransactionListContextData(
+            categories=categories,
+            selected_status=filters.status,
+            selected_upload_file=filters.upload_file_id or '',
+            search_query=filters.search,
+            uncategorized_transaction=uncategorized_transaction,
+            total_count=self.get_queryset().count(),
+            total_amount=self.get_queryset().aggregate(
+                total=Sum('amount')
+            )['total'] or 0,
+            category_count=self.get_queryset().values('category').distinct().count(),
+            selected_categories=filters.category_ids,
+            selected_months= [str(m) for m in filters.months],
+            selected_manual_insert=filters.manual_insert,
+            view_type=filters.view_type,
+            upload_file=upload_file,
+            selected_amount=filters.amount,
+            selected_amount_operator=filters.amount_operator,
+            year = filters.year,
+            merchant_summary=self.get_queryset()
+        )
+        context.update(transaction_list_context.to_context())
         return context
