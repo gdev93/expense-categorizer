@@ -7,13 +7,12 @@ from typing import Iterable
 from django.contrib.auth.models import User
 from django.core.files.uploadedfile import UploadedFile
 from django.db import transaction, connections
-from django.db.models import Count, Max, Q
+from django.db.models import Q
 
 from agent.agent import ExpenseCategorizerAgent, AgentTransactionUpload, TransactionCategorization, GeminiResponse
 from api.models import Transaction, Category, Merchant, UploadFile, normalize_string
 from costs.services import CostService
 from processors.batching_helper import BatchingHelper
-from processors.csv_structure_detector import CsvStructureDetector
 from processors.data_prechecks import parse_raw_transaction
 from processors.embeddings import EmbeddingEngine
 from processors.parser_utils import normalize_amount, parse_raw_date
@@ -184,37 +183,29 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
                     # find_rag_context is inherited from SimilarityMatcherRAG
                     ref_tx, useful_context = self.find_rag_context(tx.embedding, self.user)
                     tx.rag_context = useful_context
-
+                    all_candidates = []
+                    if useful_context:
+                        all_candidates.extend(useful_context)
                     if ref_tx:
-                        dist = getattr(ref_tx, 'distance', 1.0)
-                        # Reliability logic
-                        is_trusted = dist <= self.rag_identical_threshold and is_rag_reliable(res.description, ref_tx.description, ref_tx.merchant.name)
-                        is_likely = dist <= self.rag_reliable_threshold and is_rag_reliable(
-                            res.description, ref_tx.description, ref_tx.merchant.name
-                        )
+                        all_candidates.append(ref_tx)
+                    all_candidates = sorted(all_candidates, key=lambda x: getattr(x, 'distance', 1.0))
+                    final_ref = None
+                    earliest_index = float('inf')
+                    for ctx_tx in all_candidates:
+                        merchant_name = ctx_tx.merchant.name.lower()
+                        description_to_check = res.description.lower()
+                        pos = description_to_check.find(merchant_name)
+                        # Merchant candidates have precedence if they show in the first part of the description
+                        if pos != -1 and pos < earliest_index:
+                            earliest_index = pos
+                            final_ref = ctx_tx
+                    if final_ref:
+                        final_ref = self.similarity_matcher.find_most_frequent_transaction_for_merchant(
+                            final_ref.merchant)
+                        TransactionUpdater.update_categorized_transaction(tx, res, final_ref)
+                        all_transactions_categorized.append(tx)
+                        categorized = True
 
-                        if is_trusted or is_likely:
-                            final_ref = self.similarity_matcher.find_most_frequent_transaction_for_merchant(
-                                ref_tx.merchant)
-                            TransactionUpdater.update_categorized_transaction(tx, res, final_ref or ref_tx)
-                            all_transactions_categorized.append(tx)
-                            categorized = True
-                    elif any(useful_context):
-                        final_ref = None
-                        earliest_index = float('inf')
-                        for ctx_tx in useful_context:
-                            merchant_name = ctx_tx.merchant.name.lower()
-                            description_to_check = res.description.lower()
-                            pos = description_to_check.find(merchant_name)
-                            # Merchant candidates have precedence if they show in the first part of the description
-                            if pos != -1 and pos < earliest_index:
-                                earliest_index = pos
-                                final_ref = ctx_tx
-                        if final_ref:
-                            final_ref = self.similarity_matcher.find_most_frequent_transaction_for_merchant(final_ref.merchant)
-                            TransactionUpdater.update_categorized_transaction(tx, res, final_ref)
-                            all_transactions_categorized.append(tx)
-                            categorized = True
             # Level C: Fallback to Agent
             if not categorized:
                 uncategorized_tx = TransactionUpdater.update_transaction_with_parse_result(tx, res)
