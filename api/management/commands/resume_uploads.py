@@ -19,6 +19,10 @@ class Command(BaseCommand):
         incomplete_uploads = UploadFile.objects.filter(
             status='processing',
             resume_info__isnull=True,
+            description_column_name__isnull=False,
+            expense_amount_column_name__isnull=False,
+            income_amount_column_name__isnull=False,
+            date_column_name__isnull=False,
             # more of 15 minutes ago to process it
             upload_date__lt=now - timedelta(minutes=int(self.process_time_minute))
         )
