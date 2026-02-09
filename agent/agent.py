@@ -229,7 +229,8 @@ class ExpenseCategorizerAgent:
 
     def detect_csv_structure(
             self,
-            transactions: list[AgentTransactionUpload]
+            transactions: list[AgentTransactionUpload],
+            known_date_column: str | None = None
     ) -> tuple[CsvStructure, GeminiResponse | None]:
         """
         Analyze the CSV structure using Gemini to identify column mappings.
@@ -247,7 +248,11 @@ class ExpenseCategorizerAgent:
                 samples_text += f"    - {column}: {display_value}\n"
             samples_text += "\n"
 
-        prompt = f"""Sei un esperto nell'analisi di strutture dati di transazioni bancarie italiane.
+        prompt_context = ""
+        if known_date_column:
+            prompt_context = f"\n\nNOTA: Abbiamo già identificato che il campo della data è '{known_date_column}'. Utilizzalo come transaction_date_field e concentrati sull'identificazione degli altri campi."
+
+        prompt = f"""Sei un esperto nell'analisi di strutture dati di transazioni bancarie italiane.{prompt_context}
 
             Analizza i seguenti campioni di transazioni e identifica quali campi corrispondono a:
             1. **description_field**: Il campo contenente la descrizione/dettagli della transazione
