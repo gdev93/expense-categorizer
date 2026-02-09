@@ -7,7 +7,7 @@
             {% if transaction.transaction_type == 'income' %}
                 {{ transaction.operation_type|default:transaction.merchant.name|default:"Entrata" }}
             {% else %}
-                {{ transaction.merchant.name|default:"Merchant Sconosciuto" }}
+                {{ transaction.merchant.name|default:"Esercente non identificato" }}
             {% endif %}
         </div>
         {% if show_description and transaction.description %}
