@@ -181,17 +181,11 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
                 tx.embedding = embedding_dict.get(res.description.strip())
                 if tx.embedding:
                     # find_rag_context is inherited from SimilarityMatcherRAG
-                    ref_tx, useful_context = self.find_rag_context(tx.embedding, self.user)
+                    useful_context = self.find_rag_context(tx.embedding, self.user)
                     tx.rag_context = useful_context
-                    all_candidates = []
-                    if useful_context:
-                        all_candidates.extend(useful_context)
-                    if ref_tx:
-                        all_candidates.append(ref_tx)
-                    all_candidates = sorted(all_candidates, key=lambda x: getattr(x, 'distance', 1.0))
                     final_ref = None
                     earliest_index = float('inf')
-                    for ctx_tx in all_candidates:
+                    for ctx_tx in useful_context:
                         merchant_name = ctx_tx.merchant.name.lower()
                         description_to_check = res.description.lower()
                         pos = description_to_check.find(merchant_name)
@@ -200,11 +194,16 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
                             earliest_index = pos
                             final_ref = ctx_tx
                     if final_ref:
-                        final_ref = self.similarity_matcher.find_most_frequent_transaction_for_merchant(
+                        final_ref_most_frequent = self.similarity_matcher.find_most_frequent_transaction_for_merchant(
                             final_ref.merchant)
-                        TransactionUpdater.update_categorized_transaction(tx, res, final_ref)
-                        all_transactions_categorized.append(tx)
-                        categorized = True
+                        if final_ref_most_frequent:
+                            TransactionUpdater.update_categorized_transaction(tx, res, final_ref_most_frequent)
+                            all_transactions_categorized.append(tx)
+                            categorized = True
+                        else:
+                            TransactionUpdater.update_categorized_transaction(tx, res, final_ref)
+                            all_transactions_categorized.append(tx)
+                            categorized = True
 
             # Level C: Fallback to Agent
             if not categorized:
@@ -231,13 +230,8 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
         agent_upload_transaction = []
         for tx in batch:
             # Check if we already have the context from _process_prechecks
-            useful_context = getattr(tx, 'rag_context', None)
+            useful_context = getattr(tx, 'rag_context', []) or []
 
-            if useful_context is None:
-                # Assicuriamoci che l'embedding sia presente
-                if tx.embedding is None:
-                    tx.embedding = generate_embedding(tx.description or "")
-                _, useful_context = self.find_rag_context(tx.embedding, self.user)
             rag_context_data = [
                 {
                     'description': ctx_tx.description,
@@ -356,7 +350,8 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
 
                 # Only try to find similar transactions if we have a description
                 if tx.description:
-                    similar_tx, _ = self.find_rag_context(generate_embedding(tx.description), self.user)
+                    useful_context = self.find_rag_context(generate_embedding(tx.description), self.user)
+                    similar_tx = useful_context[0] if useful_context else None
                     if similar_tx and is_rag_reliable(tx.description, similar_tx.description, similar_tx.merchant.name):
                         similar_tx = self.similarity_matcher.find_most_frequent_transaction_for_merchant(similar_tx.merchant)
                         TransactionUpdater.update_categorized_transaction(tx, parse_result, similar_tx)

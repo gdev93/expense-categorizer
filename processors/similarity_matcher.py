@@ -1,12 +1,9 @@
 import logging
 import os
 
-import numpy as np
 from django.contrib.auth.models import User
 from django.contrib.postgres.search import TrigramWordSimilarity
 from django.db.models import Count, Max
-from django.db.models.expressions import RawSQL
-from numpy import ndarray
 
 from api.models import Transaction, Merchant, normalize_string
 from processors.data_prechecks import RawTransactionParseResult
@@ -65,17 +62,15 @@ class SimilarityMatcherRAG:
     utilizzando FastEmbed e pgvector.
     """
 
+    rag_context_threshold = os.getenv('RAG_CONTEXT_THRESHOLD', 0.25)
 
-    AUTO_CATEGORIZE_THRESHOLD = os.getenv('AUTO_CATEGORIZE_THRESHOLD', 0.06)
-    RAG_CONTEXT_THRESHOLD = os.getenv('RAG_CONTEXT_THRESHOLD', 0.25)
-
-    def find_rag_context(self, embedding: list[float] | None, user: User):
+    def find_rag_context(self, embedding: list[float] | None, user: User) -> list[Transaction]:
         """
         Cerca nel database le transazioni passate più simili dell'utente.
         Ritorna una tupla: (best_match_transaction, list_of_context_transactions)
         """
         if not embedding:
-            return None, []
+            return []
         from pgvector.django import CosineDistance
 
         # Query pgvector: CosineDistance (più bassa è, più sono simili)
@@ -93,20 +88,9 @@ class SimilarityMatcherRAG:
         context_results = list(similar_query[:5])
 
         if not context_results:
-            return None, []
+            return []
 
-        best_match = context_results[0]
-
-        # Se la distanza è bassissima, possiamo considerarlo un match certo
-        is_auto_match = best_match.distance <= self.AUTO_CATEGORIZE_THRESHOLD
-
-        # Filtriamo per il contesto Gemini (solo quelle entro il threshold di utilità)
-        useful_context = [
-            tx for tx in context_results
-            if tx.distance <= self.RAG_CONTEXT_THRESHOLD
-        ]
-
-        return (best_match if is_auto_match else None), useful_context
+        return context_results
 class SimilarityMatcher:
     def __init__(self, user: User, threshold: float):
         self.user = user
