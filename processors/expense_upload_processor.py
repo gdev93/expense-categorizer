@@ -1,6 +1,8 @@
 import itertools
 import logging
 import os
+import random
+import time
 from concurrent.futures import ThreadPoolExecutor
 from typing import Iterable
 
@@ -36,6 +38,8 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
     rag_identical_threshold = os.environ.get('RAG_IDENTICAL_THRESHOLD', 0.02) # 98% sure
     rag_reliable_threshold = os.environ.get('RAG_RELIABLE_THRESHOLD', 0.15) # very likely
     rag_context_threshold = os.environ.get('RAG_CONTEXT_THRESHOLD', 0.35) # context for gemini
+    gemini_max_retries = int(os.environ.get('GEMINI_MAX_RETRIES', 5))
+    gemini_base_delay = int(os.environ.get('GEMINI_BASE_DELAY', 2))
 
     def __init__(self, user: User, user_rules: list[str] = None, available_categories: list[Category] | None = None, batch_helper:BatchingHelper | None = None):
         self.user = user
@@ -226,12 +230,12 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
             f"Batch processed: {len(all_transactions_categorized)} auto-categorized, {len(all_transactions_to_upload)} sent to agent.")
         return all_transactions_to_upload
 
-    def _process_with_agent(self, batch: list[Transaction], upload_file: UploadFile) -> tuple[list[TransactionCategorization], GeminiResponse | None]:
+    def _process_with_agent(self, batch: list[Transaction], upload_file: UploadFile) -> tuple[
+        list[TransactionCategorization], GeminiResponse | None]:
         agent_upload_transaction = []
         for tx in batch:
             # Check if we already have the context from _process_prechecks
             useful_context = getattr(tx, 'rag_context', []) or []
-
             rag_context_data = [
                 {
                     'description': ctx_tx.description,
@@ -240,7 +244,6 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
                 }
                 for ctx_tx in useful_context
             ]
-
             agent_upload_transaction.append(
                 AgentTransactionUpload(
                     transaction_id=tx.id,
@@ -250,13 +253,24 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
             )
 
         if any(agent_upload_transaction):
-            try:
-                return self.agent.process_batch(agent_upload_transaction, upload_file)
-            except Exception as e:
-                logger.error(f"⚠️  Agent failed to process batch: {str(e)}")
-                return [], None
-            finally:
-                connections.close_all()
+            for attempt in range(self.gemini_max_retries):
+                try:
+                    # Chiamata all'agente
+                    return self.agent.process_batch(agent_upload_transaction, upload_file)
+
+                except Exception as e:
+                    is_last_attempt = (attempt == self.gemini_max_retries - 1)
+
+                    if is_last_attempt:
+                        logger.error(f"⚠️ Agent failed to process batch after {self.gemini_max_retries} attempts: {str(e)}")
+                        return [], None
+
+                    # Backoff esponenziale con Jitter (per evitare che tutti i thread riprovino insieme)
+                    sleep_time = (self.gemini_base_delay * (2 ** attempt)) + random.uniform(0, 1)
+                    logger.warning(
+                        f"⚠️ Gemini 503/Error (Attempt {attempt + 1}/{self.gemini_max_retries}). Retrying in {sleep_time:.2f}s... Error: {str(e)}")
+                    time.sleep(sleep_time)
+
         return [], None
 
     def _persist_batch_results(self, batch: list[TransactionCategorization]):

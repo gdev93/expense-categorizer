@@ -749,4 +749,4 @@ class ExpenseCategorizerAgent:
 
         except Exception as e:
             logger.error(f"Analysis failed: {str(e)}", exc_info=True)
-            return [], None
+            raise e
