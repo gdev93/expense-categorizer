@@ -242,4 +242,11 @@ def _clean_dataframe_to_dict(df: pd.DataFrame) -> List[Dict[str, str]]:
     # Remove rows that became completely empty after cleaning
     df = df.dropna(how='all')
 
-    return df.to_dict('records')
+    # Convert to list of dicts and ENSURE no NaNs are left (Postgres JSONField compatibility)
+    records = df.to_dict('records')
+    for record in records:
+        for key, value in record.items():
+            if pd.isna(value):
+                record[key] = None
+
+    return records
