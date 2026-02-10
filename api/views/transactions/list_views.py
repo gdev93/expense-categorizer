@@ -6,6 +6,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.postgres.aggregates import StringAgg
 from django.core.exceptions import BadRequest
+from django.db import transaction
 from django.db.models import Q, Sum, Count, Max, Case, When, Value, IntegerField
 from django.db.models import QuerySet
 from django.shortcuts import get_object_or_404, redirect
@@ -68,6 +69,7 @@ class TransactionListView(LoginRequiredMixin, ListView, TransactionFilterMixin):
             return ['transactions/components/transaction_list_htmx.html']
         return [self.template_name]
 
+    @transaction.atomic
     def post(self, request, *args, **kwargs):
         merchant_id = request.POST.get('merchant_id')
         new_category_id = request.POST.get('new_category_id')

@@ -12,3 +12,5 @@ gunicorn
 pandas
 openpyxl
 whitenoise
+celery
+redis
