@@ -21,6 +21,7 @@ from django.views.generic import FormView, ListView, DeleteView
 
 from api.models import Rule, Category
 from api.models import UploadFile, Transaction, Merchant, DefaultCategory
+from api.tasks import process_upload
 from processors.csv_structure_detector import CsvStructureDetector
 from processors.expense_upload_processor import ExpenseUploadProcessor, persist_uploaded_file
 from processors.file_parsers import parse_uploaded_file, FileParserError
@@ -451,50 +452,8 @@ class UploadProcessView(View):
             logging.warning(f"No upload file found for processing for user {self.request.user.username}.")
             return HttpResponse(status=404)
         upload_file = upload_file_query.first()
-        thread = threading.Thread(
-            target=self._do_process,
-            args=(request.user, upload_file,),
-            daemon=True
-        )
-        thread.start()
+        process_upload.delay(self.request.user.pk, upload_file.pk)
         return HttpResponse(status=202)
-
-    def _do_process(self, user: User, upload_file: UploadFile) -> HttpResponse:
-        start_time = time.time()
-
-        upload_file.status = 'processing'
-        upload_file.save()
-
-        transactions = Transaction.objects.filter(upload_file=upload_file, user=user, status='pending')
-        user_rules = list(
-            Rule.objects.filter(
-                user=user,
-                is_active=True
-            ).values_list('text_content', flat=True)
-        )
-        user_categories = Category.objects.filter(user=user)
-        if not user_categories.exists():
-            for default_category in DefaultCategory.objects.all():
-                category = Category(user=user, name=default_category.name, description=default_category.description, is_default=True)
-                category.save()
-
-        # Process transactions using ExpenseUploadProcessor
-        processor = ExpenseUploadProcessor(
-            user=user,
-            user_rules=user_rules,
-            available_categories=list(
-                Category.objects.filter(user=user)
-            )
-        )
-
-        logging.info(f"{user}'s data {upload_file.file_name} is being processed.")
-        upload_file = processor.process_transactions(transactions.iterator(), upload_file)
-
-        # Calculate processing time and update record
-        processing_time = int((time.time() - start_time) * 1000)
-        upload_file.processing_time = processing_time
-        upload_file.save()
-        return HttpResponse(status=201)
 
 class UploadFileCheckView(View):
 

@@ -133,7 +133,8 @@ class TransactionDetailUpdateView(LoginRequiredMixin, UpdateView):
         return super().form_invalid(form)
 
 class EditTransactionCategory(View):
-
+    
+    @transaction.atomic
     def post(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
         # 1. Get and validate data
         transaction_id = request.POST.get('transaction_id', '')

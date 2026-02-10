@@ -1,7 +1,11 @@
 import logging
+import time
+
 from celery import shared_task
-from google import genai
-from agent.agent import call_gemini_api, GeminiResponse, get_api_key
+from django.contrib.auth.models import User
+
+from api.models import Transaction, UploadFile, Rule, Category, DefaultCategory
+from processors.expense_upload_processor import ExpenseUploadProcessor
 
 logger = logging.getLogger(__name__)
 
@@ -9,29 +13,48 @@ logger = logging.getLogger(__name__)
     bind=True,
     autoretry_for=(Exception,),
     retry_backoff=True,
-    retry_kwargs={'max_retries': 5},
-    name='api.tasks.call_gemini_with_retry'
+    retry_backoff_max=120,
+    max_retries=2,
+    acks_late=True,
+    name='api.tasks.process_upload'
 )
-def call_gemini_with_retry(self, prompt: str, temperature: float = 0.1):
-    """
-    Celery task to call Gemini API with automatic retries on failure.
-    """
+def process_upload(self, user_id: int, upload_file_id: int):
+    logger.info(f"Processing upload {upload_file_id} for user {user_id}")
+    start_time = time.time()
+    upload_file = UploadFile.objects.get(id=upload_file_id)
+    upload_file.status = 'processing'
+    upload_file.save()
+    user = User.objects.get(id=user_id)
+    transactions = Transaction.objects.filter(upload_file=upload_file, user=user, status='pending')
+    user_rules = list(
+        Rule.objects.filter(
+            user=user,
+            is_active=True
+        ).values_list('text_content', flat=True)
+    )
+    user_categories = Category.objects.filter(user=user)
+    if not user_categories.exists():
+        for default_category in DefaultCategory.objects.all():
+            category = Category(user=user, name=default_category.name, description=default_category.description,
+                                is_default=True)
+            category.save()
     try:
-        api_key = get_api_key()
-        client = genai.Client(api_key=api_key)
-        
-        response = call_gemini_api(prompt, client, temperature)
-        
-        # We return a dict because GeminiResponse (dataclass) might not be JSON serializable 
-        # by default in some celery configurations if not handled, 
-        # but here we just want to show the scaffolding.
-        return {
-            'text': response.text,
-            'prompt_tokens': response.prompt_tokens,
-            'candidate_tokens': response.candidate_tokens,
-            'model_name': response.model_name
-        }
-    except Exception as exc:
-        logger.error(f"Error calling Gemini API: {exc}")
-        # Re-raise to trigger autoretry_for
-        raise exc
+        processor = ExpenseUploadProcessor(
+            user=user,
+            user_rules=user_rules,
+            available_categories=list(
+                Category.objects.filter(user=user)
+            )
+        )
+        logging.info(f"{user}'s data {upload_file.file_name} is being processed.")
+        upload_file = processor.process_transactions(transactions.iterator(), upload_file)
+        processing_time = int((time.time() - start_time) * 1000)
+        upload_file.processing_time = processing_time
+    except Exception as e:
+        logger.error(f"Attempt {self.request.retries} failed for file {upload_file_id}: {e}")
+        if self.request.retries >= self.max_retries:
+            upload_file.status = 'failed'
+            upload_file.save()
+        raise e
+
+    upload_file.save()

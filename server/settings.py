@@ -167,9 +167,11 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = TIME_ZONE
-
-# Default primary key field type
-# https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
+CELERY_TASK_ACKS_LATE = True
+CELERY_TASK_REJECT_ON_WORKER_LOST = True
+CELERY_BROKER_TRANSPORT_OPTIONS = {
+    'visibility_timeout': int(os.getenv('CELERY_BROKER_VISIBILITY_TIMEOUT', "10")),
+}
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
