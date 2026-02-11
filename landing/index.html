@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pecuniam | Organizza le tue spese in un click</title>
+    <!-- Importing Inter font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/svg+xml" href="images/favicon.svg">
+    <style>
+        /* =========================================
+           1. INTEGRATION WITH YOUR VARIABLES
+           ========================================= */
+        :root {
+            --primary-color: #FFC107;
+            --primary-hover-color: #E0A800;
+            --nav-bg-color: #ffffff;
+            --nav-text-color: #343a40;
+            --text-color: #212529;
+            --background-color: #f8f9fa;
+            --secondary-color: #6c757d;
+            --white: #ffffff;
+            --border-color: #e9ecef;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            --expense-color: #dc3545;
+
+            /* Category styles */
+            --category-bg: #fff3cd;
+            --category-text: #856404;
+            --category-border: #ffeeba;
+        }
+
+        /* Base Reset */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        /* =========================================
+           2. REUSED COMPONENTS
+           ========================================= */
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        .btn {
+            height: 48px;
+            padding: 0 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: var(--nav-text-color);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-hover-color);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-outline {
+            background-color: transparent;
+            color: var(--nav-text-color);
+            border: 1px solid transparent;
+        }
+
+        .btn-outline:hover {
+            color: var(--primary-hover-color);
+            border-color: var(--primary-color);
+        }
+
+        /* =========================================
+           3. LANDING SPECIFIC STYLES
+           ========================================= */
+        nav {
+            height: 80px;
+            background: var(--nav-bg-color);
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .nav-wrapper {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+
+        .logo {
+            font-size: 26px;
+            font-weight: 800;
+            color: var(--nav-text-color);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .logo-symbol {
+            color: var(--primary-color);
+            font-size: 30px;
+        }
+
+        .hero {
+            padding: 80px 0;
+            text-align: center;
+            background: white;
+        }
+
+        .hero h1 {
+            font-size: 52px;
+            font-weight: 800;
+            color: var(--nav-text-color);
+            margin-bottom: 24px;
+            letter-spacing: -1.5px;
+            line-height: 1.1;
+        }
+
+        .hero p {
+            font-size: 20px;
+            color: var(--secondary-color);
+            max-width: 650px;
+            margin: 0 auto 40px;
+        }
+
+        /* Mockup box */
+        .preview-box {
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.05);
+            margin-top: 60px;
+            text-align: left;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .preview-header {
+            padding: 16px;
+            background: #f1f5f9;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            gap: 8px;
+        }
+
+        .dot { width: 12px; height: 12px; border-radius: 50%; background: #cbd5e1; }
+
+        .preview-content {
+            padding: 24px;
+        }
+
+        .mock-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 0;
+            border-bottom: 1px solid #f8f9fa;
+        }
+
+        .mock-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .mock-merchant {
+            font-weight: 700;
+            font-size: 15px;
+            color: var(--text-color);
+        }
+
+        .mock-date {
+            font-size: 12px;
+            color: var(--secondary-color);
+        }
+
+        /* Amount & Pill grouping */
+        .mock-amount-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .category-pill {
+            display: inline-block;
+            padding: 4px 10px;
+            background-color: var(--category-bg);
+            color: var(--category-text);
+            border-radius: 50px;
+            font-size: 14px;
+            font-weight: 500;
+            white-space: nowrap;
+            border: 1px solid var(--category-border);
+            cursor: default;
+        }
+
+        .amount {
+            font-weight: 700;
+            color: var(--expense-color);
+            font-size: 16px;
+            min-width: 70px;
+            text-align: right;
+        }
+
+        /* Steps section */
+        .steps {
+            padding: 80px 0;
+            background: var(--background-color);
+        }
+
+        .steps-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 32px;
+            margin-top: 48px;
+        }
+
+        .step-card {
+            background: var(--white);
+            padding: 40px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow);
+            transition: transform 0.3s;
+            text-align: center;
+        }
+
+        .step-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .step-number {
+            display: inline-flex;
+            width: 40px;
+            height: 40px;
+            background-color: var(--primary-color);
+            color: var(--nav-text-color);
+            font-weight: 800;
+            border-radius: 50%;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            font-size: 18px;
+        }
+
+        footer {
+            padding: 60px 0;
+            text-align: center;
+            color: var(--secondary-color);
+            border-top: 1px solid var(--border-color);
+            background: white;
+        }
+
+        @media (max-width: 767px) {
+            .hero h1 { font-size: 34px; }
+            .hero { padding: 40px 0; }
+            .mock-amount-group { flex-direction: column; align-items: flex-end; gap: 4px; }
+            .amount { min-width: auto; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="container nav-wrapper">
+            <a href="https://www.preview.pecuniam.it" class="logo"><span class="logo-symbol">P</span>ecuniam</a>
+            <div>
+                <a href="https://www.preview.pecuniam.it/accounts/" class="btn btn-outline">Accedi</a>
+                <a href="https://www.preview.pecuniam.it/accounts/register/" class="btn btn-primary">Registrati</a>
+            </div>
+        </div>
+    </nav>
+
+    <header class="hero">
+        <div class="container">
+            <h1>Analizza le tue spese con <span style="color: var(--primary-hover-color)">precisione.</span></h1>
+            <p>Carica i tuoi file bancari, organizza le uscite e riprendi il controllo dei tuoi risparmi con <strong>Pecuniam</strong>.</p>
+            <!-- CTA points to Sign Up -->
+            <a href="https://www.preview.pecuniam.it/accounts/register/" class="btn btn-primary">Inizia Gratis ora</a>
+
+            <div class="preview-box">
+                <div class="preview-header">
+                    <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+                </div>
+                <div class="preview-content">
+                    <!-- Row 1 -->
+                    <div class="mock-row">
+                        <div class="mock-info">
+                            <span class="mock-merchant">Amazon.it Retail</span>
+                            <span class="mock-date">10 Febbraio</span>
+                        </div>
+                        <div class="mock-amount-group">
+                            <span class="category-pill">Shopping</span>
+                            <span class="amount">€ 45,90</span>
+                        </div>
+                    </div>
+                    <!-- Row 2 -->
+                    <div class="mock-row">
+                        <div class="mock-info">
+                            <span class="mock-merchant">Esselunga SpA</span>
+                            <span class="mock-date">09 Febbraio</span>
+                        </div>
+                        <div class="mock-amount-group">
+                            <span class="category-pill">Spesa</span>
+                            <span class="amount">€ 82,15</span>
+                        </div>
+                    </div>
+                    <!-- Row 3 -->
+                    <div class="mock-row" style="border:none">
+                        <div class="mock-info">
+                            <span class="mock-merchant">Netflix Subscription</span>
+                            <span class="mock-date">08 Febbraio</span>
+                        </div>
+                        <div class="mock-amount-group">
+                            <span class="category-pill">Svago</span>
+                            <span class="amount">€ 12,99</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <section class="steps">
+        <div class="container">
+            <h2 style="text-align: center; font-size: 32px; margin-bottom: 12px;">Pecuniam semplifica tutto</h2>
+            <p style="text-align: center; color: var(--secondary-color);">Dimentica i fogli Excel complicati. Bastano tre step.</p>
+
+            <div class="steps-grid">
+                <div class="step-card">
+                    <div class="step-number">1</div>
+                    <h3>Crea Categorie</h3>
+                    <p>Definisci i contenitori per le tue uscite. Crea categorie specifiche per monitorare meglio ogni tua spesa.</p>
+                </div>
+                <div class="step-card">
+                    <div class="step-number">2</div>
+                    <h3>Carica i File</h3>
+                    <p>Trascina il tuo file CSV o Excel. Pecuniam isola le spese e ignora il resto automaticamente.</p>
+                </div>
+                <div class="step-card">
+                    <div class="step-number">3</div>
+                    <h3>Ottieni Insight</h3>
+                    <p>Visualizza raggruppamenti per categoria o esercente. Identifica subito dove puoi risparmiare.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 Pecuniam. La tua privacy al primo posto.</p>
+        </div>
+    </footer>
+
+</body>
+</html>

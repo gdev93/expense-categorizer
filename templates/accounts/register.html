@@ -5,55 +5,114 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/svg+xml" href="{% static 'images/favicon.svg' %}">
-    <title>Registrati - Contabilità</title>
+    <title>Registrati - Pecuniam</title>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'css/main.css' %}">
     <link rel="stylesheet" href="{% static 'css/login.css' %}">
 </head>
-    <body>
-    <div class="fullscreen-center">
-        <div class="login-container register-override">
-            <div class="login-header">
-                <h2>Crea Account</h2>
-                <p>Unisciti a noi per iniziare a tracciare le tue spese</p>
+<body>
+
+    <div class="auth-wrapper">
+        <!-- LEFT SIDE: Form -->
+        <div class="auth-content">
+            <a href="/" class="auth-logo">
+                <span>P</span>ecuniam
+            </a>
+
+            <div class="auth-header">
+                <h1 class="auth-title">Crea Account</h1>
+                <p class="auth-subtitle">Inizia a tracciare le tue spese in meno di 2 minuti.</p>
             </div>
 
-            <form method="post" action="{% url 'create_user' %}">
+            <form method="post" action="{% url 'create_user' %}" class="auth-form">
                 {% csrf_token %}
 
+                <!-- Username -->
                 <div class="form-group">
-                    <label for="username">Nome utente:</label>
-                    <input type="text" id="username" name="username" required>
+                    <label for="username" class="form-label">Nome utente</label>
+                    <input type="text" id="username" name="username" class="form-control" required>
                 </div>
 
+                <!-- Email -->
                 <div class="form-group">
-                    <label for="email">Email:</label>
-                    <input type="email" id="email" name="email">
+                    <label for="email" class="form-label">Email</label>
+                    <input type="email" id="email" name="email" class="form-control" required>
                 </div>
 
-                <div class="form-group">
-                    <label for="first_name">Nome:</label>
-                    <input type="text" id="first_name" name="first_name">
+                <!-- Name Row (Flexbox for side-by-side inputs on desktop) -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="first_name" class="form-label">Nome</label>
+                        <input type="text" id="first_name" name="first_name" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label for="last_name" class="form-label">Cognome</label>
+                        <input type="text" id="last_name" name="last_name" class="form-control">
+                    </div>
                 </div>
 
+                <!-- Password -->
                 <div class="form-group">
-                    <label for="last_name">Cognome:</label>
-                    <input type="text" id="last_name" name="last_name">
-                </div>
-
-                <div class="form-group">
-                    <label for="password">Password:</label>
-                    <input type="password" id="password" name="password" required>
+                    <label for="password" class="form-label">Password</label>
+                    <div class="input-wrapper">
+                        <input type="password" id="password" name="password" class="form-control" required>
+                        <button type="button" class="password-toggle" onclick="togglePassword()">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                        </button>
+                    </div>
+                    <small class="form-help">
+                        Usa almeno 8 caratteri
+                    </small>
                 </div>
 
                 <input type="hidden" name="next" value="{{ request.GET.next|default:'/' }}">
 
-                <button type="submit" class="login-btn">Crea Account</button>
+                <button type="submit" class="btn btn-primary btn-auth">Crea Account</button>
             </form>
 
-            <div class="auth-links-container">
-                <p>Hai già un account? <a href="{% url 'login_form' %}">Accedi qui</a></p>
+            <div class="auth-footer">
+                Hai già un account? <a href="{% url 'login_form' %}" class="auth-link">Accedi qui</a>
+            </div>
+        </div>
+
+        <!-- RIGHT SIDE: Banner -->
+        <div class="auth-banner">
+            <div class="banner-content">
+                <!-- Visual Element: Expense Card Mockup -->
+                <div class="banner-card">
+                    <div class="banner-card-header">
+                        <div class="banner-card-vendor">Esselunga SpA</div>
+                        <div class="banner-card-info">
+                            <span class="category-pill">Spesa</span>
+                            <div class="banner-card-amount">- € 82,15</div>
+                        </div>
+                    </div>
+                </div>
+
+                <p class="banner-quote">"Finalmente so dove finiscono i miei soldi ogni mese. Semplice, pulito ed efficace."</p>
+
+                <!-- Simple Avatar/Name -->
+                <div class="banner-user">
+                    <div class="banner-user-avatar">M</div>
+                    <div class="banner-user-info">
+                        <div class="banner-user-name">Marco R.</div>
+                        <div class="banner-user-role">Utente Premium</div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-    </body>
+
+    <script>
+        function togglePassword() {
+            const passwordInput = document.getElementById('password');
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+        }
+    </script>
+</body>
 </html>
