@@ -379,7 +379,7 @@ input:focus,
     transition: margin-left 0.3s ease;
     /* Default spacing (will be overridden by media queries) */
     padding: 24px;
-    padding-top: 88px;
+    padding-top: 100px;
     margin-left: 0;
 }
 
@@ -458,7 +458,7 @@ input:focus,
     /* 1. Wrapper flush with screen edges */
     .main-content {
         padding: 0;
-        padding-top: 80px;
+        padding-top: 95px;
         overflow-x: hidden;
     }
 
@@ -550,6 +550,7 @@ input:focus,
     .main-content {
         margin-left: 330px;
         padding: 30px;
+        padding-top: 100px;
     }
 
     .container {

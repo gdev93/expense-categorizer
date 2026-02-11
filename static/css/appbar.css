@@ -6,12 +6,13 @@
     top: 0;
     left: 0;
     right: 0;
-    height: 64px;
-    background-color: var(--body-bg-color, #f5f5f5); /* Blend with body background */
+    height: 75px; /* Increased height */
+    background-color: #ffffff;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05); /* Added subtle border for definition */
     color: var(--nav-text-color); /* Now charcoal */
     display: flex;
     align-items: center;
-    padding: 25px 0 0 16px;
+    padding: 25px 16px 0 16px;
     z-index: 1000;
     transition: left 0.3s ease, width 0.3s ease;
 }
@@ -41,10 +42,27 @@
 }
 
 .app-title {
-    font-size: 20px;
-    font-weight: 600;
-    margin: 0;
-    flex-grow: 1;
+    display: none; /* Hide title in app bar as logo is now centered and prominent */
+}
+
+.app-logo {
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+    font-weight: 800;
+    font-size: 24px;
+    color: var(--nav-text-color);
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    top: 25px;
+    bottom: 0;
+    z-index: 10;
+}
+
+.app-logo span {
+    color: var(--primary-color);
+    font-size: 32px;
 }
 
 .app-bar-actions {
@@ -53,9 +71,14 @@
     align-items: center;
 }
 
-/* Desktop layout: Hide app bar completely */
+/* Desktop layout: Show app bar */
 @media (min-width: 768px) {
     .app-bar {
-        display: none; /* Hide entire app bar on desktop */
+        left: 330px; /* Match sidebar width */
+        display: flex;
+    }
+    
+    .menu-toggle {
+        display: none;
     }
 }
