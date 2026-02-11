@@ -265,7 +265,7 @@ class UploadFileView(ListView, FormView):
                     success=False,
                     error_message='Il file è vuoto.'
                 )
-
+            logging.info(f"File with {len(file_data)} rows parsed successfully.")
             # Create a preliminary UploadFile record for detection
             # We use the processor to detect the structure before persisting all transactions
             # This allows us to fail early if mandatory columns are missing
