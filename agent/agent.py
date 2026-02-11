@@ -193,7 +193,7 @@ class CsvStructure:
     expense_amount_field: str | None  # Updated: specific field for expenses
     income_amount_field: str | None   # New: specific field for income
     operation_type_field: str | None
-    confidence: str  # "high", "medium", "low"
+    confidence: str | None  # "high", "medium", "low"
     notes: str | None = None
 
     @classmethod

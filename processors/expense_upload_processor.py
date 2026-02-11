@@ -19,6 +19,7 @@ from processors.data_prechecks import parse_raw_transaction
 from processors.embeddings import EmbeddingEngine
 from processors.parser_utils import normalize_amount, parse_raw_date
 from processors.similarity_matcher import SimilarityMatcher, generate_embedding, SimilarityMatcherRAG, is_rag_reliable
+from processors.utils import retry_with_backoff
 from processors.transaction_updater import TransactionUpdater
 
 logger = logging.getLogger(__name__)
@@ -253,23 +254,14 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
             )
 
         if any(agent_upload_transaction):
-            for attempt in range(self.gemini_max_retries):
-                try:
-                    # Chiamata all'agente
-                    return self.agent.process_batch(agent_upload_transaction, upload_file)
-
-                except Exception as e:
-                    is_last_attempt = (attempt == self.gemini_max_retries - 1)
-
-                    if is_last_attempt:
-                        logger.error(f"⚠️ Agent failed to process batch after {self.gemini_max_retries} attempts: {str(e)}")
-                        return [], None
-
-                    # Backoff esponenziale con Jitter (per evitare che tutti i thread riprovino insieme)
-                    sleep_time = (self.gemini_base_delay * (2 ** attempt)) + random.uniform(0, 1)
-                    logger.warning(
-                        f"⚠️ Gemini 503/Error (Attempt {attempt + 1}/{self.gemini_max_retries}). Retrying in {sleep_time:.2f}s... Error: {str(e)}")
-                    time.sleep(sleep_time)
+            return retry_with_backoff(
+                self.agent.process_batch,
+                max_retries=self.gemini_max_retries,
+                base_delay=self.gemini_base_delay,
+                on_failure=([], None),
+                batch=agent_upload_transaction,
+                upload_file=upload_file
+            )
 
         return [], None
 

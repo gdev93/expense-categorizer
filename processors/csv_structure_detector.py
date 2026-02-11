@@ -5,9 +5,10 @@ import pandas as pd
 
 from django.contrib.auth.models import User
 
-from agent.agent import ExpenseCategorizerAgent, AgentTransactionUpload
+from agent.agent import ExpenseCategorizerAgent, AgentTransactionUpload, CsvStructure
 from api.models import UploadFile, FileStructureMetadata
 from costs.services import CostService
+from processors.utils import retry_with_backoff
 
 logger = logging.getLogger(__name__)
 
@@ -85,8 +86,10 @@ class CsvStructureDetector(ExpenseCategorizerAgent):
 
             detected_date_column = self._detect_date_column(current_data[:transaction_sample_size])
 
-            result_from_agent, response = self.detect_csv_structure(
-                [AgentTransactionUpload(raw_text=tx, transaction_id=0) for tx in
+            result_from_agent, response = retry_with_backoff(
+                self.detect_csv_structure,
+                on_failure=(CsvStructure(None, None, None, None, None, None, None, "low"), None),
+                transactions=[AgentTransactionUpload(raw_text=tx, transaction_id=0) for tx in
                  current_data[:transaction_sample_size]],
                 known_date_column=detected_date_column
             )
