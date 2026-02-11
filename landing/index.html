@@ -111,6 +111,13 @@
             justify-content: space-between;
             align-items: center;
             width: 100%;
+            gap: 10px;
+        }
+
+        .nav-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
         }
 
         .logo {
@@ -280,6 +287,10 @@
         }
 
         @media (max-width: 767px) {
+            .container { padding: 0 16px; }
+            .logo { font-size: 22px; }
+            .btn { height: 40px; padding: 0 12px; font-size: 14px; }
+            .nav-actions { gap: 4px; }
             .hero h1 { font-size: 34px; }
             .hero { padding: 40px 0; }
             .mock-amount-group { flex-direction: column; align-items: flex-end; gap: 4px; }
@@ -292,7 +303,7 @@
     <nav>
         <div class="container nav-wrapper">
             <a href="https://www.preview.pecuniam.it" class="logo"><span class="logo-symbol">P</span>ecuniam</a>
-            <div>
+            <div class="nav-actions">
                 <a href="https://www.preview.pecuniam.it/accounts/" class="btn btn-outline">Accedi</a>
                 <a href="https://www.preview.pecuniam.it/accounts/register/" class="btn btn-primary">Registrati</a>
             </div>

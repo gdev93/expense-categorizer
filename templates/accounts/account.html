@@ -14,7 +14,7 @@
 <body>
 
     <div class="auth-wrapper">
-        <!-- LEFT SIDE: Form -->
+        <!-- LEFT SIDE: Form & Branding -->
         <div class="auth-content">
             <!-- Logo with link to Home -->
             <a href="/" class="auth-logo">
@@ -47,7 +47,7 @@
                     <div class="input-wrapper">
                         <input type="password" id="password" name="password" class="form-control" placeholder="••••••••" required>
                         <!-- Show Password Toggle -->
-                        <button type="button" class="password-toggle" onclick="togglePassword()">
+                        <button type="button" class="password-toggle" onclick="togglePassword()" aria-label="Toggle password visibility">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                                 <circle cx="12" cy="12" r="3"></circle>
@@ -65,7 +65,7 @@
             </div>
         </div>
 
-        <!-- RIGHT SIDE: Banner (Hidden on Mobile) -->
+        <!-- RIGHT SIDE: Banner (Desktop Only) -->
         <div class="auth-banner">
             <div class="banner-content">
                 <!-- Visual Element: Expense Card Mockup -->
@@ -81,7 +81,7 @@
 
                 <p class="banner-quote">"Finalmente so dove finiscono i miei soldi ogni mese. Semplice, pulito ed efficace."</p>
 
-                <!-- Simple Avatar/Name -->
+                <!-- User Info Section -->
                 <div class="banner-user">
                     <div class="banner-user-avatar">M</div>
                     <div class="banner-user-info">
@@ -95,6 +95,9 @@
 
     <!-- Script for Password Toggle -->
     <script>
+        /**
+         * Toggles the password field between 'password' and 'text'
+         */
         function togglePassword() {
             const passwordInput = document.getElementById('password');
             const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';

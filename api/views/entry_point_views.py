@@ -42,17 +42,12 @@ def create_user(request):
         user_exists = User.objects.filter(username=username).exists()
         if user_exists:
             raise PermissionDenied("Username already exists. Ask giacomozanotti.dev@gmail.com to reset password.")
-        first_name = request.POST.get('first_name', '')
-        last_name = request.POST.get('last_name', '')
-
         # Create the user
         with transaction.atomic():
             user = User.objects.create_user(
                 username=username,
                 password=password,
-                email=email,
-                first_name=first_name,
-                last_name=last_name
+                email=email
             )
             Profile.objects.create(user=user,subscription_type='free_trial')
 
