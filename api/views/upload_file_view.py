@@ -452,6 +452,7 @@ class UploadProcessView(View):
             logging.warning(f"No upload file found for processing for user {self.request.user.username}.")
             return HttpResponse(status=404)
         upload_file = upload_file_query.first()
+        logging.info(f"Scheduling task for upload {upload_file.pk} of user {self.request.user.username}.")
         process_upload.delay(self.request.user.pk, upload_file.pk)
         return HttpResponse(status=202)
 
