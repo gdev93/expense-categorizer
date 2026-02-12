@@ -1,13 +1,15 @@
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.exceptions import BadRequest
 from django.db import transaction
 from django.shortcuts import redirect, render, get_object_or_404
 from django.views import View
 
 from api.models import Transaction, Category, Merchant
+from processors.similarity_matcher import SimilarityMatcher
 
 
-class TransactionCreateView(LoginRequiredMixin, View):
+class TransactionCreateView(LoginRequiredMixin, View, SimilarityMatcher):
 
     def get(self, request, *args, **kwargs):
         categories = Category.objects.filter(user=request.user)
@@ -23,15 +25,9 @@ class TransactionCreateView(LoginRequiredMixin, View):
         transaction_date = request.POST.get('transaction_date', '')
         category_name = request.POST.get('category_name', '').strip()
 
-        # 1. Handle Category
-        if category_name:
-            category, created = Category.objects.get_or_create(
-                name=category_name,
-                user=user,
-                defaults={'is_default': False}
-            )
-        else:
-            category = None
+        # Initialize SimilarityMatcher
+        self.user = user
+        self.threshold = 0.6
 
         # 2. Handle Merchant
         if merchant_id:
@@ -41,7 +37,17 @@ class TransactionCreateView(LoginRequiredMixin, View):
             if not merchant:
                 merchant = Merchant.objects.create(name=merchant_name, user=user)
         else:
-            merchant = None
+            raise BadRequest("Non è stato possibile trovare o creare il merchant")
+
+        # 1. Handle Category
+        if category_name:
+            category, created = Category.objects.get_or_create(
+                name=category_name,
+                user=user,
+                defaults={'is_default': False}
+            )
+        else:
+            raise BadRequest("Non è stato possibile trovare o creare la categoria")
 
         # 3. Create Transaction
         new_transaction = Transaction.objects.create(

@@ -19,7 +19,7 @@ from django.views.generic import RedirectView
 
 from api.views.entry_point_views import login_form, authenticate_user, register_form, create_user, logout_user
 from api.views.category_view import CategoryCreateView, CategoryListView, CategoryDetailView, CategoryDeleteView, \
-    CategoryUpdateView, CategoryExportView, CategorySearchView
+    CategoryUpdateView, CategoryExportView, CategorySearchView, CategoryFromMerchant
 from api.views.merchant_views import MerchantSearchView
 from api.views.transactions.create_views import TransactionCreateView
 from api.views.transactions.export_views import TransactionExportView
@@ -63,6 +63,7 @@ urlpatterns = [
     path('categories/<int:pk>/edit/', CategoryUpdateView.as_view(), name='category_update'),
     path('categories/<int:pk>/delete/', CategoryDeleteView.as_view(), name='category_delete'),
     path('merchants/search',MerchantSearchView.as_view(),name='merchant_search'),
+    path('categories/from-merchant/', CategoryFromMerchant.as_view(), name='category_from_merchant'),
     path('categories/search', CategorySearchView.as_view(), name='category_search'),
     path("", RedirectView.as_view(url="transactions/"), name="entry_point"),
 ]

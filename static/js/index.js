@@ -428,6 +428,23 @@ function selectMerchant(name, id) {
     if (container) {
         container.innerHTML = '';
     }
+
+    // Automatically set category if merchant is selected
+    if (id) {
+        fetch(`/categories/from-merchant/?merchant_id=${id}`)
+            .then(response => {
+                if (response.ok) return response.text();
+                throw new Error('Network response was not ok');
+            })
+            .then(category => {
+                const categoryInput = document.getElementById('id_category_name');
+                if (categoryInput && category && !categoryInput.value) {
+                    categoryInput.value = category;
+                    categoryInput.dispatchEvent(new Event('change'));
+                }
+            })
+            .catch(error => console.error('Error fetching category:', error));
+    }
 }
 
 /**

@@ -9,15 +9,16 @@ from django.contrib.messages.views import SuccessMessageMixin
 from django.core.paginator import Paginator
 from django.db.models import Count, Sum, DecimalField, Q, QuerySet
 from django.db.models.functions import Coalesce, ExtractMonth, ExtractYear
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpRequest
 from django.urls import reverse, reverse_lazy
 from django.views import View
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView
 
 from api.constants import ITALIAN_MONTHS
-from api.models import Category, Transaction, Rule
+from api.models import Category, Transaction, Rule, Merchant
 from api.views.mixins import MonthYearFilterMixin
 from api.views.transactions.transaction_mixins import TransactionFilterMixin
+from processors.similarity_matcher import SimilarityMatcher
 
 logger = logging.getLogger(__name__)
 
@@ -345,3 +346,26 @@ class CategoryDeleteView(DeleteView):
 
         messages.success(self.request, f"Categoria '{category_to_delete.name}' eliminata. Tutte le transazioni sono state spostate in '{replacement_category.name}'.")
         return super().form_valid(form)
+
+class CategoryFromMerchant(LoginRequiredMixin, View, SimilarityMatcher):
+
+    def get(self, request:HttpRequest, *args, **kwargs):
+        merchant_id = request.GET.get('merchant_id')
+        if not merchant_id:
+            return HttpResponse("", status=400)
+            
+        try:
+            merchant = Merchant.objects.get(pk=merchant_id, user=request.user)
+            # SimilarityMatcher needs user and threshold
+            self.user = request.user
+            self.threshold = 0.6
+            
+            transaction = self.find_most_frequent_transaction_for_merchant(merchant)
+            if transaction and transaction.category:
+                return HttpResponse(transaction.category.name)
+        except Merchant.DoesNotExist:
+            return HttpResponse("", status=404)
+        except Exception as e:
+            return HttpResponse("", status=500)
+            
+        return HttpResponse("", status=204)

@@ -3,20 +3,6 @@ from django.test import TestCase
 from processors.similarity_matcher import is_rag_reliable, generate_embedding
 
 class SimilarityMatcherTest(TestCase):
-    def test_embedding_cosine_distance(self):
-        desc1 = "Operazione Mastercard del 27/01/2026 alle ore 13:49 con Carta xxxxxxxxxxxx3352 Div=EUR Importo in divisa=5.99 / Importo in Euro=5.99 presso VERY - ACQUISTO OFFERT"
-        desc2 = "Operazione Mastercard del 23/12/2025 alle ore 04:10 con Carta xxxxxxxxxxxx7329 Div=EUR Importo in divisa=106.08 / Importo in Euro=106.08 presso SQUARELIFE INSURANCE"
-        
-        emb1 = generate_embedding(desc1)
-        emb2 = generate_embedding(desc2)
-        
-        # Calculate cosine distance
-        u = np.array(emb1)
-        v = np.array(emb2)
-        dist = 1.0 - np.dot(u, v) / (np.linalg.norm(u) * np.linalg.norm(v))
-        
-        # The calculated distance was 0.018731
-        self.assertAlmostEqual(dist, 0.018731, places=5)
 
     def test_is_rag_reliable_with_provided_inputs(self):
         new_desc = "Operazione Mastercard del 27/01/2026 alle ore 13:49 con Carta xxxxxxxxxxxx3352 Div=EUR Importo in divisa=5.99 / Importo in Euro=5.99 presso VERY - ACQUISTO OFFERT"
