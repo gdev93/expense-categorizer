@@ -16,12 +16,6 @@ def generate_transaction_csv(transactions_iterator: Iterator[Transaction]):
     output = io.StringIO()
     writer = csv.writer(output)
 
-    # Italian Headers Mapping
-    # Date -> Data
-    # Amount -> Importo
-    # Transaction Type -> Tipo di Transazione
-    # Bank Description -> Descrizione Bancaria
-    # Original CSV Source -> File Sorgente
     headers = ['Data', 'Importo', 'Categoria', 'Descrizione Bancaria', 'Tipo di Transazione', 'File Sorgente']
     writer.writerow(headers)
     yield output.getvalue()
@@ -35,7 +29,7 @@ def generate_transaction_csv(transactions_iterator: Iterator[Transaction]):
             tx.category.name if tx.category else '',
             tx.description,
             tx.transaction_type,
-            tx.upload_file.file_name if tx.upload_file else ''
+            tx.upload_file.file_name if tx.upload_file else 'Inserimento manuale'
         ]
         writer.writerow(row)
         yield output.getvalue()

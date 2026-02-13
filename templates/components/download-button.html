@@ -1,0 +1,7 @@
+<button type="button" 
+        class="btn btn-icon btn-subtle {{ extra_classes }}" 
+        {% if onclick %}onclick="{{ onclick }}"{% endif %} 
+        {% if id %}id="{{ id }}"{% endif %}
+        title="{{ title|default:'Esporta' }}">
+    <span class="material-icons">download</span>
+</button>

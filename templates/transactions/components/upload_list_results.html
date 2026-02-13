@@ -59,13 +59,7 @@
                             <span class="count-number">{{ upload.transactions_count }}</span> Spese trovate
                         </div>
                         <div class="list-item-actions">
-                            <button type="button" class="btn btn-icon btn-subtle" onclick="exportUpload({{ upload.id }}, event)" title="Esporta">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                    <polyline points="7 10 12 15 17 10"></polyline>
-                                    <line x1="12" y1="15" x2="12" y2="3"></line>
-                                </svg>
-                            </button>
+                            {% include "components/download-button.html" with onclick="exportUpload({{ upload.id }}, event)" title="Esporta" %}
                             <a href="{% url 'transactions_upload_delete' upload.id %}" class="btn btn-icon btn-subtle-danger" title="Elimina" onclick="event.stopPropagation();">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M3 6h18"></path>

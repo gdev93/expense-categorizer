@@ -2,10 +2,8 @@
  * Common logic to download CSV from the export API.
  */
 function downloadExport(payload, csrfToken, button) {
-    const originalContent = button ? button.innerHTML : null;
     if (button) {
         button.disabled = true;
-        button.innerHTML = '⏳...';
     }
 
     fetch(EXPORT_DOWNLOAD_ENDPOINT, {
@@ -59,7 +57,6 @@ function downloadExport(payload, csrfToken, button) {
     .finally(() => {
         if (button) {
             button.disabled = false;
-            button.innerHTML = originalContent;
         }
     });
 }

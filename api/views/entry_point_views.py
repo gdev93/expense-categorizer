@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_not_required
@@ -9,7 +10,19 @@ from django.shortcuts import render, redirect
 
 from api.models import Profile
 
-allowed_emails = os.getenv('ALLOWED_EMAILS','').split(',')
+def load_allowed_emails():
+    """Load allowed emails from allowed_emails.txt file"""
+    file_path = Path(__file__).resolve().parent.parent.parent / 'allowed-emails.txt'
+    try:
+        with open(file_path, 'r') as f:
+            # Strip whitespace and skip empty lines
+            return [line.strip() for line in f if line.strip()]
+    except FileNotFoundError:
+        # Fallback to empty list if file doesn't exist
+        return []
+
+allowed_emails = load_allowed_emails()
+
 # Create your views here.
 @login_not_required
 def login_form(request):
