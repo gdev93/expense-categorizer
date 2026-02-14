@@ -105,3 +105,16 @@ def onboarding_status(request):
     Check and advance onboarding step based on existing data.
     """
     return {}
+
+
+def user_avatar(request):
+    """Make user avatar available in all templates"""
+    avatar_url = None
+    if request.user.is_authenticated:
+        social_account = request.user.socialaccount_set.filter(provider='google').first()
+        if social_account:
+            avatar_url = social_account.get_avatar_url()
+
+    return {
+        'user_avatar_url': avatar_url
+    }

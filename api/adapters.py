@@ -5,19 +5,6 @@ from api.models import Profile
 from django.db import transaction
 
 class MySocialAccountAdapter(DefaultSocialAccountAdapter):
-    def pre_social_login(self, request, sociallogin):
-        """
-        Checks if the email is in the allowed list before proceeding with login.
-        """
-        # # sociallogin.user is an unsaved User instance populated with data from the provider
-        # email = sociallogin.user.email
-        # if not email:
-        #     # Fallback to check social account data directly if user.email is not yet set
-        #     email = sociallogin.account.extra_data.get('email')
-        #
-        # if email not in allowed_emails:
-        #     raise PermissionDenied("Email not authorized.")
-        raise PermissionDenied
 
     def save_user(self, request, sociallogin, form=None):
         """

@@ -65,22 +65,31 @@
     margin-bottom: 10px;
 }
 
-.user-avatar-placeholder {
+.user-avatar-placeholder, .user-avatar {
     /* Prevent avatar from shrinking on small screens */
     flex-shrink: 0;
-    width: 36px;
-    height: 36px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin-right: 12px;
+}
+
+.user-avatar-placeholder {
     background-color: var(--nav-link-active-bg);
     color: var(--primary-color);
-    border-radius: 50%;
     display: flex;
     justify-content: center;
     align-items: center;
-    margin-right: 10px;
+    overflow: hidden;
+}
+
+.user-avatar {
+    object-fit: cover;
+    display: block;
 }
 
 .user-avatar-placeholder .material-icons {
-    font-size: 20px;
+    font-size: 24px;
     line-height: 1;
 }
 

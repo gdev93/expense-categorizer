@@ -79,6 +79,7 @@ TEMPLATES = [
                 'api.context_processors.is_free_trial',
                 'api.context_processors.user_uploads',
                 'api.context_processors.onboarding_status',
+                'api.context_processors.user_avatar',
             ],
         },
     },

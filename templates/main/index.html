@@ -37,9 +37,13 @@
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-user-info">
             <div class="user-profile">
-                <div class="user-avatar-placeholder">
-                    <span class="material-icons">person</span>
-                </div>
+                {% if user_avatar_url %}
+                    <img src="{{ user_avatar_url }}" alt="{{ user.username }}" class="user-avatar">
+                {% else %}
+                    <div class="user-avatar-placeholder">
+                        <span class="material-icons">person</span>
+                    </div>
+                {% endif %}
                 <div class="user-details">
                     <div class="user-name">{{ user.username }}</div>
                     <div class="user-email">{{ user.email }}</div>

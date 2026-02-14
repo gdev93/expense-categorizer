@@ -5,8 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/svg+xml" href="{% static 'images/favicon.svg' %}">
-    <title>{{ error_code }} - {{ error_title }} | Pecuniam</title>
-    <!-- Fonts -->
+    <title>403 - Accesso negato | Pecuniam</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'css/main.css' %}">
     <style>
@@ -93,13 +92,16 @@
             <span>P</span>ecuniam
         </a>
         
-        <div class="error-code mb-5">{{ error_code }}</div>
+        <div class="error-code mb-5">403</div>
         
         <div class="error-content">
-            <h1 class="error-title">{{ error_title }}</h1>
-            <p class="error-message">{{ error_message }}</p>
-            <a href="{{ button_url|default:'/' }}" class="btn btn-primary btn-home">
-                {{ button_text|default:'Torna alla Home' }}
+            <h1 class="error-title">Errore di login</h1>
+            <p class="error-message">
+                C'è stato un errore nel login.
+                Contatta l'amministratore per richiedere l'accesso.
+            </p>
+            <a href="{% url 'login_form' %}" class="btn btn-primary btn-home">
+                Torna al Login
             </a>
         </div>
     </div>
