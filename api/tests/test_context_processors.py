@@ -1,7 +1,7 @@
 from django.test import TestCase, RequestFactory
 from django.contrib.auth.models import AnonymousUser
 from django.core.exceptions import PermissionDenied
-from api.context_processors import is_free_trial, available_years_context, available_months_context, user_uploads
+from api.context_processors import is_free_trial, available_years_context, available_months_context, user_uploads, user_avatar
 
 class ContextProcessorsTest(TestCase):
     def setUp(self):
@@ -65,3 +65,35 @@ class ContextProcessorsTest(TestCase):
         # This should NOT raise PermissionDenied
         result = user_uploads(request)
         self.assertEqual(list(result['user_uploads']), [])
+
+    def test_user_avatar_anonymous_user(self):
+        request = self.factory.get('/')
+        request.user = AnonymousUser()
+        
+        result = user_avatar(request)
+        self.assertIn('user_avatar_url', result)
+        self.assertIsNone(result['user_avatar_url'])
+
+    def test_user_avatar_authenticated_no_social(self):
+        from django.contrib.auth.models import User
+        user = User.objects.create_user(username='testuser')
+        request = self.factory.get('/')
+        request.user = user
+        
+        result = user_avatar(request)
+        self.assertIn('user_avatar_url', result)
+        self.assertIsNone(result['user_avatar_url'])
+
+    def test_user_avatar_authenticated_with_google_social(self):
+        from django.contrib.auth.models import User
+        from allauth.socialaccount.models import SocialAccount
+        user = User.objects.create_user(username='googleuser')
+        sa = SocialAccount.objects.create(user=user, provider='google', extra_data={'picture': 'http://example.com/avatar.jpg'})
+        
+        request = self.factory.get('/')
+        request.user = user
+        
+        result = user_avatar(request)
+        self.assertIn('user_avatar_url', result)
+        # allauth's get_avatar_url might depend on various things, but it should return something if picture is in extra_data
+        self.assertTrue(result['user_avatar_url'])
