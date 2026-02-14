@@ -5,12 +5,9 @@
     <option name="INTERPRETER_OPTIONS" value="" />
     <option name="PARENT_ENVS" value="true" />
     <envs>
-      <env name="ALLOWED_EMAILS" value="cicciopasticco@pasticcio.it" />
-      <env name="DJANGO_SETTINGS_MODULE" value="server.settings" />
-      <env name="GOOGLE_OAUTH_CLIENT_ID" value="74795496060-rui77e1tjch6d2moma4bspata9ptprm9.apps.googleusercontent.com" />
-      <env name="GOOGLE_OAUTH_CLIENT_SECRET" value="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" />
-      <env name="PYTHONUNBUFFERED" value="1" />
       <env name="DEBUG" value="TRUE" />
+      <env name="DJANGO_SETTINGS_MODULE" value="server.settings" />
+      <env name="PYTHONUNBUFFERED" value="1" />
     </envs>
     <option name="SDK_HOME" value="" />
     <option name="SDK_NAME" value="Python 3.13 virtualenv at ~/Documents/repos/expense-categorizer/.venv" />
