@@ -66,6 +66,7 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
         def get_agent_batches():
             to_upload_iter = get_transactions_to_upload()
             while True:
+                # It keeps asking for slices untile it stops at batch_helper_size
                 batch = list(itertools.islice(to_upload_iter, self.batch_helper.batch_size))
                 if not batch:
                     break
