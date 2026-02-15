@@ -92,7 +92,7 @@ class SimilarityMatcher:
         Finds the most frequent categorized transaction for a given merchant (matching by normalized name).
         """
         best_category_candidate = (
-            Transaction.objects.filter(user=self.user, merchant__normalized_name=merchant.normalized_name,
+            Transaction.objects.filter(user=self.user, merchant=merchant,
                                        status='categorized').values('category')
             .annotate(
                 count=Count('category'), latest_date=Max('transaction_date')
@@ -102,7 +102,7 @@ class SimilarityMatcher:
             return Transaction.objects.filter(
                 user=self.user,
                 category__id=best_category_candidate['category'],
-                merchant__normalized_name=merchant.normalized_name
+                merchant=merchant
             ).select_related('category', 'merchant').first()
         return None
 

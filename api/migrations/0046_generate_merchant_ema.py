@@ -74,7 +74,7 @@ def reverse_merchant_ema(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('api', '0045_uploadfile_file_structure_metadata_and_more'),
+        ('api', '0045_populate_fsm'),
     ]
 
     operations = [
