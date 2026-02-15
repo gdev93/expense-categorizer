@@ -57,7 +57,7 @@ class SimilarityMatcherRAG:
 
     rag_context_threshold = os.getenv('RAG_CONTEXT_THRESHOLD', 0.45)
 
-    def find_rag_context(self, embedding: list[float] | None) -> list[
+    def find_rag_context(self, embedding: list[float] | None, user:User) -> list[
         MerchantEMA]:
         """
         Cerca nel database le transazioni passate più simili dell'utente.
@@ -67,7 +67,7 @@ class SimilarityMatcherRAG:
             return []
         from pgvector.django import CosineDistance
 
-        merchant_emas = MerchantEMA.objects.select_related('merchant').annotate(
+        merchant_emas = MerchantEMA.objects.filter(merchant__user=user).select_related('merchant').annotate(
             distance=CosineDistance('digital_footprint', embedding)
         ).filter(
             distance__lte=self.rag_context_threshold
