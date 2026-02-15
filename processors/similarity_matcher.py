@@ -59,10 +59,6 @@ class SimilarityMatcherRAG:
 
     def find_rag_context(self, embedding: list[float] | None, user:User) -> list[
         MerchantEMA]:
-        """
-        Cerca nel database le transazioni passate più simili dell'utente.
-        Ritorna una tupla: (best_match_transaction, list_of_context_transactions)
-        """
         if not any(embedding):
             return []
         from pgvector.django import CosineDistance
