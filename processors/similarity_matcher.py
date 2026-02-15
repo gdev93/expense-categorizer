@@ -46,7 +46,7 @@ def generate_embedding(description: str) -> list[float]:
 
     # embed returns a generator of numpy arrays
     embeddings = list(EmbeddingEngine.get_model().embed(texts))
-    return embeddings[0].tolist() if any(embeddings) else []
+    return embeddings[0].tolist() if embeddings else []
 
 
 class SimilarityMatcherRAG:
