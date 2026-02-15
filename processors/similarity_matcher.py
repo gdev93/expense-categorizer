@@ -5,11 +5,35 @@ from django.contrib.auth.models import User
 from django.contrib.postgres.search import TrigramWordSimilarity
 from django.db.models import Count, Max
 
-from api.models import Transaction, Merchant, normalize_string
+from api.models import Transaction, Merchant, normalize_string, FileStructureMetadata, MerchantEMA
 from processors.data_prechecks import RawTransactionParseResult
 from processors.embeddings import EmbeddingEngine
 
 logger = logging.getLogger(__name__)
+
+
+def update_merchant_ema(merchant: Merchant, file_structure_metadata: FileStructureMetadata, embedding: list[float]):
+    """
+    Updates the Exponential Moving Average (EMA) of the merchant's digital footprint.
+    Uses 0.9 as the old weight and 0.1 for the new weight.
+    """
+    if not any(embedding) or not merchant or not file_structure_metadata:
+        return
+
+    import numpy as np
+    ema_obj, created = MerchantEMA.objects.get_or_create(
+        merchant=merchant,
+        file_structure_metadata=file_structure_metadata,
+        defaults={'digital_footprint': embedding}
+    )
+
+    if not created:
+        old_ema = np.array(ema_obj.digital_footprint)
+        new_vec = np.array(embedding)
+        # EMA Formula: 0.9 * old + 0.1 * new
+        updated_ema = 0.9 * old_ema + 0.1 * new_vec
+        ema_obj.digital_footprint = updated_ema.tolist()
+        ema_obj.save()
 
 
 def generate_embedding(description: str) -> list[float]:
@@ -22,38 +46,7 @@ def generate_embedding(description: str) -> list[float]:
 
     # embed returns a generator of numpy arrays
     embeddings = list(EmbeddingEngine.get_model().embed(texts))
-    return embeddings[0].tolist() if embeddings else []
-
-
-def is_rag_reliable(new_desc:str, match_desc:str, target_merchant_name:str):
-    """
-    Verifica se il match RAG è affidabile confrontando le parole
-    senza usare stop-words predefinite.
-    """
-    # 1. Estraiamo tutte le parole (solo lettere/numeri > 2 caratteri)
-    import re
-    def get_clean_words(text):
-        return set(re.findall(r'\b\w{3,}\b', text.lower()))
-
-    words_new = get_clean_words(new_desc)
-    words_match = get_clean_words(match_desc)
-
-    # 2. Troviamo le parole diverse (Symmetric Difference)
-    # Queste sono le parole che "rompono" la somiglianza perfetta
-    differences = words_new.symmetric_difference(words_match)
-
-    # Se tra le differenze ci sono parole puramente testuali (non date/numeri)
-    # come "PAROS" e "PITTAROSSO", dobbiamo insospettirci.
-
-    important_diffs = [w for w in differences if not w.isdigit()]
-
-    # 3. Se la distanza del RAG è > 0.01 (non è identico)
-    # E ci sono parole diverse significative (nomi di negozi diversi)
-    # allora blocchiamo l'auto-categorizzazione.
-    if len(important_diffs) > 0:
-        return new_desc.lower().find(target_merchant_name.lower()) != -1
-
-    return True
+    return embeddings[0].tolist() if any(embeddings) else []
 
 
 class SimilarityMatcherRAG:
@@ -62,30 +55,27 @@ class SimilarityMatcherRAG:
     utilizzando FastEmbed e pgvector.
     """
 
-    rag_context_threshold = os.getenv('RAG_CONTEXT_THRESHOLD', 0.25)
+    rag_context_threshold = os.getenv('RAG_CONTEXT_THRESHOLD', 0.45)
 
-    def find_rag_context(self, embedding: list[float] | None, user: User) -> list[Transaction]:
+    def find_rag_context(self, embedding: list[float] | None) -> list[
+        MerchantEMA]:
         """
         Cerca nel database le transazioni passate più simili dell'utente.
         Ritorna una tupla: (best_match_transaction, list_of_context_transactions)
         """
-        if not embedding:
+        if not any(embedding):
             return []
         from pgvector.django import CosineDistance
 
-        # Query pgvector: CosineDistance (più bassa è, più sono simili)
-        # Filtriamo per transazioni già categorizzate o revisionate dello stesso utente
-        similar_query = Transaction.objects.filter(
-            user=user,
-            status__in=['categorized'],
-            transaction_type='expense',
-            embedding__isnull=False
-        ).annotate(
-            distance=CosineDistance('embedding', embedding)
+        merchant_emas = MerchantEMA.objects.select_related('merchant').annotate(
+            distance=CosineDistance('digital_footprint', embedding)
+        ).filter(
+            distance__lte=self.rag_context_threshold
         ).order_by('distance')
 
+
         # Recuperiamo le top 5 per il contesto
-        context_results = list(similar_query[:5])
+        context_results = list(merchant_emas[:5])
 
         if not context_results:
             return []
@@ -113,7 +103,7 @@ class SimilarityMatcher:
                 user=self.user,
                 category__id=best_category_candidate['category'],
                 merchant__normalized_name=merchant.normalized_name
-            ).first()
+            ).select_related('category', 'merchant').first()
         return None
 
     def find_similar_transaction_by_merchant(self, merchant_name: str) -> Transaction | None:

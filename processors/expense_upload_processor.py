@@ -18,7 +18,10 @@ from processors.batching_helper import BatchingHelper
 from processors.data_prechecks import parse_raw_transaction
 from processors.embeddings import EmbeddingEngine
 from processors.parser_utils import normalize_amount, parse_raw_date
-from processors.similarity_matcher import SimilarityMatcher, generate_embedding, SimilarityMatcherRAG, is_rag_reliable
+from processors.similarity_matcher import (
+    SimilarityMatcher, generate_embedding, SimilarityMatcherRAG, 
+    update_merchant_ema
+)
 from processors.utils import retry_with_backoff
 from processors.transaction_updater import TransactionUpdater
 
@@ -93,7 +96,7 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
                     )
                 if batch_result:
                     with transaction.atomic():
-                        self._persist_batch_results(batch_result)
+                        self._persist_batch_results(batch_result, upload_file)
 
         with transaction.atomic():
             self._post_process_transactions(upload_file)
@@ -112,6 +115,7 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
         parsed_data = []
         merchant_names_to_fetch = set()
         descriptions_to_embed = set()
+        merchant_with_category = dict()
 
         for tx in batch:
             res = parse_raw_transaction(tx.raw_data, [upload_file])
@@ -175,10 +179,13 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
             merchant_obj = merchant_map.get(m_lookup) or merchant_map.get(m_norm_lookup)
 
             if merchant_obj:
-                ref_tx = self.similarity_matcher.find_most_frequent_transaction_for_merchant(merchant_obj)
+                ref_tx = merchant_with_category.get(merchant_obj) or self.similarity_matcher.find_most_frequent_transaction_for_merchant(merchant_obj)
                 if ref_tx:
+                    merchant_with_category[merchant_obj] = ref_tx
                     TransactionUpdater.update_categorized_transaction(tx, res, ref_tx)
                     tx.embedding = embedding_dict.get(res.description.strip())
+                    if tx.embedding:
+                        update_merchant_ema(merchant_obj, upload_file.file_structure_metadata, tx.embedding)
                     all_transactions_categorized.append(tx)
                     categorized = True
 
@@ -187,27 +194,28 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
                 tx.embedding = embedding_dict.get(res.description.strip())
                 if tx.embedding:
                     # find_rag_context is inherited from SimilarityMatcherRAG
-                    useful_context = self.find_rag_context(tx.embedding, self.user)
+                    useful_context = self.find_rag_context(tx.embedding)
                     tx.rag_context = useful_context
                     final_ref = None
                     earliest_index = float('inf')
-                    for ctx_tx in useful_context:
-                        merchant_name = ctx_tx.merchant.name.lower()
+                    for ctx_ema in useful_context:
+                        merchant_name = ctx_ema.merchant.name.lower()
                         description_to_check = res.description.lower()
                         pos = description_to_check.find(merchant_name)
                         # Merchant candidates have precedence if they show in the first part of the description
                         if pos != -1 and pos < earliest_index:
                             earliest_index = pos
-                            final_ref = ctx_tx
+                            final_ref = ctx_ema
                     if final_ref:
-                        final_ref_most_frequent = self.similarity_matcher.find_most_frequent_transaction_for_merchant(
-                            final_ref.merchant)
+                        final_ref_most_frequent = merchant_with_category.get(final_ref.merchant)
+                        if not final_ref_most_frequent:
+                            final_ref_most_frequent = self.similarity_matcher.find_most_frequent_transaction_for_merchant(final_ref.merchant)
+                            if final_ref_most_frequent:
+                                merchant_with_category[final_ref.merchant] = final_ref_most_frequent
+
                         if final_ref_most_frequent:
                             TransactionUpdater.update_categorized_transaction(tx, res, final_ref_most_frequent)
-                            all_transactions_categorized.append(tx)
-                            categorized = True
-                        else:
-                            TransactionUpdater.update_categorized_transaction(tx, res, final_ref)
+                            update_merchant_ema(final_ref.merchant, upload_file.file_structure_metadata, tx.embedding)
                             all_transactions_categorized.append(tx)
                             categorized = True
 
@@ -235,17 +243,36 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
     def _process_with_agent(self, batch: list[Transaction], upload_file: UploadFile) -> tuple[
         list[TransactionCategorization], GeminiResponse | None]:
         agent_upload_transaction = []
+
+        # 1. Collect all unique merchants across the entire batch to avoid repeated queries
+        merchant_map = {}
+        for tx in batch:
+            useful_context = getattr(tx, 'rag_context', []) or []
+            for ema in useful_context:
+                # Store the merchant object to avoid re-fetching it later
+                # and use its ID as the key to ensure uniqueness in the map.
+                merchant_map[ema.merchant_id] = ema.merchant
+
+        # 2. Pre-fetch the most frequent transaction for each unique merchant
+        # We store these in a dictionary to reuse them for different transactions in the same batch
+        merchant_to_frequent_tx = {
+            m_id: self.similarity_matcher.find_most_frequent_transaction_for_merchant(m_obj)
+            for m_id, m_obj in merchant_map.items()
+        }
+
         for tx in batch:
             # Check if we already have the context from _process_prechecks
             useful_context = getattr(tx, 'rag_context', []) or []
-            rag_context_data = [
-                {
-                    'description': ctx_tx.description,
-                    'category': ctx_tx.category.name,
-                    'merchant': ctx_tx.merchant.name
-                }
-                for ctx_tx in useful_context
-            ]
+            rag_context_data = []
+            for ctx_ema in useful_context:
+                frequent_tx = merchant_to_frequent_tx.get(ctx_ema.merchant_id)
+                if frequent_tx:
+                    rag_context_data.append({
+                        'description': frequent_tx.description,
+                        'category': frequent_tx.category.name,
+                        'merchant': frequent_tx.merchant.name
+                    })
+
             agent_upload_transaction.append(
                 AgentTransactionUpload(
                     transaction_id=tx.id,
@@ -266,7 +293,7 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
 
         return [], None
 
-    def _persist_batch_results(self, batch: list[TransactionCategorization]):
+    def _persist_batch_results(self, batch: list[TransactionCategorization], upload_file: UploadFile):
         transactions_to_update = []
         for tx_data in batch:
             tx_id = tx_data.transaction_id
@@ -313,6 +340,10 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
                 transaction_from_agent.reasoning = tx_data.reasoning
                 if transaction_from_agent.embedding is None:
                     transaction_from_agent.embedding = generate_embedding(transaction_from_agent.description)
+                
+                # Update Merchant EMA
+                update_merchant_ema(merchant, upload_file.file_structure_metadata, transaction_from_agent.embedding)
+                
                 transactions_to_update.append(transaction_from_agent)
 
             except Exception as e:
@@ -357,12 +388,34 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
 
                 # Only try to find similar transactions if we have a description
                 if tx.description:
-                    useful_context = self.find_rag_context(generate_embedding(tx.description), self.user)
-                    similar_tx = useful_context[0] if useful_context else None
-                    if similar_tx and is_rag_reliable(tx.description, similar_tx.description, similar_tx.merchant.name):
-                        similar_tx = self.similarity_matcher.find_most_frequent_transaction_for_merchant(similar_tx.merchant)
-                        TransactionUpdater.update_categorized_transaction(tx, parse_result, similar_tx)
-                        tx.embedding = similar_tx.embedding if any(similar_tx.embedding) else generate_embedding(tx.description)
+                    if tx.embedding is None:
+                        tx.embedding = generate_embedding(tx.description)
+
+                    if any(tx.embedding):
+                        # find_rag_context is inherited from SimilarityMatcherRAG
+                        useful_context = self.find_rag_context(tx.embedding)
+                        tx.rag_context = useful_context
+                        final_ref = None
+                        earliest_index = float('inf')
+                        for ctx_tx in useful_context:
+                            merchant_name = ctx_tx.merchant.name.lower()
+                            description_to_check = parse_result.description.lower()
+                            pos = description_to_check.find(merchant_name)
+                            # Merchant candidates have precedence if they show in the first part of the description
+                            if pos != -1 and pos < earliest_index:
+                                earliest_index = pos
+                                final_ref = ctx_tx
+
+                        if final_ref:
+                            ref_tx = self.similarity_matcher.find_most_frequent_transaction_for_merchant(final_ref.merchant)
+                            if ref_tx:
+                                TransactionUpdater.update_categorized_transaction(tx, parse_result, ref_tx)
+                                # Update EMA since we found a reliable match
+                                update_merchant_ema(final_ref.merchant, upload_file.file_structure_metadata, tx.embedding)
+                            else:
+                                tx.status = 'uncategorized'
+                        else:
+                            tx.status = 'uncategorized'
                     else:
                         tx.status = 'uncategorized'
                 else:

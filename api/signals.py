@@ -1,17 +1,17 @@
-from allauth.account.signals import user_logged_in
-from django.contrib import messages
-from django.db.models.signals import post_save
+from django.db.models.signals import pre_save
 from django.dispatch import receiver
+
 from .models import UploadFile, FileStructureMetadata
 
-@receiver(post_save, sender=UploadFile)
-def create_file_structure_metadata(sender, instance, created, **kwargs):
+
+@receiver(pre_save, sender=UploadFile)
+def create_file_structure_metadata(sender, instance: UploadFile, **kwargs):
     """
     Signal to automatically create FileStructureMetadata
     when an UploadFile entry is updated with structure information.
     """
-    # Only proceed if we have the minimum required columns set
-    if instance.description_column_name and instance.date_column_name and (
+    # Only proceed if we have the minimum required columns set and the instance exists
+    if instance.pk and instance.description_column_name and instance.date_column_name and (
             instance.income_amount_column_name or instance.expense_amount_column_name):
 
         first_transaction = instance.transactions.first()
@@ -23,7 +23,7 @@ def create_file_structure_metadata(sender, instance, created, **kwargs):
 
         # Use get_or_create to avoid duplicates if the same structure
         # is uploaded by different files/users
-        FileStructureMetadata.objects.get_or_create(
+        fsm, _ = FileStructureMetadata.objects.get_or_create(
             row_hash=row_hash,
             defaults={
                 'description_column_name': instance.description_column_name,
@@ -35,3 +35,5 @@ def create_file_structure_metadata(sender, instance, created, **kwargs):
                 'notes': instance.notes,
             }
         )
+        instance.file_structure_metadata = fsm
+        # Do NOT call instance.save() here as it is a pre_save signal

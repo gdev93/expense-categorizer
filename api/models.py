@@ -61,8 +61,9 @@ class Merchant(models.Model):
     address = models.TextField(blank=True)
     user = models.ForeignKey(
         User,
-        on_delete=models.CASCADE,
-        related_name='merchants'
+        on_delete=models.SET_NULL,
+        related_name='merchants',
+        null=True,
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -177,6 +178,35 @@ class FileStructureMetadata(models.Model):
         return hashlib.sha256(data_payload.encode('utf-8')).hexdigest()
 
 
+class MerchantEMA(models.Model):
+    merchant = models.ForeignKey(
+        Merchant,
+        on_delete=models.CASCADE,
+        related_name='emas'
+    )
+    file_structure_metadata = models.ForeignKey(
+        FileStructureMetadata,
+        on_delete=models.SET_NULL,
+        related_name='merchant_emas',
+        null=True,
+    )
+    digital_footprint = VectorField(dimensions=384, null=False, blank=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        indexes = [
+            HnswIndex(
+                name='merchant_ema_footprint_hnsw_idx',
+                fields=['digital_footprint'],
+                opclasses=['vector_cosine_ops']
+            )
+        ]
+
+    def __str__(self):
+        return f"EMA for {self.merchant.name} (FileStructure: {self.file_structure_metadata.id})"
+
+
 class UploadFile(models.Model):
     user = models.ForeignKey(
         User,
@@ -245,6 +275,13 @@ class UploadFile(models.Model):
     notes = models.TextField(blank=True, help_text='Agent description of the csv structure')
 
     status = models.CharField(max_length=70, choices=[('pending', 'Pending'), ('processing', 'Processing'), ('completed', 'Completed'), ('failed', 'Failed')], default='pending')
+
+    file_structure_metadata = models.ForeignKey(
+        FileStructureMetadata,
+        on_delete=models.SET_NULL,
+        related_name='upload_files',
+        null=True,
+    )
 
 
 

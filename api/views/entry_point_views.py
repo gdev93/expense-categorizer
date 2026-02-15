@@ -65,7 +65,7 @@ def create_user(request):
             Profile.objects.create(user=user,subscription_type='free_trial')
 
         # Auto-login after registration
-        login(request, user)
+        login(request, user, backend='django.contrib.auth.backends.ModelBackend')
 
         next_redirect_target = request.POST.get('next', '/')
         return redirect(next_redirect_target)
