@@ -194,7 +194,7 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
                 tx.embedding = embedding_dict.get(res.description.strip())
                 if tx.embedding:
                     # find_rag_context is inherited from SimilarityMatcherRAG
-                    useful_context = self.find_rag_context(tx.embedding)
+                    useful_context = self.find_rag_context(tx.embedding, self.user)
                     tx.rag_context = useful_context
                     final_ref = None
                     earliest_index = float('inf')
@@ -393,7 +393,7 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
 
                     if any(tx.embedding):
                         # find_rag_context is inherited from SimilarityMatcherRAG
-                        useful_context = self.find_rag_context(tx.embedding)
+                        useful_context = self.find_rag_context(tx.embedding, self.user)
                         tx.rag_context = useful_context
                         final_ref = None
                         earliest_index = float('inf')
