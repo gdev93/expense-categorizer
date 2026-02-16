@@ -26,7 +26,7 @@ from api.views.transactions.export_views import TransactionExportView
 from api.views.transactions.list_views import TransactionListView
 from api.views.transactions.query_views import TransactionByMerchant
 from api.views.transactions.update_views import EditTransactionCategory, TransactionDetailUpdateView
-from api.views.upload_file_view import UploadFileView, UploadFileDelete, UploadProcessView, UploadProgressView, \
+from api.views.upload_file_view import UploadFileView, UploadFileDelete, UploadProgressView, \
     UploadFileCheckView
 from api.views.onboarding_views import OnboardingStepView
 from api.views.error_views import trigger_403, trigger_500, trigger_502, trigger_503
@@ -44,10 +44,8 @@ urlpatterns = [
     path('users/accounts/register/', register_form, name='register_form'),
     path('users/accounts/create/', create_user, name='create_user'),
     path('transactions/upload/', UploadFileView.as_view(), name='transactions_upload'),
-    path('transactions/upload/process', UploadProcessView.as_view(), name='transactions_process'),
     path('transactions/upload/progress/', UploadProgressView.as_view(), name='transactions_progress'),
     path('transactions/upload/check', UploadFileCheckView.as_view(), name='transactions_upload_check'),
-    path('transactions/upload/<int:pk>/process', UploadProcessView.as_view(), name='transactions_process_detail'),
     path('transactions/upload/<int:pk>/delete/', UploadFileDelete.as_view(), name='transactions_upload_delete'),
     path('transactions/upload/<int:upload_file_id>/', TransactionListView.as_view(), name='transactions_upload_detail'),
     path('transactions/', TransactionListView.as_view(), name='transaction_list'),

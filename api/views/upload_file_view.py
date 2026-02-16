@@ -377,7 +377,9 @@ class UploadFileView(ListView, FormView):
 
         # Process the CSV upload
         result = self._process_upload_file(csv_file)
-
+        upload_file = result.upload_file
+        logging.info(f"Scheduling task for upload {upload_file.pk} of user {self.request.user.username}.")
+        process_upload.delay(self.request.user.pk, upload_file.pk)
         if result.success:
             messages.success(
                 self.request,
@@ -453,18 +455,6 @@ class UploadProgressView(View):
         response = StreamingHttpResponse(event_stream(), content_type='text/event-stream')
         response['Cache-Control'] = 'no-cache'
         return response
-
-class UploadProcessView(View):
-
-    def post(self, request, *args, **kwargs):
-        upload_file_query = UploadFile.objects.filter(user=self.request.user, status='pending').distinct()
-        if not upload_file_query.exists():
-            logging.warning(f"No upload file found for processing for user {self.request.user.username}.")
-            return HttpResponse(status=404)
-        upload_file = upload_file_query.first()
-        logging.info(f"Scheduling task for upload {upload_file.pk} of user {self.request.user.username}.")
-        process_upload.delay(self.request.user.pk, upload_file.pk)
-        return HttpResponse(status=202)
 
 class UploadFileCheckView(View):
 

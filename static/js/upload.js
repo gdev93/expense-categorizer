@@ -142,36 +142,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Funzioni per Avvio e Controllo Processo ---
 
     /**
-     * Invia la richiesta POST a FILE_UPLOAD_PROCESS per avviare l'elaborazione in background.
-     */
-    async function startCsvProcessing() {
-        try {
-            const response = await fetch(FILE_UPLOAD_PROCESS, {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': CSRF_TOKEN
-                }
-            });
-
-            // L'endpoint di processo ritorna 200/403/404, ma in caso di successo
-            // dovrebbe tornare 200 con lo stato iniziale o un 201.
-            if (!response.ok) {
-                console.error("Errore nell'avvio del processo:", response.status);
-                // Se l'avvio fallisce, il polling non deve partire
-            }
-        } catch (error) {
-            console.error('Errore di Rete nell\'avvio del processo:', error);
-        } finally {
-            processingComplete = true;
-            submitUpload.disabled = false;
-            submitUpload.classList.remove('btn-disabled');
-            window.location.href = FILE_UPLOADS_PAGE;
-        }
-
-    }
-
-
-    /**
      * Controlla lo stato di avanzamento usando Server-Sent Events (SSE).
      */
     function startSSE() {
@@ -350,8 +320,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.log("Upload file riuscito.");
                 uploadInProgress = true;
 
-                // 2. AVVIA L'ELABORAZIONE IN BACKGROUND
-                await startCsvProcessing();
+                // 2. AVVIA L'ELABORAZIONE SSE
+                startSSE();
             }
         } catch (error) {
             console.error('Errore di Rete:', error);
