@@ -12,7 +12,7 @@ def preprocess_text(text):
 
     # Context injection: tells the model these are 'financial categories'
     # This helps distinguish 'Abbonamenti' (subscriptions) from 'Abbigliamento' (clothes)
-    return f"Spesa di categoria: {text}"
+    return f"Pagamento per la categoria: {text}"
 
 def generate_embedding(text: str) -> list[float]:
     """
@@ -115,22 +115,23 @@ def test_similarity_matrix():
 
     # Compute similarity matrix in a dictionary
     similarity_matrix = {}
-    best_matches = {}
+    top_matches = {}
     for val1 in list1:
         similarity_matrix[val1] = {}
-        best_val = None
-        best_sim = -1.0
+        matches = []
         for val2 in list2:
             sim = cosine_similarity(embs1[val1], embs2[val2])
             similarity_matrix[val1][val2] = float(sim)
-            if sim > best_sim:
-                best_sim = sim
-                best_val = val2
-        best_matches[val1] = {"best_match": best_val, "similarity": float(best_sim)}
+            matches.append({"match": val2, "similarity": float(sim)})
+        
+        # Ordina per similarità decrescente e prendi i primi 3
+        matches.sort(key=lambda x: x['similarity'], reverse=True)
+        top_matches[val1] = matches[:3]
 
-    # Print some results for verification
-    print("\nSimilarity Matrix (top matches for each item in list 1):")
-    for val1, match_data in best_matches.items():
-        print(f"'{val1}' -> Top match: '{match_data['best_match']}' (sim: {match_data['similarity']:.4f})")
+    # Stampa i risultati per verifica
+    print("\nSimilarity Matrix (top 3 matches per ogni voce della lista 1):")
+    for val1, matches in top_matches.items():
+        match_strings = [f"'{m['match']}' ({m['similarity']:.4f})" for m in matches]
+        print(f"'{val1}' -> Top 3 matches: {', '.join(match_strings)}")
 
 
