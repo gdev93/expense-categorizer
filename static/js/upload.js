@@ -172,99 +172,70 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     /**
-     * Controlla lo stato di avanzamento usando FILE_UPLOAD_PROGRESS (GET request).
+     * Controlla lo stato di avanzamento usando Server-Sent Events (SSE).
      */
-    async function checkProcessingProgress() {
-        try {
-            const response = await fetch(FILE_UPLOAD_PROGRESS, {
-                method: 'GET',
-                headers: {
-                    'X-CSRFToken': CSRF_TOKEN
-                }
-            });
+    function startSSE() {
+        console.log("SSE avviato.");
 
+        // Chiudi eventuale connessione esistente
+        if (window.currentEventSource) {
+            window.currentEventSource.close();
+        }
 
-            if (response.status === 200) {
-                const data = await response.json();
+        const eventSource = new EventSource(FILE_UPLOAD_PROGRESS);
+        window.currentEventSource = eventSource;
 
-                // NUOVO: Estrai la percentuale e puliscila se necessario
-                let percentage = data.percentage ? data.percentage.replace('%', '') : '0';
-                percentage = parseInt(percentage, 10);
+        eventSource.onmessage = (event) => {
+            const data = JSON.parse(event.data);
 
-                // Aggiorna l'elemento della Progress Bar
-                processingProgressBar.style.width = `${percentage}%`;
-                processingProgressBar.textContent = `${percentage}% Elaborazione...`;
-                processingProgressBar.setAttribute('aria-valuenow', percentage);
-
-                uploadInProgress = true;
-                submitUpload.disabled = true;
-                submitUpload.classList.add('btn-disabled');
-
-                // Verifica la condizione di completamento
-                if (percentage === 100 || (data.total > 0 && data.total === data.current_categorized)) {
-                    console.log("Processing complete!");
-                    processingComplete = true;
-                    uploadInProgress = false;
-                    // Imposta la barra al 100% finale e la nasconde nel "finally" del submit.
-                } else {
-                    console.log(`Processing progress: ${percentage}%`);
-                }
-                return true; // Success: process is running/complete
-
-            } else if (response.status === 404) {
-                // Nessun caricamento in attesa trovato
-                console.log("Nessun caricamento in attesa trovato (404).");
-                processingComplete = true; // Ferma il loop
-                uploadInProgress = false;
-
-                // Nascondi la Progress Bar al termine o se non trovata
-                processingProgressBarContainer.classList.add('hidden');
-
-                // Aggiorna l'UI alla modalità di attesa di upload
-                submitUpload.disabled = false;
-                submitUpload.classList.remove('btn-disabled');
-                return false;
-
-            } else {
-                console.error("Errore durante il controllo dello stato di elaborazione:", response.status);
+            if (data.status === 'finished') {
+                eventSource.close();
                 processingComplete = true;
                 uploadInProgress = false;
+
+                processingProgressBarContainer.classList.add('hidden');
                 submitUpload.disabled = false;
                 submitUpload.classList.remove('btn-disabled');
-                processingProgressBarContainer.classList.add('hidden');
-                return false;
+
+                if (window.location.href !== FILE_UPLOADS_PAGE) {
+                    window.location.href = FILE_UPLOADS_PAGE;
+                }
+                return;
             }
 
-        } catch (error) {
-            console.error('Errore di Rete durante il polling:', error);
+            let percentage = data.percentage ? data.percentage.replace('%', '') : '0';
+            percentage = parseInt(percentage, 10);
+
+            processingProgressBar.style.width = `${percentage}%`;
+            processingProgressBar.textContent = `${percentage}% Elaborazione...`;
+            processingProgressBar.setAttribute('aria-valuenow', percentage);
+
+            uploadInProgress = true;
+            submitUpload.disabled = true;
+            submitUpload.classList.add('btn-disabled');
+            processingProgressBarContainer.classList.remove('hidden');
+
+            if (percentage === 100) {
+                console.log("Processing complete!");
+                eventSource.close();
+                processingComplete = true;
+                uploadInProgress = false;
+
+                setTimeout(() => {
+                    window.location.href = FILE_UPLOADS_PAGE;
+                }, 1000);
+            }
+        };
+
+        eventSource.onerror = (error) => {
+            console.error("SSE error:", error);
+            eventSource.close();
             processingComplete = true;
             uploadInProgress = false;
             submitUpload.disabled = false;
             submitUpload.classList.remove('btn-disabled');
             processingProgressBarContainer.classList.add('hidden');
-            return false;
-        }
-    }
-
-    async function startPolling() {
-        console.log("Polling avviato.");
-
-        // Loop di polling
-        while (!processingComplete) {
-            await checkProcessingProgress();
-
-            // Micro-delay per non saturare la CPU del browser
-            if (!processingComplete) {
-                await new Promise(resolve => setTimeout(resolve, 100));
-            }
-        }
-
-        // Una volta completato, reindirizza l'utente
-        if (processingComplete && window.location.href !== FILE_UPLOADS_PAGE) {
-            setTimeout(() => {
-                window.location.href = FILE_UPLOADS_PAGE;
-            }, 1000)
-        }
+        };
     }
 
     async function handlePageRefresh() {
@@ -278,7 +249,7 @@ document.addEventListener('DOMContentLoaded', () => {
             submitUpload.classList.add('btn-disabled');
             processingProgressBarContainer.classList.remove('hidden');
             uploadInProgress = true;
-            await startPolling();
+            startSSE();
         } else {
             // Nessun upload in corso - Abilita il bottone
             uploadInProgress = false;

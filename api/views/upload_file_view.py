@@ -1,29 +1,28 @@
+import asyncio
 import csv
 import io
+import json
 import logging
-import os
-import threading
-import time
 from dataclasses import dataclass
+from datetime import timedelta
 from math import ceil
 from typing import List, Dict
 
 from django import forms
 from django.contrib import messages
-from django.contrib.auth.models import User
 from django.core.validators import FileExtensionValidator
 from django.db import transaction
 from django.db.models import Sum, Count, Exists, OuterRef, Q, QuerySet
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, JsonResponse, StreamingHttpResponse
 from django.urls import reverse_lazy
+from django.utils import timezone
 from django.views import View
 from django.views.generic import FormView, ListView, DeleteView
 
-from api.models import Rule, Category
-from api.models import UploadFile, Transaction, Merchant, DefaultCategory
+from api.models import UploadFile, Transaction, Merchant
 from api.tasks import process_upload
 from processors.csv_structure_detector import CsvStructureDetector
-from processors.expense_upload_processor import ExpenseUploadProcessor, persist_uploaded_file
+from processors.expense_upload_processor import persist_uploaded_file
 from processors.file_parsers import parse_uploaded_file, FileParserError
 
 
@@ -418,31 +417,42 @@ class UploadFileView(ListView, FormView):
 
 
 class UploadProgressView(View):
-    long_polling_limit = os.getenv('LONG_POLLING_SLEEP', 5)
 
-    def get(self, request, *args, **kwargs):
-        upload_file_query = UploadFile.objects.filter(user=self.request.user, status='processing').distinct()
-        if not upload_file_query.exists():
-            return HttpResponse(status=404)
-        upload_file = upload_file_query.first()
-        time.sleep(self.long_polling_limit)
-        total = Transaction.objects.filter(upload_file=upload_file, user=request.user).count()
-        current_pending = Transaction.objects.filter(upload_file=upload_file, user=request.user, status='pending').count()
-        if current_pending == 0:
-            return JsonResponse(status=200, data={
-                "total": total,
-                "current_pending": 0,
-                "current_categorized": total,
-                "percentage": "100%"
-            })
-        current_categorized = Transaction.objects.filter(upload_file=upload_file, user=request.user,
-                                                         status='categorized').count()
-        return JsonResponse(status=200, data={
-            "total": total,
-            "current_pending": current_pending,
-            "current_categorized": current_categorized,
-            "percentage": f"{ceil(current_categorized / total * 100)}%"
-        })
+    async def get(self, request, *args, **kwargs):
+        async def event_stream():
+            while True:
+                upload_file_query = UploadFile.objects.filter(user=request.user,
+                                                              status__in=['pending', 'processing']).distinct()
+                if not await upload_file_query.aexists():
+                    yield f"data: {json.dumps({'status': 'finished'})}\n\n"
+                    break
+
+                upload_file = await upload_file_query.afirst()
+                if timezone.now() - timedelta(minutes=10) > upload_file.upload_date:
+                    yield f"data: {json.dumps({'status': 'timeout'})}\n\n"
+                    break
+                total = await Transaction.objects.filter(upload_file=upload_file, user=request.user).acount()
+                current_pending = await Transaction.objects.filter(upload_file=upload_file, user=request.user,
+                                                                   status='pending').acount()
+                current_categorized = await Transaction.objects.filter(upload_file=upload_file, user=request.user,
+                                                                       status='categorized').acount()
+
+                data = {
+                    "total": total,
+                    "current_pending": current_pending,
+                    "current_categorized": current_categorized,
+                    "percentage": f"{ceil(current_categorized / total * 100)}%" if total > 0 else "0%"
+                }
+                yield f"data: {json.dumps(data)}\n\n"
+
+                if current_pending == 0 and total > 0 and upload_file.status == 'completed':
+                    break
+
+                await asyncio.sleep(1)
+
+        response = StreamingHttpResponse(event_stream(), content_type='text/event-stream')
+        response['Cache-Control'] = 'no-cache'
+        return response
 
 class UploadProcessView(View):
 

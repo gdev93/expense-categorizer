@@ -10,6 +10,8 @@ fastembed==0.5.1
 numpy
 pgvector
 gunicorn
+uvicorn
+uvicorn-worker
 pandas
 openpyxl
 whitenoise
