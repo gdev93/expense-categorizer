@@ -2,7 +2,26 @@ import re
 
 import numpy as np
 import pytest
-from processors.similarity_matcher import generate_embedding
+from processors.embeddings import EmbeddingEngine
+
+def preprocess_text(text):
+    """
+    Cleans and enriches the text to improve vector focus.
+    Using English names and comments as per instructions.
+    """
+
+    # Context injection: tells the model these are 'financial categories'
+    # This helps distinguish 'Abbonamenti' (subscriptions) from 'Abbigliamento' (clothes)
+    return f"Spesa di categoria: {text}"
+
+def generate_embedding(text: str) -> list[float]:
+    """
+    Generates embedding for a string without using the database.
+    """
+    processed_text = preprocess_text(text)
+    texts = [(processed_text or '').strip()]
+    embeddings = list(EmbeddingEngine.get_model().embed(texts))
+    return embeddings[0].tolist() if embeddings else []
 
 def cosine_similarity(v1, v2):
     """
@@ -35,4 +54,83 @@ def test_embedding_cosine_similarity():
     print(f"\nDescrizione 1: {desc1}")
     print(f"Descrizione 2: {desc2}")
     print(f"Similarità (1, 2): {sim_1_2:.4f}")
+
+def test_compute_embeddings_for_lists():
+    list1 = [
+        "Spesa", "Shopp", "Affitto", "Sport", "Partita IVA", "Auto", "Regali",
+        "Carburante", "Shopping", "Abbonamenti", "Scuola", "Bollette", "Vacanze",
+        "Trasporti", "Spese mediche", "Vita sociale", "Casa", "Bambini",
+        "Cure Personali", "Donazioni", "Tasse"
+    ]
+
+    list2 = [
+        "Affitto/Mutuo", "Utenze", "Internet e Telefono",
+        "Casa - Spese e Manutenzione", "Spesa Alimentare", "Bar e Caffè",
+        "Ristoranti e Pranzi Fuori", "Carburante", "Trasporti e Spostamenti",
+        "Auto - Gestione", "Abbigliamento", "Casa e Arredamento",
+        "Libri e Cartoleria", "Regali", "Salute", "Cura Personale",
+        "Sport e Fitness", "Intrattenimento Fuori Casa", "Abbonamenti Digitali",
+        "Viaggi e Vacanze", "Hobby e Passioni", "Animali Domestici",
+        "Istruzione", "Corsi e Formazione", "Assistenza Familiare",
+        "Servizi Bancari e Assicurativi", "Tasse e Professionisti",
+        "Finanziamenti", "Beneficenza", "Shopping Online"
+    ]
+
+    print("\nComputing embeddings for list 1:")
+    for val in list1:
+        emb = generate_embedding(val)
+        print(f"Value: {val}, Embedding size: {len(emb)}")
+        assert len(emb) == 384  # paraphrase-multilingual-MiniLM-L12-v2 embedding size is 384
+
+    print("\nComputing embeddings for list 2:")
+    for val in list2:
+        emb = generate_embedding(val)
+        print(f"Value: {val}, Embedding size: {len(emb)}")
+        assert len(emb) == 384
+
+def test_similarity_matrix():
+    list1 = [
+        "Spesa", "Shopping", "Affitto", "Sport", "Partita IVA", "Auto", "Regali",
+        "Carburante", "Shopping", "Abbonamenti", "Scuola", "Bollette", "Vacanze",
+        "Trasporti", "Spese mediche", "Vita sociale", "Casa", "Bambini",
+        "Cure Personali", "Donazioni", "Tasse"
+    ]
+
+    list2 = [
+        "Affitto/Mutuo", "Utenze", "Internet e Telefono",
+        "Casa - Spese e Manutenzione", "Spesa Alimentare", "Bar e Caffè",
+        "Ristoranti e Pranzi Fuori", "Carburante", "Trasporti e Spostamenti",
+        "Auto - Gestione", "Abbigliamento", "Casa e Arredamento",
+        "Libri e Cartoleria", "Regali", "Salute", "Cura Personale",
+        "Sport e Fitness", "Intrattenimento Fuori Casa", "Abbonamenti Digitali",
+        "Viaggi e Vacanze", "Hobby e Passioni", "Animali Domestici",
+        "Istruzione", "Corsi e Formazione", "Assistenza Familiare",
+        "Servizi Bancari e Assicurativi", "Tasse e Professionisti",
+        "Finanziamenti", "Beneficenza", "Shopping Online"
+    ]
+
+    # Pre-compute embeddings for both lists
+    embs1 = {val: generate_embedding(val) for val in list1}
+    embs2 = {val: generate_embedding(val) for val in list2}
+
+    # Compute similarity matrix in a dictionary
+    similarity_matrix = {}
+    best_matches = {}
+    for val1 in list1:
+        similarity_matrix[val1] = {}
+        best_val = None
+        best_sim = -1.0
+        for val2 in list2:
+            sim = cosine_similarity(embs1[val1], embs2[val2])
+            similarity_matrix[val1][val2] = float(sim)
+            if sim > best_sim:
+                best_sim = sim
+                best_val = val2
+        best_matches[val1] = {"best_match": best_val, "similarity": float(best_sim)}
+
+    # Print some results for verification
+    print("\nSimilarity Matrix (top matches for each item in list 1):")
+    for val1, match_data in best_matches.items():
+        print(f"'{val1}' -> Top match: '{match_data['best_match']}' (sim: {match_data['similarity']:.4f})")
+
 

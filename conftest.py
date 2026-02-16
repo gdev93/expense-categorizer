@@ -11,8 +11,16 @@ if "DOCKER_HOST" not in os.environ:
             os.environ["DOCKER_HOST"] = socket_path
 
 @pytest.fixture(scope="session", autouse=True)
-def postgres_container():
+def postgres_container(request):
     if os.environ.get("USE_TESTCONTAINERS", "true").lower() == "false":
+        yield None
+        return
+
+    # Check if any collected test needs the database
+    # This avoids starting the container for standalone tests that don't use Django DB
+    needs_db = any(item.get_closest_marker("django_db") for item in request.session.items)
+    
+    if not needs_db:
         yield None
         return
 
