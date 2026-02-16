@@ -285,6 +285,7 @@ class UploadFile(models.Model):
 
 
 
+
     def __str__(self):
         return f"CSV Map (Upload: {self.upload_date.strftime('%Y-%m-%d')})"
 

@@ -35,3 +35,34 @@ def generate_transaction_csv(transactions_iterator: Iterator[Transaction]):
         yield output.getvalue()
         output.truncate(0)
         output.seek(0)
+
+
+async def generate_transaction_csv_async(transactions_iterator):
+    """
+    An async generator that yields CSV rows for the given transactions iterator.
+    
+    Args:
+        transactions_iterator: An async iterable of Transaction model instances.
+    """
+    output = io.StringIO()
+    writer = csv.writer(output)
+
+    headers = ['Data', 'Importo', 'Categoria', 'Descrizione Bancaria', 'Tipo di Transazione', 'File Sorgente']
+    writer.writerow(headers)
+    yield output.getvalue()
+    output.truncate(0)
+    output.seek(0)
+
+    async for tx in transactions_iterator:
+        row = [
+            tx.transaction_date.isoformat() if tx.transaction_date else '',
+            tx.amount,
+            tx.category.name if tx.category else '',
+            tx.description,
+            tx.transaction_type,
+            tx.upload_file.file_name if tx.upload_file else 'Inserimento manuale'
+        ]
+        writer.writerow(row)
+        yield output.getvalue()
+        output.truncate(0)
+        output.seek(0)

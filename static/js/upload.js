@@ -79,7 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateFileList() {
         // Aggiorna la lista di anteprima e il bottone
         fileListPreview.innerHTML = '';
-
+        console.log("Aggiornamento file list:", fileToUpload);
         if (fileToUpload) {
             fileListPreview.classList.remove('hidden');
 
@@ -167,7 +167,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 submitUpload.disabled = false;
                 submitUpload.classList.remove('btn-disabled');
 
-                if (window.location.href !== FILE_UPLOADS_PAGE) {
+                if (window.location.href.includes(FILE_UPLOADS_PAGE)) {
+                    window.location.reload();
+                } else {
                     window.location.href = FILE_UPLOADS_PAGE;
                 }
                 return;
@@ -192,7 +194,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 uploadInProgress = false;
 
                 setTimeout(() => {
-                    window.location.href = FILE_UPLOADS_PAGE;
+                    if (window.location.href.includes(FILE_UPLOADS_PAGE)) {
+                        window.location.reload();
+                    } else {
+                        window.location.href = FILE_UPLOADS_PAGE;
+                    }
                 }, 1000);
             }
         };
@@ -319,9 +325,11 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 console.log("Upload file riuscito.");
                 uploadInProgress = true;
-
-                // 2. AVVIA L'ELABORAZIONE SSE
-                startSSE();
+                if (window.location.href.includes(FILE_UPLOADS_PAGE)) {
+                    window.location.reload();
+                } else {
+                    window.location.href = FILE_UPLOADS_PAGE;
+                }
             }
         } catch (error) {
             console.error('Errore di Rete:', error);

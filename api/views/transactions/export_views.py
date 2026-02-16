@@ -4,26 +4,30 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q
 from django.http import StreamingHttpResponse
 from django.views import View
+from asgiref.sync import sync_to_async
 from api.models import Transaction
-from exporters.exporters import generate_transaction_csv
+from exporters.exporters import generate_transaction_csv, generate_transaction_csv_async
 
 from api.views.transactions.transaction_mixins import TransactionFilterMixin
 
 class TransactionExportView(LoginRequiredMixin, TransactionFilterMixin, View):
 
-    def post(self, request, *args, **kwargs):
+    async def post(self, request, *args, **kwargs):
         # Update session filters if POST data is provided
-        return self._export(request)
+        return await self._export(request)
 
-    def _export(self, request):
-        queryset = self.get_transaction_filter_query()
+    async def _export(self, request):
+        # Ensure user is loaded in async context
+        await request.auser()
+        # get_transaction_filter_query might perform sync DB lookups for default filters
+        queryset = await sync_to_async(self.get_transaction_filter_query)()
         
-        # Optimize query: select_related for file metadata and .iterator() for memory efficiency
-        iterator = queryset.select_related('upload_file', 'category', 'merchant').iterator()
+        # Optimize query: select_related for file metadata
+        iterator = queryset.select_related('upload_file', 'category', 'merchant')
 
-        # Exporter Layer: Use the generator to stream the response
+        # Exporter Layer: Use the async generator to stream the response
         response = StreamingHttpResponse(
-            generate_transaction_csv(iterator),
+            generate_transaction_csv_async(iterator),
             content_type='text/csv'
         )
         

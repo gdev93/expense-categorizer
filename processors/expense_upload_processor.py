@@ -1,14 +1,12 @@
 import itertools
 import logging
 import os
-import random
-import time
 from concurrent.futures import ThreadPoolExecutor
 from typing import Iterable
 
 from django.contrib.auth.models import User
 from django.core.files.uploadedfile import UploadedFile
-from django.db import transaction, connections
+from django.db import transaction
 from django.db.models import Q
 
 from agent.agent import ExpenseCategorizerAgent, AgentTransactionUpload, TransactionCategorization, GeminiResponse
@@ -19,11 +17,11 @@ from processors.data_prechecks import parse_raw_transaction
 from processors.embeddings import EmbeddingEngine
 from processors.parser_utils import normalize_amount, parse_raw_date
 from processors.similarity_matcher import (
-    SimilarityMatcher, generate_embedding, SimilarityMatcherRAG, 
+    SimilarityMatcher, generate_embedding, SimilarityMatcherRAG,
     update_merchant_ema
 )
-from processors.utils import retry_with_backoff
 from processors.transaction_updater import TransactionUpdater
+from processors.utils import retry_with_backoff
 
 logger = logging.getLogger(__name__)
 
@@ -37,13 +35,10 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
     - Persistence of results
     - Progress tracking and logging
     """
-    pre_check_confidence_threshold = os.environ.get('PRE_CHECK_CONFIDENCE_THRESHOLD', 0.85)
-    pre_check_iterator_fetch_size = os.environ.get('PRE_CHECK_ITERATOR_FETCH_SIZE', 50)
-    rag_identical_threshold = os.environ.get('RAG_IDENTICAL_THRESHOLD', 0.02) # 98% sure
-    rag_reliable_threshold = os.environ.get('RAG_RELIABLE_THRESHOLD', 0.15) # very likely
-    rag_context_threshold = os.environ.get('RAG_CONTEXT_THRESHOLD', 0.35) # context for gemini
-    gemini_max_retries = int(os.environ.get('GEMINI_MAX_RETRIES', 5))
-    gemini_base_delay = int(os.environ.get('GEMINI_BASE_DELAY', 2))
+    pre_check_confidence_threshold = float(os.environ.get('PRE_CHECK_CONFIDENCE_THRESHOLD', '0.85'))
+    pre_check_iterator_fetch_size = int(os.environ.get('PRE_CHECK_ITERATOR_FETCH_SIZE', '50'))
+    gemini_max_retries = int(os.environ.get('GEMINI_MAX_RETRIES', '5'))
+    gemini_base_delay = int(os.environ.get('GEMINI_BASE_DELAY', '2'))
 
     def __init__(self, user: User, user_rules: list[str] = None, available_categories: list[Category] | None = None, batch_helper:BatchingHelper | None = None):
         self.user = user

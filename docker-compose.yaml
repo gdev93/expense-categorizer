@@ -26,6 +26,44 @@ services:
           memory: 256M
     volumes:
       - expense_categorizer_dev_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:alpine
+    container_name: expenses_redis_dev
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  celery-worker:
+    build: .
+    container_name: expenses_celery_worker_dev
+    command: celery -A server worker -l info
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - DJANGO_SETTINGS_MODULE=server.settings
+      - FASTEMBED_CACHE_PATH=/app/model_cache
+    volumes:
+      - fastembed_models:/app/model_cache
+    restart: unless-stopped
+
 volumes:
   expense_categorizer_dev_data:
   redis_data:
+  fastembed_models:

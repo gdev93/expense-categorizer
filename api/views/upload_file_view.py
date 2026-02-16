@@ -3,6 +3,7 @@ import csv
 import io
 import json
 import logging
+import os
 from dataclasses import dataclass
 from datetime import timedelta
 from math import ceil
@@ -268,7 +269,11 @@ class UploadFileView(ListView, FormView):
             # Create a preliminary UploadFile record for detection
             # We use the processor to detect the structure before persisting all transactions
             # This allows us to fail early if mandatory columns are missing
-            upload_file_obj = UploadFile.objects.create(user=self.request.user, file_name=uploaded_file.name)
+            upload_file_obj = UploadFile.objects.create(
+                user=self.request.user,
+                file_name=uploaded_file.name,
+            )
+            
             upload_file_obj = CsvStructureDetector().setup_upload_file_structure(file_data, upload_file_obj, self.request.user)
 
             # Validate mandatory columns
@@ -377,10 +382,14 @@ class UploadFileView(ListView, FormView):
 
         # Process the CSV upload
         result = self._process_upload_file(csv_file)
-        upload_file = result.upload_file
-        logging.info(f"Scheduling task for upload {upload_file.pk} of user {self.request.user.username}.")
-        process_upload.delay(self.request.user.pk, upload_file.pk)
         if result.success:
+            upload_file = result.upload_file
+            logging.info(f"Scheduling task for upload {upload_file.pk} of user {self.request.user.username}.")
+            process_upload.delay(self.request.user.pk, upload_file.pk)
+            
+            if self.request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                return JsonResponse({'status': 'success', 'upload_id': upload_file.pk})
+            
             messages.success(
                 self.request,
                 f'File caricato con successo! {result.rows_processed}'
@@ -410,6 +419,11 @@ class UploadFileView(ListView, FormView):
             storage = messages.get_messages(self.request)
             for message in storage:
                 all_errors.append(str(message))
+            
+            if not all_errors:
+                for field, errors in form.errors.items():
+                    for error in errors:
+                        all_errors.append(str(error))
 
             return JsonResponse({'error': " ".join(all_errors)}, status=400)
 
@@ -421,6 +435,9 @@ class UploadFileView(ListView, FormView):
 class UploadProgressView(View):
 
     async def get(self, request, *args, **kwargs):
+        # Ensure user is loaded in async context
+        await request.auser()
+
         async def event_stream():
             while True:
                 upload_file_query = UploadFile.objects.filter(user=request.user,
@@ -459,7 +476,7 @@ class UploadProgressView(View):
 class UploadFileCheckView(View):
 
     def get(self, request, *args, **kwargs):
-        upload_file_query = UploadFile.objects.filter(user=self.request.user, status='processing').distinct()
+        upload_file_query = UploadFile.objects.filter(user=self.request.user, status__in=['pending', 'processing']).distinct()
         if not upload_file_query.exists():
             return HttpResponse(status=404)
         upload_file = upload_file_query.first()
