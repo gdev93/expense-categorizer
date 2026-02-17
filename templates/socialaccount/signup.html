@@ -11,6 +11,7 @@
   {% csrf_token %}
   {% if form.errors %}
     <div class="alert alert-danger">
+        <button type="button" class="close-btn" onclick="this.parentElement.remove();" aria-label="Chiudi"><span class="material-icons">close</span></button>
         {% for field in form %}
             {% for error in field.errors %}
                 <p>{{ error }}</p>

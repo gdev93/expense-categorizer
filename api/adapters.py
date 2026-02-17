@@ -2,10 +2,9 @@ import os
 
 from allauth.account.adapter import DefaultAccountAdapter
 from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
+from django.conf import settings
 from django.db import transaction
 from api.models import Profile
-
-site_name = os.getenv('SITE_NAME', 'Expense Categorizer')
 
 class AccountAdapter(DefaultAccountAdapter):
 
@@ -16,12 +15,13 @@ class AccountAdapter(DefaultAccountAdapter):
         return True
 
     def get_site_name(self):
-        return site_name
+        return settings.SITE_NAME
 
     # Optional: ensure the confirmation URL uses your SITE_DOMAIN variable
     def get_email_confirmation_url(self, request, emailconfirmation):
         protocol = 'https' if request.is_secure() else 'http'
-        return f"{protocol}://{site_name}/accounts/confirm-email/{emailconfirmation.key}/"
+        return f"{protocol}://{settings.SITE_NAME}/accounts/confirm-email/{emailconfirmation.key}/"
+
 
     def save_user(self, request, user, form, commit=True):
         """

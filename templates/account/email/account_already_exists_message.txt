@@ -1,0 +1,12 @@
+Ciao,
+
+abbiamo ricevuto una richiesta di registrazione su Pecuniam associata a questo indirizzo email. Dato che questo indirizzo è già presente nei nostri sistemi, non è stato possibile creare un nuovo account.
+
+Se non ti ricordi di avere già un account, o se hai dimenticato la tua password, puoi reimpostarla facilmente cliccando sul link qui sotto:
+
+{{ password_reset_url }}
+
+Se non sei stato tu a tentare la registrazione, puoi ignorare tranquillamente questa email.
+
+Buon risparmio,
+Il team di Pecuniam

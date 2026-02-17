@@ -1,8 +1,8 @@
+from django.conf import settings
 from django.db.models.signals import pre_save
 from django.dispatch import receiver
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
-from django.contrib.sites.shortcuts import get_current_site
 from allauth.account.signals import user_signed_up, email_confirmed
 from allauth.account.models import EmailAddress
 
@@ -35,8 +35,8 @@ def send_welcome_email_to_user(user, request):
     if not hasattr(user, 'profile') or user.profile.welcome_email_sent:
         return
 
-    current_site = get_current_site(request)
-    site_url = f"{request.scheme}://{current_site.domain}"
+    protocol = 'https' if request.is_secure() else 'http'
+    site_url = f"{protocol}://{settings.SITE_NAME}"
 
     context = {
         'user': user,

@@ -38,6 +38,7 @@
                 <!-- Display form errors -->
                 {% if form.errors %}
                     <div class="alert alert-danger mt-3">
+                        <button type="button" class="close-btn" onclick="this.parentElement.remove();" aria-label="Chiudi"><span class="material-icons">close</span></button>
                         {% for field, errors in form.errors.items %}
                             {% for error in errors %}
                                 <p>{{ error }}</p>
