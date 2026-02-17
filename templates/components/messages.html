@@ -3,10 +3,46 @@
     {% for message in messages %}
     <div class="alert alert-{{ message.tags }}" role="alert">
         {{ message|safe }}
-        <button type="button" class="close-btn" onclick="this.parentElement.remove();"><span class="material-icons">close</span></button>
+        <button type="button" class="close-btn" onclick="this.parentElement.remove();" aria-label="Chiudi"><span class="material-icons">close</span></button>
     </div>
     {% endfor %}
 </div>
 {% else %}
 <div class="messages-container" id="messages-container" hx-swap-oob="true"></div>
 {% endif %}
+
+<script>
+    (function() {
+        /**
+         * Funzione per gestire la scomparsa automatica dei messaggi
+         */
+        const initMessageDismissal = () => {
+            const container = document.getElementById('messages-container');
+            if (!container) return;
+            
+            const alerts = container.querySelectorAll('.alert:not(.auto-dismiss-init)');
+            alerts.forEach(alert => {
+                alert.classList.add('auto-dismiss-init');
+                // Scompare dopo 5 secondi
+                setTimeout(() => {
+                    if (alert && alert.parentElement) {
+                        alert.style.opacity = '0';
+                        alert.style.transition = 'opacity 0.5s ease-out, transform 0.5s ease-out';
+                        alert.style.transform = 'translateY(-10px)';
+                        setTimeout(() => {
+                            if (alert && alert.parentElement) alert.remove();
+                        }, 500);
+                    }
+                }, 5000);
+            });
+        };
+
+        // Esegui subito
+        initMessageDismissal();
+
+        // Supporto per aggiornamenti HTMX (sia swap diretto che OOB)
+        document.body.addEventListener('htmx:afterSwap', (event) => {
+            initMessageDismissal();
+        });
+    })();
+</script>

@@ -1,0 +1,13 @@
+{% extends "account/base_auth.html" %}
+{% load i18n %}
+
+{% block head_title %}{% trans "Verify Your Email Address" %}{% endblock %}
+
+{% block auth_title %}{% trans "Verify Your Email Address" %}{% endblock %}
+{% block auth_subtitle %}{% trans "Ti abbiamo inviato un'email per confermare il tuo indirizzo. Per favore controlla la tua casella di posta e clicca sul link contenuto nell'email." %}{% endblock %}
+
+{% block content %}
+<div class="auth-footer">
+    <a href="{% url 'account_login' %}" class="btn btn-primary btn-auth">{% trans "Torna al login" %}</a>
+</div>
+{% endblock %}

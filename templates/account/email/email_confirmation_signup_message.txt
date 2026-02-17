@@ -1,0 +1,15 @@
+{% load i18n %}
+{% autoescape off %}
+Ciao {{ user.username }},
+
+Benvenuto su Pecuniam!
+
+Per favore, conferma il tuo indirizzo email cliccando sul link qui sotto:
+
+{{ activate_url }}
+
+Se non hai creato un account, puoi tranquillamente ignorare questa email.
+
+Un saluto,
+Il team di Pecuniam
+{% endautoescape %}

@@ -1,0 +1,48 @@
+{% load i18n %}
+{% autoescape off %}
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { font-family: 'Inter', Arial, sans-serif; color: #212529; line-height: 1.6; background-color: #f8f9fa; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 20px auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .header { background: #FFC107; padding: 30px; text-align: center; }
+        .logo { font-size: 28px; font-weight: 800; color: #343a40; text-decoration: none; display: inline-block; }
+        .logo span { background: #343a40; color: #FFC107; padding: 2px 8px; border-radius: 4px; margin-right: 2px; }
+        .content { padding: 40px; }
+        .features { margin: 25px 0; padding-left: 20px; }
+        .features li { margin-bottom: 10px; }
+        .button-wrapper { text-align: center; margin: 30px 0; }
+        .button { display: inline-block; padding: 12px 32px; background: #FFC107; color: #343a40; text-decoration: none; border-radius: 4px; font-weight: 700; }
+        .footer { padding: 20px; text-align: center; font-size: 12px; color: #6c757d; border-top: 1px solid #eeeeee; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo"><span>P</span>ecuniam</div>
+        </div>
+        <div class="content">
+            <h2 style="margin-top: 0;">Ciao {{ user.username }}, benvenuto!</h2>
+            <p>Siamo entusiasti di averti con noi in <strong>Pecuniam</strong>.</p>
+            <p>Pecuniam è lo strumento ideale per chi vuole avere il pieno controllo delle proprie finanze senza stress. Ecco cosa puoi fare già da ora:</p>
+            <ul class="features">
+                <li><strong>Caricamento veloce:</strong> trascina i file scaricati dal tuo home banking.</li>
+                <li><strong>Categorizzazione Intelligente:</strong> il nostro sistema impara dalle tue scelte.</li>
+                <li><strong>Analisi dei costi:</strong> scopri dove finiscono i tuoi soldi con grafici semplici.</li>
+            </ul>
+            <div class="button-wrapper">
+                <a href="{{ site_url }}" class="button">Vai alla Dashboard</a>
+            </div>
+            <p>Se hai domande o suggerimenti, rispondi pure a questa email: siamo sempre felici di ascoltare i nostri utenti.</p>
+            <p>Buon risparmio,<br>Il team di Pecuniam</p>
+        </div>
+        <div class="footer">
+            &copy; 2026 Pecuniam. Tutti i diritti riservati.
+        </div>
+    </div>
+</body>
+</html>
+{% endautoescape %}

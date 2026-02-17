@@ -9,18 +9,15 @@ def test_create_user_view_creates_profile(client):
     """
     Test that the create_user view creates both a User and a Profile.
     """
-    url = reverse('create_user')
+    url = reverse('account_signup')
     data = {
         'username': 'newuser',
-        'password': 'password123',
+        'password1': 'StR0ngP@ssw0rd!123',
         'email': 'authorized@example.com',
-        'first_name': 'New',
-        'last_name': 'User'
     }
     
-    # Mock allowed_emails to include our test email
-    with patch('api.views.entry_point_views.allowed_emails', ['authorized@example.com']):
-        response = client.post(url, data)
+    # Mock allowed_emails is no longer needed since we use allauth and AccountAdapter is open
+    response = client.post(url, data)
     
     assert response.status_code == 302  # Redirect after success
     

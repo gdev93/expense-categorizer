@@ -97,7 +97,7 @@
             {% endblock %}
         </nav>
         <div class="sidebar-footer">
-            <form id="logout-form" action="{% url 'logout_user' %}" method="post" style="display: none;">
+            <form id="logout-form" action="{% url 'account_logout' %}" method="post" style="display: none;">
                 {% csrf_token %}
             </form>
             <button id="logoutBtn" class="btn btn-secondary logout-button btn-full-width">

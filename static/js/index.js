@@ -371,7 +371,7 @@ function showAlert(message, type = 'danger') {
     
     alertDiv.innerHTML = `
         ${formattedMessage}
-        <button type="button" class="close-btn" onclick="this.parentElement.remove();">
+        <button type="button" class="close-btn" onclick="this.parentElement.remove();" aria-label="Chiudi">
             <span class="material-icons">close</span>
         </button>
     `;

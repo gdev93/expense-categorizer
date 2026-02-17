@@ -59,8 +59,18 @@ services:
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
       - DJANGO_SETTINGS_MODULE=server.settings
       - FASTEMBED_CACHE_PATH=/app/model_cache
+      - EMAIL_HOST=mailhog
+      - EMAIL_PORT=1025
     volumes:
       - fastembed_models:/app/model_cache
+    restart: unless-stopped
+
+  mailhog:
+    image: mailhog/mailhog
+    container_name: expenses_mailhog_dev
+    ports:
+      - "1025:1025" # SMTP server
+      - "8025:8025" # Web UI
     restart: unless-stopped
 
 volumes:

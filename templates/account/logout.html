@@ -1,29 +1,12 @@
-{% load static %}
-<!DOCTYPE html>
-<html lang="it">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/svg+xml" href="{% static 'images/favicon.svg' %}">
-    <title>Logout - Pecuniam</title>
-    <!-- Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{% static 'css/main.css' %}">
-    <link rel="stylesheet" href="{% static 'css/login.css' %}">
-</head>
-<body>
+{% extends "account/base_auth.html" %}
+{% load i18n %}
 
-    <div class="auth-wrapper">
-        <div class="auth-content">
-            <a href="/" class="auth-logo">
-                <span>P</span>ecuniam
-            </a>
+{% block head_title %}{% trans "Sign Out" %}{% endblock %}
 
-            <div class="auth-header">
-                <h1 class="auth-title">Logout</h1>
-                <p class="auth-subtitle">Sei sicuro di voler uscire?</p>
-            </div>
+{% block auth_title %}Logout{% endblock %}
+{% block auth_subtitle %}Sei sicuro di voler uscire?{% endblock %}
 
+{% block content %}
             <form method="POST" action="{% url 'account_logout' %}" class="auth-form">
                 {% csrf_token %}
                 {% if redirect_field_value %}
@@ -35,7 +18,4 @@
             <div class="auth-footer">
                 <a href="/" class="auth-link">Torna alla home</a>
             </div>
-        </div>
-    </div>
-</body>
-</html>
+{% endblock %}

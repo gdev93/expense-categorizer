@@ -1,7 +1,59 @@
 from django.db.models.signals import pre_save
 from django.dispatch import receiver
+from django.core.mail import EmailMultiAlternatives
+from django.template.loader import render_to_string
+from django.contrib.sites.shortcuts import get_current_site
+from allauth.account.signals import user_signed_up, email_confirmed
+from allauth.account.models import EmailAddress
 
 from .models import UploadFile, FileStructureMetadata
+
+
+@receiver(user_signed_up)
+def send_welcome_email_on_signup(request, user, **kwargs):
+    """
+    Sends a welcome email when a user signs up, but only if they are already verified
+    (e.g. social login with pre-verified email).
+    """
+    if EmailAddress.objects.filter(user=user, verified=True).exists():
+        send_welcome_email_to_user(user, request)
+
+
+@receiver(email_confirmed)
+def send_welcome_email_on_confirmation(request, email_address, **kwargs):
+    """
+    Sends a welcome email when a user confirms their email address.
+    """
+    send_welcome_email_to_user(email_address.user, request)
+
+
+def send_welcome_email_to_user(user, request):
+    """
+    Helper function to send the welcome email and track it in the user's profile.
+    """
+    # Ensure profile exists and email hasn't been sent yet
+    if not hasattr(user, 'profile') or user.profile.welcome_email_sent:
+        return
+
+    current_site = get_current_site(request)
+    site_url = f"{request.scheme}://{current_site.domain}"
+
+    context = {
+        'user': user,
+        'site_url': site_url,
+    }
+
+    subject = render_to_string('account/email/welcome_subject.txt', context).strip()
+    html_content = render_to_string('account/email/welcome_message.html', context)
+    text_content = render_to_string('account/email/welcome_message.txt', context)
+
+    msg = EmailMultiAlternatives(subject, text_content, None, [user.email])
+    msg.attach_alternative(html_content, "text/html")
+    msg.send()
+
+    # Mark as sent
+    user.profile.welcome_email_sent = True
+    user.profile.save()
 
 
 @receiver(pre_save, sender=UploadFile)

@@ -49,7 +49,7 @@ def test_real_csrf_failure(live_server):
     We send a POST request without a token to a view that requires it.
     """
     # Use a view that definitely requires POST and CSRF verification.
-    url = f"{live_server.url}{reverse('authenticate_user')}"
+    url = f"{live_server.url}{reverse('account_login')}"
     # Sending POST without CSRF token
     response = requests.post(url)
     

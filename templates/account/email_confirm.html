@@ -1,0 +1,30 @@
+{% extends "account/base_auth.html" %}
+{% load i18n %}
+{% load account %}
+
+{% block head_title %}{% trans "Confirm Email Address" %}{% endblock %}
+
+{% block auth_title %}{% trans "Confirm Email Address" %}{% endblock %}
+
+{% block auth_subtitle %}
+{% if confirmation %}
+    {% user_display confirmation.email_address.user as user_display %}
+    {% blocktrans with confirmation.email_address.email as email %}Per favore conferma che <a href="mailto:{{ email }}">{{ email }}</a> è l'indirizzo email per l'utente {{ user_display }}.{% endblocktrans %}
+{% else %}
+    {% url 'account_email' as email_url %}
+    {% blocktrans %}Questo link di conferma email è scaduto o non è valido. Per favore <a href="{{ email_url }}">richiedi una nuova conferma</a>.{% endblocktrans %}
+{% endif %}
+{% endblock %}
+
+{% block content %}
+{% if confirmation %}
+    <form method="post" action="{% url 'account_confirm_email' confirmation.key %}" class="auth-form">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-primary btn-auth">{% trans 'Confirm' %}</button>
+    </form>
+{% endif %}
+
+<div class="auth-footer">
+    <a href="/" class="auth-link">Torna alla home</a>
+</div>
+{% endblock %}

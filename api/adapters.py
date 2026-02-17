@@ -1,9 +1,11 @@
+import os
+
 from allauth.account.adapter import DefaultAccountAdapter
 from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
 from django.db import transaction
 from api.models import Profile
 
-
+site_name = os.getenv('SITE_NAME', 'Expense Categorizer')
 
 class AccountAdapter(DefaultAccountAdapter):
 
@@ -12,6 +14,14 @@ class AccountAdapter(DefaultAccountAdapter):
         Checks whether or not the site is open for signups.
         """
         return True
+
+    def get_site_name(self):
+        return site_name
+
+    # Optional: ensure the confirmation URL uses your SITE_DOMAIN variable
+    def get_email_confirmation_url(self, request, emailconfirmation):
+        protocol = 'https' if request.is_secure() else 'http'
+        return f"{protocol}://{site_name}/accounts/confirm-email/{emailconfirmation.key}/"
 
     def save_user(self, request, user, form, commit=True):
         """

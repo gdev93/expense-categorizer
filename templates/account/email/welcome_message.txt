@@ -1,0 +1,20 @@
+{% load i18n %}
+{% autoescape off %}
+Ciao {{ user.username }},
+
+Benvenuto in Pecuniam! Siamo entusiasti di averti con noi.
+
+Pecuniam è progettato per aiutarti a tenere traccia delle tue spese e a gestire le tue finanze in modo semplice ed efficace.
+
+Ecco cosa puoi fare ora:
+- Caricare i tuoi file bancari
+- Categorizzare automaticamente le tue transazioni
+- Analizzare i tuoi costi mensili
+
+Inizia subito: {{ site_url }}
+
+Se hai domande o suggerimenti, non esitare a contattarci.
+
+Buon risparmio,
+Il team di Pecuniam
+{% endautoescape %}

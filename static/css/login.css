@@ -27,6 +27,20 @@
     z-index: 2;
 }
 
+/* Messages in auth pages */
+.auth-content .messages-container {
+    align-items: stretch;
+    padding: 0;
+    margin-bottom: 20px;
+    width: 100%;
+    max-width: 400px;
+}
+
+.auth-content .messages-container .alert {
+    width: 100%;
+    max-width: none;
+}
+
 /* --- Right Side (Brand/Visual) --- */
 .auth-banner {
     flex: 1.2;
