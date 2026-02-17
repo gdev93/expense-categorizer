@@ -244,6 +244,12 @@ LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/accounts/login/'
 SOCIALACCOUNT_LOGIN_ON_GET = True
 
+# MailerSend specific settings (as requested by provider snippet)
+MAILERSEND_SMTP_HOST = os.getenv('MAILERSEND_SMTP_HOST', 'smtp.mailersend.net')
+MAILERSEND_SMTP_PORT = int(os.getenv('MAILERSEND_SMTP_PORT', 587))
+MAILERSEND_SMTP_USERNAME = os.getenv('MAILERSEND_SMTP_USERNAME')
+MAILERSEND_API_KEY = os.getenv('MAILERSEND_API_KEY')
+
 # Email Config (Standard Django variables)
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 
@@ -256,11 +262,11 @@ if DEBUG:
     EMAIL_HOST_PASSWORD = ''
 else:
     # Production: MailerSend
-    EMAIL_HOST = 'smtp.mailersend.net'
-    EMAIL_PORT = 587
+    EMAIL_HOST = MAILERSEND_SMTP_HOST
+    EMAIL_PORT = MAILERSEND_SMTP_PORT
     EMAIL_USE_TLS = True
-    EMAIL_HOST_USER = os.getenv('MAILERSEND_SMTP_USERNAME')
-    EMAIL_HOST_PASSWORD = os.getenv('MAILERSEND_API_KEY')
+    EMAIL_HOST_USER = MAILERSEND_SMTP_USERNAME
+    EMAIL_HOST_PASSWORD = MAILERSEND_API_KEY
 
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL')
 
