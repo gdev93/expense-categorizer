@@ -17,7 +17,6 @@ Including another URLconf
 from django.urls import path, include
 from django.views.generic import RedirectView
 
-from api.views.entry_point_views import login_form, authenticate_user, register_form, create_user, logout_user
 from api.views.category_view import CategoryCreateView, CategoryListView, CategoryDetailView, CategoryDeleteView, \
     CategoryUpdateView, CategoryExportView, CategorySearchView, CategoryFromMerchant
 from api.views.merchant_views import MerchantSearchView
@@ -38,11 +37,6 @@ urlpatterns = [
     path('test-502/', trigger_502, name='test_502'),
     path('test-503/', trigger_503, name='test_503'),
     path("accounts/", include('allauth.urls')),
-    path("users/accounts/", login_form, name="login_form"),
-    path("users/accounts/authenticate/", authenticate_user, name="authenticate_user"),
-    path("users/accounts/logout/", logout_user, name="logout_user"),
-    path('users/accounts/register/', register_form, name='register_form'),
-    path('users/accounts/create/', create_user, name='create_user'),
     path('transactions/upload/', UploadFileView.as_view(), name='transactions_upload'),
     path('transactions/upload/progress/', UploadProgressView.as_view(), name='transactions_progress'),
     path('transactions/upload/check', UploadFileCheckView.as_view(), name='transactions_upload_check'),

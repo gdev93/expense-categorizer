@@ -18,7 +18,7 @@ from django.contrib.messages import constants as messages
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY','django-insecure-sn-x3ofrldb(ey$&8(gpas4x9qyxl*p2iq%p)6zkz53%d-#ad^')
-DEBUG = os.getenv('DEBUG', 'True').lower() == 'true'
+DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 ALLOWED_HOSTS = os.environ.setdefault('ALLOWED_HOSTS', '127.0.0.1,0.0.0.0,localhost').split(',')
 CSRF_TRUSTED_ORIGINS=os.environ.setdefault('CSRF_TRUSTED_ORIGINS', 'http://localhost:8000').split(',')
 
@@ -187,7 +187,7 @@ CELERY_TASK_EAGER_PROPAGATES = os.getenv('CELERY_TASK_EAGER_PROPAGATES', 'False'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-LOGIN_URL = '/users/accounts/'
+LOGIN_URL = '/accounts/login/'
 
 CSRF_FAILURE_VIEW = 'api.views.error_views.csrf_failure'
 
@@ -197,7 +197,7 @@ CSRF_FAILURE_VIEW = 'api.views.error_views.csrf_failure'
 GOOGLE_OAUTH_CLIENT_ID = os.getenv('GOOGLE_OAUTH_CLIENT_ID', '')
 GOOGLE_OAUTH_CLIENT_SECRET = os.getenv('GOOGLE_OAUTH_CLIENT_SECRET', '')
 
-# django-allauth configuration
+# django-allauth configuration. It used if the same django instance handles more domains
 SITE_ID = 1
 
 AUTHENTICATION_BACKENDS = [
@@ -223,13 +223,24 @@ SOCIALACCOUNT_PROVIDERS = {
     }
 }
 
-SOCIALACCOUNT_ADAPTER = 'api.adapters.MySocialAccountAdapter'
-ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
-ACCOUNT_LOGIN_METHODS = {'email'}
-ACCOUNT_EMAIL_VERIFICATION = 'none'
+SOCIALACCOUNT_ADAPTER = 'api.adapters.SocialAccountAdapter'
+ACCOUNT_ADAPTER = 'api.adapters.AccountAdapter'
+ACCOUNT_AUTHENTICATION_METHOD = 'email'
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_USERNAME_REQUIRED = True
+ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
 LOGIN_REDIRECT_URL = '/'
-LOGOUT_REDIRECT_URL = '/accounts/'
+LOGOUT_REDIRECT_URL = '/accounts/login/'
 SOCIALACCOUNT_LOGIN_ON_GET = True
+
+# Email Config (Standard Django variables)
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = os.getenv('MAILERSEND_SMTP_HOST')
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = os.getenv('MAILERSEND_SMTP_USERNAME')
+EMAIL_HOST_PASSWORD = os.getenv('MAILERSEND_API_KEY')
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL')
 
 LOGGING = {
     'version': 1,

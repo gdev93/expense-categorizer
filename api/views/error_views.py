@@ -18,7 +18,7 @@ def error_401(request, exception=None):
         'error_title': 'Non autorizzato',
         'error_message': 'La tua sessione potrebbe essere scaduta o non hai effettuato l\'accesso.',
         'button_text': 'Vai al Login',
-        'button_url': reverse('login_form')
+        'button_url': reverse('account_login')
     }
     return render(request, 'errors/error.html', context, status=401)
 

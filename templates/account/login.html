@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/svg+xml" href="{% static 'images/favicon.svg' %}">
-    <title>Registrati - Pecuniam</title>
+    <title>Accedi - Pecuniam</title>
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'css/main.css' %}">
@@ -22,38 +22,43 @@
             </a>
 
             <div class="auth-header">
-                <h1 class="auth-title">Crea Account</h1>
+                <h1 class="auth-title">Bentornato</h1>
                 <p class="auth-subtitle">Accedi o crea un nuovo account per iniziare.</p>
             </div>
 
-            <form method="POST" action="{% url 'create_user' %}" class="auth-form">
+            {% if form.errors %}
+                <div class="alert alert-danger">
+                    {% for field in form %}
+                        {% for error in field.errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    {% endfor %}
+                    {% for error in form.non_field_errors %}
+                        <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <form method="POST" action="{% url 'account_login' %}" class="auth-form">
                 {% csrf_token %}
 
-                {% if request.GET.next %}
-                    <input type="hidden" name="next" value="{{ request.GET.next }}">
+                {% if redirect_field_value %}
+                    <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}">
                 {% endif %}
 
-                <!-- Email Input -->
+                <!-- Email/Username Input -->
                 <div class="form-group">
-                    <label for="email" class="form-label">Email</label>
+                    <label for="id_login" class="form-label">Email</label>
                     <div class="input-wrapper">
-                        <input type="email" id="email" name="email" class="form-control" placeholder="tua@email.com" required autofocus>
-                    </div>
-                </div>
-
-                <!-- Username Input -->
-                <div class="form-group">
-                    <label for="username" class="form-label">Nome utente</label>
-                    <div class="input-wrapper">
-                        <input type="text" id="username" name="username" class="form-control" placeholder="Il tuo username" required>
+                        <input type="text" id="id_login" name="login" class="form-control" placeholder="La tua email" required autofocus>
                     </div>
                 </div>
 
                 <!-- Password Input -->
                 <div class="form-group">
-                    <label for="password" class="form-label">Password</label>
+                    <label for="id_password" class="form-label">Password</label>
                     <div class="input-wrapper">
-                        <input type="password" id="password" name="password" class="form-control" placeholder="••••••••" required>
+                        <input type="password" id="id_password" name="password" class="form-control" placeholder="••••••••" required>
                         <!-- Show Password Toggle -->
                         <button type="button" class="password-toggle" onclick="togglePassword()" aria-label="Toggle password visibility">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -62,9 +67,10 @@
                             </svg>
                         </button>
                     </div>
+                    <a href="{% url 'account_reset_password' %}" class="forgot-password">Password dimenticata?</a>
                 </div>
 
-                <button type="submit" class="btn btn-primary btn-auth">Crea account</button>
+                <button type="submit" class="btn btn-primary btn-auth">Accedi</button>
 
                 <div class="auth-divider">
                     <span>oppure</span>
@@ -82,7 +88,7 @@
             </form>
 
             <div class="auth-footer">
-                Hai già un account? <a href="{% url 'login_form' %}" class="auth-link">Accedi</a>
+                Non hai ancora un account? <a href="{% url 'account_signup' %}" class="auth-link">Registrati con email</a>
             </div>
         </div>
 
@@ -120,7 +126,7 @@
          * Toggles the password field between 'password' and 'text'
          */
         function togglePassword() {
-            const passwordInput = document.getElementById('password');
+            const passwordInput = document.getElementById('id_password');
             const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
             passwordInput.setAttribute('type', type);
         }
