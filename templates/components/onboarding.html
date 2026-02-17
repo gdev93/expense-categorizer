@@ -1,29 +1,16 @@
 {% if user.is_authenticated %}
     {% if user.profile.onboarding_step < 5 %}
-    <div id="onboarding-container" data-step="{{ user.profile.onboarding_step }}">
-        <!-- Overlay for initial welcome or step explanation -->
-        <div class="onboarding-overlay" id="onboarding-overlay" style="display: none;">
-            <div class="onboarding-card">
-                <h2 id="onboarding-title">Benvenuto!</h2>
-                <p id="onboarding-text">Iniziamo a configurare la tua app in pochi semplici passi.</p>
-                
-                <div class="onboarding-steps">
-                    <div class="onboarding-step-indicator {% if user.profile.onboarding_step == 1 %}active{% elif user.profile.onboarding_step > 1 %}completed{% endif %}"></div>
-                    <div class="onboarding-step-indicator {% if user.profile.onboarding_step == 2 %}active{% elif user.profile.onboarding_step > 2 %}completed{% endif %}"></div>
-                    <div class="onboarding-step-indicator {% if user.profile.onboarding_step == 3 %}active{% elif user.profile.onboarding_step > 3 %}completed{% endif %}"></div>
-                    <div class="onboarding-step-indicator {% if user.profile.onboarding_step == 4 %}active{% elif user.profile.onboarding_step > 4 %}completed{% endif %}"></div>
-                </div>
-
-                <div class="onboarding-actions">
-                    <button class="btn btn-primary" id="onboarding-next">Continua</button>
-                    <button class="btn btn-secondary" id="onboarding-skip">Salta</button>
+    <div id="onboarding-modal-container" class="onboarding-modal-overlay">
+        <div id="onboarding-modal" class="onboarding-modal-card">
+            <div id="onboarding-modal-body" 
+                 hx-get="{% url 'onboarding_step' %}" 
+                 hx-trigger="load"
+                 hx-swap="innerHTML transition:true">
+                <div class="onboarding-loading">
+                    <div class="spinner"></div>
+                    <p>Caricamento...</p>
                 </div>
             </div>
-        </div>
-
-        <!-- Floating hints -->
-        <div id="onboarding-hint" class="onboarding-hint" style="display: none;">
-            <span id="onboarding-hint-text"></span>
         </div>
     </div>
     {% endif %}

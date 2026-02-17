@@ -31,6 +31,7 @@ from api.views.onboarding_views import OnboardingStepView
 from api.views.error_views import trigger_403, trigger_500, trigger_502, trigger_503
 
 urlpatterns = [
+    path('onboarding/step/', OnboardingStepView.as_view(), name='onboarding_step'),
     path('onboarding/update-step/', OnboardingStepView.as_view(), name='update_onboarding_step'),
     path('test-403/', trigger_403, name='test_403'),
     path('test-500/', trigger_500, name='test_500'),
