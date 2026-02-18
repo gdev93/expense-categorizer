@@ -1,0 +1,21 @@
+/* Styles for templates/transactions/components/merchant-list-item.html */
+
+.merchant-item-receipt-icon {
+    font-size: 0.9rem;
+    vertical-align: middle;
+    margin-right: 4px;
+}
+
+.merchant-item-category-span {
+    cursor: pointer;
+}
+
+.merchant-item-expansion-indicator {
+    padding: 10px;
+}
+
+.merchant-item-sync-icon {
+    font-size: 1.2rem;
+    vertical-align: middle;
+    margin-right: 8px;
+}

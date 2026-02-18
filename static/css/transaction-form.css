@@ -1,0 +1,26 @@
+/* Styles for templates/transactions/components/transaction_form.html */
+
+.transaction-form-group-relative {
+    position: relative;
+}
+
+.transaction-form-apply-all-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    font-weight: normal;
+    font-size: 0.95rem;
+    color: #64748b;
+    text-transform: none;
+}
+
+.transaction-form-apply-all-checkbox {
+    margin-right: 10px;
+    width: 14px;
+    height: 14px;
+}
+
+.transaction-form-save-icon {
+    vertical-align: middle;
+    margin-right: 4px;
+}

@@ -1,0 +1,100 @@
+/* Styles for templates/costs/components/summary_results.html */
+
+.summary-card-skeleton {
+    height: 100px;
+    flex: 1;
+    border: none;
+}
+
+.summary-title-skeleton {
+    width: 250px;
+    height: 32px;
+    margin-bottom: 16px;
+}
+
+.summary-list-item-skeleton {
+    height: 80px;
+    cursor: default;
+    pointer-events: none;
+}
+
+.summary-item-title-skeleton {
+    width: 200px;
+    height: 18px;
+    margin-bottom: 8px;
+}
+
+.summary-item-subtitle-skeleton {
+    width: 120px;
+    height: 14px;
+}
+
+.summary-item-stat-title-skeleton {
+    width: 80px;
+    height: 20px;
+    margin-bottom: 4px;
+}
+
+.summary-item-stat-subtitle-skeleton {
+    width: 100px;
+    height: 14px;
+}
+
+.summary-total-card {
+    background: #eef2ff;
+    border-radius: 12px;
+    padding: 20px;
+    flex: 1;
+    text-align: center;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.summary-total-label {
+    font-size: 0.9rem;
+    color: #4b5563;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.summary-total-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+.summary-upload-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    background: white;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    cursor: default;
+}
+
+.summary-upload-name {
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.summary-upload-date {
+    font-size: 0.85rem;
+    color: #6b7280;
+}
+
+.summary-upload-stats {
+    text-align: right;
+}
+
+.summary-upload-cost {
+    font-weight: 600;
+    color: #059669;
+}
+
+.summary-upload-tokens {
+    font-size: 0.8rem;
+    color: #6b7280;
+}

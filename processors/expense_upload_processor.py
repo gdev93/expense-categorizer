@@ -357,6 +357,11 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
     def _post_process_transactions(self, upload_file: UploadFile) -> None:
         """Post-process transactions after batch processing to identify column mappings and categorize uncategorized transactions."""
         self._categorize_remaining_transactions(upload_file)
+        self._clean_transactions_raw_data(upload_file)
+    
+    def _clean_transactions_raw_data(self, upload_file:UploadFile):
+        """Clean the raw data of transactions to avoid errors in the agent."""
+        Transaction.objects.filter(upload_file=upload_file).update(raw_data=None, embedding=None)
 
     def _categorize_remaining_transactions(self, upload_file: UploadFile) -> None:
         """Process uncategorized transactions by parsing their data and attempting to categorize them using similar transactions."""

@@ -376,11 +376,12 @@ input:focus,
 /* Wrapper for content to respect Sidebar */
 .main-content {
     min-height: 100vh;
-    transition: margin-left 0.3s ease;
+    transition: all 0.2s ease;
     /* Default spacing (will be overridden by media queries) */
     padding: 24px;
     padding-top: 100px;
     margin-left: 0;
+
 }
 
 /* --- Empty States --- */
@@ -675,12 +676,16 @@ input:focus,
 
 .app-modal-header {
     margin-bottom: 20px;
+
 }
 
 .app-modal-header h3 {
     margin: 0;
     font-size: 20px;
     color: var(--nav-text-color);
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .app-modal-body {

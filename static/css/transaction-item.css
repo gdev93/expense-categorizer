@@ -1,0 +1,5 @@
+/* Styles for templates/transactions/components/transaction_item.html */
+
+.transaction-category-container {
+    display: inline-block;
+}

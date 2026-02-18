@@ -1,0 +1,28 @@
+/* Styles for templates/transactions/components/transaction_income_list_results.html */
+
+.transaction-income-skeleton-item {
+    cursor: default;
+    pointer-events: none;
+}
+
+.transaction-income-skeleton-date {
+    width: 80px;
+    height: 12px;
+    margin-bottom: 4px;
+}
+
+.transaction-income-skeleton-merchant {
+    width: 150px;
+    height: 16px;
+    margin-bottom: 4px;
+}
+
+.transaction-income-skeleton-desc {
+    width: 250px;
+    height: 14px;
+}
+
+.transaction-income-skeleton-amount {
+    width: 90px;
+    height: 20px;
+}

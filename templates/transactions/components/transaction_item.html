@@ -24,7 +24,7 @@
 
     <div class="list-item-stats">
         {% if not hide_category %}
-            <div onclick="event.stopPropagation()" style="display: inline-block;">
+            <div onclick="event.stopPropagation()" class="transaction-category-container">
                 {% if transaction.category %}
                     <span class="transaction-category"
                           data-transaction-id="{{ transaction.id }}"

@@ -3,7 +3,6 @@ import csv
 import io
 import json
 import logging
-import os
 from dataclasses import dataclass
 from datetime import timedelta
 from math import ceil
@@ -14,13 +13,13 @@ from django.contrib import messages
 from django.core.validators import FileExtensionValidator
 from django.db import transaction
 from django.db.models import Sum, Count, Exists, OuterRef, Q, QuerySet
-from django.http import HttpResponse, JsonResponse, StreamingHttpResponse
+from django.http import JsonResponse, StreamingHttpResponse
 from django.urls import reverse_lazy
 from django.utils import timezone
 from django.views import View
 from django.views.generic import FormView, ListView, DeleteView
 
-from api.models import UploadFile, Transaction, Merchant
+from api.models import UploadFile, Transaction, Merchant, Category, DefaultCategory
 from api.tasks import process_upload
 from processors.csv_structure_detector import CsvStructureDetector
 from processors.expense_upload_processor import persist_uploaded_file
@@ -360,6 +359,11 @@ class UploadFileView(ListView, FormView):
         )
         context['has_pending'] = full_queryset.filter(has_pending=True).exists()
         context['selected_status'] = self.request.GET.getlist('status')
+        categories_exist = Category.objects.filter(user=self.request.user).exists()
+        if not categories_exist:
+            default_categories = list(DefaultCategory.objects.values_list('name', flat=True))
+            context['default_categories'] = default_categories
+
 
         return context
 
@@ -395,10 +399,12 @@ class UploadFileView(ListView, FormView):
                 f'File caricato con successo! {result.rows_processed}'
             )
             # Advance onboarding if before step 3
-            profile = getattr(self.request.user, 'profile', None)
+            profile = self.request.user.profile
             if profile and profile.onboarding_step < 3:
                 profile.onboarding_step = 3
+                profile.show_no_category_modal = False
                 profile.save()
+
         else:
             messages.error(self.request, result.error_message)
             return self.form_invalid(form)
@@ -477,14 +483,29 @@ class UploadFileCheckView(View):
 
     def get(self, request, *args, **kwargs):
         upload_file_query = UploadFile.objects.filter(user=self.request.user, status__in=['pending', 'processing']).distinct()
-        if not upload_file_query.exists():
-            return HttpResponse(status=404)
-        upload_file = upload_file_query.first()
-        return JsonResponse(status=200, data={
-            "total": Transaction.objects.filter(upload_file=upload_file, user=request.user).count(),
-            "current_pending": Transaction.objects.filter(upload_file=upload_file, user=request.user, status='pending').count(),
-            "current_categorized": Transaction.objects.filter(upload_file=upload_file, user=request.user, status='categorized').count(),
-        })
 
+        has_categories = Category.objects.filter(user=request.user).exists()
+        has_dismissed_modal = request.session.get('has_dismissed_default_category_modal', False)
+        default_categories = list(DefaultCategory.objects.values_list('name', flat=True))
 
+        data = {
+            "has_categories": has_categories,
+            "has_dismissed_modal": has_dismissed_modal,
+            "default_categories": default_categories,
+        }
+
+        if upload_file_query.exists():
+            upload_file = upload_file_query.first()
+            data.update({
+                "upload_in_progress": True,
+                "total": Transaction.objects.filter(upload_file=upload_file, user=request.user).count(),
+                "current_pending": Transaction.objects.filter(upload_file=upload_file, user=request.user, status='pending').count(),
+                "current_categorized": Transaction.objects.filter(upload_file=upload_file, user=request.user, status='categorized').count(),
+            })
+        else:
+            data.update({
+                "upload_in_progress": False,
+            })
+
+        return JsonResponse(status=200, data=data)
 

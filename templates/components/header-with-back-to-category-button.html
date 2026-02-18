@@ -2,7 +2,7 @@
 
 {% block header_extra_title %}
     {% if total is not None %}
-    <div class="header-total-pill" style="margin: 0;" id="category-detail-total-pill">
+    <div class="header-total-pill header-back-total-pill" id="category-detail-total-pill">
         <span class="label">Totale Speso</span>
         <span class="value">€ {{ total|floatformat:2|default:"0,00" }}</span>
     </div>
@@ -10,7 +10,7 @@
 {% endblock %}
 
 {% block header_content %}
-    <div style="display: flex; align-items: center; gap: 0.75rem;">
+    <div class="header-back-content">
         {% if edit_url %}
         <a href="{{ edit_url }}" class="btn btn-primary">
             Modifica

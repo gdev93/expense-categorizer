@@ -10,13 +10,21 @@
     <link rel="stylesheet" href="{% static 'css/layout.css' %}">
     <link rel="stylesheet" href="{% static 'css/filters.css' %}">
     <link rel="stylesheet" href="{% static 'css/merchant-details.css' %}">
+    <link rel="stylesheet" href="{% static 'css/transaction-list.css' %}">
+    <link rel="stylesheet" href="{% static 'css/transaction-item.css' %}">
+    <link rel="stylesheet" href="{% static 'css/transaction-income-list-results.css' %}">
+    <link rel="stylesheet" href="{% static 'css/transaction-list-results.css' %}">
+    <link rel="stylesheet" href="{% static 'css/transaction-list-content.css' %}">
+    <link rel="stylesheet" href="{% static 'css/merchant-list-content.css' %}">
+    <link rel="stylesheet" href="{% static 'css/merchant-list-item.css' %}">
+    <link rel="stylesheet" href="{% static 'css/merchant-transactions.css' %}">
 {% endblock %}
 {% block content %}
     <div class="container mt-2">
 
         <div class="header">
             <div class="header-title-container">
-                <h1><span class="material-icons" style="vertical-align: middle; margin-right: 8px;">{% if view_type == 'merchant' %}store{% else %}receipt_long{% endif %}</span> {% if view_type == 'merchant' %}Spese per Esercente{% else %}Lista Spese{% endif %}</h1>
+                <h1><span class="material-icons transaction-list-header-icon">{% if view_type == 'merchant' %}store{% else %}receipt_long{% endif %}</span> {% if view_type == 'merchant' %}Spese per Esercente{% else %}Lista Spese{% endif %}</h1>
                 <div class="header-extra">
                     <div class="mobile-only">
                         {% include "components/year-select.html" with id_suffix="_mobile_toggle" show_year=False %}

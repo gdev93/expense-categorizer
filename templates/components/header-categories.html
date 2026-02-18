@@ -1,14 +1,14 @@
 {% extends "components/header.html" %}
 
 {% block header_extra_title %}
-    <div class="header-total-pill" style="margin: 0;" id="category-total-pill">
+    <div class="header-total-pill header-categories-total-pill" id="category-total-pill">
         <span class="label">Totale Speso</span>
         <span class="value">€ {{ total|floatformat:2|default:"0,00" }}</span>
     </div>
 {% endblock %}
 
 {% block header_content %}
-    <div style="display: flex; align-items: center; gap: 0.75rem;">
+    <div class="header-categories-content">
         <div class="desktop-only">
             {% include "components/year-select-compact.html" with id_suffix="_desktop" %}
         </div>

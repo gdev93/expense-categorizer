@@ -1,0 +1,34 @@
+/* Styles for templates/transactions/components/transaction_list_results.html */
+
+.transaction-list-skeleton-title {
+    width: 200px;
+    height: 24px;
+    margin-bottom: 24px;
+}
+
+.transaction-list-skeleton-item {
+    cursor: default;
+    pointer-events: none;
+}
+
+.transaction-list-skeleton-date {
+    width: 80px;
+    height: 12px;
+}
+
+.transaction-list-skeleton-merchant {
+    width: 150px;
+    height: 16px;
+    margin-top: 4px;
+}
+
+.transaction-list-skeleton-category {
+    width: 100px;
+    height: 24px;
+    border-radius: 12px;
+}
+
+.transaction-list-skeleton-amount {
+    width: 60px;
+    height: 18px;
+}

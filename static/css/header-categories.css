@@ -1,0 +1,11 @@
+/* Styles for templates/components/header-categories.html */
+
+.header-categories-total-pill {
+    margin: 0;
+}
+
+.header-categories-content {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}

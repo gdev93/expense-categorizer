@@ -1,0 +1,5 @@
+/* Styles for templates/main/index.html */
+
+.logout-form-hidden {
+    display: none;
+}

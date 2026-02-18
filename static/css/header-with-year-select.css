@@ -1,0 +1,14 @@
+/* Styles for templates/components/header-with-year-select.html */
+
+.header-with-year-select-content {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.header-with-year-select-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 38px;
+}

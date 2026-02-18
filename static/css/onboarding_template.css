@@ -1,0 +1,5 @@
+/* Styles for templates/components/onboarding.html */
+
+.onboarding-replay-modal-hidden {
+    display: none;
+}

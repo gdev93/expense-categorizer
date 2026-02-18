@@ -1,0 +1,19 @@
+/* Styles for templates/components/onboarding_step.html */
+
+.mock-upload-icon {
+    font-size: 3rem;
+    color: var(--onboarding-accent);
+}
+
+.mock-section-title-margin {
+    margin-top: 1.5rem;
+}
+
+.mock-item-badge-completed {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.mock-hint-text-margin {
+    margin-top: 1.5rem;
+}

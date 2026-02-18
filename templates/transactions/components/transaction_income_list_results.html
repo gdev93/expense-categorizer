@@ -2,14 +2,14 @@
     <div class="skeleton-loader">
         <div class="data-list">
             {% for i in "12345" %}
-                <div class="data-list-item" style="cursor: default; pointer-events: none;">
+                <div class="data-list-item transaction-income-skeleton-item">
                     <div class="list-item-info">
-                        <div class="skeleton-text" style="width: 80px; height: 12px; margin-bottom: 4px;"></div>
-                        <div class="skeleton-text" style="width: 150px; height: 16px; margin-bottom: 4px;"></div>
-                        <div class="skeleton-text" style="width: 250px; height: 14px;"></div>
+                        <div class="skeleton-text transaction-income-skeleton-date"></div>
+                        <div class="skeleton-text transaction-income-skeleton-merchant"></div>
+                        <div class="skeleton-text transaction-income-skeleton-desc"></div>
                     </div>
                     <div class="list-item-stats">
-                        <div class="skeleton-text" style="width: 90px; height: 20px;"></div>
+                        <div class="skeleton-text transaction-income-skeleton-amount"></div>
                     </div>
                 </div>
             {% endfor %}

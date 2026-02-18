@@ -1,10 +1,9 @@
-<div class="filters filters-clean" style="margin: 0;">
+<div class="filters filters-clean year-select-compact-container">
     <select id="year-select{{ id_suffix }}"
             name="year"
-            class="form-select"
+            class="form-select year-select-compact-select"
             form="main-filter-form"
-            hx-on:change="document.querySelectorAll('select[name=year]').forEach(s => s.value = this.value)"
-            style="padding: 6px 10px; height: 38px; width: auto; min-width: 100px;">
+            hx-on:change="document.querySelectorAll('select[name=year]').forEach(s => s.value = this.value)">
         {% for available_year in available_years %}
             <option value="{{ available_year }}" {% if available_year == year %}selected{% endif %}>
                 {{ available_year }}

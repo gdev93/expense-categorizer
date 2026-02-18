@@ -10,36 +10,7 @@
     <link rel="stylesheet" href="{% static 'css/main.css' %}">
     <link rel="stylesheet" href="{% static 'css/login.css' %}">
     <link rel="stylesheet" href="{% static 'css/material-icons.css' %}">
-    <script src="https://unpkg.com/htmx.org@2.0.4" integrity="sha384-HGfzYHLsqSAnfSht5BCS2f81koqvICRIZIzKsre8p9i6P0tueR4vOxH60X2v" crossorigin="anonymous"></script>
-    <style>
-        .htmx-indicator {
-            display: none;
-        }
-        .htmx-request.htmx-indicator {
-            display: flex;
-        }
-        .htmx-request.btn-auth {
-            display: none;
-        }
-        .auth-loading {
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            margin-bottom: 20px;
-            color: #6c757d;
-        }
-        .spinner {
-            width: 20px;
-            height: 20px;
-            border: 2px solid rgba(0,0,0,0.1);
-            border-top-color: #FFC107;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-    </style>
+    <script src="{% static 'js/htmx/htmx.min.js' %}"></script>
     {% block extra_head %}{% endblock %}
 </head>
 <body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>

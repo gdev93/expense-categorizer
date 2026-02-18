@@ -5,17 +5,19 @@
 
 {% block extra_css %}
     <link rel="stylesheet" href="{% static 'css/transactions.css' %}">
+    <link rel="stylesheet" href="{% static 'css/transaction-detail.css' %}">
+    <link rel="stylesheet" href="{% static 'css/transaction-form.css' %}">
 {% endblock %}
 
 {% block content %}
     <div class="container mt-2">
         <div class="header">
             <div class="header-title-container">
-                <h1><span class="material-icons" style="vertical-align: middle; margin-right: 8px;">edit</span> Modifica Spesa</h1>
+                <h1><span class="material-icons transaction-detail-header-icon">edit</span> Modifica Spesa</h1>
             </div>
             <div class="header-actions">
                 <button type="submit" form="transaction-form" class="btn btn-primary desktop-only">
-                    <span class="material-icons" style="vertical-align: middle; margin-right: 4px;">save</span> Salva
+                    <span class="material-icons transaction-detail-save-icon">save</span> Salva
                 </button>
                 <form method="post" action="{% url 'transaction_detail' transaction.id %}" onsubmit="return confirm('Sei sicuro di voler eliminare questa transazione? Questa azione non è reversibile.')">
                     {% csrf_token %}

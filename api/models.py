@@ -351,7 +351,7 @@ class Transaction(models.Model):
     modified_by_user = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    raw_data = models.JSONField(default=dict)
+    raw_data = models.JSONField(default=dict, null=True)
     categorized_by_agent = models.BooleanField(default=False)
     reasoning = models.TextField(blank=True)
     embedding = VectorField(dimensions=384, null=True, blank=True)
@@ -442,7 +442,6 @@ class Profile(models.Model):
     subscription_type = models.CharField(max_length=50, default='free_trial')
     onboarding_step = models.IntegerField(default=1, help_text="1: Categories, 2: Upload, 3: Filters, 4: Personalize, 5: Completed")
     welcome_email_sent = models.BooleanField(default=False)
-
     def __str__(self):
         return f"{self.user.username}'s profile"
 

@@ -282,6 +282,34 @@
     text-decoration: underline;
 }
 
+.htmx-indicator {
+    display: none;
+}
+.htmx-request.htmx-indicator {
+    display: flex;
+}
+.htmx-request.btn-auth {
+    display: none;
+}
+.auth-loading {
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    color: #6c757d;
+}
+.spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(0,0,0,0.1);
+    border-top-color: #FFC107;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
 /* =========================================
    3. BANNER CONTENT (Right Side)
    ========================================= */

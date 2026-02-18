@@ -1,0 +1,125 @@
+/* Styles for templates/transactions/transactions_upload.html */
+
+.upload-progress-bar-initial {
+    width: 0;
+}
+
+.upload-default-category-list {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0 20px;
+    list-style-type: none;
+    padding: 12px;
+    margin-top: 15px;
+    max-height: 450px;
+    overflow-y: auto;
+    background: #fdfdfd;
+    border: 1px solid #f0f0f0;
+    border-radius: 8px;
+}
+
+/* Adjust layout and scroll on small screens */
+@media (max-width: 767px) {
+    .upload-default-category-list {
+        grid-template-columns: 1fr;
+        max-height: 380px;
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
+.default-category-item {
+    padding: 6px 0;
+    display: flex;
+    align-items: center;
+    font-size: 0.9rem;
+}
+
+.default-category-icon {
+    font-size: 16px;
+    vertical-align: middle;
+    margin-right: 8px;
+    color: var(--primary-color);
+}
+
+/* Modal Specific Styles */
+.default-category-modal {
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.5);
+    align-items: center;
+    justify-content: center;
+}
+
+.default-category-modal .app-modal-content {
+    position: relative;
+}
+
+.default-category-modal .close-btn {
+    top: 15px;
+    right: 15px;
+    transform: none;
+}
+
+.default-category-modal .close-btn:hover {
+    transform: scale(1.1);
+}
+
+/* Desktop specific width and height */
+@media (min-width: 768px) {
+    .default-category-modal .app-modal-content {
+        max-width: 800px;
+        width: 90%;
+        min-height: 600px;
+        max-height: 90vh;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .default-category-modal .app-modal-body {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .upload-default-category-list {
+        flex: 1;
+        max-height: 500px;
+    }
+}
+
+@media (max-width: 767px) {
+}
+
+.default-categories-warning {
+    background-color: var(--category-bg);
+    border: 1px solid var(--category-border);
+    color: var(--category-text);
+    padding: 10px 15px;
+    border-radius: 8px;
+    margin: 15px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.9rem;
+}
+
+.default-categories-warning .material-icons {
+    color: var(--category-text);
+    font-size: 20px;
+}
+
+.default-categories-warning a {
+    color: var(--category-text);
+    text-decoration: underline;
+    font-weight: 500;
+}
+
+.default-categories-warning a:hover {
+    color: #000;
+}

@@ -259,17 +259,15 @@ ACCOUNT_FORMS = {
     'signup': 'api.forms.RegistrationForm',
 }
 ACCOUNT_LOGIN_METHODS = {'email', 'username'}
-ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
-ACCOUNT_USERNAME_REQUIRED = True
-ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_SIGNUP_FIELDS = ['email*', 'username*', 'password1*', 'password2*']
 ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
 ACCOUNT_HTML_EMAIL_CONFIRMATION = True
 ACCOUNT_EMAIL_SUBJECT_PREFIX = ""
 ACCOUNT_PREVENT_ENUMERATION = False
-ACCOUNT_UNIQUE_EMAIL = True
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/accounts/login/'
 SOCIALACCOUNT_LOGIN_ON_GET = True
+
 
 # MailerSend specific settings (as requested by provider snippet)
 SMTP_PROVIDER_HOST = os.getenv('SMTP_PROVIDER_HOST', 'pro.turbo-smtp.com')
@@ -288,12 +286,16 @@ if DEBUG:
     EMAIL_HOST_USER = ''
     EMAIL_HOST_PASSWORD = ''
 else:
-    # Production: MailerSend
     EMAIL_HOST = SMTP_PROVIDER_HOST
     EMAIL_PORT = SMTP_PROVIDER_PORT
     EMAIL_USE_TLS = True
     EMAIL_HOST_USER = SMTP_PROVIDER_USERNAME
     EMAIL_HOST_PASSWORD = SMTP_PROVIDER_PASSWORD
+    # 1. Tell Django to trust the X-Forwarded-Proto header from Apache
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+    # 2. Force allauth to use https when generating URLs
+    ACCOUNT_DEFAULT_HTTP_PROTOCOL = 'https'
 
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL')
 
