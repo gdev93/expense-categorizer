@@ -13,7 +13,7 @@
                     <button type="button" class="close-btn" onclick="this.parentElement.remove();" aria-label="Chiudi"><span class="material-icons">close</span></button>
                     {% for field in form %}
                         {% for error in field.errors %}
-                            <p>{{ error }}</p>
+                            <p><strong>{{ field.label }}:</strong> {{ error }}</p>
                         {% endfor %}
                     {% endfor %}
                     {% for error in form.non_field_errors %}
@@ -22,7 +22,12 @@
                 </div>
             {% endif %}
 
-            <form method="POST" action="{% url 'account_login' %}" class="auth-form">
+            <form method="POST" action="{% url 'account_login' %}" class="auth-form" 
+                  hx-post="{% url 'account_login' %}" 
+                  hx-target=".auth-content" 
+                  hx-select=".auth-content" 
+                  hx-swap="outerHTML"
+                  hx-indicator="#loading-indicator">
                 {% csrf_token %}
 
                 {% if redirect_field_value %}
@@ -31,9 +36,9 @@
 
                 <!-- Email/Username Input -->
                 <div class="form-group">
-                    <label for="id_login" class="form-label">Email</label>
+                    <label for="id_login" class="form-label">Nome utente o Email</label>
                     <div class="input-wrapper">
-                        <input type="text" id="id_login" name="login" class="form-control" placeholder="La tua email" required autofocus>
+                        <input type="text" id="id_login" name="login" class="form-control" placeholder="Nome utente o Email" value="{{ form.login.value|default:'' }}" required autofocus>
                     </div>
                 </div>
 
@@ -53,6 +58,11 @@
                     <a href="{% url 'account_reset_password' %}" class="forgot-password">Password dimenticata?</a>
                 </div>
 
+                <div id="loading-indicator" class="htmx-indicator auth-loading">
+                    <div class="spinner"></div>
+                    <span>Attendere prego...</span>
+                </div>
+                
                 <button type="submit" class="btn btn-primary btn-auth">Accedi</button>
 
                 <div class="auth-divider">

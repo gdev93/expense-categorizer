@@ -11,6 +11,7 @@ from django.views import View
 from django.views.generic import UpdateView
 
 from api.models import Transaction, Category, Merchant
+from processors.similarity_matcher import update_merchant_ema
 
 pre_check_confidence_threshold = os.environ.get('PRE_CHECK_CONFIDENCE_THRESHOLD', 0.8)
 
@@ -98,6 +99,14 @@ class TransactionDetailUpdateView(LoginRequiredMixin, UpdateView):
         form.instance.modified_by_user = True
         form.instance.status = 'categorized'
         self.object = form.save()
+
+        # Update Merchant EMA if merchant and embedding are available
+        if self.object.merchant and self.object.embedding and self.object.upload_file and self.object.upload_file.file_structure_metadata:
+            update_merchant_ema(
+                merchant=self.object.merchant,
+                file_structure_metadata=self.object.upload_file.file_structure_metadata,
+                embedding=self.object.embedding
+            )
 
         # Apply to all transactions of the same merchant if requested
         apply_to_all = self.request.POST.get('apply_to_all') in ['on', 'true']

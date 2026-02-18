@@ -60,7 +60,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.LoginRequiredMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware'
+    'whitenoise.middleware.WhiteNoiseMiddleware',
+    'api.middleware.HTMXRedirectMiddleware',
 ]
 
 ROOT_URLCONF = 'server.urls'
@@ -206,8 +207,30 @@ GOOGLE_OAUTH_CLIENT_SECRET = os.getenv('GOOGLE_OAUTH_CLIENT_SECRET', '')
 SITE_ID = 1
 SITE_NAME = os.getenv('SITE_NAME', 'Pecuniam')
 
+AUTH_PASSWORD_VALIDATORS = [
+    {
+        # Checks if the password is too similar to the username or other attributes
+        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+    },
+    {
+        # Checks if the password meets a minimum length (default is 8)
+        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'OPTIONS': {
+            'min_length': 10, # You can customize the length here
+        }
+    },
+    {
+        # Checks if the password is a commonly used one (from a list of 1000+ common passwords)
+        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+    },
+    {
+        # Checks if the password is not entirely numeric
+        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+    },
+]
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
+    'api.backends.EmailOrUsernameBackend',
     'allauth.account.auth_backends.AuthenticationBackend',
 ]
 
@@ -231,8 +254,14 @@ SOCIALACCOUNT_PROVIDERS = {
 
 SOCIALACCOUNT_ADAPTER = 'api.adapters.SocialAccountAdapter'
 ACCOUNT_ADAPTER = 'api.adapters.AccountAdapter'
-ACCOUNT_LOGIN_METHODS = {'email'}
-ACCOUNT_SIGNUP_FIELDS = ['email*', 'username*', 'password1*']
+ACCOUNT_FORMS = {
+    'login': 'api.forms.LoginForm',
+    'signup': 'api.forms.RegistrationForm',
+}
+ACCOUNT_LOGIN_METHODS = {'email', 'username'}
+ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
+ACCOUNT_USERNAME_REQUIRED = True
+ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
 ACCOUNT_HTML_EMAIL_CONFIRMATION = True
 ACCOUNT_EMAIL_SUBJECT_PREFIX = ""
@@ -243,10 +272,10 @@ LOGOUT_REDIRECT_URL = '/accounts/login/'
 SOCIALACCOUNT_LOGIN_ON_GET = True
 
 # MailerSend specific settings (as requested by provider snippet)
-MAILERSEND_SMTP_HOST = os.getenv('MAILERSEND_SMTP_HOST', 'smtp.mailersend.net')
-MAILERSEND_SMTP_PORT = int(os.getenv('MAILERSEND_SMTP_PORT', 587))
-MAILERSEND_SMTP_USERNAME = os.getenv('MAILERSEND_SMTP_USERNAME')
-MAILERSEND_API_KEY = os.getenv('MAILERSEND_API_KEY')
+SMTP_PROVIDER_HOST = os.getenv('SMTP_PROVIDER_HOST', 'pro.turbo-smtp.com')
+SMTP_PROVIDER_PORT = int(os.getenv('SMTP_PROVIDER_PORT', 587))
+SMTP_PROVIDER_USERNAME = os.getenv('SMTP_PROVIDER_USERNAME')
+SMTP_PROVIDER_PASSWORD = os.getenv('SMTP_PROVIDER_PASSWORD')
 
 # Email Config (Standard Django variables)
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
@@ -260,11 +289,11 @@ if DEBUG:
     EMAIL_HOST_PASSWORD = ''
 else:
     # Production: MailerSend
-    EMAIL_HOST = MAILERSEND_SMTP_HOST
-    EMAIL_PORT = MAILERSEND_SMTP_PORT
+    EMAIL_HOST = SMTP_PROVIDER_HOST
+    EMAIL_PORT = SMTP_PROVIDER_PORT
     EMAIL_USE_TLS = True
-    EMAIL_HOST_USER = MAILERSEND_SMTP_USERNAME
-    EMAIL_HOST_PASSWORD = MAILERSEND_API_KEY
+    EMAIL_HOST_USER = SMTP_PROVIDER_USERNAME
+    EMAIL_HOST_PASSWORD = SMTP_PROVIDER_PASSWORD
 
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL')
 

@@ -47,7 +47,7 @@
             <div class="form-group">
                 <label for="id_email" class="form-label">Email</label>
                 <div class="input-wrapper">
-                    <input type="email" name="email" id="id_email" class="form-control" placeholder="nuova@email.com" required>
+                    <input type="email" name="email" id="id_email" class="form-control" placeholder="nuova@email.com" value="{{ form.email.value|default:'' }}" required>
                 </div>
             </div>
             <button class="btn btn-primary btn-auth" name="action_add" type="submit">{% trans "Add Email" %}</button>

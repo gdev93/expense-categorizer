@@ -13,7 +13,7 @@
                     <button type="button" class="close-btn" onclick="this.parentElement.remove();" aria-label="Chiudi"><span class="material-icons">close</span></button>
                     {% for field in form %}
                         {% for error in field.errors %}
-                            <p>{{ error }}</p>
+                            <p><strong>{{ field.label }}:</strong> {{ error }}</p>
                         {% endfor %}
                     {% endfor %}
                     {% for error in form.non_field_errors %}
@@ -22,7 +22,12 @@
                 </div>
             {% endif %}
 
-            <form method="POST" action="{% url 'account_signup' %}" class="auth-form">
+            <form method="POST" action="{% url 'account_signup' %}" class="auth-form" 
+                  hx-post="{% url 'account_signup' %}" 
+                  hx-target=".auth-content" 
+                  hx-select=".auth-content" 
+                  hx-swap="outerHTML"
+                  hx-indicator="#loading-indicator">
                 {% csrf_token %}
 
                 {% if redirect_field_value %}
@@ -33,7 +38,7 @@
                 <div class="form-group">
                     <label for="id_email" class="form-label">Email</label>
                     <div class="input-wrapper">
-                        <input type="email" id="id_email" name="email" class="form-control" placeholder="tua@email.com" required autofocus>
+                        <input type="email" id="id_email" name="email" class="form-control" placeholder="tua@email.com" value="{{ form.email.value|default:'' }}" required autofocus>
                     </div>
                 </div>
 
@@ -41,7 +46,7 @@
                 <div class="form-group">
                     <label for="id_username" class="form-label">Nome utente</label>
                     <div class="input-wrapper">
-                        <input type="text" id="id_username" name="username" class="form-control" placeholder="Il tuo username" required>
+                        <input type="text" id="id_username" name="username" class="form-control" placeholder="Il tuo username" value="{{ form.username.value|default:'' }}" required>
                     </div>
                 </div>
 
@@ -58,6 +63,19 @@
                             </svg>
                         </button>
                     </div>
+                </div>
+
+                <!-- Password Confirm Input -->
+                <div class="form-group">
+                    <label for="id_password2" class="form-label">Conferma password</label>
+                    <div class="input-wrapper">
+                        <input type="password" id="id_password2" name="password2" class="form-control" placeholder="••••••••" required>
+                    </div>
+                </div>
+
+                <div id="loading-indicator" class="htmx-indicator auth-loading">
+                    <div class="spinner"></div>
+                    <span>Attendere prego...</span>
                 </div>
 
                 <button type="submit" class="btn btn-primary btn-auth">Crea account</button>
