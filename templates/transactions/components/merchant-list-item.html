@@ -28,7 +28,7 @@
             </div>
             <div class="merchant-meta">
                 <span class="badge-count">
-                    <span class="material-icons" style="font-size: 0.9rem; vertical-align: middle; margin-right: 4px;">receipt_long</span>
+                    <span class="material-icons merchant-item-receipt-icon">receipt_long</span>
                     {{ item.number_of_transactions }} transazioni
                 </span>
             </div>
@@ -39,9 +39,8 @@
                     {% csrf_token %}
                     <input type="hidden" name="merchant_id" value="{{ item.merchant__id }}">
                     <div class="category-pill-container">
-                        <span class="transaction-category"
-                              onclick="toggleCategoryMenu(this)"
-                              style="cursor: pointer;">
+                        <span class="transaction-category merchant-item-category-span"
+                              onclick="toggleCategoryMenu(this)">
                             {% if item.categories_list %}{{ item.categories_list }}{% else %}Seleziona<span class="desktop-only"> Categoria</span>{% endif %}
                         </span>
                         <div class="category-dropdown-menu">
@@ -63,8 +62,8 @@
 
     <div class="merchant-details-expansion" id="details-{{ m_id }}">
         <div class="expansion-content">
-            <div class="htmx-indicator" style="padding: 10px;">
-                <p class="text-muted"><span class="material-icons spin-animation" style="font-size: 1.2rem; vertical-align: middle; margin-right: 8px;">sync</span>Caricamento transazioni...</p>
+            <div class="htmx-indicator merchant-item-expansion-indicator">
+                <p class="text-muted"><span class="material-icons spin-animation merchant-item-sync-icon">sync</span>Caricamento transazioni...</p>
             </div>
         </div>
     </div>

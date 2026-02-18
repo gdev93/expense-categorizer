@@ -1,0 +1,8 @@
+/* Styles for templates/transactions/components/merchant_transactions.html */
+
+.merchant-transactions-date-icon {
+    font-size: 0.85rem;
+    vertical-align: middle;
+    margin-right: 4px;
+    color: #94a3b8;
+}

@@ -1,0 +1,28 @@
+/* Styles for templates/transactions/transactions_upload.html */
+
+.upload-progress-bar-initial {
+    width: 0;
+}
+
+.upload-default-category-list {
+    column-count: 2;
+    list-style-type: none;
+    padding-left: 0;
+    margin-top: 15px;
+}
+
+.upload-modal-footer-margin {
+    margin-top: 25px;
+}
+
+.upload-dont-show-again-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.upload-dont-show-again-checkbox {
+    margin-right: 10px;
+    width: 18px;
+    height: 18px;
+}

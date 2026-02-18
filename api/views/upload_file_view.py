@@ -15,6 +15,7 @@ from django.core.validators import FileExtensionValidator
 from django.db import transaction
 from django.db.models import Sum, Count, Exists, OuterRef, Q, QuerySet
 from django.http import HttpResponse, JsonResponse, StreamingHttpResponse
+from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.utils import timezone
 from django.views import View
@@ -512,8 +513,16 @@ class UploadFileCheckView(View):
 
 class DismissDefaultCategoryModalView(View):
     def post(self, request, *args, **kwargs):
-        request.session['has_dismissed_default_category_modal'] = True
-        return JsonResponse({"status": "success"})
+        # Check if the checkbox was ticked in the form
+        dont_show_again = request.POST.get('dont_show_again')
 
+        if dont_show_again:
+            # Update the user profile preference
+            profile = request.user.profile
+            profile.show_no_category_modal = False
+            profile.save()
+
+        # Redirect back to the previous page or a fallback
+        return redirect(request.META.get('HTTP_REFERER', '/'))
 
 

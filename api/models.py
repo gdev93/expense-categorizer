@@ -442,6 +442,7 @@ class Profile(models.Model):
     subscription_type = models.CharField(max_length=50, default='free_trial')
     onboarding_step = models.IntegerField(default=1, help_text="1: Categories, 2: Upload, 3: Filters, 4: Personalize, 5: Completed")
     welcome_email_sent = models.BooleanField(default=False)
+    show_no_category_modal = models.BooleanField(default=True)
     def __str__(self):
         return f"{self.user.username}'s profile"
 

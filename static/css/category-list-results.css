@@ -1,0 +1,28 @@
+/* Styles for templates/categories/components/category_list_results.html */
+
+.category-list-skeleton-item {
+    cursor: default;
+    pointer-events: none;
+}
+
+.category-list-skeleton-name {
+    width: 150px;
+    height: 18px;
+    margin-bottom: 8px;
+}
+
+.category-list-skeleton-desc {
+    width: 250px;
+    height: 14px;
+}
+
+.category-list-skeleton-amount {
+    width: 80px;
+    height: 20px;
+}
+
+.category-list-skeleton-badge {
+    width: 100px;
+    height: 18px;
+    border-radius: 12px;
+}

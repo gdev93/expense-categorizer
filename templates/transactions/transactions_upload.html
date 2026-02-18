@@ -10,6 +10,8 @@
     <link rel="stylesheet" href="{% static 'css/pagination.css' %}">
     <link rel="stylesheet" href="{% static 'css/progress-bar.css' %}">
     <link rel="stylesheet" href="{% static 'css/filters.css' %}">
+    <link rel="stylesheet" href="{% static 'css/transactions-upload.css' %}">
+    <link rel="stylesheet" href="{% static 'css/upload-list-results.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -51,7 +53,8 @@
                     <div id="fileListPreview" class="file-list-preview hidden">
                     </div>
                     <div id="processingProgressBarContainer" class="progress-container mt-3 hidden">
-                        <div id="processingProgressBar" class="progress-bar" role="progressbar"  style="width: 0;"
+                        <div id="processingProgressBar" class="progress-bar upload-progress-bar-initial"
+                             role="progressbar"
                              aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
                             0%
                         </div>
@@ -201,14 +204,16 @@
             </div>
             <div class="app-modal-body">
                 <p>Non hai ancora creato nessuna categoria. Se procedi con il caricamento, verranno utilizzate le seguenti categorie di default per classificare le tue spese:</p>
-                <ul id="defaultCategoryList" class="mt-3" style="column-count: 2; list-style-type: none; padding-left: 0; margin-top: 15px;">
+                <ul id="defaultCategoryList" class="mt-3 upload-default-category-list">
 
                 </ul>
-                <div class="mt-4" style="margin-top: 25px;">
-                    <label style="display: flex; align-items: center; cursor: pointer;">
-                        <input type="checkbox" id="dontShowAgain" style="margin-right: 10px; width: 18px; height: 18px;">
+                <div class="mt-4 upload-modal-footer-margin">
+                    <form method="post" action="{% url 'dismiss_default_category_modal' %}">
+                        <label class="upload-dont-show-again-label">
+                            <input type="checkbox" id="dontShowAgain" class="upload-dont-show-again-checkbox">
                         <span>Non mostrare più questo messaggio</span>
                     </label>
+                    </form>
                 </div>
             </div>
             <div class="app-modal-footer">

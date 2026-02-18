@@ -1,0 +1,24 @@
+/* Styles for templates/transactions/components/merchant-list-content.html */
+
+.merchant-list-uncategorized-badge {
+    background-color: var(--category-bg);
+    color: var(--category-text);
+    border: 1px solid var(--category-border);
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 14px;
+}
+
+.merchant-list-expander {
+    margin-bottom: 40px;
+}
+
+.merchant-list-expander-summary-text {
+    font-weight: 600;
+    color: #343a40;
+}
+
+.merchant-list-add-icon {
+    vertical-align: middle;
+    margin-right: 4px;
+}

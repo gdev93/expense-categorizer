@@ -1,0 +1,51 @@
+/* Styles for templates/transactions/components/upload_list_results.html */
+
+.upload-skeleton-item {
+    cursor: default;
+    pointer-events: none;
+}
+
+.upload-skeleton-filename {
+    width: 250px;
+    height: 18px;
+    margin-bottom: 8px;
+}
+
+.upload-skeleton-date {
+    width: 180px;
+    height: 14px;
+    margin-bottom: 4px;
+}
+
+.upload-skeleton-size {
+    width: 120px;
+    height: 14px;
+}
+
+.upload-skeleton-status {
+    width: 100px;
+    height: 24px;
+    border-radius: 4px;
+}
+
+.upload-skeleton-count {
+    width: 120px;
+    height: 18px;
+}
+
+.upload-skeleton-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.upload-skeleton-btn {
+    width: 80px;
+    height: 32px;
+    border-radius: 4px;
+}
+
+.upload-status-spin-icon {
+    font-size: 12px;
+    vertical-align: middle;
+    margin-right: 4px;
+}
