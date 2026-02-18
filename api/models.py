@@ -421,6 +421,18 @@ class Rule(models.Model):
             models.Index(fields=['user', 'is_active']),
         ]
 
+class OnboardingStep(models.Model):
+    step_number = models.IntegerField(unique=True)
+    title = models.CharField(max_length=255)
+    description = models.TextField()
+    mock_type = models.CharField(max_length=100)
+
+    class Meta:
+        ordering = ['step_number']
+
+    def __str__(self):
+        return f"Step {self.step_number}: {self.title}"
+
 class Profile(models.Model):
     user = models.OneToOneField(
         User,

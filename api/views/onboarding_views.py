@@ -2,7 +2,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.views import View
-from api.models import Profile
+from api.models import Profile, OnboardingStep
 
 class OnboardingStepView(LoginRequiredMixin, View):
     def get(self, request, *args, **kwargs):
@@ -17,37 +17,20 @@ class OnboardingStepView(LoginRequiredMixin, View):
         except (ValueError, TypeError):
             step = 1
 
+        total_steps = OnboardingStep.objects.count()
         context = {
             'step': step,
-            'total_steps': 4,
+            'total_steps': total_steps,
         }
         
-        # Define step specific data
-        steps_data = {
-            1: {
-                'title': 'Crea le tue Categorie',
-                'description': 'Il primo passo è creare le categorie di spesa (es. Spesa, Affitto, Trasporti) con una breve descrizione.',
-                'mock_type': 'categories'
-            },
-            2: {
-                'title': 'Carica i tuoi Dati',
-                'description': 'Ora carica il file CSV delle tue transazioni bancarie per iniziare a categorizzarle.',
-                'mock_type': 'upload'
-            },
-            3: {
-                'title': 'Usa i Filtri',
-                'description': 'Ottimo! Ora puoi usare i filtri per analizzare le tue spese per periodo, categoria o esercente.',
-                'mock_type': 'filters'
-            },
-            4: {
-                'title': 'Personalizza le tue Spese',
-                'description': 'Puoi cambiare la categoria di una spesa cliccando sulla "pillola" colorata, oppure cliccare sulla riga per vedere i dettagli.',
-                'mock_type': 'modify'
-            }
-        }
-        
-        if step in steps_data:
-            context.update(steps_data[step])
+        # Get step specific data from database
+        onboarding_step = OnboardingStep.objects.filter(step_number=step).first()
+        if onboarding_step:
+            context.update({
+                'title': onboarding_step.title,
+                'description': onboarding_step.description,
+                'mock_type': onboarding_step.mock_type,
+            })
             
         return render(request, 'components/onboarding_step.html', context)
 
@@ -59,8 +42,10 @@ class OnboardingStepView(LoginRequiredMixin, View):
                 profile = getattr(request.user, 'profile', None)
                 if not profile:
                     return JsonResponse({'status': 'error', 'message': 'Profile not found'}, status=404)
-                # Allow setting any valid step (1: Categories, 2: Upload, 3: Filters, 4: Modify, 5: Completed)
-                if 1 <= step_int <= 5:
+                
+                total_steps = OnboardingStep.objects.count()
+                # Allow setting any valid step or the next one (Completed)
+                if 1 <= step_int <= total_steps + 1:
                     profile.onboarding_step = step_int
                     profile.save()
                     return JsonResponse({'status': 'success', 'new_step': profile.onboarding_step})

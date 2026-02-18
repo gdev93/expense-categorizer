@@ -13,7 +13,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         return cookieValue;
     }
-
     function updateOnboardingStep(step) {
         fetch('/onboarding/update-step/', {
             method: 'POST',
@@ -29,34 +28,25 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (modal) modal.remove();
                     window.location.reload();
                 } else if (step === 1) {
-                    // For replay
                     window.location.reload();
                 }
             }
         });
     }
-
-    // Delegate events for dynamically loaded HTMX content
     document.addEventListener('click', function(e) {
         const target = e.target.closest('#onboarding-skip-btn, #onboarding-finish-btn');
         if (target) {
             updateOnboardingStep(5);
         }
     });
-
-    // Swipe Detection for Mobile Carousel
     let touchstartX = 0;
     let touchendX = 0;
-    
     function handleGesture() {
         const threshold = 50;
         const currentStepEl = document.querySelector('.onboarding-step-content');
         if (!currentStepEl) return;
-        
         const step = parseInt(currentStepEl.id.split('-').pop());
-        
         if (touchendX < touchstartX - threshold) {
-            // Swiped Left -> Next
             const nextArrow = document.querySelector('.arrow-right');
             if (nextArrow) {
                 nextArrow.click();
@@ -65,51 +55,41 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (finishBtn) finishBtn.click();
             }
         }
-        
         if (touchendX > touchstartX + threshold) {
-            // Swiped Right -> Back
             const prevArrow = document.querySelector('.arrow-left');
             if (prevArrow) prevArrow.click();
         }
     }
-
     document.addEventListener('touchstart', function(e) {
         if (e.target.closest('#onboarding-modal')) {
             touchstartX = e.changedTouches[0].screenX;
         }
     }, {passive: true});
-
     document.addEventListener('touchend', function(e) {
         if (e.target.closest('#onboarding-modal')) {
             touchendX = e.changedTouches[0].screenX;
             handleGesture();
         }
     }, {passive: true});
-
-    // Replay Onboarding Logic
     const replayBtn = document.getElementById('replay-onboarding');
     const replayModal = document.getElementById('replay-modal');
     const replayConfirmBtn = document.getElementById('replay-confirm');
     const replayCancelBtn = document.getElementById('replay-cancel');
-
     if (replayBtn && replayModal) {
         replayBtn.addEventListener('click', function(e) {
             e.preventDefault();
             replayModal.style.display = 'flex';
         });
-
         if (replayConfirmBtn) {
             replayConfirmBtn.addEventListener('click', function() {
                 updateOnboardingStep(1);
             });
         }
-
         if (replayCancelBtn) {
             replayCancelBtn.addEventListener('click', function() {
                 replayModal.style.display = 'none';
             });
         }
-
         replayModal.addEventListener('click', function(e) {
             if (e.target === replayModal) {
                 replayModal.style.display = 'none';
