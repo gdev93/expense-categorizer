@@ -189,11 +189,42 @@
         {% include "transactions/components/upload_list_results.html" %}
 
     </div>
+{% endblock %}
+
+{% block modals %}
+    <!-- Modal Categorie di Default -->
+    <div id="defaultCategoryModal" class="app-modal">
+        <div class="app-modal-content">
+            <div class="app-modal-header">
+                <h3>Categorie di Default</h3>
+            </div>
+            <div class="app-modal-body">
+                <p>Non hai ancora creato nessuna categoria. Se procedi con il caricamento, verranno utilizzate le seguenti categorie di default per classificare le tue spese:</p>
+                <ul id="defaultCategoryList" class="mt-3" style="column-count: 2; list-style-type: none; padding-left: 0; margin-top: 15px;">
+                    <!-- Verrà popolato via JS -->
+                </ul>
+                <div class="mt-4" style="margin-top: 25px;">
+                    <label style="display: flex; align-items: center; cursor: pointer;">
+                        <input type="checkbox" id="dontShowAgain" style="margin-right: 10px; width: 18px; height: 18px;">
+                        <span>Non mostrare più questo messaggio</span>
+                    </label>
+                </div>
+            </div>
+            <div class="app-modal-footer">
+                <button type="button" class="btn btn-secondary" id="cancelUpload">Annulla</button>
+                <button type="button" class="btn btn-primary" id="confirmUpload">Continua</button>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
     <script>
         const CSRF_TOKEN = "{{ csrf_token }}"
         const FILE_UPLOADS_PAGE = "{% url 'transactions_upload' %}"
         const FILE_UPLOAD_PROGRESS = "{% url 'transactions_progress' %}"
         const FILE_UPLOAD_CHECK = "{% url 'transactions_upload_check' %}"
+        const DISMISS_MODAL_ENDPOINT = "{% url 'dismiss_default_category_modal' %}"
         const EXPORT_DOWNLOAD_ENDPOINT = "{% url 'transaction_export' %}"
     </script>
     <script src="{% static 'js/upload.js' %}"></script>

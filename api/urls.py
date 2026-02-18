@@ -26,7 +26,7 @@ from api.views.transactions.list_views import TransactionListView
 from api.views.transactions.query_views import TransactionByMerchant
 from api.views.transactions.update_views import EditTransactionCategory, TransactionDetailUpdateView
 from api.views.upload_file_view import UploadFileView, UploadFileDelete, UploadProgressView, \
-    UploadFileCheckView
+    UploadFileCheckView, DismissDefaultCategoryModalView
 from api.views.onboarding_views import OnboardingStepView
 from api.views.error_views import trigger_403, trigger_500, trigger_502, trigger_503
 
@@ -41,6 +41,7 @@ urlpatterns = [
     path('transactions/upload/', UploadFileView.as_view(), name='transactions_upload'),
     path('transactions/upload/progress/', UploadProgressView.as_view(), name='transactions_progress'),
     path('transactions/upload/check', UploadFileCheckView.as_view(), name='transactions_upload_check'),
+    path('transactions/upload/dismiss-modal', DismissDefaultCategoryModalView.as_view(), name='dismiss_default_category_modal'),
     path('transactions/upload/<int:pk>/delete/', UploadFileDelete.as_view(), name='transactions_upload_delete'),
     path('transactions/upload/<int:upload_file_id>/', TransactionListView.as_view(), name='transactions_upload_detail'),
     path('transactions/', TransactionListView.as_view(), name='transaction_list'),

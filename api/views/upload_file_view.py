@@ -20,7 +20,7 @@ from django.utils import timezone
 from django.views import View
 from django.views.generic import FormView, ListView, DeleteView
 
-from api.models import UploadFile, Transaction, Merchant
+from api.models import UploadFile, Transaction, Merchant, Category, DefaultCategory, Profile
 from api.tasks import process_upload
 from processors.csv_structure_detector import CsvStructureDetector
 from processors.expense_upload_processor import persist_uploaded_file
@@ -477,14 +477,37 @@ class UploadFileCheckView(View):
 
     def get(self, request, *args, **kwargs):
         upload_file_query = UploadFile.objects.filter(user=self.request.user, status__in=['pending', 'processing']).distinct()
-        if not upload_file_query.exists():
-            return HttpResponse(status=404)
-        upload_file = upload_file_query.first()
-        return JsonResponse(status=200, data={
-            "total": Transaction.objects.filter(upload_file=upload_file, user=request.user).count(),
-            "current_pending": Transaction.objects.filter(upload_file=upload_file, user=request.user, status='pending').count(),
-            "current_categorized": Transaction.objects.filter(upload_file=upload_file, user=request.user, status='categorized').count(),
-        })
+
+        has_categories = Category.objects.filter(user=request.user).exists()
+        has_dismissed_modal = request.session.get('has_dismissed_default_category_modal', False)
+        default_categories = list(DefaultCategory.objects.values_list('name', flat=True))
+
+        data = {
+            "has_categories": has_categories,
+            "has_dismissed_modal": has_dismissed_modal,
+            "default_categories": default_categories,
+        }
+
+        if upload_file_query.exists():
+            upload_file = upload_file_query.first()
+            data.update({
+                "upload_in_progress": True,
+                "total": Transaction.objects.filter(upload_file=upload_file, user=request.user).count(),
+                "current_pending": Transaction.objects.filter(upload_file=upload_file, user=request.user, status='pending').count(),
+                "current_categorized": Transaction.objects.filter(upload_file=upload_file, user=request.user, status='categorized').count(),
+            })
+        else:
+            data.update({
+                "upload_in_progress": False,
+            })
+
+        return JsonResponse(status=200, data=data)
+
+
+class DismissDefaultCategoryModalView(View):
+    def post(self, request, *args, **kwargs):
+        request.session['has_dismissed_default_category_modal'] = True
+        return JsonResponse({"status": "success"})
 
 
 

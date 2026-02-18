@@ -28,27 +28,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     'X-CSRFToken': CSRF_TOKEN
                 }
             });
-            if (response.status === 200) {
-                const data = await response.json();
-                uploadInProgress = true;
-                return {
-                    canUpload: false,
-                    data: data
-                };
-            } else if (response.status === 404) {
-                uploadInProgress = false;
-                return {
-                    canUpload: true,
-                    data: null
-                };
-            } else {
-                uploadInProgress = false;
-                return {
-                    canUpload: false,
-                    data: null
-                };
-            }
+            const data = await response.json();
+            uploadInProgress = data.upload_in_progress;
+            return {
+                canUpload: !data.upload_in_progress,
+                data: data
+            };
         } catch (error) {
+            console.error("Check availability error:", error);
             uploadInProgress = false;
             return {
                 canUpload: false,
@@ -56,6 +43,100 @@ document.addEventListener('DOMContentLoaded', () => {
             };
         }
     }
+    const defaultCategoryModal = document.getElementById('defaultCategoryModal');
+    const defaultCategoryList = document.getElementById('defaultCategoryList');
+    const dontShowAgainCheckbox = document.getElementById('dontShowAgain');
+    const cancelUploadBtn = document.getElementById('cancelUpload');
+    const confirmUploadBtn = document.getElementById('confirmUpload');
+
+    function showDefaultCategoryModal(categories) {
+        if (!defaultCategoryList) return;
+        defaultCategoryList.innerHTML = '';
+        categories.forEach(cat => {
+            const li = document.createElement('li');
+            li.style.padding = '5px 0';
+            li.style.display = 'flex';
+            li.style.alignItems = 'center';
+            li.innerHTML = `<span class="material-icons" style="font-size: 14px; vertical-align: middle; margin-right: 5px; color: var(--primary-color);">label</span> ${cat}`;
+            defaultCategoryList.appendChild(li);
+        });
+        defaultCategoryModal.style.display = 'flex';
+    }
+
+    function hideDefaultCategoryModal() {
+        if (defaultCategoryModal) {
+            defaultCategoryModal.style.display = 'none';
+        }
+    }
+
+    if (cancelUploadBtn) {
+        cancelUploadBtn.addEventListener('click', () => {
+            hideDefaultCategoryModal();
+        });
+    }
+
+    if (confirmUploadBtn) {
+        confirmUploadBtn.addEventListener('click', async () => {
+            if (dontShowAgainCheckbox && dontShowAgainCheckbox.checked) {
+                await dismissModal();
+            }
+            hideDefaultCategoryModal();
+            await performUpload();
+        });
+    }
+
+    async function dismissModal() {
+        try {
+            await fetch(DISMISS_MODAL_ENDPOINT, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': CSRF_TOKEN,
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+        } catch (error) {
+            console.error("Error dismissing modal:", error);
+        }
+    }
+
+    async function performUpload() {
+        if (!fileToUpload) return;
+        const formData = new FormData();
+        formData.append('csrfmiddlewaretoken', CSRF_TOKEN);
+        formData.append(fileInput.name, fileToUpload, fileToUpload.name);
+        submitUpload.disabled = true;
+        submitUpload.classList.add('btn-disabled');
+        processingComplete = false;
+        try {
+            const response = await fetch(uploadForm.action, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: formData
+            });
+            if (!response.ok) {
+                const errorData = await response.json();
+                showAlert(`${errorData.error || 'Si è verificato un errore sul server.'}`);
+                submitUpload.disabled = false;
+                submitUpload.classList.remove('btn-disabled');
+            } else {
+                uploadInProgress = true;
+                if (window.location.href.includes(FILE_UPLOADS_PAGE)) {
+                    window.location.reload();
+                } else {
+                    window.location.href = FILE_UPLOADS_PAGE;
+                }
+            }
+        } catch (error) {
+            showAlert('Errore di connessione. Controlla la tua rete.');
+            submitUpload.disabled = false;
+            submitUpload.classList.remove('btn-disabled');
+        } finally {
+            updateFileList();
+        }
+    }
+
     function updateFileList() {
         fileListPreview.innerHTML = '';
         if (fileToUpload) {
@@ -207,40 +288,14 @@ document.addEventListener('DOMContentLoaded', () => {
             updateFileList();
             return;
         }
-        const formData = new FormData();
-        formData.append('csrfmiddlewaretoken', CSRF_TOKEN);
-        formData.append(fileInput.name, fileToUpload, fileToUpload.name);
-        submitUpload.disabled = true;
-        submitUpload.classList.add('btn-disabled');
-        processingComplete = false;
-        try {
-            const response = await fetch(uploadForm.action, {
-                method: 'POST',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: formData
-            });
-            if (!response.ok) {
-                const errorData = await response.json();
-                showAlert(`${errorData.error || 'Si è verificato un errore sul server.'}`);
-                submitUpload.disabled = false;
-                submitUpload.classList.remove('btn-disabled');
-            } else {
-                uploadInProgress = true;
-                if (window.location.href.includes(FILE_UPLOADS_PAGE)) {
-                    window.location.reload();
-                } else {
-                    window.location.href = FILE_UPLOADS_PAGE;
-                }
-            }
-        } catch (error) {
-            showAlert('Errore di connessione. Controlla la tua rete.');
-            submitUpload.disabled = false;
-            submitUpload.classList.remove('btn-disabled');
-        } finally {
-            updateFileList();
+
+        const data = uploadCheck.data;
+        if (!data.has_categories && !data.has_dismissed_modal) {
+            showDefaultCategoryModal(data.default_categories);
+            return;
         }
+
+        await performUpload();
     });
     updateFileList();
     handlePageRefresh();
