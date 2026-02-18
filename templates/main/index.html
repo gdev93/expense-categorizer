@@ -12,9 +12,13 @@
     <link rel="stylesheet" href="{% static 'css/appbar.css' %}">
     <link rel="stylesheet" href="{% static 'css/sidebar.css' %}">
     <link rel="stylesheet" href="{% static 'css/onboarding.css' %}">
+    <link rel="stylesheet" href="{% static 'css/onboarding_step.css' %}">
+    <link rel="stylesheet" href="{% static 'css/onboarding_template.css' %}">
     <link rel="stylesheet" href="{% static 'css/material-icons.css' %}">
     <link rel="stylesheet" href="{% static 'css/htmx-loading.css' %}">
     <link rel="stylesheet" href="{% static 'css/skeleton.css' %}">
+    <link rel="stylesheet" href="{% static 'css/index.css' %}">
+    <link rel="stylesheet" href="{% static 'css/header.css' %}">
     <script src="{% static 'js/htmx/htmx.min.js' %}"></script>
     {% block extra_css %}{% endblock %}
 </head>
@@ -97,7 +101,7 @@
             {% endblock %}
         </nav>
         <div class="sidebar-footer">
-            <form id="logout-form" action="{% url 'account_logout' %}" method="post" style="display: none;">
+            <form id="logout-form" action="{% url 'account_logout' %}" method="post" class="logout-form-hidden">
                 {% csrf_token %}
             </form>
             <button id="logoutBtn" class="btn btn-secondary logout-button btn-full-width">

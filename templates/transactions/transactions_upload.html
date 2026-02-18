@@ -193,6 +193,7 @@
 
 {% block modals %}
     <!-- Modal Categorie di Default -->
+    {% if default_categories %}
     <div id="defaultCategoryModal" class="app-modal">
         <div class="app-modal-content">
             <div class="app-modal-header">
@@ -201,7 +202,7 @@
             <div class="app-modal-body">
                 <p>Non hai ancora creato nessuna categoria. Se procedi con il caricamento, verranno utilizzate le seguenti categorie di default per classificare le tue spese:</p>
                 <ul id="defaultCategoryList" class="mt-3" style="column-count: 2; list-style-type: none; padding-left: 0; margin-top: 15px;">
-                    <!-- Verrà popolato via JS -->
+
                 </ul>
                 <div class="mt-4" style="margin-top: 25px;">
                     <label style="display: flex; align-items: center; cursor: pointer;">
@@ -216,6 +217,7 @@
             </div>
         </div>
     </div>
+    {% endif %}
 {% endblock %}
 
 {% block extra_js %}

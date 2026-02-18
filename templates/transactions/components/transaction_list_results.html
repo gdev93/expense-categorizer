@@ -1,16 +1,16 @@
 <div id="transaction-results" hx-boost="true" hx-target="#transaction-results" hx-swap="outerHTML settle:500ms" hx-indicator="this">
     <div class="skeleton-loader">
-        <div class="skeleton-text" style="width: 200px; height: 24px; margin-bottom: 24px;"></div>
+        <div class="skeleton-text transaction-list-skeleton-title"></div>
         <div class="data-list">
             {% for i in "12345678" %}
-                <div class="data-list-item" style="cursor: default; pointer-events: none;">
+                <div class="data-list-item transaction-list-skeleton-item">
                     <div class="list-item-info">
-                        <div class="skeleton-text" style="width: 80px; height: 12px;"></div>
-                        <div class="skeleton-text" style="width: 150px; height: 16px; margin-top: 4px;"></div>
+                        <div class="skeleton-text transaction-list-skeleton-date"></div>
+                        <div class="skeleton-text transaction-list-skeleton-merchant"></div>
                     </div>
                     <div class="list-item-stats">
-                        <div class="skeleton-text" style="width: 100px; height: 24px; border-radius: 12px;"></div>
-                        <div class="skeleton-text" style="width: 60px; height: 18px;"></div>
+                        <div class="skeleton-text transaction-list-skeleton-category"></div>
+                        <div class="skeleton-text transaction-list-skeleton-amount"></div>
                     </div>
                 </div>
             {% endfor %}

@@ -2,14 +2,13 @@
 {% if uncategorized_transaction %}
 <h2 class="mb-3">
      Spese Non Categorizzate
-    <span class="badge"
-          style="background-color: var(--category-bg); color: var(--category-text); border: 1px solid var(--category-border); padding: 4px 8px; border-radius: 12px; font-size: 14px;">
+    <span class="badge transaction-list-uncategorized-badge">
         {{ uncategorized_transaction.count }}
     </span>
 </h2>
-<details class="expander-card" style="margin-bottom: 40px;">
+<details class="expander-card transaction-list-expander">
     <summary class="expander-header">
-        <span style="font-weight: 600; color: #343a40;">Apri</span>
+        <span class="transaction-list-expander-summary-text">Apri</span>
         <div class="expander-toggle-btn">
             <span class="expander-icon">▼</span>
         </div>
@@ -21,7 +20,7 @@
                 {% include "transactions/components/transaction_item.html" with transaction=transaction show_description=True %}
             {% empty %}
                 {% if transactions %}
-                    <div class="data-list-item" style="text-align: center; color: #999;">
+                    <div class="data-list-item transaction-list-empty-msg">
                          Tutte le spese sono categorizzate!
                     </div>
                 {% endif %}

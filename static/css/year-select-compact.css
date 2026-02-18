@@ -1,0 +1,12 @@
+/* Styles for templates/components/year-select-compact.html */
+
+.year-select-compact-container {
+    margin: 0;
+}
+
+.year-select-compact-select {
+    padding: 6px 10px;
+    height: 38px;
+    width: auto;
+    min-width: 100px;
+}

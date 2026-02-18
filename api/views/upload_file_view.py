@@ -360,6 +360,12 @@ class UploadFileView(ListView, FormView):
         )
         context['has_pending'] = full_queryset.filter(has_pending=True).exists()
         context['selected_status'] = self.request.GET.getlist('status')
+        categories_exist = Category.objects.filter(user=self.request.user).exists()
+        if not categories_exist:
+            messages.warning(self.request, "Crea categorie personalizzate prima di iniziare a categorizzare le spese.")
+            default_categories = list(DefaultCategory.objects.values_list('name', flat=True))
+            context['default_categories'] = default_categories
+
 
         return context
 

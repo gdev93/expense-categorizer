@@ -1,0 +1,11 @@
+/* Styles for templates/transactions/transaction_detail.html */
+
+.transaction-detail-header-icon {
+    vertical-align: middle;
+    margin-right: 8px;
+}
+
+.transaction-detail-save-icon {
+    vertical-align: middle;
+    margin-right: 4px;
+}
