@@ -485,12 +485,10 @@ class UploadFileCheckView(View):
         upload_file_query = UploadFile.objects.filter(user=self.request.user, status__in=['pending', 'processing']).distinct()
 
         has_categories = Category.objects.filter(user=request.user).exists()
-        has_dismissed_modal = request.session.get('has_dismissed_default_category_modal', False)
         default_categories = list(DefaultCategory.objects.values_list('name', flat=True))
 
         data = {
             "has_categories": has_categories,
-            "has_dismissed_modal": has_dismissed_modal,
             "default_categories": default_categories,
         }
 

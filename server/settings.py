@@ -267,7 +267,10 @@ ACCOUNT_PREVENT_ENUMERATION = False
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/accounts/login/'
 SOCIALACCOUNT_LOGIN_ON_GET = True
-
+# django allauth uses the email to check uniqueness
+SOCIALACCOUNT_EMAIL_AUTHENTICATION = True
+# django allauth makes social account match the non social account if same email
+SOCIALACCOUNT_EMAIL_AUTHENTICATION_AUTO_CONNECT = True
 
 # MailerSend specific settings (as requested by provider snippet)
 SMTP_PROVIDER_HOST = os.getenv('SMTP_PROVIDER_HOST', 'pro.turbo-smtp.com')
