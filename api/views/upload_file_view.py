@@ -362,8 +362,9 @@ class UploadFileView(ListView, FormView):
         context['has_pending'] = full_queryset.filter(has_pending=True).exists()
         context['selected_status'] = self.request.GET.getlist('status')
         categories_exist = Category.objects.filter(user=self.request.user).exists()
-        if not categories_exist:
-            messages.warning(self.request, "Crea categorie personalizzate prima di iniziare a categorizzare le spese.")
+        profile = getattr(self.request.user, 'profile', None)
+        show_modal = profile.show_no_category_modal if profile else True
+        if not categories_exist and show_modal:
             default_categories = list(DefaultCategory.objects.values_list('name', flat=True))
             context['default_categories'] = default_categories
 
@@ -402,10 +403,12 @@ class UploadFileView(ListView, FormView):
                 f'File caricato con successo! {result.rows_processed}'
             )
             # Advance onboarding if before step 3
-            profile = getattr(self.request.user, 'profile', None)
+            profile = self.request.user.profile
             if profile and profile.onboarding_step < 3:
                 profile.onboarding_step = 3
+                profile.show_no_category_modal = False
                 profile.save()
+
         else:
             messages.error(self.request, result.error_message)
             return self.form_invalid(form)
@@ -522,7 +525,7 @@ class DismissDefaultCategoryModalView(View):
             profile.show_no_category_modal = False
             profile.save()
 
-        # Redirect back to the previous page or a fallback
-        return redirect(request.META.get('HTTP_REFERER', '/'))
+
+        return JsonResponse({})
 
 

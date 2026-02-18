@@ -7,22 +7,139 @@
 .upload-default-category-list {
     column-count: 2;
     list-style-type: none;
-    padding-left: 0;
+    padding: 12px;
     margin-top: 15px;
+    max-height: 250px;
+    overflow-y: auto;
+    background: #fdfdfd;
+    border: 1px solid #f0f0f0;
+    border-radius: 8px;
 }
 
-.upload-modal-footer-margin {
-    margin-top: 25px;
+/* Adjust column layout and scroll on small screens */
+@media (max-width: 767px) {
+    .upload-default-category-list {
+        display: flex;
+        column-count: 1;
+        list-style: none;
+        max-height: 250px;
+        overflow-y: auto;
+        flex-direction: column;
+        -webkit-overflow-scrolling: touch;
+    }
 }
 
-.upload-dont-show-again-label {
+.default-category-item {
+    padding: 6px 0;
     display: flex;
     align-items: center;
+    font-size: 0.9rem;
+    break-inside: avoid-column;
+}
+
+.default-category-icon {
+    font-size: 16px;
+    vertical-align: middle;
+    margin-right: 8px;
+    color: var(--primary-color);
+}
+
+/* Modal Dismiss Form Styles */
+.dismiss-modal-form {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 20px;
+    width: 100%;
+}
+
+.dont-show-again-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.95rem;
+    color: var(--secondary-color);
     cursor: pointer;
 }
 
-.upload-dont-show-again-checkbox {
-    margin-right: 10px;
-    width: 18px;
-    height: 18px;
+.dont-show-again-wrapper input {
+    margin: 0;
+    cursor: pointer;
+}
+
+.modal-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    width: 100%;
+    border-top: 1px solid #eee;
+    padding-top: 15px;
+}
+
+/* Modal Specific Styles */
+.default-category-modal {
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.5);
+    align-items: center;
+    justify-content: center;
+}
+
+/* Desktop specific width: wider than higher */
+@media (min-width: 768px) {
+    .default-category-modal .app-modal-content {
+        max-width: 800px;
+        width: 90%;
+    }
+}
+
+@media (max-width: 767px) {
+    .dismiss-modal-form {
+        align-items: stretch;
+        gap: 20px;
+    }
+    
+    .modal-buttons {
+        flex-direction: row;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .modal-buttons button {
+        width: 80%;
+    }
+}
+
+.default-categories-warning {
+    background-color: var(--category-bg);
+    border: 1px solid var(--category-border);
+    color: var(--category-text);
+    padding: 10px 15px;
+    border-radius: 8px;
+    margin: 15px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.9rem;
+}
+
+.default-categories-warning .material-icons {
+    color: var(--category-text);
+    font-size: 20px;
+}
+
+.default-categories-warning a {
+    color: var(--category-text);
+    text-decoration: underline;
+    font-weight: 500;
+}
+
+.default-categories-warning a:hover {
+    color: #000;
 }

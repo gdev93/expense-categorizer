@@ -351,7 +351,7 @@ class Transaction(models.Model):
     modified_by_user = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    raw_data = models.JSONField(default=dict)
+    raw_data = models.JSONField(default=dict, null=True)
     categorized_by_agent = models.BooleanField(default=False)
     reasoning = models.TextField(blank=True)
     embedding = VectorField(dimensions=384, null=True, blank=True)

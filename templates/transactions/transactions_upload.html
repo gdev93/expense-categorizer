@@ -18,6 +18,7 @@
     <div class="container mt-2">
         {% include "components/header.html" with icon="upload_file" title="Carica Estratti Conto" %}
 
+
         <div class="upload-area mb-3">
             <form id="uploadForm" class="file-upload-form" method="POST" enctype="multipart/form-data">
                 {% csrf_token %}
@@ -36,6 +37,13 @@
                         {% endif %}
                     </small>
                 </div>
+
+                {% if default_categories %}
+                <div class="default-categories-warning">
+                    <span class="material-icons">warning</span>
+                    <span>Se non hai categorie personalizzate, verranno usate quelle di default. <a href="#" id="showDefaultCategories">Clicca qui per vederle.</a></span>
+                </div>
+                {% endif %}
 
                 <!-- Display form errors -->
                 {% if form.errors %}
@@ -195,30 +203,40 @@
 {% endblock %}
 
 {% block modals %}
-    <!-- Modal Categorie di Default -->
     {% if default_categories %}
-    <div id="defaultCategoryModal" class="app-modal">
+    <div id="defaultCategoryModal" class="default-category-modal">
         <div class="app-modal-content">
             <div class="app-modal-header">
-                <h3>Categorie di Default</h3>
+                <h3><span class="material-icons">info</span> Categorie di Default</h3>
             </div>
             <div class="app-modal-body">
-                <p>Non hai ancora creato nessuna categoria. Se procedi con il caricamento, verranno utilizzate le seguenti categorie di default per classificare le tue spese:</p>
-                <ul id="defaultCategoryList" class="mt-3 upload-default-category-list">
-
+                <p id="defaultCategoryModalText">Non hai ancora creato nessuna categoria. Se procedi con il caricamento, verranno utilizzate le seguenti categorie di default per classificare le tue spese:</p>
+                <ul class="upload-default-category-list">
+                    {% for category in default_categories %}
+                        <li class="default-category-item">
+                            <span class="material-icons default-category-icon">label</span>
+                            {{ category }}
+                        </li>
+                    {% endfor %}
                 </ul>
-                <div class="mt-4 upload-modal-footer-margin">
-                    <form method="post" action="{% url 'dismiss_default_category_modal' %}">
-                        <label class="upload-dont-show-again-label">
-                            <input type="checkbox" id="dontShowAgain" class="upload-dont-show-again-checkbox">
-                        <span>Non mostrare più questo messaggio</span>
-                    </label>
-                    </form>
-                </div>
             </div>
             <div class="app-modal-footer">
-                <button type="button" class="btn btn-secondary" id="cancelUpload">Annulla</button>
-                <button type="button" class="btn btn-primary" id="confirmUpload">Continua</button>
+                <form method="POST" action="{% url 'dismiss_default_category_modal' %}" class="dismiss-modal-form">
+                    {% csrf_token %}
+                    <div class="dont-show-again-wrapper">
+                        <input type="checkbox" name="dont_show_again" id="dont_show_again"
+                               hx-post="{% url 'dismiss_default_category_modal' %}"
+                               hx-trigger="change"
+                               hx-swap="none">
+                        <label for="dont_show_again">Non mostrare più</label>
+                    </div>
+                    <div class="modal-buttons">
+                        <button type="button" class="btn btn-secondary" onclick="closeDefaultCategoryModal()">Chiudi
+                        </button>
+                        <button type="button" class="btn btn-primary" onclick="closeDefaultCategoryModal()">Ho capito
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -231,7 +249,6 @@
         const FILE_UPLOADS_PAGE = "{% url 'transactions_upload' %}"
         const FILE_UPLOAD_PROGRESS = "{% url 'transactions_progress' %}"
         const FILE_UPLOAD_CHECK = "{% url 'transactions_upload_check' %}"
-        const DISMISS_MODAL_ENDPOINT = "{% url 'dismiss_default_category_modal' %}"
         const EXPORT_DOWNLOAD_ENDPOINT = "{% url 'transaction_export' %}"
     </script>
     <script src="{% static 'js/upload.js' %}"></script>

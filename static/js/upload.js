@@ -43,61 +43,6 @@ document.addEventListener('DOMContentLoaded', () => {
             };
         }
     }
-    const defaultCategoryModal = document.getElementById('defaultCategoryModal');
-    const defaultCategoryList = document.getElementById('defaultCategoryList');
-    const dontShowAgainCheckbox = document.getElementById('dontShowAgain');
-    const cancelUploadBtn = document.getElementById('cancelUpload');
-    const confirmUploadBtn = document.getElementById('confirmUpload');
-
-    function showDefaultCategoryModal(categories) {
-        if (!defaultCategoryList) return;
-        defaultCategoryList.innerHTML = '';
-        categories.forEach(cat => {
-            const li = document.createElement('li');
-            li.style.padding = '5px 0';
-            li.style.display = 'flex';
-            li.style.alignItems = 'center';
-            li.innerHTML = `<span class="material-icons" style="font-size: 14px; vertical-align: middle; margin-right: 5px; color: var(--primary-color);">label</span> ${cat}`;
-            defaultCategoryList.appendChild(li);
-        });
-        defaultCategoryModal.style.display = 'flex';
-    }
-
-    function hideDefaultCategoryModal() {
-        if (defaultCategoryModal) {
-            defaultCategoryModal.style.display = 'none';
-        }
-    }
-
-    if (cancelUploadBtn) {
-        cancelUploadBtn.addEventListener('click', () => {
-            hideDefaultCategoryModal();
-        });
-    }
-
-    if (confirmUploadBtn) {
-        confirmUploadBtn.addEventListener('click', async () => {
-            if (dontShowAgainCheckbox && dontShowAgainCheckbox.checked) {
-                await dismissModal();
-            }
-            hideDefaultCategoryModal();
-            await performUpload();
-        });
-    }
-
-    async function dismissModal() {
-        try {
-            await fetch(DISMISS_MODAL_ENDPOINT, {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': CSRF_TOKEN,
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            });
-        } catch (error) {
-            console.error("Error dismissing modal:", error);
-        }
-    }
 
     async function performUpload() {
         if (!fileToUpload) return;
@@ -290,13 +235,37 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const data = uploadCheck.data;
-        if (!data.has_categories && !data.has_dismissed_modal) {
-            showDefaultCategoryModal(data.default_categories);
-            return;
-        }
-
         await performUpload();
     });
     updateFileList();
     handlePageRefresh();
+    
+    // Handle default category modal
+    const defaultCategoryModal = document.getElementById('defaultCategoryModal');
+    const showDefaultCategories = document.getElementById('showDefaultCategories');
+    const defaultCategoryModalText = document.getElementById('defaultCategoryModalText');
+
+    if (showDefaultCategories && defaultCategoryModal) {
+        showDefaultCategories.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (defaultCategoryModalText) {
+                defaultCategoryModalText.style.display = 'none';
+            }
+            defaultCategoryModal.style.display = 'flex';
+        });
+    }
+});
+
+window.closeDefaultCategoryModal = function() {
+    const modal = document.getElementById('defaultCategoryModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+};
+
+window.addEventListener('click', function(event) {
+    const modal = document.getElementById('defaultCategoryModal');
+    if (event.target === modal) {
+        closeDefaultCategoryModal();
+    }
 });
