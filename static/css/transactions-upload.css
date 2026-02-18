@@ -5,26 +5,24 @@
 }
 
 .upload-default-category-list {
-    column-count: 2;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0 20px;
     list-style-type: none;
     padding: 12px;
     margin-top: 15px;
-    max-height: 250px;
+    max-height: 450px;
     overflow-y: auto;
     background: #fdfdfd;
     border: 1px solid #f0f0f0;
     border-radius: 8px;
 }
 
-/* Adjust column layout and scroll on small screens */
+/* Adjust layout and scroll on small screens */
 @media (max-width: 767px) {
     .upload-default-category-list {
-        display: flex;
-        column-count: 1;
-        list-style: none;
-        max-height: 250px;
-        overflow-y: auto;
-        flex-direction: column;
+        grid-template-columns: 1fr;
+        max-height: 380px;
         -webkit-overflow-scrolling: touch;
     }
 }
@@ -34,7 +32,6 @@
     display: flex;
     align-items: center;
     font-size: 0.9rem;
-    break-inside: avoid-column;
 }
 
 .default-category-icon {
@@ -42,38 +39,6 @@
     vertical-align: middle;
     margin-right: 8px;
     color: var(--primary-color);
-}
-
-/* Modal Dismiss Form Styles */
-.dismiss-modal-form {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 20px;
-    width: 100%;
-}
-
-.dont-show-again-wrapper {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 0.95rem;
-    color: var(--secondary-color);
-    cursor: pointer;
-}
-
-.dont-show-again-wrapper input {
-    margin: 0;
-    cursor: pointer;
-}
-
-.modal-buttons {
-    display: flex;
-    justify-content: flex-end;
-    gap: 12px;
-    width: 100%;
-    border-top: 1px solid #eee;
-    padding-top: 15px;
 }
 
 /* Modal Specific Styles */
@@ -91,29 +56,44 @@
     justify-content: center;
 }
 
-/* Desktop specific width: wider than higher */
+.default-category-modal .app-modal-content {
+    position: relative;
+}
+
+.default-category-modal .close-btn {
+    top: 15px;
+    right: 15px;
+    transform: none;
+}
+
+.default-category-modal .close-btn:hover {
+    transform: scale(1.1);
+}
+
+/* Desktop specific width and height */
 @media (min-width: 768px) {
     .default-category-modal .app-modal-content {
         max-width: 800px;
         width: 90%;
+        min-height: 600px;
+        max-height: 90vh;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .default-category-modal .app-modal-body {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .upload-default-category-list {
+        flex: 1;
+        max-height: 500px;
     }
 }
 
 @media (max-width: 767px) {
-    .dismiss-modal-form {
-        align-items: stretch;
-        gap: 20px;
-    }
-    
-    .modal-buttons {
-        flex-direction: row;
-        justify-content: center;
-        align-items: center;
-    }
-    
-    .modal-buttons button {
-        width: 80%;
-    }
 }
 
 .default-categories-warning {

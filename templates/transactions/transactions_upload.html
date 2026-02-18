@@ -206,6 +206,9 @@
     {% if default_categories %}
     <div id="defaultCategoryModal" class="default-category-modal">
         <div class="app-modal-content">
+            <button type="button" class="close-btn" onclick="closeDefaultCategoryModal()" aria-label="Chiudi">
+                <span class="material-icons">close</span>
+            </button>
             <div class="app-modal-header">
                 <h3><span class="material-icons">info</span> Categorie di Default</h3>
             </div>
@@ -219,24 +222,6 @@
                         </li>
                     {% endfor %}
                 </ul>
-            </div>
-            <div class="app-modal-footer">
-                <form method="POST" action="{% url 'dismiss_default_category_modal' %}" class="dismiss-modal-form">
-                    {% csrf_token %}
-                    <div class="dont-show-again-wrapper">
-                        <input type="checkbox" name="dont_show_again" id="dont_show_again"
-                               hx-post="{% url 'dismiss_default_category_modal' %}"
-                               hx-trigger="change"
-                               hx-swap="none">
-                        <label for="dont_show_again">Non mostrare più</label>
-                    </div>
-                    <div class="modal-buttons">
-                        <button type="button" class="btn btn-secondary" onclick="closeDefaultCategoryModal()">Chiudi
-                        </button>
-                        <button type="button" class="btn btn-primary" onclick="closeDefaultCategoryModal()">Ho capito
-                        </button>
-                    </div>
-                </form>
             </div>
         </div>
     </div>

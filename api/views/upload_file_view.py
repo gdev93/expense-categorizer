@@ -3,7 +3,6 @@ import csv
 import io
 import json
 import logging
-import os
 from dataclasses import dataclass
 from datetime import timedelta
 from math import ceil
@@ -14,14 +13,13 @@ from django.contrib import messages
 from django.core.validators import FileExtensionValidator
 from django.db import transaction
 from django.db.models import Sum, Count, Exists, OuterRef, Q, QuerySet
-from django.http import HttpResponse, JsonResponse, StreamingHttpResponse
-from django.shortcuts import redirect
+from django.http import JsonResponse, StreamingHttpResponse
 from django.urls import reverse_lazy
 from django.utils import timezone
 from django.views import View
 from django.views.generic import FormView, ListView, DeleteView
 
-from api.models import UploadFile, Transaction, Merchant, Category, DefaultCategory, Profile
+from api.models import UploadFile, Transaction, Merchant, Category, DefaultCategory
 from api.tasks import process_upload
 from processors.csv_structure_detector import CsvStructureDetector
 from processors.expense_upload_processor import persist_uploaded_file
@@ -362,9 +360,7 @@ class UploadFileView(ListView, FormView):
         context['has_pending'] = full_queryset.filter(has_pending=True).exists()
         context['selected_status'] = self.request.GET.getlist('status')
         categories_exist = Category.objects.filter(user=self.request.user).exists()
-        profile = getattr(self.request.user, 'profile', None)
-        show_modal = profile.show_no_category_modal if profile else True
-        if not categories_exist and show_modal:
+        if not categories_exist:
             default_categories = list(DefaultCategory.objects.values_list('name', flat=True))
             context['default_categories'] = default_categories
 
@@ -512,20 +508,4 @@ class UploadFileCheckView(View):
             })
 
         return JsonResponse(status=200, data=data)
-
-
-class DismissDefaultCategoryModalView(View):
-    def post(self, request, *args, **kwargs):
-        # Check if the checkbox was ticked in the form
-        dont_show_again = request.POST.get('dont_show_again')
-
-        if dont_show_again:
-            # Update the user profile preference
-            profile = request.user.profile
-            profile.show_no_category_modal = False
-            profile.save()
-
-
-        return JsonResponse({})
-
 
