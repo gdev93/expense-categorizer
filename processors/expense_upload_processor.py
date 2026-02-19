@@ -8,6 +8,7 @@ from django.contrib.auth.models import User
 from django.core.files.uploadedfile import UploadedFile
 from django.db import transaction
 from django.db.models import Q
+from django.db.models.expressions import RawSQL
 
 from agent.agent import ExpenseCategorizerAgent, AgentTransactionUpload, TransactionCategorization, GeminiResponse
 from api.models import Transaction, Category, Merchant, UploadFile, normalize_string
@@ -223,7 +224,7 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
         # 5. Bulk Persistence
         to_update = all_transactions_categorized + all_transactions_to_upload + all_transactions_as_income
         Transaction.objects.bulk_update(to_update, [
-            'status', 'merchant', 'merchant_raw_name', 'category', 'transaction_date',
+            'status', 'merchant', 'category', 'transaction_date',
             'original_date', 'description', 'amount', 'original_amount',
             'transaction_type', 'normalized_description', 'operation_type', 'embedding'
         ])
@@ -302,13 +303,13 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
                 merchant_name = tx_data.merchant
                 category_name = tx_data.category
                 if not merchant_name or not category_name:
-                    Transaction.objects.filter(id=tx_id).update(status='uncategorized', failure_code=1)
+                    Transaction.objects.filter(id=tx_id).update(status='uncategorized')
                     continue
 
                 merchant, _ = Merchant.objects.get_or_create(name=merchant_name, user=self.user)
                 category = Category.objects.filter(name__icontains=category_name.strip(), user=self.user).first()
                 if not category:
-                    Transaction.objects.filter(id=tx_id).update(status='uncategorized', failure_code=1, merchant=merchant)
+                    Transaction.objects.filter(id=tx_id).update(status='uncategorized', merchant=merchant)
                     continue
 
                 transaction_from_agent = Transaction.objects.filter(user=self.user,
@@ -320,7 +321,6 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
 
                 transaction_from_agent.category = category
                 transaction_from_agent.merchant = merchant
-                transaction_from_agent.merchant_raw_name = merchant_name
                 transaction_from_agent.original_date = tx_data.date if not transaction_from_agent.original_date else transaction_from_agent.original_date
                 transaction_from_agent.original_amount = original_amount if not transaction_from_agent.original_amount else transaction_from_agent.original_amount
                 transaction_from_agent.transaction_date = transaction_date if not transaction_from_agent.transaction_date else transaction_from_agent.transaction_date
@@ -328,7 +328,6 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
                     amount) if not transaction_from_agent.amount else transaction_from_agent.amount
                 transaction_from_agent.status = 'categorized'
                 transaction_from_agent.modified_by_user = False
-                transaction_from_agent.failure_code = 0 if not failure else 1
                 transaction_from_agent.description = tx_data.description if not transaction_from_agent.description else transaction_from_agent.description
                 transaction_from_agent.normalized_description = normalize_string(transaction_from_agent.description)
                 transaction_from_agent.categorized_by_agent = True
@@ -347,8 +346,8 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
 
         if transactions_to_update:
             Transaction.objects.bulk_update(transactions_to_update, [
-                'category', 'merchant', 'merchant_raw_name', 'original_date', 'original_amount',
-                'transaction_date', 'amount', 'status', 'modified_by_user', 'failure_code',
+                'category', 'merchant', 'original_date', 'original_amount',
+                'transaction_date', 'amount', 'status', 'modified_by_user',
                 'description', 'normalized_description', 'categorized_by_agent', 'reasoning', 'embedding'
             ])
 
@@ -358,10 +357,12 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
         """Post-process transactions after batch processing to identify column mappings and categorize uncategorized transactions."""
         self._categorize_remaining_transactions(upload_file)
         self._clean_transactions_raw_data(upload_file)
+
     
     def _clean_transactions_raw_data(self, upload_file:UploadFile):
-        """Clean the raw data of transactions to avoid errors in the agent."""
+        """Clean the raw data of transactions for privacy reasons."""
         Transaction.objects.filter(upload_file=upload_file).update(raw_data=None, embedding=None)
+        logger.info(f"Raw data of {upload_file.file_name} has been cleaned.")
 
     def _categorize_remaining_transactions(self, upload_file: UploadFile) -> None:
         """Process uncategorized transactions by parsing their data and attempting to categorize them using similar transactions."""
@@ -384,7 +385,6 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
                     continue
 
                 TransactionUpdater.update_transaction_with_parse_result(tx, parse_result)
-                tx.merchant_raw_name = parse_result.merchant
 
                 # Only try to find similar transactions if we have a description
                 if tx.description:
@@ -424,7 +424,7 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
             Transaction.objects.bulk_update(
                 chunk,
                 ['transaction_date', 'amount', 'original_amount', 'description',
-                 'merchant_raw_name', 'original_date', 'category', 'status', 'merchant', 'normalized_description', 'embedding']
+                 'original_date', 'category', 'status', 'merchant', 'normalized_description', 'embedding']
             )
 
         Transaction.objects.filter(user=self.user, upload_file=upload_file, status__in=['pending', 'uncategorized'],

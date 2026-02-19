@@ -26,7 +26,6 @@ class TestTransactionApplyAll:
         t1 = Transaction.objects.create(
             user=self.user,
             merchant=self.merchant,
-            merchant_raw_name="Amazon",
             category=self.cat2,
             transaction_date=datetime.date(2025, 1, 1),
             amount=10.0,
@@ -36,7 +35,6 @@ class TestTransactionApplyAll:
         t2 = Transaction.objects.create(
             user=self.user,
             merchant=self.merchant,
-            merchant_raw_name="Amazon",
             category=self.cat2,
             transaction_date=datetime.date(2025, 1, 5),
             amount=20.0,
@@ -47,7 +45,6 @@ class TestTransactionApplyAll:
         t3 = Transaction.objects.create(
             user=self.user,
             merchant=self.merchant,
-            merchant_raw_name="Amazon",
             category=self.cat2,
             transaction_date=datetime.date(2025, 1, 10),
             amount=30.0,
@@ -58,7 +55,6 @@ class TestTransactionApplyAll:
         t4 = Transaction.objects.create(
             user=self.user,
             merchant=self.merchant,
-            merchant_raw_name="Amazon",
             category=self.cat2,
             transaction_date=datetime.date(2025, 1, 15),
             amount=40.0,
@@ -69,7 +65,6 @@ class TestTransactionApplyAll:
         t5 = Transaction.objects.create(
             user=self.user,
             merchant=self.other_merchant,
-            merchant_raw_name="eBay",
             category=self.cat2,
             transaction_date=datetime.date(2025, 1, 1),
             amount=50.0,
@@ -82,7 +77,7 @@ class TestTransactionApplyAll:
         response = client.post(url, {
             'transaction_date': '2025-01-10',
             'amount': '30.00',
-            'merchant_raw_name': 'Amazon',
+            'merchant_name': 'Amazon',
             'description': 'Target transaction',
             'category_name': self.cat1.name,
             'apply_to_all': 'true'
@@ -116,7 +111,6 @@ class TestTransactionApplyAll:
         t_other = Transaction.objects.create(
             user=self.other_user,
             merchant=other_merchant,
-            merchant_raw_name="Amazon",
             category=self.other_cat,
             transaction_date=datetime.date(2025, 1, 1),
             amount=10.0,
@@ -128,7 +122,6 @@ class TestTransactionApplyAll:
         t_me = Transaction.objects.create(
             user=self.user,
             merchant=self.merchant,
-            merchant_raw_name="Amazon",
             category=self.cat2,
             transaction_date=datetime.date(2025, 1, 10),
             amount=30.0,
@@ -140,7 +133,7 @@ class TestTransactionApplyAll:
         client.post(url, {
             'transaction_date': '2025-01-10',
             'amount': '30.00',
-            'merchant_raw_name': 'Amazon',
+            'merchant_name': 'Amazon',
             'description': 'My transaction',
             'category_name': self.cat1.name,
             'apply_to_all': 'true'
@@ -161,7 +154,6 @@ class TestTransactionApplyAll:
         t1 = Transaction.objects.create(
             user=self.user,
             merchant=self.merchant,
-            merchant_raw_name="Amazon",
             category=self.cat2,
             transaction_date=datetime.date(2025, 1, 1),
             amount=10.0,

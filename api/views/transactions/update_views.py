@@ -26,7 +26,6 @@ class TransactionDetailUpdateView(LoginRequiredMixin, UpdateView):
     fields = [
         'transaction_date',
         'amount',
-        'merchant_raw_name',
         'description',
         'category'
     ]
@@ -87,7 +86,7 @@ class TransactionDetailUpdateView(LoginRequiredMixin, UpdateView):
                 defaults={'is_default': False}
             )
 
-        merchant_name = self.request.POST.get('merchant_raw_name', '').strip()
+        merchant_name = self.request.POST.get('merchant_name', '').strip()
 
         if merchant_name:
             merchant_db = Merchant.objects.filter(name=merchant_name, user=self.request.user).first()

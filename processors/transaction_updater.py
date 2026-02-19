@@ -35,7 +35,6 @@ class TransactionUpdater:
                                                                transaction_parse_result: RawTransactionParseResult) -> Transaction:
         tx.status = 'categorized'
         tx.merchant = merchant
-        tx.merchant_raw_name = merchant.normalized_name
         tx.category = category
         return TransactionUpdater._update_common_fields(tx, transaction_parse_result)
 
@@ -50,6 +49,5 @@ class TransactionUpdater:
         """
         tx.status = 'categorized'
         tx.merchant = reference_transaction.merchant
-        tx.merchant_raw_name = reference_transaction.merchant.normalized_name
         tx.category = reference_transaction.category
         return TransactionUpdater._update_common_fields(tx, transaction_parse_result)

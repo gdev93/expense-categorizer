@@ -67,7 +67,7 @@ def create_file_structure_metadata(sender, instance: UploadFile, **kwargs):
             instance.income_amount_column_name or instance.expense_amount_column_name):
 
         first_transaction = instance.transactions.first()
-        if not first_transaction:
+        if not first_transaction or not first_transaction.raw_data:
             return
 
         keys = first_transaction.raw_data.keys()

@@ -9,9 +9,9 @@
             {% if not is_update %}
                 <input type="hidden" name="merchant_id" id="id_merchant_id" value="" />
             {% endif %}
-            <input type="text" name="{% if is_update %}merchant_raw_name{% else %}merchant_name{% endif %}" id="id_merchant_name"
+            <input type="text" name="merchant_name" id="id_merchant_name"
                    class="form-control" 
-                   value="{% if is_update %}{{ transaction.merchant.name|default:transaction.merchant_raw_name }}{% endif %}" 
+                   value="{% if is_update %}{{ transaction.merchant.name }}{% endif %}" 
                    placeholder="es: Amazon, Starbucks..." required
                    hx-get="{% url 'merchant_search' %}"
                    hx-trigger="keyup changed delay:500ms"
@@ -61,7 +61,7 @@
     <div class="form-group mt-2 mb-4">
         <label class="field-label transaction-form-apply-all-label">
             <input type="checkbox" name="apply_to_all" id="id_apply_to_all" class="transaction-form-apply-all-checkbox">
-            <span>Applica questa categoria a tutte le transazioni di <strong>{{ transaction.merchant.name|default:transaction.merchant_raw_name }}</strong></span>
+            <span>Applica questa categoria a tutte le transazioni di <strong>{{ transaction.merchant.name }}</strong></span>
         </label>
     </div>
     {% endif %}
