@@ -147,8 +147,14 @@ class TransactionFilterMixin(MonthYearFilterMixin, View):
         if filters.upload_file_id:
             queryset = queryset.filter(upload_file_id=filters.upload_file_id)
 
-        # 3. Filter by Amount (Disabled due to encryption)
-        # SQL-level filtering on encrypted amount is not possible.
+        # 3. Filter by Amount
+        if filters.amount is not None:
+            if filters.amount_operator == 'gt':
+                queryset = queryset.filter(amount__gt=filters.amount)
+            elif filters.amount_operator == 'lt':
+                queryset = queryset.filter(amount__lt=filters.amount)
+            else:
+                queryset = queryset.filter(amount=filters.amount)
 
         # 4. Filter by Search
         if filters.search:

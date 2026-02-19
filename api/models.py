@@ -327,7 +327,7 @@ class Transaction(models.Model):
     operation_type = models.CharField(max_length=255, blank=True, null=True)
     # Core transaction data
     transaction_date = models.DateField(null=True, blank=True)
-    encrypted_amount = models.TextField(blank=True, null=True)
+    amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     encrypted_description = models.TextField(blank=True, null=True)
     description_hash = models.CharField(max_length=64, db_index=True, blank=True, null=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
@@ -339,27 +339,6 @@ class Transaction(models.Model):
     raw_data = models.JSONField(default=dict, null=True)
     categorized_by_agent = models.BooleanField(default=False)
     embedding = VectorField(dimensions=384, null=True, blank=True)
-
-    @property
-    def amount(self):
-        if not hasattr(self, '_decrypted_amount'):
-            from api.privacy_utils import decrypt_value
-            from decimal import Decimal
-            val = decrypt_value(self.encrypted_amount)
-            try:
-                self._decrypted_amount = Decimal(val) if val is not None else None
-            except Exception:
-                self._decrypted_amount = None
-        return self._decrypted_amount
-
-    @amount.setter
-    def amount(self, value):
-        from api.privacy_utils import encrypt_value
-        self._decrypted_amount = value
-        if value is not None:
-            self.encrypted_amount = encrypt_value(value)
-        else:
-            self.encrypted_amount = None
 
     @property
     def description(self):
@@ -383,17 +362,10 @@ class Transaction(models.Model):
         # Privacy by Design: Encrypted fields are updated via properties setters
         # but we ensure they are consistent if attributes were set directly
         from api.privacy_utils import encrypt_value, generate_blind_index
-        if hasattr(self, '_decrypted_amount') and self._decrypted_amount is not None:
-            self.encrypted_amount = encrypt_value(self._decrypted_amount)
         
         if hasattr(self, '_decrypted_description') and self._decrypted_description:
             self.encrypted_description = encrypt_value(self._decrypted_description)
             self.description_hash = generate_blind_index(self._decrypted_description)
-
-        # AGGREGATION STRATEGY: SQL-level SUM() or AVG() on the amount field will no longer work
-        # because the data is encrypted. Strategy: Use Django Signals to update a summary table
-        # (e.g. UserFinancialSummary or MonthlySummary) with non-encrypted aggregates,
-        # or perform calculations in-memory by decrypting values on the fly.
 
         super().save(*args, **kwargs)
     class Meta:

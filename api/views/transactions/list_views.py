@@ -113,30 +113,21 @@ class TransactionListView(LoginRequiredMixin, ListView, TransactionFilterMixin):
                 status='uncategorized'
             ).values_list('merchant_id', flat=True).distinct()
             
-            # Base aggregation (excluding total_spent which is encrypted)
+            # Base aggregation
             merchants_query = queryset.exclude(
                 merchant_id__in=merchants_with_uncategorized
             ).values(
                 'merchant__id'
             ).annotate(
                 number_of_transactions=Count('id'),
+                total_spent=Sum('amount'),
                 is_uncategorized=Value(0, output_field=IntegerField()),
                 categories_list=StringAgg('category__name', delimiter=', ', distinct=True),
                 category_id=Max('category__id'),
                 merchant__encrypted_name=Max('merchant__encrypted_name')
             ).order_by('-number_of_transactions')
 
-            # In-memory calculation of total_spent
-            merchants_list = list(merchants_query)
-            merchant_totals = {}
-            for t in queryset.exclude(merchant_id__in=merchants_with_uncategorized):
-                m_id = t.merchant_id
-                merchant_totals[m_id] = merchant_totals.get(m_id, 0) + (t.amount or 0)
-            
-            for item in merchants_list:
-                item['total_spent'] = merchant_totals.get(item['merchant__id'], 0)
-            
-            return merchants_list
+            return list(merchants_query)
 
         return queryset
 
@@ -171,21 +162,14 @@ class TransactionListView(LoginRequiredMixin, ListView, TransactionFilterMixin):
                 'merchant__id'
             ).annotate(
                 number_of_transactions=Count('id'),
+                total_spent=Sum('amount'),
                 is_uncategorized=Value(1, output_field=IntegerField()),
                 categories_list=StringAgg('category__name', delimiter=', ', distinct=True),
                 category_id=Max('category__id'),
                 merchant__encrypted_name=Max('merchant__encrypted_name')
             ).order_by('-number_of_transactions')
 
-            # In-memory calculation for uncategorized merchants
             uncategorized_merchants = list(uncategorized_merchants_query)
-            merchant_totals = {}
-            for t in merchant_filter_query.filter(merchant_id__in=merchants_with_uncategorized):
-                m_id = t.merchant_id
-                merchant_totals[m_id] = merchant_totals.get(m_id, 0) + (t.amount or 0)
-            
-            for item in uncategorized_merchants:
-                item['total_spent'] = merchant_totals.get(item['merchant__id'], 0)
         else:
             uncategorized_merchants = []
 
@@ -196,15 +180,12 @@ class TransactionListView(LoginRequiredMixin, ListView, TransactionFilterMixin):
 
 
         full_queryset = self.object_list
-
         total_count = len(full_queryset) if isinstance(full_queryset, list) else full_queryset.count()
 
         if filters.view_type == 'merchant':
-            # full_queryset is now a list of dicts
             total_amount = sum(item['total_spent'] for item in full_queryset)
         else:
-            # full_queryset is a QuerySet, we sum in-memory
-            total_amount = sum(t.amount or 0 for t in full_queryset)
+            total_amount = full_queryset.aggregate(total=Sum('amount'))['total'] or 0
 
         category_count = self.get_transaction_filter_query().values('category').distinct().count()
 

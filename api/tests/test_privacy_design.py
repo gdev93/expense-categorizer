@@ -30,9 +30,8 @@ def test_privacy_encryption_and_blind_index():
         transaction_date="2026-02-19"
     )
     
-    assert tx.encrypted_amount is not None
+    assert tx.amount == amount
     assert tx.encrypted_description is not None
-    assert decrypt_value(tx.encrypted_amount) == str(amount)
     assert decrypt_value(tx.encrypted_description) == description
 
 @pytest.mark.django_db
@@ -75,20 +74,18 @@ def test_transaction_filter_by_merchant_hash():
     view = MockView(user)
     
     # 1. Search by exact merchant name (which view should hash)
-    filters = TransactionFilterState(year=2026, months=[2], search="Target Store")
-    qs = view.get_transaction_filter_query(filters)
+    view.get_transaction_filters = lambda: TransactionFilterState(year=2026, months=[2], search="Target Store")
+    qs = view.get_transaction_filter_query()
     assert qs.count() == 1
     assert qs.first().merchant == merchant
     
     # 2. Search by something else
-    filters = TransactionFilterState(year=2026, months=[2], search="Target") # Partial match won't work on blind index
-    qs = view.get_transaction_filter_query(filters)
-    # It might still match by description if "Target" was in description, 
-    # but here it shouldn't match merchant unless exact match on hash.
+    view.get_transaction_filters = lambda: TransactionFilterState(year=2026, months=[2], search="Target")
+    qs = view.get_transaction_filter_query()
     assert qs.count() == 0
     
     # 3. Search by description (exact match now required due to blind index)
-    filters = TransactionFilterState(year=2026, months=[2], search="Searchable description")
-    qs = view.get_transaction_filter_query(filters)
+    view.get_transaction_filters = lambda: TransactionFilterState(year=2026, months=[2], search="Searchable description")
+    qs = view.get_transaction_filter_query()
     assert qs.count() == 1
 
