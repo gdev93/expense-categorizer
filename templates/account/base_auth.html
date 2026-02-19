@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="preload" href="{% static 'fonts/material-icons.woff2' %}" as="font" type="font/woff2" crossorigin>
     <link rel="icon" type="image/svg+xml" href="{% static 'images/favicon.svg' %}">
+    {% include 'components/pwa_meta.html' %}
     <title>{% block head_title %}{% endblock %} - Pecuniam</title>
     <link rel="stylesheet" href="{% static 'css/main.css' %}">
     <link rel="stylesheet" href="{% static 'css/login.css' %}">
