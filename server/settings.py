@@ -296,7 +296,6 @@ else:
     EMAIL_HOST_PASSWORD = SMTP_PROVIDER_PASSWORD
     # 1. Tell Django to trust the X-Forwarded-Proto header from Apache
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-
     # 2. Force allauth to use https when generating URLs
     ACCOUNT_DEFAULT_HTTP_PROTOCOL = 'https'
 
