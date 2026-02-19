@@ -1,8 +1,7 @@
 {% load static %}
-<link rel="manifest" href="{% static 'manifest.json' %}">
+<link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#FFC107">
 <link rel="apple-touch-icon" href="{% static 'icons/icon-192x192.svg' %}">
-<script src="{% static 'sw.js' %}"></script>
 <script>
     // Verify if the browser supports service workers
     if ('serviceWorker' in navigator) {

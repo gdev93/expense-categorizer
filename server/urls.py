@@ -26,6 +26,8 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('costs/', include(costs_urls)),
     path("robots.txt", login_not_required(TemplateView.as_view(template_name="robots.txt", content_type="text/plain"))),
+    path("sw.js", login_not_required(TemplateView.as_view(template_name="sw.js", content_type="application/javascript"))),
+    path("manifest.json", login_not_required(TemplateView.as_view(template_name="manifest.json", content_type="application/json"))),
     path("", include(api_urls), name="api")
 ]
 

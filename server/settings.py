@@ -298,6 +298,8 @@ else:
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     # 2. Force allauth to use https when generating URLs
     ACCOUNT_DEFAULT_HTTP_PROTOCOL = 'https'
+    SESSION_COOKIE_SECURE = True
+    SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL')
 

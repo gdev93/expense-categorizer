@@ -1,3 +1,4 @@
+{% load static %}
 {
   "name": "Pecuniam - Contabilità Familiare",
   "short_name": "Pecuniam",
