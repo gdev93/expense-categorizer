@@ -78,7 +78,7 @@ class TestCategoryListView:
         assert response.status_code == 200
         
         content = response.content.decode()
-        assert "€ 50.00" in content
+        assert "€ 50,00" in content
         assert "1 transazioni" in content
 
     def test_category_list_multiselect_filter(self, client):

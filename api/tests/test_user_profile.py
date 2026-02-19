@@ -13,6 +13,7 @@ def test_create_user_view_creates_profile(client):
     data = {
         'username': 'newuser',
         'password1': 'StR0ngP@ssw0rd!123',
+        'password2': 'StR0ngP@ssw0rd!123',
         'email': 'authorized@example.com',
     }
     

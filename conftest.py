@@ -1,14 +1,23 @@
 import os
 import pytest
 from testcontainers.postgres import PostgresContainer
+from django.conf import settings as django_settings
 
-# Set DOCKER_HOST if not already set, to ensure testcontainers can find the Docker socket on MacOS
 if "DOCKER_HOST" not in os.environ:
     user = os.environ.get("USER")
     if user:
         socket_path = f"unix:///Users/{user}/.docker/run/docker.sock"
         if os.path.exists(socket_path.replace("unix://", "")):
             os.environ["DOCKER_HOST"] = socket_path
+
+
+@pytest.fixture(scope='session', autouse=True)
+def configure_test_settings():
+    django_settings.STORAGES = {
+        "staticfiles": {
+            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        },
+    }
 
 @pytest.fixture(scope="session", autouse=True)
 def postgres_container(request):
