@@ -4,11 +4,11 @@ import re
 
 from django.contrib.auth.models import User
 from django.contrib.postgres.indexes import GinIndex
-from django.contrib.postgres.search import TrigramWordSimilarity
 from django.db import models
 from django.db.models import QuerySet
 from django.db.models.expressions import RawSQL
 from pgvector.django import VectorField, HnswIndex
+from api.privacy_utils import encrypt_value, decrypt_value, generate_blind_index
 
 
 class DefaultCategory(models.Model):
@@ -55,9 +55,8 @@ class Category(models.Model):
 
 class Merchant(models.Model):
     """Merchants/vendors where transactions occur"""
-    name = models.CharField(max_length=255)  # Normalized name
-    normalized_name = models.CharField(max_length=255, db_index=True)  # For fuzzy matching
-    description = models.TextField(blank=True)
+    encrypted_name = models.TextField(blank=True, null=True)
+    name_hash = models.CharField(max_length=64, db_index=True, blank=True, null=True)
     address = models.TextField(blank=True)
     user = models.ForeignKey(
         User,
@@ -69,47 +68,39 @@ class Merchant(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ['name']
+        ordering = ['id']
         indexes = [
-            models.Index(fields=['user', 'name']),
-            models.Index(fields=['user', 'normalized_name']),
-            GinIndex(fields=['name'], name='merchant_name_trgm_idx', opclasses=['gin_trgm_ops']),
-            GinIndex(fields=['normalized_name'], name='merchant_norm_name_trgm_idx', opclasses=['gin_trgm_ops']),
+            models.Index(fields=['user', 'name_hash']),
         ]
+
+    @property
+    def name(self):
+        if not hasattr(self, '_decrypted_name'):
+            from api.privacy_utils import decrypt_value
+            self._decrypted_name = decrypt_value(self.encrypted_name) or ""
+        return self._decrypted_name
+
+    @name.setter
+    def name(self, value):
+        from api.privacy_utils import encrypt_value, generate_blind_index
+        self._decrypted_name = value
+        if value:
+            self.encrypted_name = encrypt_value(value)
+            self.name_hash = generate_blind_index(value)
+        else:
+            self.encrypted_name = None
+            self.name_hash = None
 
     def __str__(self):
         return self.name
 
-    @staticmethod
-    def get_merchants_by_transaction_description(description: str, user: User, threshold:float) -> QuerySet:
-        """
-        Finds merchants where the merchant name is highly similar to words
-        found in the description.
-        """
-        # TrigramWordSimilarity splits the description into words and compares
-        # them against the merchant name.
-        return Merchant.objects.annotate(
-            similarity=RawSQL(sql="WORD_SIMILARITY(name, %s)", params=(description,))
-        ).filter(
-            user=user,
-            similarity__gte=threshold  # Adjust threshold (0.6 is usually a strong match)
-        ).order_by('-similarity')
-
-    @staticmethod
-    def get_similar_merchants_by_names(merchant_name_candidate: str, user: User,
-                                       similarity_threshold: float) -> QuerySet:
-
-        return Merchant.objects.filter(user=user, normalized_name__exact=normalize_string(
-            merchant_name_candidate)) or Merchant.objects.annotate(
-            similarity=TrigramWordSimilarity(normalize_string(merchant_name_candidate),'normalized_name')
-        ).filter(
-            similarity__gte=similarity_threshold,
-            user=user
-        ).order_by('-similarity')
-
     def save(self, *args, **kwargs):
-        # Auto-normalize name for fuzzy matching
-        self.normalized_name = normalize_string(self.name)
+        # Privacy by Design logic is now handled in the name setter if used,
+        # but we also ensure fields are set here if 'name' was set as an attribute
+        if hasattr(self, '_decrypted_name') and self._decrypted_name:
+            from api.privacy_utils import encrypt_value, generate_blind_index
+            self.encrypted_name = encrypt_value(self._decrypted_name)
+            self.name_hash = generate_blind_index(self._decrypted_name)
         super().save(*args, **kwargs)
 
 
@@ -338,8 +329,10 @@ class Transaction(models.Model):
     transaction_date = models.DateField(null=True, blank=True)
     original_date = models.CharField(max_length=255, blank=True, null=True)
     amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    encrypted_amount = models.TextField(blank=True, null=True)
     original_amount = models.CharField(max_length=50, blank=True, null=True)  # Raw from CSV
     description = models.TextField(null=True, blank=True)  # Raw description from bank
+    encrypted_description = models.TextField(blank=True, null=True)
     normalized_description = models.TextField(null=True, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     manual_insert = models.BooleanField(default=False)
@@ -355,6 +348,17 @@ class Transaction(models.Model):
     def save(self, *args, **kwargs):
         # Auto-normalize name for fuzzy matching
         self.normalized_description = normalize_string(self.description)
+        # Privacy by Design: Encrypt sensitive fields
+        if self.amount is not None:
+            self.encrypted_amount = encrypt_value(self.amount)
+        if self.description:
+            self.encrypted_description = encrypt_value(self.description)
+
+        # AGGREGATION STRATEGY: SQL-level SUM() or AVG() on the amount field will no longer work
+        # because the data is encrypted. Strategy: Use Django Signals to update a summary table
+        # (e.g. UserFinancialSummary or MonthlySummary) with non-encrypted aggregates,
+        # or perform calculations in-memory by decrypting values on the fly.
+
         super().save(*args, **kwargs)
     class Meta:
         ordering = ['-transaction_date', '-created_at']

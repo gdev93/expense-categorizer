@@ -12,6 +12,7 @@ from django.db.models.expressions import RawSQL
 
 from agent.agent import ExpenseCategorizerAgent, AgentTransactionUpload, TransactionCategorization, GeminiResponse
 from api.models import Transaction, Category, Merchant, UploadFile, normalize_string
+from api.privacy_utils import generate_blind_index
 from costs.services import CostService
 from processors.batching_helper import BatchingHelper
 from processors.data_prechecks import parse_raw_transaction
@@ -45,7 +46,7 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
         self.user = user
         self.batch_helper = batch_helper or BatchingHelper()
         self.agent = ExpenseCategorizerAgent(user_rules=user_rules, available_categories=available_categories)
-        self.similarity_matcher = SimilarityMatcher(user, float(self.pre_check_confidence_threshold))
+        self.similarity_matcher = SimilarityMatcher(user)
 
     def process_transactions(self, transactions: Iterable[Transaction], upload_file: UploadFile) -> UploadFile:
 
@@ -123,18 +124,17 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
                     descriptions_to_embed.add(res.description.strip())
 
         # 2. Batch Level 1 & 2: Fetch Known Merchants
-        # Fetching by name or normalized_name to handle exact and fuzzy-ish matches
+        # Fetching by name_hash to handle exact matches
         merchant_map = {}
         if merchant_names_to_fetch:
-            normalized_names = [normalize_string(n) for n in merchant_names_to_fetch]
+            merchant_hashes = [generate_blind_index(n) for n in merchant_names_to_fetch]
             merchants = Merchant.objects.filter(
-                Q(name__in=merchant_names_to_fetch) | Q(normalized_name__in=normalized_names),
+                name_hash__in=merchant_hashes,
                 user=self.user
             )
             for m in merchants:
-                # We map both original and normalized for high-speed lookup
-                merchant_map[m.name.lower()] = m
-                merchant_map[m.normalized_name] = m
+                # We map by name_hash for high-speed lookup
+                merchant_map[m.name_hash] = m
 
         # 3. Batch Level 3: Bulk Embed
         embedding_dict = {}
@@ -170,9 +170,8 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
             categorized = False
 
             # Level A: Direct Merchant Match (from our batch map)
-            m_lookup = res.merchant.lower() if res.merchant else None
-            m_norm_lookup = normalize_string(res.merchant) if res.merchant else None
-            merchant_obj = merchant_map.get(m_lookup) or merchant_map.get(m_norm_lookup)
+            m_hash = generate_blind_index(res.merchant) if res.merchant else None
+            merchant_obj = merchant_map.get(m_hash)
 
             if merchant_obj:
                 ref_tx = merchant_with_category.get(merchant_obj) or self.similarity_matcher.find_most_frequent_transaction_for_merchant(merchant_obj)
@@ -306,7 +305,10 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
                     Transaction.objects.filter(id=tx_id).update(status='uncategorized')
                     continue
 
-                merchant, _ = Merchant.objects.get_or_create(name=merchant_name, user=self.user)
+                merchant_hash = generate_blind_index(merchant_name)
+                merchant = Merchant.objects.filter(name_hash=merchant_hash, user=self.user).first()
+                if not merchant:
+                    merchant = Merchant.objects.create(name=merchant_name, user=self.user)
                 category = Category.objects.filter(name__icontains=category_name.strip(), user=self.user).first()
                 if not category:
                     Transaction.objects.filter(id=tx_id).update(status='uncategorized', merchant=merchant)

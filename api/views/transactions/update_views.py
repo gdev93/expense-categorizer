@@ -11,6 +11,7 @@ from django.views import View
 from django.views.generic import UpdateView
 
 from api.models import Transaction, Category, Merchant
+from api.privacy_utils import generate_blind_index
 from processors.similarity_matcher import update_merchant_ema
 
 pre_check_confidence_threshold = os.environ.get('PRE_CHECK_CONFIDENCE_THRESHOLD', 0.8)
@@ -87,9 +88,9 @@ class TransactionDetailUpdateView(LoginRequiredMixin, UpdateView):
             )
 
         merchant_name = self.request.POST.get('merchant_name', '').strip()
-
         if merchant_name:
-            merchant_db = Merchant.objects.filter(name=merchant_name, user=self.request.user).first()
+            merchant_hash = generate_blind_index(merchant_name)
+            merchant_db = Merchant.objects.filter(name_hash=merchant_hash, user=self.request.user).first()
             if not merchant_db:
                 merchant_db = Merchant.objects.create(name=merchant_name, user=self.request.user)
             form.instance.merchant = merchant_db

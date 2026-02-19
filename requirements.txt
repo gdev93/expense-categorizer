@@ -20,3 +20,4 @@ redis
 django-allauth[socialaccount]
 google-auth-oauthlib
 google-auth
+cryptography

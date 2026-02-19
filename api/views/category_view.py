@@ -356,9 +356,8 @@ class CategoryFromMerchant(LoginRequiredMixin, View, SimilarityMatcher):
             
         try:
             merchant = Merchant.objects.get(pk=merchant_id, user=request.user)
-            # SimilarityMatcher needs user and threshold
+            # SimilarityMatcher needs user
             self.user = request.user
-            self.threshold = 0.6
             
             transaction = self.find_most_frequent_transaction_for_merchant(merchant)
             if transaction and transaction.category:

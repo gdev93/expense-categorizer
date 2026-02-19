@@ -116,15 +116,15 @@ class TransactionListView(LoginRequiredMixin, ListView, TransactionFilterMixin):
             return queryset.exclude(
                 merchant_id__in=merchants_with_uncategorized
             ).values(
-                'merchant__id',
-                'merchant__name'
+                'merchant__id'
             ).annotate(
                 number_of_transactions=Count('id'),
                 total_spent=Sum('amount'),  # Questo è il campo da sommare per i totali
                 is_uncategorized=Value(0, output_field=IntegerField()),
                 categories_list=StringAgg('category__name', delimiter=', ', distinct=True),
-                category_id=Max('category__id')
-            ).order_by('-number_of_transactions', 'merchant__name')
+                category_id=Max('category__id'),
+                merchant__encrypted_name=Max('merchant__encrypted_name')
+            ).order_by('-number_of_transactions')
 
         return self.get_transaction_filter_query()
 
@@ -159,15 +159,15 @@ class TransactionListView(LoginRequiredMixin, ListView, TransactionFilterMixin):
             uncategorized_merchants = merchant_filter_query.filter(
                 merchant_id__in=merchants_with_uncategorized
             ).values(
-                'merchant__id',
-                'merchant__name'
+                'merchant__id'
             ).annotate(
                 number_of_transactions=Count('id'),
                 total_spent=Sum('amount'),
                 is_uncategorized=Value(1, output_field=IntegerField()),
                 categories_list=StringAgg('category__name', delimiter=', ', distinct=True),
-                category_id=Max('category__id')
-            ).order_by('-number_of_transactions', 'merchant__name')
+                category_id=Max('category__id'),
+                merchant__encrypted_name=Max('merchant__encrypted_name')
+            ).order_by('-number_of_transactions')
         else:
             uncategorized_merchants = []
 

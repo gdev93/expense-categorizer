@@ -5,6 +5,7 @@ from django.db.models import Q, QuerySet
 from django.http import HttpRequest
 from django.views import View
 from api.models import Transaction
+from api.privacy_utils import generate_blind_index
 from api.views.mixins import MonthYearFilterMixin
 
 
@@ -161,8 +162,9 @@ class TransactionFilterMixin(MonthYearFilterMixin, View):
 
         # 4. Filter by Search
         if filters.search:
+            merchant_hash = generate_blind_index(filters.search)
             queryset = queryset.filter(
-                Q(merchant__name__icontains=filters.search) |
+                Q(merchant__name_hash=merchant_hash) |
                 Q(description__icontains=filters.search)
             )
 

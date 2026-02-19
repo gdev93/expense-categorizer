@@ -1,4 +1,4 @@
-{% load query_tags %}
+{% load query_tags privacy_tags %}
 {% with m_id=item.merchant__id|default:"none" %}
 <div class="merchant-group">
     <div class="data-list-item merchant-clickable"
@@ -24,7 +24,7 @@
 
         <div class="list-item-info">
             <div class="transaction-merchant">
-                {{ item.merchant__name|default:"Sconosciuto" }}
+                {{ item.merchant__encrypted_name|decrypt|default:"Sconosciuto" }}
             </div>
             <div class="merchant-meta">
                 <span class="badge-count">
