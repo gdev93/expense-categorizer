@@ -12,7 +12,7 @@ class MerchantSearchView(ListView):
     max_distinct_results = os.environ.get('MAX_MERCHANT_RESULTS', 5)
 
     def get_queryset(self):
-        search_term = self.request.GET.get('name') or self.request.GET.get('merchant_raw_name') or self.request.GET.get('merchant_name')
+        search_term = self.request.GET.get('name') or self.request.GET.get('merchant_name')
         if not search_term or len(search_term) < 2:
             return Merchant.objects.none()
         return super().get_queryset().filter(

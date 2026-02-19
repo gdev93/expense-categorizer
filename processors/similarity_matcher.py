@@ -117,9 +117,9 @@ class SimilarityMatcher:
         if exact_matches.exists():
             return self.find_most_frequent_transaction_for_merchant(exact_matches.first())
 
-        # 2. Try Fuzzy Match on 'merchant_raw_name' (Medium Confidence)
+        # 2. Try Fuzzy Match on 'merchant__name' (Medium Confidence)
         fuzzy_matches = Transaction.objects.annotate(
-            similarity=TrigramWordSimilarity(merchant_name, 'merchant_raw_name')
+            similarity=TrigramWordSimilarity(merchant_name, 'merchant__name')
         ).filter(
             user=self.user,
             category__isnull=False,

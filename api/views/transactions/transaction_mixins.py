@@ -163,7 +163,6 @@ class TransactionFilterMixin(MonthYearFilterMixin, View):
         if filters.search:
             queryset = queryset.filter(
                 Q(merchant__name__icontains=filters.search) |
-                Q(merchant_raw_name__icontains=filters.search) |
                 Q(description__icontains=filters.search)
             )
 

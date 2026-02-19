@@ -24,7 +24,6 @@ def create_test_data(user):
             transaction_date=date(2025, 1, 1),
             amount=Decimal("50.00"),
             description="Weekly groceries",
-            merchant_raw_name="Supermarket",
             merchant=supermarket,
             category=food,
             status="categorized",
@@ -35,7 +34,6 @@ def create_test_data(user):
             transaction_date=date(2025, 1, 5),
             amount=Decimal("40.00"),
             description="Gas refill",
-            merchant_raw_name="Gas Station",
             merchant=gas_station,
             category=transport,
             status="categorized",
@@ -46,7 +44,6 @@ def create_test_data(user):
             transaction_date=date(2025, 1, 10),
             amount=Decimal("100.00"),
             description="Monthly bill",
-            merchant_raw_name="Electric Co",
             merchant=electric_co,
             category=utilities,
             status="categorized",
@@ -57,7 +54,6 @@ def create_test_data(user):
             transaction_date=date(2025, 1, 15),
             amount=Decimal("15.50"),
             description="Lunch",
-            merchant_raw_name="Unknown Cafe",
             status="uncategorized",
             upload_file=upload_file
         )

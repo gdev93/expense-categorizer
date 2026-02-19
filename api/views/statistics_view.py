@@ -166,7 +166,7 @@ class SummaryPageContext:
         for trans in transactions.select_related('category', 'merchant').order_by('-transaction_date')[:5]:
             recent_transactions.append(RecentTransaction(
                 date=trans.transaction_date,
-                description=trans.description or trans.merchant_raw_name,
+                description=trans.description or "",
                 category=trans.category,
                 amount=trans.amount or Decimal('0'),
                 merchant=trans.merchant

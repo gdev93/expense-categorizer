@@ -54,7 +54,6 @@ class TransactionCreateView(LoginRequiredMixin, View, SimilarityMatcher):
             user=user,
             amount=amount if amount else None,
             merchant=merchant,
-            merchant_raw_name=merchant_name,
             transaction_date=transaction_date if transaction_date else None,
             description=f"Operazione in data {transaction_date} di importo {amount} presso {merchant_name}",
             category=category,

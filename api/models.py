@@ -334,8 +334,6 @@ class Transaction(models.Model):
     )
     transaction_type = models.CharField(max_length=20, choices=TRANSACTION_TYPE_CHOICES, default='expense')
     operation_type = models.CharField(max_length=255, blank=True, null=True)
-    # Processing metadata
-    merchant_raw_name = models.CharField(max_length=255, blank=True, null=True)  # Original from CSV
     # Core transaction data
     transaction_date = models.DateField(null=True, blank=True)
     original_date = models.CharField(max_length=255, blank=True, null=True)
@@ -344,8 +342,6 @@ class Transaction(models.Model):
     description = models.TextField(null=True, blank=True)  # Raw description from bank
     normalized_description = models.TextField(null=True, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
-    confidence_score = models.FloatField(null=True, blank=True)  # LLM/matching confidence
-    failure_code = models.CharField(max_length=20, null=True, blank=True)
     manual_insert = models.BooleanField(default=False)
     # Tracking
     modified_by_user = models.BooleanField(default=False)
@@ -369,13 +365,12 @@ class Transaction(models.Model):
             models.Index(fields=['user', 'amount']),
             models.Index(fields=['status']),
             models.Index(fields=['user', 'status']),
-            GinIndex(fields=['merchant_raw_name'], name='trans_merch_raw_trgm_idx', opclasses=['gin_trgm_ops']),
             GinIndex(fields=['description'], name='trans_desc_trgm_idx', opclasses=['gin_trgm_ops']),
             HnswIndex(name='idx_tx_embedding', fields=['embedding'], opclasses=['vector_cosine_ops']),
         ]
 
     def __str__(self):
-        return f"{self.transaction_date} - {self.merchant_raw_name or self.merchant} - €{self.amount}"
+        return f"{self.transaction_date} - {self.merchant or self.description} - €{self.amount}"
 
     @classmethod
     def find_similar_by_embedding(cls, user, embedding, limit=5):
