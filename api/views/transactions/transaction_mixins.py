@@ -148,13 +148,9 @@ class TransactionFilterMixin(MonthYearFilterMixin, View):
             queryset = queryset.filter(upload_file_id=filters.upload_file_id)
 
         # 3. Filter by Amount
-        if filters.amount is not None:
-            if filters.amount_operator == 'gt':
-                queryset = queryset.filter(amount__gt=filters.amount)
-            elif filters.amount_operator == 'lt':
-                queryset = queryset.filter(amount__lt=filters.amount)
-            else:
-                queryset = queryset.filter(amount=filters.amount)
+        # Note: Filtering by amount in SQL is no longer possible as it's encrypted.
+        # Monthly totals and other aggregations are handled in Python.
+        pass
 
         # 4. Filter by Search
         if filters.search:

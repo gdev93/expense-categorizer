@@ -1,5 +1,6 @@
 import datetime
 from dataclasses import dataclass, asdict, field
+from decimal import Decimal
 from typing import Any, Optional
 
 from django.contrib import messages
@@ -13,6 +14,7 @@ from django.shortcuts import get_object_or_404, redirect
 from django.views.generic import ListView
 
 from api.models import Transaction, Category, Rule, UploadFile, Merchant
+from api.privacy_utils import decrypt_value
 from api.views.rule_view import create_rule
 from api.views.transactions.transaction_mixins import TransactionFilterMixin
 
@@ -113,21 +115,39 @@ class TransactionListView(LoginRequiredMixin, ListView, TransactionFilterMixin):
                 status='uncategorized'
             ).values_list('merchant_id', flat=True).distinct()
             
-            # Base aggregation
+            # Base aggregation (Removed Sum)
             merchants_query = queryset.exclude(
                 merchant_id__in=merchants_with_uncategorized
             ).values(
                 'merchant__id'
             ).annotate(
                 number_of_transactions=Count('id'),
-                total_spent=Sum('amount'),
                 is_uncategorized=Value(0, output_field=IntegerField()),
                 categories_list=StringAgg('category__name', delimiter=', ', distinct=True),
                 category_id=Max('category__id'),
                 merchant__encrypted_name=Max('merchant__encrypted_name')
             ).order_by('-number_of_transactions')
 
-            return list(merchants_query)
+            merchants_list = list(merchants_query)
+            
+            # Calculate sums in Python
+            merchant_ids = [m['merchant__id'] for m in merchants_list if m['merchant__id']]
+            sums = {m_id: Decimal('0') for m_id in merchant_ids}
+            
+            tx_data = queryset.filter(merchant_id__in=merchant_ids).values('merchant_id', 'encrypted_amount')
+            for tx in tx_data:
+                m_id = tx['merchant_id']
+                val = decrypt_value(tx['encrypted_amount'])
+                if val:
+                    try:
+                        sums[m_id] += Decimal(val)
+                    except Exception:
+                        pass
+            
+            for m in merchants_list:
+                m['total_spent'] = sums.get(m['merchant__id'], Decimal('0'))
+
+            return merchants_list
 
         return queryset
 
@@ -162,7 +182,6 @@ class TransactionListView(LoginRequiredMixin, ListView, TransactionFilterMixin):
                 'merchant__id'
             ).annotate(
                 number_of_transactions=Count('id'),
-                total_spent=Sum('amount'),
                 is_uncategorized=Value(1, output_field=IntegerField()),
                 categories_list=StringAgg('category__name', delimiter=', ', distinct=True),
                 category_id=Max('category__id'),
@@ -170,6 +189,23 @@ class TransactionListView(LoginRequiredMixin, ListView, TransactionFilterMixin):
             ).order_by('-number_of_transactions')
 
             uncategorized_merchants = list(uncategorized_merchants_query)
+            
+            # Calculate sums in Python for uncategorized merchants
+            uncat_merchant_ids = [m['merchant__id'] for m in uncategorized_merchants if m['merchant__id']]
+            uncat_sums = {m_id: Decimal('0') for m_id in uncat_merchant_ids}
+            
+            uncat_tx_data = merchant_filter_query.filter(merchant_id__in=uncat_merchant_ids).values('merchant_id', 'encrypted_amount')
+            for tx in uncat_tx_data:
+                m_id = tx['merchant_id']
+                val = decrypt_value(tx['encrypted_amount'])
+                if val:
+                    try:
+                        uncat_sums[m_id] += Decimal(val)
+                    except Exception:
+                        pass
+            
+            for m in uncategorized_merchants:
+                m['total_spent'] = uncat_sums.get(m['merchant__id'], Decimal('0'))
         else:
             uncategorized_merchants = []
 
@@ -185,7 +221,14 @@ class TransactionListView(LoginRequiredMixin, ListView, TransactionFilterMixin):
         if filters.view_type == 'merchant':
             total_amount = sum(item['total_spent'] for item in full_queryset)
         else:
-            total_amount = full_queryset.aggregate(total=Sum('amount'))['total'] or 0
+            total_amount = Decimal('0')
+            for tx in full_queryset.values('encrypted_amount'):
+                val = decrypt_value(tx['encrypted_amount'])
+                if val:
+                    try:
+                        total_amount += Decimal(val)
+                    except Exception:
+                        pass
 
         category_count = self.get_transaction_filter_query().values('category').distinct().count()
 

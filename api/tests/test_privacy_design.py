@@ -31,6 +31,8 @@ def test_privacy_encryption_and_blind_index():
     )
     
     assert tx.amount == amount
+    assert tx.encrypted_amount is not None
+    assert decrypt_value(tx.encrypted_amount) == str(amount)
     assert tx.encrypted_description is not None
     assert decrypt_value(tx.encrypted_description) == description
 

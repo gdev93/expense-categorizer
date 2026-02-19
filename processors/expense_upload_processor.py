@@ -224,7 +224,7 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
         to_update = all_transactions_categorized + all_transactions_to_upload + all_transactions_as_income
         Transaction.objects.bulk_update(to_update, [
             'status', 'merchant', 'category', 'transaction_date',
-            'encrypted_description', 'amount', 'description_hash',
+            'encrypted_description', 'encrypted_amount', 'description_hash',
             'transaction_type', 'operation_type', 'embedding'
         ])
 
@@ -346,7 +346,7 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
         if transactions_to_update:
             Transaction.objects.bulk_update(transactions_to_update, [
                 'category', 'merchant',
-                'transaction_date', 'amount', 'status', 'modified_by_user',
+                'transaction_date', 'encrypted_amount', 'status', 'modified_by_user',
                 'encrypted_description', 'description_hash', 'categorized_by_agent', 'embedding'
             ])
 
@@ -422,12 +422,12 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
 
             Transaction.objects.bulk_update(
                 chunk,
-                ['transaction_date', 'amount', 'encrypted_description', 'description_hash',
+                ['transaction_date', 'encrypted_amount', 'encrypted_description', 'description_hash',
                  'category', 'status', 'merchant', 'embedding']
             )
 
         Transaction.objects.filter(user=self.user, upload_file=upload_file, status__in=['pending', 'uncategorized'],
-                                   amount__isnull=True).update(status='uncategorized',
+                                   encrypted_amount__isnull=True).update(status='uncategorized',
                                                                         transaction_type='income')
 
 def persist_uploaded_file(file_data: list[dict[str, str]], user: User, file: UploadedFile, upload_file: UploadFile = None) -> UploadFile:

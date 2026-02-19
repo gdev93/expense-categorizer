@@ -1,5 +1,6 @@
 import datetime
 import logging
+from decimal import Decimal
 
 import pandas as pd
 from django import forms
@@ -16,6 +17,7 @@ from django.views.generic import ListView, CreateView, UpdateView, DeleteView, D
 
 from api.constants import ITALIAN_MONTHS
 from api.models import Category, Transaction, Rule, Merchant
+from api.privacy_utils import decrypt_value
 from api.views.mixins import MonthYearFilterMixin
 from api.views.transactions.transaction_mixins import TransactionFilterMixin
 from processors.similarity_matcher import SimilarityMatcher
@@ -92,22 +94,39 @@ class CategoryEnrichedMixin(MonthYearFilterMixin):
         if filters['months']:
             filter_q &= Q(transactions__transaction_date__month__in=filters['months'])
 
-        enriched_categories = base_category_queryset.annotate(
+        # Group and Count in DB, Sum in Python
+        categories = base_category_queryset.annotate(
             transaction_count=Count(
                 'transactions',
                 filter=filter_q
-            ),
-            transaction_amount=Coalesce(
-                Sum(
-                    'transactions__amount',
-                    filter=filter_q
-                ),
-                0.0,
-                output_field=DecimalField()
             )
         ).order_by('name')
+        
+        # Adding transaction_amount in Python
+        categories_list = list(categories)
+        category_ids = [c.id for c in categories_list]
+        
+        tx_filter = Q(category_id__in=category_ids, transaction_date__year=filters['year'])
+        if filters['months']:
+            tx_filter &= Q(transaction_date__month__in=filters['months'])
+            
+        # Optimization: Fetch only necessary fields
+        transactions_data = Transaction.objects.filter(tx_filter).values('category_id', 'encrypted_amount')
+        
+        sums = {c_id: Decimal('0') for c_id in category_ids}
+        for tx in transactions_data:
+            c_id = tx['category_id']
+            val = decrypt_value(tx['encrypted_amount'])
+            if val:
+                try:
+                    sums[c_id] += Decimal(val)
+                except Exception:
+                    pass
+        
+        for c in categories_list:
+            c.transaction_amount = sums.get(c.id, Decimal('0'))
 
-        return enriched_categories
+        return categories_list
 # 1. VISUALIZATION VIEW (The List)
 class CategoryListView(LoginRequiredMixin, CategoryEnrichedMixin, ListView):
     model = Category
@@ -162,16 +181,46 @@ class CategoryExportView(LoginRequiredMixin, CategoryEnrichedMixin, View):
         filters = self.get_category_filters()
         selected_year = filters['year']
         selected_category_ids = filters['selected_category_ids']
-        base_query = Category.objects.filter(user=request.user)
+        
+        # Get all transactions for these categories in the selected year
+        tx_filter = Q(user=request.user, transaction_date__year=selected_year, category__isnull=False)
         if any(selected_category_ids):
-            base_query = base_query.filter(id__in=selected_category_ids)
+            tx_filter &= Q(category_id__in=selected_category_ids)
+        
+        if filters['months']:
+            tx_filter &= Q(transaction_date__month__in=filters['months'])
 
-        queryset = self.get_enriched_category_queryset(base_query)
-        queryset = queryset.annotate(
-            month=ExtractMonth('transactions__transaction_date'),
-            year=ExtractYear('transactions__transaction_date'),
-        ).filter(transaction_amount__gt=0)
-        data = list(queryset.values('name', 'transaction_amount', 'month'))
+        # We need name, amount (encrypted), and month
+        transactions = Transaction.objects.filter(tx_filter).select_related('category').values(
+            'category__name', 'encrypted_amount', 'transaction_date__month'
+        )
+        
+        # Group by category name and month in Python
+        from collections import defaultdict
+        grouped_data = defaultdict(Decimal)
+        
+        for tx in transactions:
+            cat_name = tx['category__name']
+            month = tx['transaction_date__month']
+            if not cat_name or not month:
+                continue
+            
+            val = decrypt_value(tx['encrypted_amount'])
+            if val:
+                try:
+                    grouped_data[(cat_name, month)] += Decimal(val)
+                except Exception:
+                    pass
+        
+        # Convert to list of dicts for DataFrame
+        data = []
+        for (name, month), amount in grouped_data.items():
+            if amount > 0:
+                data.append({
+                    'name': name,
+                    'transaction_amount': float(amount),
+                    'month': month
+                })
 
         df = pd.DataFrame(data)
         if not df.empty:
@@ -255,7 +304,7 @@ class CategoryDetailView(DetailView, CategoryEnrichedMixin, TransactionFilterMix
         filters = self.get_transaction_filters()
         base_query = Category.objects.filter(id=category.pk, user=self.request.user)
         # 2. Fetch Aggregated Summary Data for the Summary Card
-        summary = self.get_enriched_category_queryset(base_query).first()
+        summary = self.get_enriched_category_queryset(base_query)[0]
 
         context['category_summary'] = summary
 

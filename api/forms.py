@@ -7,19 +7,22 @@ from api.models import Transaction
 
 class TransactionForm(forms.ModelForm):
     description = forms.CharField(widget=forms.Textarea, required=False)
+    amount = forms.DecimalField(max_digits=10, decimal_places=2, required=False)
 
     class Meta:
         model = Transaction
-        fields = ['transaction_date', 'amount', 'category']
+        fields = ['transaction_date', 'category']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if self.instance and self.instance.pk:
             self.initial['description'] = self.instance.description
+            self.initial['amount'] = self.instance.amount
 
     def save(self, commit=True):
         instance = super().save(commit=False)
         instance.description = self.cleaned_data.get('description')
+        instance.amount = self.cleaned_data.get('amount')
         if commit:
             instance.save()
         return instance
