@@ -39,14 +39,16 @@ class TransactionByMerchant(TransactionFilterMixin, View):
             )
 
         # Convert QuerySet to list of dicts for JSON serialization
-        # Add or remove fields here based on what you want to show in the UI
-        transactions_data = list(transactions_qs.values(
-            'id',
-            'transaction_date',
-            'amount',
-            'description',
-            'transaction_type'
-        ))
+        # We manually build the list to include decrypted amount and description properties
+        transactions_data = []
+        for t in transactions_qs:
+            transactions_data.append({
+                'id': t.id,
+                'transaction_date': t.transaction_date,
+                'amount': t.amount,
+                'description': t.description,
+                'transaction_type': t.transaction_type
+            })
 
         return JsonResponse(
             data={

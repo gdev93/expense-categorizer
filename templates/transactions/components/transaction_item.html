@@ -43,8 +43,8 @@
             </div>
         {% endif %}
 
-        <div class="list-amount {% if transaction.transaction_type == 'income' or transaction.original_amount|slice:':1' == '+' %}is-income{% endif %}">
-            €{% if transaction.amount is not None %}{{ transaction.amount|floatformat:2 }}{% else %}{% if transaction.original_amount|slice:":1" == '+' %}{{ transaction.original_amount|slice:"1:" }}{% else %}{{ transaction.original_amount }}{% endif %}{% endif %}
+        <div class="list-amount {% if transaction.transaction_type == 'income' %}is-income{% endif %}">
+            €{{ transaction.amount|floatformat:2|default:"0,00" }}
         </div>
     </div>
 </div>

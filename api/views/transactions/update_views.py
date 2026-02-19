@@ -11,6 +11,7 @@ from django.views import View
 from django.views.generic import UpdateView
 
 from api.models import Transaction, Category, Merchant
+from api.forms import TransactionForm
 from api.privacy_utils import generate_blind_index
 from processors.similarity_matcher import update_merchant_ema
 
@@ -23,13 +24,8 @@ class TransactionDetailUpdateView(LoginRequiredMixin, UpdateView):
     staying on the current page.
     """
     model = Transaction
+    form_class = TransactionForm
     template_name = 'transactions/transaction_detail.html'
-    fields = [
-        'transaction_date',
-        'amount',
-        'description',
-        'category'
-    ]
 
     def get(self, request, *args, **kwargs):
         self.object = self.get_object()

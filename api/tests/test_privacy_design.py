@@ -87,8 +87,8 @@ def test_transaction_filter_by_merchant_hash():
     # but here it shouldn't match merchant unless exact match on hash.
     assert qs.count() == 0
     
-    # 3. Search by description (partial match)
-    filters = TransactionFilterState(year=2026, months=[2], search="Searchable")
+    # 3. Search by description (exact match now required due to blind index)
+    filters = TransactionFilterState(year=2026, months=[2], search="Searchable description")
     qs = view.get_transaction_filter_query(filters)
     assert qs.count() == 1
 

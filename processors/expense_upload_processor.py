@@ -159,7 +159,7 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
             if res.description:
                 if Transaction.objects.filter(
                         user=self.user,
-                        normalized_description=normalize_string(res.description),
+                        description_hash=generate_blind_index(res.description),
                         transaction_date=res.date,
                         status='categorized'
                 ).exists():
@@ -224,8 +224,8 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
         to_update = all_transactions_categorized + all_transactions_to_upload + all_transactions_as_income
         Transaction.objects.bulk_update(to_update, [
             'status', 'merchant', 'category', 'transaction_date',
-            'original_date', 'description', 'amount', 'original_amount',
-            'transaction_type', 'normalized_description', 'operation_type', 'embedding'
+            'encrypted_description', 'encrypted_amount', 'description_hash',
+            'transaction_type', 'operation_type', 'embedding'
         ])
 
         if all_transactions_to_delete:
@@ -316,22 +316,19 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
 
                 transaction_from_agent = Transaction.objects.filter(user=self.user,
                                                                    id=tx_id).first() or Transaction.objects.filter(
-                    user=self.user, description=description).first()
+                    user=self.user, description_hash=generate_blind_index(description)).first()
 
                 if not transaction_from_agent:
                     continue
 
                 transaction_from_agent.category = category
                 transaction_from_agent.merchant = merchant
-                transaction_from_agent.original_date = tx_data.date if not transaction_from_agent.original_date else transaction_from_agent.original_date
-                transaction_from_agent.original_amount = original_amount if not transaction_from_agent.original_amount else transaction_from_agent.original_amount
                 transaction_from_agent.transaction_date = transaction_date if not transaction_from_agent.transaction_date else transaction_from_agent.transaction_date
                 transaction_from_agent.amount = abs(
                     amount) if not transaction_from_agent.amount else transaction_from_agent.amount
                 transaction_from_agent.status = 'categorized'
                 transaction_from_agent.modified_by_user = False
                 transaction_from_agent.description = tx_data.description if not transaction_from_agent.description else transaction_from_agent.description
-                transaction_from_agent.normalized_description = normalize_string(transaction_from_agent.description)
                 transaction_from_agent.categorized_by_agent = True
                 transaction_from_agent.reasoning = tx_data.reasoning
                 if transaction_from_agent.embedding is None:
@@ -348,9 +345,9 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
 
         if transactions_to_update:
             Transaction.objects.bulk_update(transactions_to_update, [
-                'category', 'merchant', 'original_date', 'original_amount',
-                'transaction_date', 'amount', 'status', 'modified_by_user',
-                'description', 'normalized_description', 'categorized_by_agent', 'reasoning', 'embedding'
+                'category', 'merchant',
+                'transaction_date', 'encrypted_amount', 'status', 'modified_by_user',
+                'encrypted_description', 'description_hash', 'categorized_by_agent', 'embedding'
             ])
 
 
@@ -425,12 +422,12 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
 
             Transaction.objects.bulk_update(
                 chunk,
-                ['transaction_date', 'amount', 'original_amount', 'description',
-                 'original_date', 'category', 'status', 'merchant', 'normalized_description', 'embedding']
+                ['transaction_date', 'encrypted_amount', 'encrypted_description', 'description_hash',
+                 'category', 'status', 'merchant', 'embedding']
             )
 
         Transaction.objects.filter(user=self.user, upload_file=upload_file, status__in=['pending', 'uncategorized'],
-                                   original_amount__isnull=True).update(status='uncategorized',
+                                   encrypted_amount__isnull=True).update(status='uncategorized',
                                                                         transaction_type='income')
 
 def persist_uploaded_file(file_data: list[dict[str, str]], user: User, file: UploadedFile, upload_file: UploadFile = None) -> UploadFile:

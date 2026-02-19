@@ -5,11 +5,8 @@ class TransactionUpdater:
     @staticmethod
     def _update_common_fields(tx: Transaction, parse_result: RawTransactionParseResult) -> Transaction:
         tx.amount = abs(parse_result.amount)
-        tx.original_amount = parse_result.original_amount
         tx.transaction_date = parse_result.date
-        tx.original_date = parse_result.date_original
         tx.description = parse_result.description
-        tx.normalized_description = normalize_string(parse_result.description)
         tx.operation_type = parse_result.operation_type
         return tx
 

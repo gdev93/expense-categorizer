@@ -327,13 +327,9 @@ class Transaction(models.Model):
     operation_type = models.CharField(max_length=255, blank=True, null=True)
     # Core transaction data
     transaction_date = models.DateField(null=True, blank=True)
-    original_date = models.CharField(max_length=255, blank=True, null=True)
-    amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     encrypted_amount = models.TextField(blank=True, null=True)
-    original_amount = models.CharField(max_length=50, blank=True, null=True)  # Raw from CSV
-    description = models.TextField(null=True, blank=True)  # Raw description from bank
     encrypted_description = models.TextField(blank=True, null=True)
-    normalized_description = models.TextField(null=True, blank=True)
+    description_hash = models.CharField(max_length=64, db_index=True, blank=True, null=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     manual_insert = models.BooleanField(default=False)
     # Tracking
@@ -342,17 +338,57 @@ class Transaction(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     raw_data = models.JSONField(default=dict, null=True)
     categorized_by_agent = models.BooleanField(default=False)
-    reasoning = models.TextField(blank=True)
     embedding = VectorField(dimensions=384, null=True, blank=True)
 
+    @property
+    def amount(self):
+        if not hasattr(self, '_decrypted_amount'):
+            from api.privacy_utils import decrypt_value
+            from decimal import Decimal
+            val = decrypt_value(self.encrypted_amount)
+            try:
+                self._decrypted_amount = Decimal(val) if val is not None else None
+            except Exception:
+                self._decrypted_amount = None
+        return self._decrypted_amount
+
+    @amount.setter
+    def amount(self, value):
+        from api.privacy_utils import encrypt_value
+        self._decrypted_amount = value
+        if value is not None:
+            self.encrypted_amount = encrypt_value(value)
+        else:
+            self.encrypted_amount = None
+
+    @property
+    def description(self):
+        if not hasattr(self, '_decrypted_description'):
+            from api.privacy_utils import decrypt_value
+            self._decrypted_description = decrypt_value(self.encrypted_description) or ""
+        return self._decrypted_description
+
+    @description.setter
+    def description(self, value):
+        from api.privacy_utils import encrypt_value, generate_blind_index
+        self._decrypted_description = value
+        if value:
+            self.encrypted_description = encrypt_value(value)
+            self.description_hash = generate_blind_index(value)
+        else:
+            self.encrypted_description = None
+            self.description_hash = None
+
     def save(self, *args, **kwargs):
-        # Auto-normalize name for fuzzy matching
-        self.normalized_description = normalize_string(self.description)
-        # Privacy by Design: Encrypt sensitive fields
-        if self.amount is not None:
-            self.encrypted_amount = encrypt_value(self.amount)
-        if self.description:
-            self.encrypted_description = encrypt_value(self.description)
+        # Privacy by Design: Encrypted fields are updated via properties setters
+        # but we ensure they are consistent if attributes were set directly
+        from api.privacy_utils import encrypt_value, generate_blind_index
+        if hasattr(self, '_decrypted_amount') and self._decrypted_amount is not None:
+            self.encrypted_amount = encrypt_value(self._decrypted_amount)
+        
+        if hasattr(self, '_decrypted_description') and self._decrypted_description:
+            self.encrypted_description = encrypt_value(self._decrypted_description)
+            self.description_hash = generate_blind_index(self._decrypted_description)
 
         # AGGREGATION STRATEGY: SQL-level SUM() or AVG() on the amount field will no longer work
         # because the data is encrypted. Strategy: Use Django Signals to update a summary table
@@ -366,10 +402,9 @@ class Transaction(models.Model):
             models.Index(fields=['user', 'transaction_type', '-transaction_date', '-created_at']),
             models.Index(fields=['user', 'category']),
             models.Index(fields=['user', 'merchant']),
-            models.Index(fields=['user', 'amount']),
+            models.Index(fields=['user', 'description_hash']),
             models.Index(fields=['status']),
             models.Index(fields=['user', 'status']),
-            GinIndex(fields=['description'], name='trans_desc_trgm_idx', opclasses=['gin_trgm_ops']),
             HnswIndex(name='idx_tx_embedding', fields=['embedding'], opclasses=['vector_cosine_ops']),
         ]
 

@@ -2,6 +2,31 @@ from django import forms
 from django.contrib.auth.models import User
 from allauth.account.forms import SignupForm, LoginForm as AllauthLoginForm
 from django.core.exceptions import ValidationError
+from api.models import Transaction
+
+
+class TransactionForm(forms.ModelForm):
+    amount = forms.DecimalField(max_digits=10, decimal_places=2, required=False)
+    description = forms.CharField(widget=forms.Textarea, required=False)
+
+    class Meta:
+        model = Transaction
+        fields = ['transaction_date', 'category']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and self.instance.pk:
+            self.initial['amount'] = self.instance.amount
+            self.initial['description'] = self.instance.description
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        instance.amount = self.cleaned_data.get('amount')
+        instance.description = self.cleaned_data.get('description')
+        if commit:
+            instance.save()
+        return instance
+
 
 class LoginForm(AllauthLoginForm):
     """
