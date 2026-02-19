@@ -4,5 +4,5 @@ from .views import CostSummaryView
 app_name = 'costs'
 
 urlpatterns = [
-    path('summary/', CostSummaryView.as_view(), name='summary'),
+    # path('summary/', CostSummaryView.as_view(), name='summary'),
 ]
