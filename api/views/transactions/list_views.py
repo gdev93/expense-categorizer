@@ -1,4 +1,5 @@
 import datetime
+import os
 from dataclasses import dataclass, asdict, field
 from decimal import Decimal
 from typing import Any, Optional
@@ -8,12 +9,12 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.postgres.aggregates import StringAgg
 from django.core.exceptions import BadRequest
 from django.db import transaction
-from django.db.models import Q, Sum, Count, Max, Case, When, Value, IntegerField
+from django.db.models import Q, Count, Max, Value, IntegerField
 from django.db.models import QuerySet
 from django.shortcuts import get_object_or_404, redirect
 from django.views.generic import ListView
 
-from api.models import Transaction, Category, Rule, UploadFile, Merchant
+from api.models import Transaction, Category, UploadFile, Merchant
 from api.privacy_utils import decrypt_value
 from api.views.rule_view import create_rule
 from api.views.transactions.transaction_mixins import TransactionFilterMixin
@@ -58,7 +59,7 @@ class TransactionListView(LoginRequiredMixin, ListView, TransactionFilterMixin):
     context_object_name = 'transactions'
 
     # Default pagination if not specified in filters
-    paginate_by = 25
+    paginate_by = int(os.getenv("DEFAULT_PAGINATION", "25"))
 
     def get_paginate_by(self, queryset):
         # Recupera il valore dal filtro o usa il default della classe
@@ -101,20 +102,15 @@ class TransactionListView(LoginRequiredMixin, ListView, TransactionFilterMixin):
         return redirect(request.META.get('HTTP_REFERER', 'transaction_list'))
 
     def get_queryset(self):
-        """
-        Restituisce il queryset filtrato.
-        Se view_type è 'merchant', restituisce una lista di dizionari aggregati.
-        """
         filters = self.get_transaction_filters()
         queryset = self.get_transaction_filter_query()
 
         if filters.view_type == 'merchant':
-            # ... (omitted for brevity in search/replace but I'll include enough)
             # Subquery to check if there are merchants with uncategorized transactions
             merchants_with_uncategorized = queryset.filter(
                 status='uncategorized'
             ).values_list('merchant_id', flat=True).distinct()
-            
+
             # Base aggregation (Removed Sum)
             merchants_query = queryset.exclude(
                 merchant_id__in=merchants_with_uncategorized
@@ -128,38 +124,19 @@ class TransactionListView(LoginRequiredMixin, ListView, TransactionFilterMixin):
                 merchant__encrypted_name=Max('merchant__encrypted_name')
             ).order_by('-number_of_transactions')
 
-            merchants_list = list(merchants_query)
-            
-            # Calculate sums in Python
-            merchant_ids = [m['merchant__id'] for m in merchants_list if m['merchant__id']]
-            sums = {m_id: Decimal('0') for m_id in merchant_ids}
-            
-            tx_data = queryset.filter(merchant_id__in=merchant_ids).values('merchant_id', 'encrypted_amount')
-            for tx in tx_data:
-                m_id = tx['merchant_id']
-                val = decrypt_value(tx['encrypted_amount'])
-                if val:
-                    try:
-                        sums[m_id] += Decimal(val)
-                    except Exception:
-                        pass
-            
-            for m in merchants_list:
-                m['total_spent'] = sums.get(m['merchant__id'], Decimal('0'))
-
-            # Filter merchants by amount if requested (exact search)
-            if filters.amount is not None:
-                target_amount = Decimal(str(filters.amount))
-                merchants_list = [m for m in merchants_list if m['total_spent'] == target_amount]
-
-            return merchants_list
+            # Always return the query for merchants, ignoring the amount filter if present.
+            # This allows database-level pagination.
+            self.full_merchant_count = merchants_query.count()
+            return merchants_query
 
         # If view_type is 'list', apply amount filter in Python
         if filters.amount is not None:
             target_amount = Decimal(str(filters.amount))
-            # We must convert to list to filter in Python
-            # This might be slow for many transactions, but necessary for encrypted data
+            # Se abbiamo l'amount filter dobbiamo caricare tutto per filtrare in Python
+            # Usiamo iterator() o values() per mitigare l'uso di memoria se possibile
+            # ma ListView ha bisogno di un oggetto che supporti len() o un QuerySet.
             filtered_list = [tx for tx in queryset if tx.amount == target_amount]
+            self.full_merchant_count = len(filtered_list)
             return filtered_list
 
         return queryset
@@ -229,10 +206,26 @@ class TransactionListView(LoginRequiredMixin, ListView, TransactionFilterMixin):
 
 
         full_queryset = self.object_list
-        total_count = len(full_queryset) if isinstance(full_queryset, list) else full_queryset.count()
+        # Se abbiamo impostato full_merchant_count, lo usiamo per il totale (per evitare len() o count() ripetuti)
+        total_count = getattr(self, 'full_merchant_count', None)
+        if total_count is None:
+            total_count = len(full_queryset) if isinstance(full_queryset, list) else full_queryset.count()
 
+        # Per le statistiche globali (total_amount), purtroppo dobbiamo comunque iterare 
+        # su tutte le transazioni se vogliamo il totale esatto, ma possiamo farlo in modo più efficiente.
         if filters.view_type == 'merchant':
-            total_amount = sum(item['total_spent'] for item in full_queryset)
+            # In merchant view, we always calculate the total amount by decrypting all filtered transactions
+            # because the amount filter is ignored for this view.
+            total_amount = Decimal('0')
+            # Recuperiamo solo gli importi di tutte le transazioni filtrate
+            amounts_qs = self.get_transaction_filter_query().values('encrypted_amount')
+            for tx in amounts_qs:
+                val = decrypt_value(tx['encrypted_amount'])
+                if val:
+                    try:
+                        total_amount += Decimal(val)
+                    except Exception:
+                        pass
         else:
             total_amount = Decimal('0')
             if isinstance(full_queryset, QuerySet):
@@ -250,9 +243,32 @@ class TransactionListView(LoginRequiredMixin, ListView, TransactionFilterMixin):
 
         category_count = self.get_transaction_filter_query().values('category').distinct().count()
 
-        # 4. Gestione dati paginati
-        # context['page_obj'] contiene l'oggetto pagina di Django (con metadati per paginazione)
         paginated_data = context.get('page_obj')
+        
+        # Se siamo in view_type 'merchant', calcoliamo i totali per i merchant nella pagina corrente.
+        if filters.view_type == 'merchant':
+            # Gli oggetti in paginated_data sono dict provenienti da .values()
+            current_page_merchants = list(paginated_data.object_list)
+            m_ids = [m['merchant__id'] for m in current_page_merchants if m['merchant__id']]
+            
+            # Calcoliamo le somme solo per i merchant nella pagina
+            page_sums = {m_id: Decimal('0') for m_id in m_ids}
+            tx_qs = self.get_transaction_filter_query().filter(merchant_id__in=m_ids).values('merchant_id', 'encrypted_amount')
+            
+            for tx in tx_qs:
+                m_id = tx['merchant_id']
+                val = decrypt_value(tx['encrypted_amount'])
+                if val:
+                    try:
+                        page_sums[m_id] += Decimal(val)
+                    except Exception:
+                        pass
+            
+            for m in current_page_merchants:
+                m['total_spent'] = page_sums.get(m['merchant__id'], Decimal('0'))
+            
+            # Aggiorniamo l'object_list nel paginator così il template vedrà i total_spent
+            paginated_data.object_list = current_page_merchants
 
         transaction_list_context = TransactionListContextData(
             categories=categories,
