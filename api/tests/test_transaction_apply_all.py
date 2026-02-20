@@ -178,5 +178,5 @@ class TestTransactionApplyAll:
         t1.refresh_from_db()
         assert t1.category == self.cat1
 
-        new_t = Transaction.objects.get(amount=20, user=self.user)
+        new_t = Transaction.objects.get(encrypted_amount=t1.encrypted_amount, user=self.user)
         assert new_t.category == self.cat1

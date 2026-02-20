@@ -1,3 +1,4 @@
+{% load l10n %}
 <form method="post" action="{% if is_update %}{% url 'transaction_detail' transaction.id %}{% else %}{% url 'transaction_create' %}{% endif %}" class="transaction-form-content" id="transaction-form">
     {% csrf_token %}
 
@@ -26,7 +27,7 @@
             </label>
             <input type="number" name="amount" id="id_amount" step="0.01"
                    class="form-control" 
-                   value="{% if is_update %}{{ transaction.amount|floatformat:2 }}{% endif %}" 
+                   value="{% if is_update %}{{ transaction.amount|unlocalize }}{% endif %}" 
                    placeholder="0.00" required />
         </div>
 

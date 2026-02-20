@@ -1,5 +1,7 @@
 import datetime
+import os
 from dataclasses import dataclass, asdict, field
+from decimal import Decimal
 from typing import Any, Optional
 
 from django.contrib import messages
@@ -7,12 +9,14 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.postgres.aggregates import StringAgg
 from django.core.exceptions import BadRequest
 from django.db import transaction
-from django.db.models import Q, Sum, Count, Max, Case, When, Value, IntegerField
+from django.db.models import Q, Count, Max, Value, IntegerField
 from django.db.models import QuerySet
 from django.shortcuts import get_object_or_404, redirect
 from django.views.generic import ListView
 
-from api.models import Transaction, Category, Rule, UploadFile, Merchant
+from api.models import Transaction, Category, UploadFile, Merchant
+from api.privacy_utils import decrypt_value
+from api.services import TransactionAggregationService
 from api.views.rule_view import create_rule
 from api.views.transactions.transaction_mixins import TransactionFilterMixin
 
@@ -40,8 +44,6 @@ class TransactionListContextData:
     selected_months: list[str] = field(default_factory=list)
     view_type: str = 'list'
     upload_file: Optional[UploadFile] = None
-    selected_amount: Optional[float] = None
-    selected_amount_operator: str = 'eq'
     year: int = datetime.datetime.now().year
     paginate_by: int = 25
 
@@ -57,10 +59,10 @@ class TransactionListView(LoginRequiredMixin, ListView, TransactionFilterMixin):
     context_object_name = 'transactions'
 
     # Default pagination if not specified in filters
-    paginate_by = 25
+    paginate_by = int(os.getenv("DEFAULT_PAGINATION", "25"))
 
     def get_paginate_by(self, queryset):
-        # Recupera il valore dal filtro o usa il default della classe
+        # Retrieve the value from the filter or use the class default
         filters = self.get_transaction_filters()
         return filters.paginate_by
 
@@ -95,50 +97,51 @@ class TransactionListView(LoginRequiredMixin, ListView, TransactionFilterMixin):
         create_rule(merchant, new_category, self.request.user)
 
         messages.success(self.request,
-                         f"Tutte le spese di '{merchant.name}' sono state categorizzate come '{new_category.name}'.")
+                         f"All expenses for '{merchant.name}' have been categorized as '{new_category.name}'.")
 
         return redirect(request.META.get('HTTP_REFERER', 'transaction_list'))
 
     def get_queryset(self):
-        """
-        Restituisce il queryset filtrato.
-        Se view_type è 'merchant', restituisce un queryset di dizionari (values) aggregati.
-        """
         filters = self.get_transaction_filters()
+        queryset = self.get_transaction_filter_query()
+
         if filters.view_type == 'merchant':
-            queryset = self.get_transaction_filter_query()
-            
             # Subquery to check if there are merchants with uncategorized transactions
             merchants_with_uncategorized = queryset.filter(
                 status='uncategorized'
             ).values_list('merchant_id', flat=True).distinct()
-            
-            return queryset.exclude(
+
+            # Base aggregation (Removed Sum)
+            merchants_query = queryset.exclude(
                 merchant_id__in=merchants_with_uncategorized
             ).values(
-                'merchant__id',
-                'merchant__name'
+                'merchant__id'
             ).annotate(
                 number_of_transactions=Count('id'),
-                total_spent=Sum('amount'),  # Questo è il campo da sommare per i totali
                 is_uncategorized=Value(0, output_field=IntegerField()),
                 categories_list=StringAgg('category__name', delimiter=', ', distinct=True),
-                category_id=Max('category__id')
-            ).order_by('-number_of_transactions', 'merchant__name')
+                category_id=Max('category__id'),
+                merchant__encrypted_name=Max('merchant__encrypted_name')
+            ).order_by('-number_of_transactions')
 
-        return self.get_transaction_filter_query()
+            # Always return the query for merchants, ignoring the amount filter if present.
+            # This allows database-level pagination.
+            self.full_merchant_count = merchants_query.count()
+            return merchants_query
+
+        return queryset
 
     def get_context_data(self, **kwargs):
         """Add extra context data"""
         context = super().get_context_data(**kwargs)
         filters = self.get_transaction_filters()
 
-        # 1. Dati di riferimento
+        # 1. Reference Data
         categories = list(Category.objects.filter(
             Q(user=self.request.user) | Q(user__isnull=True)
         ).order_by('name').values('id', 'name'))
 
-        # 2. Sidebar / Widget dati (Uncategorized)
+        # 2. Sidebar / Widget data (Uncategorized)
         uncategorized_transaction = Transaction.objects.filter(
             user=self.request.user,
             status='uncategorized',
@@ -149,25 +152,30 @@ class TransactionListView(LoginRequiredMixin, ListView, TransactionFilterMixin):
             # Identify merchants with uncategorized transactions
             merchant_filter_query = self.get_transaction_filter_query()
             
-            # This identifies merchant IDs that have at least one uncategorized transaction
-            # within the current filter context
             merchants_with_uncategorized = merchant_filter_query.filter(
                 status='uncategorized'
             ).values_list('merchant_id', flat=True).distinct()
             
-            # We want to show these merchants in the "Uncategorized" section of merchant view
-            uncategorized_merchants = merchant_filter_query.filter(
+            uncategorized_merchants_query = merchant_filter_query.filter(
                 merchant_id__in=merchants_with_uncategorized
             ).values(
-                'merchant__id',
-                'merchant__name'
+                'merchant__id'
             ).annotate(
                 number_of_transactions=Count('id'),
-                total_spent=Sum('amount'),
                 is_uncategorized=Value(1, output_field=IntegerField()),
                 categories_list=StringAgg('category__name', delimiter=', ', distinct=True),
-                category_id=Max('category__id')
-            ).order_by('-number_of_transactions', 'merchant__name')
+                category_id=Max('category__id'),
+                merchant__encrypted_name=Max('merchant__encrypted_name')
+            ).order_by('-number_of_transactions')
+
+            uncategorized_merchants = list(uncategorized_merchants_query)
+            
+            # Calculate sums in Python for uncategorized merchants
+            uncat_merchant_ids = [m['merchant__id'] for m in uncategorized_merchants if m['merchant__id']]
+            uncat_sums = TransactionAggregationService.calculate_merchant_sums(merchant_filter_query, uncat_merchant_ids)
+            
+            for m in uncategorized_merchants:
+                m['total_spent'] = uncat_sums.get(m['merchant__id'], Decimal('0'))
         else:
             uncategorized_merchants = []
 
@@ -178,19 +186,38 @@ class TransactionListView(LoginRequiredMixin, ListView, TransactionFilterMixin):
 
 
         full_queryset = self.object_list
+        # If full_merchant_count is set, use it for the total (to avoid repeated len() or count())
+        total_count = getattr(self, 'full_merchant_count', None)
+        if total_count is None:
+            total_count = len(full_queryset) if isinstance(full_queryset, list) else full_queryset.count()
 
-        total_count = full_queryset.count()
-
+        # For global statistics (total_amount), we still need to iterate 
+        # over all transactions to get the exact total, but we can do it more efficiently.
         if filters.view_type == 'merchant':
-            total_amount = full_queryset.aggregate(total=Sum('total_spent'))['total'] or 0
+            # In merchant view, we always calculate the total amount by decrypting all filtered transactions
+            # because the amount filter is ignored for this view.
+            total_amount = TransactionAggregationService.calculate_total_amount(self.get_transaction_filter_query())
         else:
-            total_amount = full_queryset.aggregate(total=Sum('amount'))['total'] or 0
+            total_amount = TransactionAggregationService.calculate_total_amount(full_queryset)
 
-        category_count = full_queryset.values('category').distinct().count()
+        category_count = self.get_transaction_filter_query().values('category').distinct().count()
 
-        # 4. Gestione dati paginati
-        # context['page_obj'] contiene l'oggetto pagina di Django (con metadati per paginazione)
         paginated_data = context.get('page_obj')
+        
+        # In merchant view_type, calculate totals for merchants in the current page.
+        if filters.view_type == 'merchant':
+            # Objects in paginated_data are dicts from .values()
+            current_page_merchants = list(paginated_data.object_list)
+            m_ids = [m['merchant__id'] for m in current_page_merchants if m['merchant__id']]
+            
+            # Calculate sums only for merchants on the page
+            page_sums = TransactionAggregationService.calculate_merchant_sums(self.get_transaction_filter_query(), m_ids)
+            
+            for m in current_page_merchants:
+                m['total_spent'] = page_sums.get(m['merchant__id'], Decimal('0'))
+            
+            # Update object_list in the paginator so the template sees total_spent
+            paginated_data.object_list = current_page_merchants
 
         transaction_list_context = TransactionListContextData(
             categories=categories,
@@ -199,7 +226,7 @@ class TransactionListView(LoginRequiredMixin, ListView, TransactionFilterMixin):
             search_query=filters.search,
             uncategorized_transaction=uncategorized_transaction,
 
-            # Stats calcolate correttamente
+            # Correctly calculated Stats
             total_count=total_count,
             total_amount=total_amount,
             category_count=category_count,
@@ -209,11 +236,9 @@ class TransactionListView(LoginRequiredMixin, ListView, TransactionFilterMixin):
             selected_manual_insert=filters.manual_insert,
             view_type=filters.view_type,
             upload_file=upload_file,
-            selected_amount=filters.amount,
-            selected_amount_operator=filters.amount_operator,
             year=filters.year,
 
-            # Assegna i dati paginati al campo corretto
+            # Assign paginated data to the correct field
             merchant_summary=paginated_data if filters.view_type == 'merchant' else None,
             transactions=paginated_data,
             paginate_by=self.get_paginate_by(full_queryset)

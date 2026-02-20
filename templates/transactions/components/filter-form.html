@@ -147,40 +147,6 @@
                 </div>
             </div>
 
-            <div class="filter-group">
-                <div class="card-selector-static">
-                    <div class="card-content">
-                        <div class="card-info">
-                            <div class="card-icon-box">
-                                <span class="material-icons">payments</span>
-                            </div>
-                            <div class="card-text">
-                                <b>Importo</b>
-                                <span>Filtra per valore</span>
-                            </div>
-                        </div>
-                        <div class="card-action">
-                            <div class="amount-card-wrapper">
-                                <select name="amount_operator" id="amount_operator" class="card-select">
-                                    <option value="eq" {% if selected_amount_operator == "eq" %}selected{% endif %}>=</option>
-                                    <option value="gt" {% if selected_amount_operator == "gt" %}selected{% endif %}>&gt;</option>
-                                    <option value="gte" {% if selected_amount_operator == "gte" %}selected{% endif %}>&gt;=</option>
-                                    <option value="lt" {% if selected_amount_operator == "lt" %}selected{% endif %}>&lt;</option>
-                                    <option value="lte" {% if selected_amount_operator == "lte" %}selected{% endif %}>&lt;=</option>
-                                </select>
-                                <input type="number"
-                                       name="amount"
-                                       id="amount"
-                                       class="amount-input-card"
-                                       placeholder="0.00"
-                                       step="0.01"
-                                       min="0"
-                                       value="{{ selected_amount }}"/>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
             <div class="filter-group">
                 <label class="card-selector" for="manual_insert">

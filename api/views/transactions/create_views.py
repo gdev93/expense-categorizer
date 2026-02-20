@@ -6,10 +6,10 @@ from django.shortcuts import redirect, render, get_object_or_404
 from django.views import View
 
 from api.models import Transaction, Category, Merchant
-from processors.similarity_matcher import SimilarityMatcher
+from api.privacy_utils import generate_blind_index
 
 
-class TransactionCreateView(LoginRequiredMixin, View, SimilarityMatcher):
+class TransactionCreateView(LoginRequiredMixin, View):
 
     def get(self, request, *args, **kwargs):
         categories = Category.objects.filter(user=request.user)
@@ -25,15 +25,12 @@ class TransactionCreateView(LoginRequiredMixin, View, SimilarityMatcher):
         transaction_date = request.POST.get('transaction_date', '')
         category_name = request.POST.get('category_name', '').strip()
 
-        # Initialize SimilarityMatcher
-        self.user = user
-        self.threshold = 0.6
-
         # 2. Handle Merchant
         if merchant_id:
             merchant = get_object_or_404(Merchant, id=merchant_id, user=user)
         elif merchant_name:
-            merchant = Merchant.objects.filter(name=merchant_name, user=user).first()
+            merchant_hash = generate_blind_index(merchant_name)
+            merchant = Merchant.objects.filter(name_hash=merchant_hash, user=user).first()
             if not merchant:
                 merchant = Merchant.objects.create(name=merchant_name, user=user)
         else:

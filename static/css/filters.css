@@ -326,6 +326,10 @@
     box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.25);
 }
 
+.filter-group.hidden {
+    display: none;
+}
+
 /* Multi-select specific */
 #categories,
 #category,
@@ -463,59 +467,6 @@
 
 .multiselect-item.is-selected .material-icons {
     color: #ffc107;
-}
-
-/* Amount Wrapper */
-.amount-filter-wrapper {
-    display: flex;
-    gap: 8px;
-    width: 100%;
-}
-
-.amount-operator {
-    width: 70px !important;
-    flex-shrink: 0;
-    text-align: center;
-    font-weight: 600;
-}
-
-.amount-input {
-    flex: 1;
-}
-
-.amount-card-wrapper {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    min-width: 0;
-}
-
-.amount-input-card {
-    border: none !important;
-    background: transparent !important;
-    padding: 0 !important;
-    font-weight: 600;
-    color: var(--secondary-color);
-    width: 60px !important;
-    max-width: 80px;
-    text-align: right;
-    font-size: 14px;
-}
-
-.amount-input-card:focus {
-    box-shadow: none !important;
-    outline: none !important;
-}
-
-/* Hide spin buttons for number input in card */
-.amount-input-card::-webkit-outer-spin-button,
-.amount-input-card::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-}
-
-.amount-input-card {
-    -moz-appearance: textfield;
 }
 
 /* Multiselect in Card */
@@ -663,9 +614,5 @@
 
     .card-select, .card-multiselect-trigger .trigger-text {
         max-width: 120px;
-    }
-
-    .amount-input-card {
-        width: 50px !important;
     }
 }

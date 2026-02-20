@@ -5,6 +5,7 @@ from django.db.models import Q, QuerySet
 from django.http import HttpRequest
 from django.views import View
 from api.models import Transaction
+from api.privacy_utils import generate_blind_index
 from api.views.mixins import MonthYearFilterMixin
 
 
@@ -18,8 +19,6 @@ class TransactionFilterState:
     months: List[int]
     category_ids: List[str] = field(default_factory=list)
     upload_file_id: Optional[str] = None
-    amount: Optional[float] = None
-    amount_operator: str = 'eq'
     search: str = ''
     view_type: str = 'list'
     status: str = ''
@@ -38,8 +37,6 @@ class TransactionFilterState:
         # Session keys mapping
         session_map = {
             'category_ids': 'filter_category',
-            'amount': 'filter_amount',
-            'amount_operator': 'filter_amount_operator',
             'search': 'filter_search',
             'view_type': 'filter_view_type',
             'status': 'filter_status',
@@ -94,14 +91,11 @@ class TransactionFilterState:
                         ['mobile', 'android', 'iphone', 'ipad', 'ipod', 'blackberry', 'iemobile', 'opera mini'])
         default_pagination = 10 if is_mobile else int(os.environ.get('DEFAULT_PAGINATION', 25))
 
-        # 4. Build the object
         return cls(
             year=year,
             months=months,
             category_ids=category_ids,
             upload_file_id=file_id,
-            amount=get_value('amount', 'filter_amount', None, float),
-            amount_operator=get_value('amount_operator', 'filter_amount_operator', 'eq', str),
             search=get_value('search', 'filter_search', '', str),
             view_type=get_value('view_type', 'filter_view_type', 'list', str),
             status=get_value('status', 'filter_status', '', str),
@@ -146,24 +140,12 @@ class TransactionFilterMixin(MonthYearFilterMixin, View):
         if filters.upload_file_id:
             queryset = queryset.filter(upload_file_id=filters.upload_file_id)
 
-        # 3. Filter by Amount
-        if filters.amount is not None:
-            if filters.amount_operator == 'gt':
-                queryset = queryset.filter(amount__gt=filters.amount)
-            elif filters.amount_operator == 'gte':
-                queryset = queryset.filter(amount__gte=filters.amount)
-            elif filters.amount_operator == 'lt':
-                queryset = queryset.filter(amount__lt=filters.amount)
-            elif filters.amount_operator == 'lte':
-                queryset = queryset.filter(amount__lte=filters.amount)
-            else:
-                queryset = queryset.filter(amount=filters.amount)
-
-        # 4. Filter by Search
+        # 3. Filter by Search
         if filters.search:
+            search_hash = generate_blind_index(filters.search)
             queryset = queryset.filter(
-                Q(merchant__name__icontains=filters.search) |
-                Q(description__icontains=filters.search)
+                Q(merchant__name_hash=search_hash) |
+                Q(description_hash=search_hash)
             )
 
         # 5. Filter by Date
