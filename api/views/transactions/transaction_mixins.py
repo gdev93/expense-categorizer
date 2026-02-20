@@ -20,7 +20,6 @@ class TransactionFilterState:
     category_ids: List[str] = field(default_factory=list)
     upload_file_id: Optional[str] = None
     amount: Optional[float] = None
-    amount_operator: str = 'eq'
     search: str = ''
     view_type: str = 'list'
     status: str = ''
@@ -40,7 +39,6 @@ class TransactionFilterState:
         session_map = {
             'category_ids': 'filter_category',
             'amount': 'filter_amount',
-            'amount_operator': 'filter_amount_operator',
             'search': 'filter_search',
             'view_type': 'filter_view_type',
             'status': 'filter_status',
@@ -102,7 +100,6 @@ class TransactionFilterState:
             category_ids=category_ids,
             upload_file_id=file_id,
             amount=get_value('amount', 'filter_amount', None, float),
-            amount_operator=get_value('amount_operator', 'filter_amount_operator', 'eq', str),
             search=get_value('search', 'filter_search', '', str),
             view_type=get_value('view_type', 'filter_view_type', 'list', str),
             status=get_value('status', 'filter_status', '', str),

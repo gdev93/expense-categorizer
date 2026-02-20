@@ -43,7 +43,6 @@ class TransactionListContextData:
     view_type: str = 'list'
     upload_file: Optional[UploadFile] = None
     selected_amount: Optional[float] = None
-    selected_amount_operator: str = 'eq'
     year: int = datetime.datetime.now().year
     paginate_by: int = 25
 
@@ -110,6 +109,7 @@ class TransactionListView(LoginRequiredMixin, ListView, TransactionFilterMixin):
         queryset = self.get_transaction_filter_query()
 
         if filters.view_type == 'merchant':
+            # ... (omitted for brevity in search/replace but I'll include enough)
             # Subquery to check if there are merchants with uncategorized transactions
             merchants_with_uncategorized = queryset.filter(
                 status='uncategorized'
@@ -147,7 +147,20 @@ class TransactionListView(LoginRequiredMixin, ListView, TransactionFilterMixin):
             for m in merchants_list:
                 m['total_spent'] = sums.get(m['merchant__id'], Decimal('0'))
 
+            # Filter merchants by amount if requested (exact search)
+            if filters.amount is not None:
+                target_amount = Decimal(str(filters.amount))
+                merchants_list = [m for m in merchants_list if m['total_spent'] == target_amount]
+
             return merchants_list
+
+        # If view_type is 'list', apply amount filter in Python
+        if filters.amount is not None:
+            target_amount = Decimal(str(filters.amount))
+            # We must convert to list to filter in Python
+            # This might be slow for many transactions, but necessary for encrypted data
+            filtered_list = [tx for tx in queryset if tx.amount == target_amount]
+            return filtered_list
 
         return queryset
 
@@ -222,7 +235,12 @@ class TransactionListView(LoginRequiredMixin, ListView, TransactionFilterMixin):
             total_amount = sum(item['total_spent'] for item in full_queryset)
         else:
             total_amount = Decimal('0')
-            for tx in full_queryset.values('encrypted_amount'):
+            if isinstance(full_queryset, QuerySet):
+                it = full_queryset.values('encrypted_amount')
+            else:
+                it = [{'encrypted_amount': tx.encrypted_amount} for tx in full_queryset]
+
+            for tx in it:
                 val = decrypt_value(tx['encrypted_amount'])
                 if val:
                     try:
@@ -254,7 +272,6 @@ class TransactionListView(LoginRequiredMixin, ListView, TransactionFilterMixin):
             view_type=filters.view_type,
             upload_file=upload_file,
             selected_amount=filters.amount,
-            selected_amount_operator=filters.amount_operator,
             year=filters.year,
 
             # Assegna i dati paginati al campo corretto
