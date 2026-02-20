@@ -19,7 +19,6 @@ class TransactionFilterState:
     months: List[int]
     category_ids: List[str] = field(default_factory=list)
     upload_file_id: Optional[str] = None
-    amount: Optional[float] = None
     search: str = ''
     view_type: str = 'list'
     status: str = ''
@@ -38,7 +37,6 @@ class TransactionFilterState:
         # Session keys mapping
         session_map = {
             'category_ids': 'filter_category',
-            'amount': 'filter_amount',
             'search': 'filter_search',
             'view_type': 'filter_view_type',
             'status': 'filter_status',
@@ -93,13 +91,11 @@ class TransactionFilterState:
                         ['mobile', 'android', 'iphone', 'ipad', 'ipod', 'blackberry', 'iemobile', 'opera mini'])
         default_pagination = 10 if is_mobile else int(os.environ.get('DEFAULT_PAGINATION', 25))
 
-        # 4. Build the object
         return cls(
             year=year,
             months=months,
             category_ids=category_ids,
             upload_file_id=file_id,
-            amount=get_value('amount', 'filter_amount', None, float),
             search=get_value('search', 'filter_search', '', str),
             view_type=get_value('view_type', 'filter_view_type', 'list', str),
             status=get_value('status', 'filter_status', '', str),
@@ -144,12 +140,7 @@ class TransactionFilterMixin(MonthYearFilterMixin, View):
         if filters.upload_file_id:
             queryset = queryset.filter(upload_file_id=filters.upload_file_id)
 
-        # 3. Filter by Amount
-        # Note: Filtering by amount in SQL is no longer possible as it's encrypted.
-        # Monthly totals and other aggregations are handled in Python.
-        pass
-
-        # 4. Filter by Search
+        # 3. Filter by Search
         if filters.search:
             search_hash = generate_blind_index(filters.search)
             queryset = queryset.filter(

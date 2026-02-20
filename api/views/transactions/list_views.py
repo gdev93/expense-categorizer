@@ -16,6 +16,7 @@ from django.views.generic import ListView
 
 from api.models import Transaction, Category, UploadFile, Merchant
 from api.privacy_utils import decrypt_value
+from api.services import TransactionAggregationService
 from api.views.rule_view import create_rule
 from api.views.transactions.transaction_mixins import TransactionFilterMixin
 
@@ -43,7 +44,6 @@ class TransactionListContextData:
     selected_months: list[str] = field(default_factory=list)
     view_type: str = 'list'
     upload_file: Optional[UploadFile] = None
-    selected_amount: Optional[float] = None
     year: int = datetime.datetime.now().year
     paginate_by: int = 25
 
@@ -62,7 +62,7 @@ class TransactionListView(LoginRequiredMixin, ListView, TransactionFilterMixin):
     paginate_by = int(os.getenv("DEFAULT_PAGINATION", "25"))
 
     def get_paginate_by(self, queryset):
-        # Recupera il valore dal filtro o usa il default della classe
+        # Retrieve the value from the filter or use the class default
         filters = self.get_transaction_filters()
         return filters.paginate_by
 
@@ -97,7 +97,7 @@ class TransactionListView(LoginRequiredMixin, ListView, TransactionFilterMixin):
         create_rule(merchant, new_category, self.request.user)
 
         messages.success(self.request,
-                         f"Tutte le spese di '{merchant.name}' sono state categorizzate come '{new_category.name}'.")
+                         f"All expenses for '{merchant.name}' have been categorized as '{new_category.name}'.")
 
         return redirect(request.META.get('HTTP_REFERER', 'transaction_list'))
 
@@ -129,16 +129,6 @@ class TransactionListView(LoginRequiredMixin, ListView, TransactionFilterMixin):
             self.full_merchant_count = merchants_query.count()
             return merchants_query
 
-        # If view_type is 'list', apply amount filter in Python
-        if filters.amount is not None:
-            target_amount = Decimal(str(filters.amount))
-            # Se abbiamo l'amount filter dobbiamo caricare tutto per filtrare in Python
-            # Usiamo iterator() o values() per mitigare l'uso di memoria se possibile
-            # ma ListView ha bisogno di un oggetto che supporti len() o un QuerySet.
-            filtered_list = [tx for tx in queryset if tx.amount == target_amount]
-            self.full_merchant_count = len(filtered_list)
-            return filtered_list
-
         return queryset
 
     def get_context_data(self, **kwargs):
@@ -146,12 +136,12 @@ class TransactionListView(LoginRequiredMixin, ListView, TransactionFilterMixin):
         context = super().get_context_data(**kwargs)
         filters = self.get_transaction_filters()
 
-        # 1. Dati di riferimento
+        # 1. Reference Data
         categories = list(Category.objects.filter(
             Q(user=self.request.user) | Q(user__isnull=True)
         ).order_by('name').values('id', 'name'))
 
-        # 2. Sidebar / Widget dati (Uncategorized)
+        # 2. Sidebar / Widget data (Uncategorized)
         uncategorized_transaction = Transaction.objects.filter(
             user=self.request.user,
             status='uncategorized',
@@ -182,17 +172,7 @@ class TransactionListView(LoginRequiredMixin, ListView, TransactionFilterMixin):
             
             # Calculate sums in Python for uncategorized merchants
             uncat_merchant_ids = [m['merchant__id'] for m in uncategorized_merchants if m['merchant__id']]
-            uncat_sums = {m_id: Decimal('0') for m_id in uncat_merchant_ids}
-            
-            uncat_tx_data = merchant_filter_query.filter(merchant_id__in=uncat_merchant_ids).values('merchant_id', 'encrypted_amount')
-            for tx in uncat_tx_data:
-                m_id = tx['merchant_id']
-                val = decrypt_value(tx['encrypted_amount'])
-                if val:
-                    try:
-                        uncat_sums[m_id] += Decimal(val)
-                    except Exception:
-                        pass
+            uncat_sums = TransactionAggregationService.calculate_merchant_sums(merchant_filter_query, uncat_merchant_ids)
             
             for m in uncategorized_merchants:
                 m['total_spent'] = uncat_sums.get(m['merchant__id'], Decimal('0'))
@@ -206,68 +186,37 @@ class TransactionListView(LoginRequiredMixin, ListView, TransactionFilterMixin):
 
 
         full_queryset = self.object_list
-        # Se abbiamo impostato full_merchant_count, lo usiamo per il totale (per evitare len() o count() ripetuti)
+        # If full_merchant_count is set, use it for the total (to avoid repeated len() or count())
         total_count = getattr(self, 'full_merchant_count', None)
         if total_count is None:
             total_count = len(full_queryset) if isinstance(full_queryset, list) else full_queryset.count()
 
-        # Per le statistiche globali (total_amount), purtroppo dobbiamo comunque iterare 
-        # su tutte le transazioni se vogliamo il totale esatto, ma possiamo farlo in modo più efficiente.
+        # For global statistics (total_amount), we still need to iterate 
+        # over all transactions to get the exact total, but we can do it more efficiently.
         if filters.view_type == 'merchant':
             # In merchant view, we always calculate the total amount by decrypting all filtered transactions
             # because the amount filter is ignored for this view.
-            total_amount = Decimal('0')
-            # Recuperiamo solo gli importi di tutte le transazioni filtrate
-            amounts_qs = self.get_transaction_filter_query().values('encrypted_amount')
-            for tx in amounts_qs:
-                val = decrypt_value(tx['encrypted_amount'])
-                if val:
-                    try:
-                        total_amount += Decimal(val)
-                    except Exception:
-                        pass
+            total_amount = TransactionAggregationService.calculate_total_amount(self.get_transaction_filter_query())
         else:
-            total_amount = Decimal('0')
-            if isinstance(full_queryset, QuerySet):
-                it = full_queryset.values('encrypted_amount')
-            else:
-                it = [{'encrypted_amount': tx.encrypted_amount} for tx in full_queryset]
-
-            for tx in it:
-                val = decrypt_value(tx['encrypted_amount'])
-                if val:
-                    try:
-                        total_amount += Decimal(val)
-                    except Exception:
-                        pass
+            total_amount = TransactionAggregationService.calculate_total_amount(full_queryset)
 
         category_count = self.get_transaction_filter_query().values('category').distinct().count()
 
         paginated_data = context.get('page_obj')
         
-        # Se siamo in view_type 'merchant', calcoliamo i totali per i merchant nella pagina corrente.
+        # In merchant view_type, calculate totals for merchants in the current page.
         if filters.view_type == 'merchant':
-            # Gli oggetti in paginated_data sono dict provenienti da .values()
+            # Objects in paginated_data are dicts from .values()
             current_page_merchants = list(paginated_data.object_list)
             m_ids = [m['merchant__id'] for m in current_page_merchants if m['merchant__id']]
             
-            # Calcoliamo le somme solo per i merchant nella pagina
-            page_sums = {m_id: Decimal('0') for m_id in m_ids}
-            tx_qs = self.get_transaction_filter_query().filter(merchant_id__in=m_ids).values('merchant_id', 'encrypted_amount')
-            
-            for tx in tx_qs:
-                m_id = tx['merchant_id']
-                val = decrypt_value(tx['encrypted_amount'])
-                if val:
-                    try:
-                        page_sums[m_id] += Decimal(val)
-                    except Exception:
-                        pass
+            # Calculate sums only for merchants on the page
+            page_sums = TransactionAggregationService.calculate_merchant_sums(self.get_transaction_filter_query(), m_ids)
             
             for m in current_page_merchants:
                 m['total_spent'] = page_sums.get(m['merchant__id'], Decimal('0'))
             
-            # Aggiorniamo l'object_list nel paginator così il template vedrà i total_spent
+            # Update object_list in the paginator so the template sees total_spent
             paginated_data.object_list = current_page_merchants
 
         transaction_list_context = TransactionListContextData(
@@ -277,7 +226,7 @@ class TransactionListView(LoginRequiredMixin, ListView, TransactionFilterMixin):
             search_query=filters.search,
             uncategorized_transaction=uncategorized_transaction,
 
-            # Stats calcolate correttamente
+            # Correctly calculated Stats
             total_count=total_count,
             total_amount=total_amount,
             category_count=category_count,
@@ -287,10 +236,9 @@ class TransactionListView(LoginRequiredMixin, ListView, TransactionFilterMixin):
             selected_manual_insert=filters.manual_insert,
             view_type=filters.view_type,
             upload_file=upload_file,
-            selected_amount=filters.amount,
             year=filters.year,
 
-            # Assegna i dati paginati al campo corretto
+            # Assign paginated data to the correct field
             merchant_summary=paginated_data if filters.view_type == 'merchant' else None,
             transactions=paginated_data,
             paginate_by=self.get_paginate_by(full_queryset)

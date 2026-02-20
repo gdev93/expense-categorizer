@@ -1,6 +1,8 @@
 import datetime
 import logging
+from dataclasses import dataclass, asdict
 from decimal import Decimal
+from typing import Any, Optional
 
 import pandas as pd
 from django import forms
@@ -18,6 +20,7 @@ from django.views.generic import ListView, CreateView, UpdateView, DeleteView, D
 from api.constants import ITALIAN_MONTHS
 from api.models import Category, Transaction, Rule, Merchant
 from api.privacy_utils import decrypt_value
+from api.services import TransactionAggregationService
 from api.views.mixins import MonthYearFilterMixin
 from api.views.transactions.transaction_mixins import TransactionFilterMixin
 from processors.similarity_matcher import SimilarityMatcher
@@ -44,18 +47,50 @@ class CategoryForm(forms.ModelForm):
         widgets = {
             'name': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'es. Alimentari'
+                'placeholder': 'e.g. Food'
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 4,
-                'placeholder': 'es. Spese fatte al supermercato...'
+                'placeholder': 'e.g. Supermarket expenses...'
             }),
         }
         labels = {
-            'name': 'Nome Categoria',
-            'description': 'Descrizione (Opzionale)'
+            'name': 'Category Name',
+            'description': 'Description (Optional)'
         }
+
+
+@dataclass
+class CategoryListContextData:
+    """Context data for category list view"""
+    form: CategoryForm
+    categories: list[Category]
+    all_categories: QuerySet[Category]
+    total: Decimal
+    selected_categories: list[str]
+    search_query: str
+    year: int
+    selected_months: list[str]
+
+    def to_context(self) -> dict:
+        return asdict(self)
+
+
+@dataclass
+class CategoryDetailContextData:
+    """Context data for category detail view"""
+    category: Category
+    category_summary: Category
+    transactions: Any
+    search_query: str
+    year: int
+    selected_year: int
+    selected_months: list[str]
+    paginate_by: int
+
+    def to_context(self) -> dict:
+        return asdict(self)
 
 
 class CategoryEnrichedMixin(MonthYearFilterMixin):
@@ -111,17 +146,8 @@ class CategoryEnrichedMixin(MonthYearFilterMixin):
             tx_filter &= Q(transaction_date__month__in=filters['months'])
             
         # Optimization: Fetch only necessary fields
-        transactions_data = Transaction.objects.filter(tx_filter).values('category_id', 'encrypted_amount')
-        
-        sums = {c_id: Decimal('0') for c_id in category_ids}
-        for tx in transactions_data:
-            c_id = tx['category_id']
-            val = decrypt_value(tx['encrypted_amount'])
-            if val:
-                try:
-                    sums[c_id] += Decimal(val)
-                except Exception:
-                    pass
+        transactions_queryset = Transaction.objects.filter(tx_filter)
+        sums = TransactionAggregationService.calculate_category_sums(transactions_queryset, category_ids)
         
         for c in categories_list:
             c.transaction_amount = sums.get(c.id, Decimal('0'))
@@ -160,19 +186,28 @@ class CategoryListView(LoginRequiredMixin, CategoryEnrichedMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         # Pass the form to the template so it can be rendered in the "New Category" card
-        context['form'] = CategoryForm()
+        form = CategoryForm()
 
         # --- LOGIC FOR SUMMARY CARD ---
         # Get the queryset used by the list
         categories = context['categories']
 
-        context['total'] = sum([category.transaction_amount for category in categories]) if categories else 0
+        total = sum([category.transaction_amount for category in categories]) if categories else Decimal('0')
         filters = self.get_category_filters()
-        context['all_categories'] = Category.objects.filter(user=self.request.user).order_by('name')
-        context['selected_categories'] = filters['selected_category_ids']
-        context['search_query'] = filters['search']
-        context['year'] = filters['year']
-        context['selected_months'] = [str(m) for m in filters['months']]
+        all_categories = Category.objects.filter(user=self.request.user).order_by('name')
+        
+        category_list_context = CategoryListContextData(
+            form=form,
+            categories=categories,
+            all_categories=all_categories,
+            total=total,
+            selected_categories=filters['selected_category_ids'],
+            search_query=filters['search'],
+            year=filters['year'],
+            selected_months=[str(m) for m in filters['months']]
+        )
+        
+        context.update(category_list_context.to_context())
         return context
 
 
@@ -190,27 +225,8 @@ class CategoryExportView(LoginRequiredMixin, CategoryEnrichedMixin, View):
         if filters['months']:
             tx_filter &= Q(transaction_date__month__in=filters['months'])
 
-        # We need name, amount (encrypted), and month
-        transactions = Transaction.objects.filter(tx_filter).select_related('category').values(
-            'category__name', 'encrypted_amount', 'transaction_date__month'
-        )
-        
         # Group by category name and month in Python
-        from collections import defaultdict
-        grouped_data = defaultdict(Decimal)
-        
-        for tx in transactions:
-            cat_name = tx['category__name']
-            month = tx['transaction_date__month']
-            if not cat_name or not month:
-                continue
-            
-            val = decrypt_value(tx['encrypted_amount'])
-            if val:
-                try:
-                    grouped_data[(cat_name, month)] += Decimal(val)
-                except Exception:
-                    pass
+        grouped_data = TransactionAggregationService.calculate_category_monthly_sums(Transaction.objects.filter(tx_filter))
         
         # Convert to list of dicts for DataFrame
         data = []
@@ -261,7 +277,7 @@ class CategoryCreateView(SuccessMessageMixin, CreateView):
     # from the form on the List page. If it fails validation, it re-renders the list.
     template_name = 'categories/category-creation.html'
     success_url = reverse_lazy('category_list')
-    success_message = "Categoria creata con successo."
+    success_message = "Category created successfully."
 
     def form_valid(self, form):
         form.instance.user = self.request.user
@@ -306,8 +322,6 @@ class CategoryDetailView(DetailView, CategoryEnrichedMixin, TransactionFilterMix
         # 2. Fetch Aggregated Summary Data for the Summary Card
         summary = self.get_enriched_category_queryset(base_query)[0]
 
-        context['category_summary'] = summary
-
         transaction_list = self.get_transaction_filter_query().filter(category=category)
 
         # Pagination logic
@@ -316,13 +330,18 @@ class CategoryDetailView(DetailView, CategoryEnrichedMixin, TransactionFilterMix
 
         transactions = paginator.page(page_number)
 
-        context['transactions'] = transactions
-        context['search_query'] = filters.search
-        context['year'] = filters.year
-        context['selected_year'] = filters.year
-        context['selected_months'] = [str(m) for m in filters.months]
-        context['paginate_by'] = filters.paginate_by
+        category_detail_context = CategoryDetailContextData(
+            category=category,
+            category_summary=summary,
+            transactions=transactions,
+            search_query=filters.search,
+            year=filters.year,
+            selected_year=filters.year,
+            selected_months=[str(m) for m in filters.months],
+            paginate_by=filters.paginate_by
+        )
 
+        context.update(category_detail_context.to_context())
         return context
 
 
@@ -333,7 +352,7 @@ class CategoryUpdateView(SuccessMessageMixin, UpdateView):
     model = Category
     form_class = CategoryForm
     template_name = 'categories/category-edit.html'
-    success_message = "Categoria aggiornata con successo."
+    success_message = "Category updated successfully."
 
     def get_queryset(self):
         # Security: Only allow the user to edit their own categories
@@ -383,17 +402,17 @@ class CategoryDeleteView(DeleteView):
                     user=self.request.user
                 )
             except Category.DoesNotExist:
-                messages.error(self.request, "La categoria di sostituzione selezionata non è valida.")
+                messages.error(self.request, "The selected replacement category is invalid.")
                 return self.render_to_response(self.get_context_data(form=form))
         else:
-            messages.error(self.request, "Devi selezionare una categoria di sostituzione o crearne una nuova.")
+            messages.error(self.request, "You must select a replacement category or create a new one.")
             return self.render_to_response(self.get_context_data(form=form))
 
         # Reassign transactions
         Transaction.objects.filter(category=category_to_delete).update(category=replacement_category)
         Rule.objects.filter(category=category_to_delete).update(category=replacement_category)
 
-        messages.success(self.request, f"Categoria '{category_to_delete.name}' eliminata. Tutte le transazioni sono state spostate in '{replacement_category.name}'.")
+        messages.success(self.request, f"Category '{category_to_delete.name}' deleted. All transactions have been moved to '{replacement_category.name}'.")
         return super().form_valid(form)
 
 class CategoryFromMerchant(LoginRequiredMixin, View, SimilarityMatcher):
