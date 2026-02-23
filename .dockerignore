@@ -11,3 +11,11 @@ build-and-push.sh
 VERSION
 Dockerfile
 performance_tests
+dump
+demo
+.run
+.github
+.junie
+documentation
+landing
+model_cache

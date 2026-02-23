@@ -73,6 +73,27 @@ services:
       - "8025:8025" # Web UI
     restart: unless-stopped
 
+  manager:
+    build: .
+    container_name: expenses_manager_dev
+    profiles:
+      - manual
+    command: ${MANAGER_COMMAND}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - DJANGO_SETTINGS_MODULE=server.settings
+      - FASTEMBED_CACHE_PATH=/app/model_cache
+
 volumes:
   expense_categorizer_dev_data:
   redis_data:

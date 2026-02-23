@@ -18,7 +18,7 @@ from django.contrib.messages import constants as messages
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-SECRET_KEY = os.getenv('SECRET_KEY','django-insecure-sn-x3ofrldb(ey$&8(gpas4x9qyxl*p2iq%p)6zkz53%d-#ad^')
+SECRET_KEY = os.getenv('SECRET_KEY')
 DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 ALLOWED_HOSTS = os.environ.setdefault('ALLOWED_HOSTS', '127.0.0.1,0.0.0.0,localhost').split(',')
 CSRF_TRUSTED_ORIGINS=os.environ.setdefault('CSRF_TRUSTED_ORIGINS', 'http://localhost:8000').split(',')

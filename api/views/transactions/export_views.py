@@ -1,12 +1,11 @@
+import csv
 import datetime
-import json
+import io
+
+from asgiref.sync import sync_to_async
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Q
 from django.http import StreamingHttpResponse
 from django.views import View
-from asgiref.sync import sync_to_async
-from api.models import Transaction
-from exporters.exporters import generate_transaction_csv, generate_transaction_csv_async
 
 from api.views.transactions.transaction_mixins import TransactionFilterMixin
 
@@ -38,3 +37,34 @@ class TransactionExportView(LoginRequiredMixin, TransactionFilterMixin, View):
         response['Content-Disposition'] = f'attachment; filename="{filename}"'
         
         return response
+
+
+async def generate_transaction_csv_async(transactions_iterator):
+    """
+    An async generator that yields CSV rows for the given transactions iterator.
+
+    Args:
+        transactions_iterator: An async iterable of Transaction model instances.
+    """
+    output = io.StringIO()
+    writer = csv.writer(output)
+
+    headers = ['Data', 'Importo', 'Categoria', 'Descrizione Bancaria', 'Tipo di Transazione', 'File Sorgente']
+    writer.writerow(headers)
+    yield output.getvalue()
+    output.truncate(0)
+    output.seek(0)
+
+    async for tx in transactions_iterator:
+        row = [
+            tx.transaction_date.isoformat() if tx.transaction_date else '',
+            tx.amount,
+            tx.category.name if tx.category else '',
+            tx.description,
+            tx.transaction_type,
+            tx.upload_file.file_name if tx.upload_file else 'Inserimento manuale'
+        ]
+        writer.writerow(row)
+        yield output.getvalue()
+        output.truncate(0)
+        output.seek(0)
