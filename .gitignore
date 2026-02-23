@@ -191,6 +191,3 @@ performance_tests
 
 # Hugging Face machine learning folder
 model_cache
-
-# Allowed emails temporary
-allowed-emails.txt
