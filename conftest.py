@@ -1,7 +1,9 @@
 import os
+
 import pytest
-from testcontainers.postgres import PostgresContainer
 from django.conf import settings as django_settings
+from testcontainers.core.wait_strategies import LogMessageWaitStrategy
+from testcontainers.postgres import PostgresContainer
 
 if "DOCKER_HOST" not in os.environ:
     user = os.environ.get("USER")
@@ -18,12 +20,12 @@ def configure_test_settings():
             "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
         },
     }
+    django_settings.SECRET_KEY = "notasecret"
 
 @pytest.fixture(scope="session", autouse=True)
 def postgres_container(request):
     if os.environ.get("USE_TESTCONTAINERS", "true").lower() == "false":
         yield None
-        return
 
     # Check if any collected test needs the database
     # This avoids starting the container for standalone tests that don't use Django DB
@@ -31,24 +33,21 @@ def postgres_container(request):
     
     if not needs_db:
         yield None
-        return
 
-    postgres = PostgresContainer("pgvector/pgvector:pg15")
-    postgres.start()
-    
-    os.environ["DB_HOST"] = str(postgres.get_container_host_ip())
-    os.environ["DB_PORT"] = str(postgres.get_exposed_port(5432))
-    os.environ["DB_USER"] = str(postgres.username)
-    os.environ["DB_PASSWORD"] = str(postgres.password)
-    os.environ["DB_NAME"] = str(postgres.dbname)
-    
-    from django.conf import settings
-    settings.DATABASES['default']['HOST'] = os.environ["DB_HOST"]
-    settings.DATABASES['default']['PORT'] = os.environ["DB_PORT"]
-    settings.DATABASES['default']['USER'] = os.environ["DB_USER"]
-    settings.DATABASES['default']['PASSWORD'] = os.environ["DB_PASSWORD"]
-    settings.DATABASES['default']['NAME'] = os.environ["DB_NAME"]
-    
-    yield postgres
-    
-    postgres.stop()
+    with PostgresContainer("pgvector/pgvector:pg15") as postgres:
+        postgres.start()
+        postgres.waiting_for(LogMessageWaitStrategy("database system is ready to accept connections"))
+        os.environ["DB_HOST"] = str(postgres.get_container_host_ip())
+        os.environ["DB_PORT"] = str(postgres.get_exposed_port(5432))
+        os.environ["DB_USER"] = str(postgres.username)
+        os.environ["DB_PASSWORD"] = str(postgres.password)
+        os.environ["DB_NAME"] = str(postgres.dbname)
+
+        from django.conf import settings
+        settings.DATABASES['default']['HOST'] = os.environ["DB_HOST"]
+        settings.DATABASES['default']['PORT'] = os.environ["DB_PORT"]
+        settings.DATABASES['default']['USER'] = os.environ["DB_USER"]
+        settings.DATABASES['default']['PASSWORD'] = os.environ["DB_PASSWORD"]
+        settings.DATABASES['default']['NAME'] = os.environ["DB_NAME"]
+
+        yield postgres
