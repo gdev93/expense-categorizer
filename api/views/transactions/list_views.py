@@ -15,7 +15,6 @@ from django.shortcuts import get_object_or_404, redirect
 from django.views.generic import ListView
 
 from api.models import Transaction, Category, UploadFile, Merchant
-from api.privacy_utils import decrypt_value
 from api.services import TransactionAggregationService
 from api.views.rule_view import create_rule
 from api.views.transactions.transaction_mixins import TransactionFilterMixin
@@ -33,7 +32,7 @@ class TransactionListContextData:
 
     # Stats
     total_count: int
-    total_amount: float
+    total_amount: Decimal
     category_count: int
 
     # View Data
@@ -123,10 +122,6 @@ class TransactionListView(LoginRequiredMixin, ListView, TransactionFilterMixin):
                 category_id=Max('category__id'),
                 merchant__encrypted_name=Max('merchant__encrypted_name')
             ).order_by('-number_of_transactions')
-
-            # Always return the query for merchants, ignoring the amount filter if present.
-            # This allows database-level pagination.
-            self.full_merchant_count = merchants_query.count()
             return merchants_query
 
         return queryset
@@ -186,10 +181,9 @@ class TransactionListView(LoginRequiredMixin, ListView, TransactionFilterMixin):
 
 
         full_queryset = self.object_list
-        # If full_merchant_count is set, use it for the total (to avoid repeated len() or count())
-        total_count = getattr(self, 'full_merchant_count', None)
-        if total_count is None:
-            total_count = len(full_queryset) if isinstance(full_queryset, list) else full_queryset.count()
+
+        total_count = len(full_queryset) if isinstance(full_queryset, list) else full_queryset.count()
+
 
         # For global statistics (total_amount), we still need to iterate 
         # over all transactions to get the exact total, but we can do it more efficiently.

@@ -17,6 +17,7 @@ def send_welcome_email_on_signup(request, user, **kwargs):
     """
     if EmailAddress.objects.filter(user=user, verified=True).exists():
         send_welcome_email_to_user(user, request)
+        send_backoffice_notification(request, user)
 
 
 @receiver(email_confirmed)
@@ -25,6 +26,30 @@ def send_welcome_email_on_confirmation(request, email_address, **kwargs):
     Sends a welcome email when a user confirms their email address.
     """
     send_welcome_email_to_user(email_address.user, request)
+    send_backoffice_notification(request, email_address.user)
+
+def send_backoffice_notification(request, user, **kwargs):
+    """
+    Sends a notification email to the backoffice when a new user signs up.
+    """
+    if not settings.BACKOFFICE_EMAIL:
+        return
+
+    protocol = 'https' if request.is_secure() else 'http'
+    site_url = f"{protocol}://{settings.SITE_NAME}"
+
+    context = {
+        'user': user,
+        'site_url': site_url,
+    }
+
+    subject = render_to_string('backoffice/email/new_user_subject.txt', context).strip()
+    html_content = render_to_string('backoffice/email/new_user_message.html', context)
+    text_content = render_to_string('backoffice/email/new_user_message.txt', context)
+
+    msg = EmailMultiAlternatives(subject, text_content, None, [settings.BACKOFFICE_EMAIL])
+    msg.attach_alternative(html_content, "text/html")
+    msg.send()
 
 
 def send_welcome_email_to_user(user, request):

@@ -1,0 +1,39 @@
+{% load i18n %}
+{% autoescape off %}
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { font-family: 'Inter', Arial, sans-serif; color: #212529; line-height: 1.6; background-color: #f8f9fa; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 20px auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .header { background: #343a40; padding: 30px; text-align: center; color: #FFC107; }
+        .content { padding: 40px; }
+        .info-list { margin: 25px 0; padding: 0; list-style: none; }
+        .info-list li { margin-bottom: 10px; border-bottom: 1px solid #eeeeee; padding-bottom: 5px; }
+        .footer { padding: 20px; text-align: center; font-size: 12px; color: #6c757d; border-top: 1px solid #eeeeee; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>Notifica Backoffice</h2>
+        </div>
+        <div class="content">
+            <h3 style="margin-top: 0;">Un nuovo utente si è registrato!</h3>
+            <p>Ecco i dettagli della nuova registrazione su <strong>Pecuniam</strong>:</p>
+            <ul class="info-list">
+                <li><strong>Username:</strong> {{ user.username }}</li>
+                <li><strong>Email:</strong> {{ user.email }}</li>
+                <li><strong>Data:</strong> {{ user.date_joined }}</li>
+            </ul>
+            <p>Puoi accedere al sito qui: <a href="{{ site_url }}">{{ site_url }}</a></p>
+        </div>
+        <div class="footer">
+            &copy; 2026 Pecuniam Backoffice.
+        </div>
+    </div>
+</body>
+</html>
+{% endautoescape %}

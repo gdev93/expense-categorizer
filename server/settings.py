@@ -279,6 +279,7 @@ SMTP_PROVIDER_USERNAME = os.getenv('SMTP_PROVIDER_USERNAME')
 SMTP_PROVIDER_PASSWORD = os.getenv('SMTP_PROVIDER_PASSWORD')
 
 # Email Config (Standard Django variables)
+BACKOFFICE_EMAIL = os.getenv('BACKOFFICE_EMAIL')
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 
 if DEBUG:

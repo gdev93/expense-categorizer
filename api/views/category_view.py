@@ -19,7 +19,6 @@ from django.views.generic import ListView, CreateView, UpdateView, DeleteView, D
 
 from api.constants import ITALIAN_MONTHS
 from api.models import Category, Transaction, Rule, Merchant
-from api.privacy_utils import decrypt_value
 from api.services import TransactionAggregationService
 from api.views.mixins import MonthYearFilterMixin
 from api.views.transactions.transaction_mixins import TransactionFilterMixin

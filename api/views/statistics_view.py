@@ -9,7 +9,6 @@ from django.shortcuts import render
 from django.views import View
 
 from api.models import Category, Merchant, Transaction, UserFinancialSummary
-from api.privacy_utils import decrypt_value
 
 
 @dataclass
@@ -85,37 +84,32 @@ class SummaryPageContext:
         if selected_category:
             transactions_qs = transactions_qs.filter(category_id=int(selected_category))
             
-        # 1. Fetch data and decrypt in Python
+        # 1. Fetch data and use properties
         from collections import defaultdict
-        raw_txs = list(transactions_qs.values(
-            'id', 'transaction_date', 'category_id', 'category__name', 
-            'encrypted_amount', 'merchant_id', 'merchant__encrypted_name'
-        ))
+        # We use select_related to avoid N+1 queries when accessing category and merchant
+        processed_txs = []
         
-        # Prepare processed data
         total_expenses = Decimal('0')
         monthly_totals = defaultdict(Decimal)
         category_totals = defaultdict(Decimal)
         category_counts = defaultdict(int)
         
-        for tx in raw_txs:
-            # Decrypt amount
-            val = decrypt_value(tx['encrypted_amount'])
-            amount = Decimal(val) if val else Decimal('0')
-            tx['amount'] = amount # Add decrypted amount to the dict for later use
-            
+        for tx in transactions_qs.select_related('category', 'merchant'):
+            amount = tx.amount or Decimal('0')
             total_expenses += amount
             
             # Month grouping
-            if tx['transaction_date']:
-                month_key = (tx['transaction_date'].year, tx['transaction_date'].month)
+            if tx.transaction_date:
+                month_key = (tx.transaction_date.year, tx.transaction_date.month)
                 monthly_totals[month_key] += amount
             
             # Category grouping
-            c_id = tx['category_id']
-            if c_id:
-                category_totals[c_id] += amount
-                category_counts[c_id] += 1
+            if tx.category_id:
+                category_totals[tx.category_id] += amount
+                category_counts[tx.category_id] += 1
+            
+            # Store for later use (recent transactions)
+            processed_txs.append(tx)
 
         # 2. Calculate average monthly
         if monthly_totals:
@@ -183,30 +177,14 @@ class SummaryPageContext:
 
         # 7. Get recent transactions (top 5 from our processed list)
         recent_transactions = []
-        # raw_txs is already sorted by date descending from the queryset
-        for tx in raw_txs[:5]:
-            # Load merchant and category objects for display
-            merchant = None
-            if tx['merchant_id']:
-                merchant = Merchant.objects.filter(id=tx['merchant_id']).first()
-                
-            category = None
-            if tx['category_id']:
-                category = Category.objects.filter(id=tx['category_id']).first()
-
+        for tx in processed_txs[:5]:
             recent_transactions.append(RecentTransaction(
-                date=tx['transaction_date'],
-                description="", # Description is encrypted, we don't need it for recent tx list for now, or we can decrypt it.
-                category=category,
-                amount=tx['amount'],
-                merchant=merchant
+                date=tx.transaction_date,
+                description=tx.description,
+                category=tx.category,
+                amount=tx.amount or Decimal('0'),
+                merchant=tx.merchant
             ))
-            # Let's also decrypt description if needed
-            from api.privacy_utils import decrypt_value
-            from api.models import Transaction as TxModel
-            # But wait, we want to minimize DB access, we can fetch the model object or use decrypted value if it's in our processed tx list.
-            # Actually, recent transactions in UI usually show description.
-            # Let's fix description later if needed.
 
         return cls(
             total_expenses=total_expenses,

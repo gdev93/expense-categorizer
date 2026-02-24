@@ -1,0 +1,7 @@
+Un nuovo utente si è registrato su Pecuniam.
+
+Username: {{ user.username }}
+Email: {{ user.email }}
+Data registrazione: {{ user.date_joined }}
+
+Dashboard: {{ site_url }}
