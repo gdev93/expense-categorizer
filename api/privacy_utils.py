@@ -1,10 +1,11 @@
 import hmac
 import hashlib
 import base64
+from typing import Any
 from django.conf import settings
 from cryptography.fernet import Fernet
 
-def generate_blind_index(value):
+def generate_blind_index(value: str | None) -> str:
     """
     Generate a deterministic HMAC-SHA256 hash (salted with settings.SECRET_KEY)
     for a given value to allow exact matching on encrypted fields.
@@ -18,20 +19,20 @@ def generate_blind_index(value):
         hashlib.sha256
     ).hexdigest()
 
-def _get_fernet():
+def _get_fernet() -> Fernet:
     """Derives a Fernet key from settings.SECRET_KEY."""
     # Ensure it's 32 bytes for Fernet
     key = hashlib.sha256(settings.SECRET_KEY.encode()).digest()
     return Fernet(base64.urlsafe_b64encode(key))
 
-def encrypt_value(value):
+def encrypt_value(value: Any) -> str | None:
     """Encrypt a value using application-level encryption."""
     if value is None:
         return None
     f = _get_fernet()
     return f.encrypt(str(value).encode()).decode()
 
-def decrypt_value(encrypted_value):
+def decrypt_value(encrypted_value: str | None) -> str | None:
     """Decrypt an encrypted value."""
     if not encrypted_value:
         return None

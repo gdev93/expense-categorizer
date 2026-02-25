@@ -4,14 +4,13 @@ import os
 from django.contrib.auth.models import User
 from django.db.models import Count, Max
 
-from api.models import Transaction, Merchant, normalize_string, FileStructureMetadata, MerchantEMA
-from api.privacy_utils import generate_blind_index
+from api.models import Transaction, Merchant, FileStructureMetadata, MerchantEMA
 from processors.embeddings import EmbeddingEngine
 
 logger = logging.getLogger(__name__)
 
 
-def update_merchant_ema(merchant: Merchant, file_structure_metadata: FileStructureMetadata, embedding: list[float]):
+def update_merchant_ema(merchant: Merchant, file_structure_metadata: FileStructureMetadata, embedding: list[float]) -> None:
     """
     Updates the Exponential Moving Average (EMA) of the merchant's digital footprint.
     Uses 0.9 as the old weight and 0.1 for the new weight.
@@ -77,7 +76,7 @@ class SimilarityMatcherRAG:
 
         return context_results
 class SimilarityMatcher:
-    def __init__(self, user: User):
+    def __init__(self, user: User) -> None:
         self.user = user
 
     def find_most_frequent_transaction_for_merchant(self, merchant: Merchant) -> Transaction | None:

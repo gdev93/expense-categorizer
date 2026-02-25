@@ -1,4 +1,4 @@
-from api.models import Transaction, Category, Merchant, normalize_string
+from api.models import Transaction, Category, Merchant
 from processors.data_prechecks import RawTransactionParseResult
 
 class TransactionUpdater:

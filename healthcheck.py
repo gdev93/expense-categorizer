@@ -4,7 +4,7 @@ import sys
 import socket
 
 
-def check_health():
+def check_health() -> None:
     try:
         # First check if the port is open
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

@@ -2,7 +2,7 @@ import itertools
 import logging
 import os
 from concurrent.futures import ThreadPoolExecutor
-from typing import Iterable
+from typing import Iterable, Any
 
 from django.contrib.auth.models import User
 from django.core.files.uploadedfile import UploadedFile
@@ -40,7 +40,7 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
     gemini_max_retries = int(os.environ.get('GEMINI_MAX_RETRIES', '5'))
     gemini_base_delay = int(os.environ.get('GEMINI_BASE_DELAY', '2'))
 
-    def __init__(self, user: User, user_rules: list[str] = None, available_categories: list[Category] | None = None, batch_helper:BatchingHelper | None = None):
+    def __init__(self, user: User, user_rules: list[str] = None, available_categories: list[Category] | None = None, batch_helper:BatchingHelper | None = None) -> None:
         self.user = user
         self.batch_helper = batch_helper or BatchingHelper()
         self.agent = ExpenseCategorizerAgent(user_rules=user_rules, available_categories=available_categories)
@@ -54,14 +54,14 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
         logger.info(f"🚀 Starting CSV Processing for: {upload_file.file_name}")
 
         # 2. Process pre-checks and batch for agent using generators to save memory
-        def get_transactions_to_upload():
+        def get_transactions_to_upload() -> Iterable[Transaction]:
             while True:
                 chunk = list(itertools.islice(transactions_iter, self.pre_check_iterator_fetch_size))
                 if not chunk:
                     break
                 yield from self._process_prechecks(chunk, upload_file)
 
-        def get_agent_batches():
+        def get_agent_batches() -> Iterable[list[Transaction]]:
             to_upload_iter = get_transactions_to_upload()
             while True:
                 # It keeps asking for slices untile it stops at batch_helper_size
@@ -286,7 +286,7 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
 
         return [], None
 
-    def _persist_batch_results(self, batch: list[TransactionCategorization], upload_file: UploadFile):
+    def _persist_batch_results(self, batch: list[TransactionCategorization], upload_file: UploadFile) -> None:
         transactions_to_update = []
         for tx_data in batch:
             tx_id = tx_data.transaction_id
@@ -354,7 +354,7 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
         self._clean_transactions_raw_data(upload_file)
 
     
-    def _clean_transactions_raw_data(self, upload_file:UploadFile):
+    def _clean_transactions_raw_data(self, upload_file: UploadFile) -> None:
         """Clean the raw data of transactions for privacy reasons."""
         Transaction.objects.filter(upload_file=upload_file).update(raw_data=None, embedding=None)
         logger.info(f"Raw data of {upload_file.file_name} has been cleaned.")
@@ -426,7 +426,7 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
                                    amount__isnull=True).update(status='uncategorized',
                                                                         transaction_type='income')
 
-def persist_uploaded_file(file_data: list[dict[str, str]], user: User, file: UploadedFile, upload_file: UploadFile = None) -> UploadFile:
+def persist_uploaded_file(file_data: list[dict[str, str]], user: User, file: UploadedFile, upload_file: UploadFile | None = None) -> UploadFile:
     if upload_file is None:
         upload_file = UploadFile.objects.create(user=user, dimension=file.size, file_name=file.name)
     else:

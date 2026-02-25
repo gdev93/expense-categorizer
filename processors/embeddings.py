@@ -8,7 +8,7 @@ class EmbeddingEngine:
     _lock = threading.Lock()
 
     @classmethod
-    def get_model(cls):
+    def get_model(cls) -> TextEmbedding:
         with cls._lock:
             if cls._instance is None:
                 # Define the cache directory from environment or default to a local folder

@@ -1,9 +1,12 @@
 # models.py
+from __future__ import annotations
 import hashlib
 import re
+from typing import Any, Iterable
 
 from django.contrib.auth.models import User
 from django.db import models
+from django.db.models import QuerySet
 from pgvector.django import VectorField, HnswIndex
 
 from api.fields import EncryptedDecimalField, EncryptedCharField
@@ -47,9 +50,8 @@ class Category(models.Model):
         ordering = ['name']
         unique_together = [['name', 'user']]  # Unique per user
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name
-
 
 class Merchant(models.Model):
     """Merchants/vendors where transactions occur"""
@@ -71,10 +73,10 @@ class Merchant(models.Model):
             models.Index(fields=['user', 'name_hash']),
         ]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name
 
-    def save(self, *args, **kwargs):
+    def save(self, *args, **kwargs: Any) -> None:
         # Update name_hash from the decrypted name
         if self.name:
             from api.privacy_utils import generate_blind_index
@@ -136,11 +138,11 @@ class FileStructureMetadata(models.Model):
             )
         ]
 
-    def save(self, *args, **kwargs):
+    def save(self, *args, **kwargs: Any) -> None:
         super().save(*args, **kwargs)
 
     @staticmethod
-    def generate_tuple_hash(keys):
+    def generate_tuple_hash(keys: Iterable[str]) -> str:
         """
         Generates a SHA-256 hash based on the raw CSV keys (headers).
         """
@@ -174,7 +176,7 @@ class MerchantEMA(models.Model):
             )
         ]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"EMA for {self.merchant.name} (FileStructure: {self.file_structure_metadata.id})"
 
 
@@ -257,7 +259,7 @@ class UploadFile(models.Model):
 
 
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"CSV Map (Upload: {self.upload_date.strftime('%Y-%m-%d')})"
 
 
@@ -320,7 +322,7 @@ class Transaction(models.Model):
     categorized_by_agent = models.BooleanField(default=False)
     embedding = VectorField(dimensions=384, null=True, blank=True)
 
-    def save(self, *args, **kwargs):
+    def save(self, *args, **kwargs: Any) -> None:
         if self.description:
             from api.privacy_utils import generate_blind_index
             self.description_hash = generate_blind_index(self.description)
@@ -340,11 +342,11 @@ class Transaction(models.Model):
             HnswIndex(name='idx_tx_embedding', fields=['embedding'], opclasses=['vector_cosine_ops']),
         ]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.transaction_date} - {self.merchant or self.description} - €{self.amount}"
 
     @classmethod
-    def find_similar_by_embedding(cls, user, embedding, limit=5):
+    def find_similar_by_embedding(cls, user: User, embedding: list[float], limit: int = 5) -> QuerySet[Transaction]:
         from pgvector.django import CosineDistance
         return cls.objects.filter(
             user=user,
@@ -396,7 +398,7 @@ class OnboardingStep(models.Model):
     class Meta:
         ordering = ['step_number']
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"Step {self.step_number}: {self.title}"
 
 class Profile(models.Model):
@@ -408,7 +410,7 @@ class Profile(models.Model):
     subscription_type = models.CharField(max_length=50, default='free_trial')
     onboarding_step = models.IntegerField(default=1, help_text="1: Categories, 2: Upload, 3: Filters, 4: Personalize, 5: Completed")
     welcome_email_sent = models.BooleanField(default=False)
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.user.username}'s profile"
 
 
@@ -426,11 +428,10 @@ class YearlyMonthlyUserRollup(models.Model):
         verbose_name = "Yearly Monthly User Rollup"
         verbose_name_plural = "Yearly Monthly User Rollups"
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.user.username} - {self.by_year} - {self.month_number}"
 
 
-def normalize_string(input_data:str)->str:
-    if not input_data:
-        return ''
-    return re.sub(r'[^a-z0-9]', '', input_data.lower())
+def generate_trigrams(text: str) -> list[str]:
+    text = f" {text.strip().lower()} "
+    return [text[i:i+3] for i in range(len(text)-2)]

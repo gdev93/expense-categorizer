@@ -7,7 +7,7 @@ import os
 import logging
 import io
 import pandas as pd
-from typing import List, Dict, Optional, Tuple
+from typing import List, Dict, Optional, Tuple, Any
 from django.db.models import Q
 from api.models import FileStructureMetadata
 
@@ -221,7 +221,7 @@ def _clean_dataframe_to_dict(df: pd.DataFrame) -> List[Dict[str, str]]:
     Final cleaning to ensure JSON compliance for Postgres.
     Converts NaNs to None, dates to strings, strips whitespace.
     """
-    def clean_cell(x):
+    def clean_cell(x: Any) -> str | None:
         if x is None: return None
         if pd.isna(x): return None # Handle NaN/NaT
 

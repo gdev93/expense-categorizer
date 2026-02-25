@@ -1,6 +1,7 @@
 from decimal import Decimal
 from functools import wraps
-from typing import Iterable, Dict, Tuple
+from typing import Iterable, Dict, Tuple, Any
+from django.contrib.auth.models import User
 
 from django.db import transaction
 from django.db.models import QuerySet
@@ -16,7 +17,7 @@ def optimize_total_amount(func):
     """
 
     @wraps(func)
-    def wrapper(user, filters, queryset, *args, **kwargs):
+    def wrapper(user: User, filters: Any, queryset: Any, *args: Any, **kwargs: Any) -> Any:
         # Check if filters are at their default values using the dataclass property
         if getattr(filters, 'is_default_filter', False):
             from api.models import YearlyMonthlyUserRollup
@@ -112,7 +113,7 @@ class RollupService:
     """Service to handle rollup table updates."""
 
     @staticmethod
-    def update_user_rollup(user, years_months: Iterable[Tuple[int, int | None]]):
+    def update_user_rollup(user: User, years_months: Iterable[Tuple[int, int | None]]) -> None:
         """
         Update the YearlyMonthlyUserRollup for a given user and a list of (year, month) tuples.
         Also updates the yearly totals for those years.
@@ -190,6 +191,6 @@ class RollupService:
             )
 
     @staticmethod
-    def update_user_yearly_rollup(user, years: Iterable[int]):
+    def update_user_yearly_rollup(user: User, years: Iterable[int]) -> None:
         """Legacy method to update only yearly rollups."""
         RollupService.update_user_rollup(user, [(year, None) for year in years])

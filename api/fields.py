@@ -1,3 +1,5 @@
+from typing import Any
+from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from decimal import Decimal
 from api.privacy_utils import encrypt_value, decrypt_value
@@ -5,7 +7,7 @@ from api.privacy_utils import encrypt_value, decrypt_value
 class EncryptedDecimalField(models.TextField):
     description = "A field that encrypts and decrypts Decimal values"
 
-    def from_db_value(self, value, expression, connection):
+    def from_db_value(self, value: str | None, expression: Any, connection: Any) -> Decimal:
         if value is None:
             return Decimal('0.00')
         decrypted = decrypt_value(value)
@@ -14,7 +16,7 @@ class EncryptedDecimalField(models.TextField):
         except Exception:
             return Decimal('0.00')
 
-    def to_python(self, value):
+    def to_python(self, value: Any) -> Decimal | None:
         if value is None or isinstance(value, Decimal):
             return value
         if isinstance(value, str):
@@ -24,7 +26,7 @@ class EncryptedDecimalField(models.TextField):
                 return Decimal('0.00')
         return Decimal(value)
 
-    def get_prep_value(self, value):
+    def get_prep_value(self, value: Any) -> str | None:
         if value is None:
             return None
         return encrypt_value(str(value))
@@ -32,18 +34,19 @@ class EncryptedDecimalField(models.TextField):
 class EncryptedCharField(models.TextField):
     description = "A field that encrypts and decrypts string values"
 
-    def from_db_value(self, value, expression, connection):
+    def from_db_value(self, value: str | None, expression: Any, connection: Any) -> str:
         if value is None:
             return ""
         decrypted = decrypt_value(value)
         return decrypted or ""
 
-    def to_python(self, value):
+    def to_python(self, value: Any) -> str | None:
         if value is None or isinstance(value, str):
             return value
         return str(value)
 
-    def get_prep_value(self, value):
+    def get_prep_value(self, value: Any) -> str | None:
         if value is None:
             return None
         return encrypt_value(str(value))
+

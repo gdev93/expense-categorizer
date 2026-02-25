@@ -2,6 +2,7 @@ import os
 import hashlib
 import hmac
 import base64
+from typing import Any
 from cryptography.fernet import Fernet
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
@@ -11,14 +12,14 @@ from api.models import Merchant, Transaction
 class Command(BaseCommand):
     help = 'Rotates cryptographic keys for Merchant and Transaction models.'
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser: Any) -> None:
         parser.add_argument(
             '--rotate',
             action='store_true',
             help='Explicitly allow key rotation.',
         )
 
-    def handle(self, *args, **options):
+    def handle(self, *args: Any, **options: Any) -> None:
         # 1. Safety check
         if not options.get('rotate'):
             self.stdout.write(self.style.WARNING(
@@ -60,7 +61,7 @@ class Command(BaseCommand):
         finally:
             settings.SECRET_KEY = original_secret_key
 
-    def rotate_merchants(self, old_fernet):
+    def rotate_merchants(self, old_fernet: Fernet) -> None:
         """Rotates Merchant names and blind indexes."""
         self.stdout.write('Processing Merchants...')
         
@@ -91,7 +92,7 @@ class Command(BaseCommand):
         
         self.stdout.write(self.style.SUCCESS(f'Finished Merchants: {processed} processed.'))
 
-    def rotate_transactions(self, old_fernet):
+    def rotate_transactions(self, old_fernet: Fernet) -> None:
         """Rotates Transaction descriptions, amounts and blind indexes."""
         self.stdout.write('\nProcessing Transactions...')
 

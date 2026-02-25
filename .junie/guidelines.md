@@ -6,3 +6,4 @@
 4. **Class-Based Views (CBVs):** Every new endpoint must be implemented as a Class-Based View.
    1. Context should be passed using a dataclass
 5. **Testing with Testcontainers:** Every Class-Based View must have a minimal unit test using Testcontainers.
+6. **Type Hints:** All Python methods and functions must have type hints for both arguments and return types.

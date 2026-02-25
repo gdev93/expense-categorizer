@@ -1,3 +1,4 @@
+from typing import Any
 from django.conf import settings
 from django.db.models.signals import pre_save
 from django.dispatch import receiver
@@ -5,12 +6,13 @@ from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from allauth.account.signals import user_signed_up, email_confirmed
 from allauth.account.models import EmailAddress
+from django.contrib.auth.models import User
 
 from .models import UploadFile, FileStructureMetadata
 
 
 @receiver(user_signed_up)
-def send_welcome_email_on_signup(request, user, **kwargs):
+def send_welcome_email_on_signup(request: Any, user: User, **kwargs: Any) -> None:
     """
     Sends a welcome email when a user signs up, but only if they are already verified
     (e.g. social login with pre-verified email).
@@ -21,14 +23,14 @@ def send_welcome_email_on_signup(request, user, **kwargs):
 
 
 @receiver(email_confirmed)
-def send_welcome_email_on_confirmation(request, email_address, **kwargs):
+def send_welcome_email_on_confirmation(request: Any, email_address: Any, **kwargs: Any) -> None:
     """
     Sends a welcome email when a user confirms their email address.
     """
     send_welcome_email_to_user(email_address.user, request)
     send_backoffice_notification(request, email_address.user)
 
-def send_backoffice_notification(request, user, **kwargs):
+def send_backoffice_notification(request: Any, user: User, **kwargs: Any) -> None:
     """
     Sends a notification email to the backoffice when a new user signs up.
     """
@@ -52,7 +54,7 @@ def send_backoffice_notification(request, user, **kwargs):
     msg.send()
 
 
-def send_welcome_email_to_user(user, request):
+def send_welcome_email_to_user(user: User, request: Any) -> None:
     """
     Helper function to send the welcome email and track it in the user's profile.
     """
@@ -82,7 +84,7 @@ def send_welcome_email_to_user(user, request):
 
 
 @receiver(pre_save, sender=UploadFile)
-def create_file_structure_metadata(sender, instance: UploadFile, **kwargs):
+def create_file_structure_metadata(sender: Any, instance: UploadFile, **kwargs: Any) -> None:
     """
     Signal to automatically create FileStructureMetadata
     when an UploadFile entry is updated with structure information.

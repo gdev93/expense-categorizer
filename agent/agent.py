@@ -215,7 +215,7 @@ class ExpenseCategorizerAgent:
     """Agent for categorizing expense transactions using LLM"""
 
     def __init__(self, api_key: str | None = None, user_rules: list[str] | None = None,
-                 available_categories: list[Category] | None = None):
+                 available_categories: list[Category] | None = None) -> None:
         """
         Args:
             api_key: Gemini API key (optional, will try env var)
