@@ -1,11 +1,14 @@
 import os
 from dataclasses import dataclass, field
 from typing import List, Optional
-from django.db.models import Q, QuerySet
+
+from django.db.models import Q, QuerySet, When, Case
 from django.http import HttpRequest
 from django.views import View
+
 from api.models import Transaction
 from api.privacy_utils import generate_blind_index
+from api.services import MerchantService
 from api.views.mixins import MonthYearFilterMixin
 
 
@@ -23,7 +26,7 @@ class TransactionFilterState:
     view_type: str = 'list'
     status: str = ''
     manual_insert: bool = False
-    paginate_by: int = 25
+    paginate_by: int = int(os.getenv("DEFAULT_PAGINATION", "25"))
 
     @property
     def is_default_filter(self):
@@ -147,11 +150,36 @@ class TransactionFilterMixin(MonthYearFilterMixin, View):
         # 3. Filter by Search
         if filters.search:
             search_hash = generate_blind_index(filters.search)
-            queryset = queryset.filter(
-                Q(merchant__name_hash=search_hash) |
-                Q(description_hash=search_hash)
+
+            # 1. Get the list of merchant objects (ordered by relevance)
+            merchants = MerchantService.get_merchants_candidates(
+                search_term=filters.search,
+                user=self.request.user,
+                max_results=filters.paginate_by
             )
 
+            # 2. Extract IDs to maintain the specific order
+            merchant_ids = [m.id for m in merchants]
+
+            # 3. Build the conditional ordering (Case/When)
+            # This assigns an integer rank based on the position in the list
+            order_conditions = [
+                When(merchant_id=m_id, then=index)
+                for index, m_id in enumerate(merchant_ids)
+            ]
+
+            # 4. Filter and Apply Order
+            queryset = queryset.filter(
+                Q(merchant__name_hash=search_hash) |
+                Q(description_hash=search_hash) |
+                Q(merchant__in=merchants)
+            )
+
+            if order_conditions:
+                # We order by merchant relevance first, then by date/id
+                queryset = queryset.annotate(
+                    relevance_order=Case(*order_conditions, default=len(merchant_ids))
+                ).order_by('relevance_order', '-transaction_date')
         # 5. Filter by Date
         # Only apply year filter if we are not looking at a specific file
         if filters.year and not filters.upload_file_id:

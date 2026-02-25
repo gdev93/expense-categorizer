@@ -75,7 +75,7 @@ class Merchant(models.Model):
         ordering = ['id']
         indexes = [
             models.Index(fields=['user', 'name_hash']),
-            GinIndex(fields=['fuzzy_search_trigrams'], name='idx_merchant_fuzzy_search_trigrams')
+            GinIndex(fields=['fuzzy_search_trigrams'])
         ]
 
     def __str__(self) -> str:

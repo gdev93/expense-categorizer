@@ -1,12 +1,14 @@
+from collections import Counter
 from decimal import Decimal
 from functools import wraps
 from typing import Iterable, Dict, Tuple, Any
-from django.contrib.auth.models import User
 
+from django.contrib.auth.models import User
 from django.db import transaction
 from django.db.models import QuerySet
 
-from api.models import Transaction
+from api.models import Transaction, Merchant
+from api.privacy_utils import generate_blind_index, generate_encrypted_trigrams
 
 
 def optimize_total_amount(func):
@@ -194,3 +196,25 @@ class RollupService:
     def update_user_yearly_rollup(user: User, years: Iterable[int]) -> None:
         """Legacy method to update only yearly rollups."""
         RollupService.update_user_rollup(user, [(year, None) for year in years])
+
+
+class MerchantService:
+
+    @staticmethod
+    def get_merchants_candidates(search_term: str, user: User, max_results: int) -> list[Merchant]:
+        hashed_user_input = generate_blind_index(search_term)
+        merchants_from_db = Merchant.objects.filter(name_hash=hashed_user_input, user=user)
+        exact_match = merchants_from_db.first()
+        if exact_match:
+            return [exact_match]
+        hashed_user_input = generate_encrypted_trigrams(search_term)
+        merchants_from_db = Merchant.objects.filter(fuzzy_search_trigrams__overlap=hashed_user_input,
+                                                    user=user)
+        results = []
+        source_counter = Counter(hashed_user_input)
+        for merchant in merchants_from_db:
+            additional_weight = 1 if search_term.lower() in merchant.name.lower() else 0
+            results.append(
+                (merchant, sum(source_counter[tg] for tg in merchant.fuzzy_search_trigrams) + additional_weight))
+        best_results = sorted(results, key=lambda x: x[1], reverse=True)[:max_results]
+        return [best_merchant for best_merchant, _ in best_results]
