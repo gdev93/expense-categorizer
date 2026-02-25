@@ -25,10 +25,6 @@ class TransactionUpdater:
         """
         tx.transaction_type = 'income'
         tx.status = 'categorized'
-        tx.amount = abs(parse_result.amount)
-        tx.transaction_date = parse_result.date
-        tx.description = parse_result.description
-        tx.operation_type = parse_result.operation_type
         return TransactionUpdater._update_common_fields(tx, parse_result)
 
     @staticmethod

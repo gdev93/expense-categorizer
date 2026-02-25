@@ -69,7 +69,7 @@ class Command(BaseCommand):
         # with the NEW key (set in handle()), which will fail.
         from django.db import connection
         with connection.cursor() as cursor:
-            cursor.execute("SELECT id, encrypted_name FROM api_merchant")
+            cursor.execute("SELECT id, name FROM api_merchant")
             merchant_data = {row[0]: row[1] for row in cursor.fetchall()}
 
         merchants = Merchant.objects.all().iterator()
@@ -98,7 +98,7 @@ class Command(BaseCommand):
         # Fetch raw encrypted values
         from django.db import connection
         with connection.cursor() as cursor:
-            cursor.execute("SELECT id, encrypted_description, encrypted_amount FROM api_transaction")
+            cursor.execute("SELECT id, description, amount FROM api_transaction")
             transaction_data = {row[0]: (row[1], row[2]) for row in cursor.fetchall()}
         
         transactions = Transaction.objects.all().iterator()

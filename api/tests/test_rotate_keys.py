@@ -32,7 +32,7 @@ class TestRotateKeysCommand:
         # Capture old values for verification using raw SQL to get encrypted data
         from django.db import connection
         with connection.cursor() as cursor:
-            cursor.execute("SELECT encrypted_name FROM api_merchant WHERE id = %s", [self.merchant.id])
+            cursor.execute("SELECT name FROM api_merchant WHERE id = %s", [self.merchant.id])
             self.old_merchant_encrypted = cursor.fetchone()[0]
             
             cursor.execute("SELECT encrypted_description, encrypted_amount FROM api_transaction WHERE id = %s", [self.transaction.id])
@@ -65,7 +65,7 @@ class TestRotateKeysCommand:
         # 2. Verify that encrypted values have changed in the DB
         from django.db import connection
         with connection.cursor() as cursor:
-            cursor.execute("SELECT encrypted_name FROM api_merchant WHERE id = %s", [self.merchant.id])
+            cursor.execute("SELECT name FROM api_merchant WHERE id = %s", [self.merchant.id])
             new_merchant_encrypted = cursor.fetchone()[0]
             
             cursor.execute("SELECT encrypted_description, encrypted_amount FROM api_transaction WHERE id = %s", [self.transaction.id])
