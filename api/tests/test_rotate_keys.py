@@ -29,12 +29,19 @@ class TestRotateKeysCommand:
             user=self.user
         )
         
-        # Capture old values for verification
+        # Capture old values for verification using raw SQL to get encrypted data
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT encrypted_name FROM api_merchant WHERE id = %s", [self.merchant.id])
+            self.old_merchant_encrypted = cursor.fetchone()[0]
+            
+            cursor.execute("SELECT encrypted_description, encrypted_amount FROM api_transaction WHERE id = %s", [self.transaction.id])
+            row = cursor.fetchone()
+            self.old_tx_desc_encrypted = row[0]
+            self.old_tx_amount_encrypted = row[1]
+
         self.old_merchant_hash = self.merchant.name_hash
         self.old_tx_desc_hash = self.transaction.description_hash
-        self.old_merchant_encrypted = self.merchant.encrypted_name
-        self.old_tx_desc_encrypted = self.transaction.encrypted_description
-        self.old_tx_amount_encrypted = self.transaction.encrypted_amount
 
     def teardown_method(self):
         settings.SECRET_KEY = self.original_secret_key
@@ -55,36 +62,34 @@ class TestRotateKeysCommand:
         assert self.merchant.name_hash != self.old_merchant_hash
         assert self.transaction.description_hash != self.old_tx_desc_hash
         
-        # 2. Verify that encrypted values have changed
-        assert self.merchant.encrypted_name != self.old_merchant_encrypted
-        assert self.transaction.encrypted_description != self.old_tx_desc_encrypted
-        assert self.transaction.encrypted_amount != self.old_tx_amount_encrypted
+        # 2. Verify that encrypted values have changed in the DB
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT encrypted_name FROM api_merchant WHERE id = %s", [self.merchant.id])
+            new_merchant_encrypted = cursor.fetchone()[0]
+            
+            cursor.execute("SELECT encrypted_description, encrypted_amount FROM api_transaction WHERE id = %s", [self.transaction.id])
+            row = cursor.fetchone()
+            new_tx_desc_encrypted = row[0]
+            new_tx_amount_encrypted = row[1]
+            
+        assert new_merchant_encrypted != self.old_merchant_encrypted
+        assert new_tx_desc_encrypted != self.old_tx_desc_encrypted
+        assert new_tx_amount_encrypted != self.old_tx_amount_encrypted
         
         # 3. Verify that with the OLD key, we cannot decrypt anymore
-        # (decrypt_value returns None/empty string on failure)
-        # Clear cache first
-        for obj, attr in [
-            (self.merchant, '_decrypted_name'),
-            (self.transaction, '_decrypted_description'),
-            (self.transaction, '_decrypted_amount')
-        ]:
-            if hasattr(obj, attr):
-                delattr(obj, attr)
-
+        # (EncryptedCharField returns empty string/Decimal('0.00') on failure)
         assert self.merchant.name == ""
         assert self.transaction.description == ""
-        assert self.transaction.amount is None
+        from decimal import Decimal
+        assert self.transaction.amount == Decimal('0.00')
         
         # 4. Temporarily switch to the NEW key and verify decryption
         settings.SECRET_KEY = self.new_key
-        # Force refresh decrypted cache attributes again
-        for obj, attr in [
-            (self.merchant, '_decrypted_name'),
-            (self.transaction, '_decrypted_description'),
-            (self.transaction, '_decrypted_amount')
-        ]:
-            if hasattr(obj, attr):
-                delattr(obj, attr)
+        
+        # Refresh from DB to trigger re-decryption with new key
+        self.merchant.refresh_from_db()
+        self.transaction.refresh_from_db()
             
         assert self.merchant.name == "Test Merchant"
         assert self.transaction.description == "Test Transaction"

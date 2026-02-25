@@ -24,7 +24,7 @@
 
         <div class="list-item-info">
             <div class="transaction-merchant">
-                {{ item.merchant__encrypted_name|decrypt|default:"Sconosciuto" }}
+                {{ item.merchant__name|default:"Sconosciuto" }}
             </div>
             <div class="merchant-meta">
                 <span class="badge-count">

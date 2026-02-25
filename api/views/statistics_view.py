@@ -4,11 +4,10 @@ from decimal import Decimal
 from typing import List, Optional
 
 from django.contrib.auth.models import User
-from django.db.models import Sum, Count
 from django.shortcuts import render
 from django.views import View
 
-from api.models import Category, Merchant, Transaction, UserFinancialSummary
+from api.models import Category, Merchant, Transaction
 
 
 @dataclass

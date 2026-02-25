@@ -120,7 +120,7 @@ class TransactionListView(LoginRequiredMixin, ListView, TransactionFilterMixin):
                 is_uncategorized=Value(0, output_field=IntegerField()),
                 categories_list=StringAgg('category__name', delimiter=', ', distinct=True),
                 category_id=Max('category__id'),
-                merchant__encrypted_name=Max('merchant__encrypted_name')
+                merchant__name=Max('merchant__name')
             ).order_by('-number_of_transactions')
             return merchants_query
 
@@ -160,7 +160,7 @@ class TransactionListView(LoginRequiredMixin, ListView, TransactionFilterMixin):
                 is_uncategorized=Value(1, output_field=IntegerField()),
                 categories_list=StringAgg('category__name', delimiter=', ', distinct=True),
                 category_id=Max('category__id'),
-                merchant__encrypted_name=Max('merchant__encrypted_name')
+                merchant__name=Max('merchant__name')
             ).order_by('-number_of_transactions')
 
             uncategorized_merchants = list(uncategorized_merchants_query)
@@ -190,9 +190,17 @@ class TransactionListView(LoginRequiredMixin, ListView, TransactionFilterMixin):
         if filters.view_type == 'merchant':
             # In merchant view, we always calculate the total amount by decrypting all filtered transactions
             # because the amount filter is ignored for this view.
-            total_amount = TransactionAggregationService.calculate_total_amount(self.get_transaction_filter_query())
+            total_amount = TransactionAggregationService.calculate_total_amount(
+                self.request.user,
+                filters,
+                self.get_transaction_filter_query()
+            )
         else:
-            total_amount = TransactionAggregationService.calculate_total_amount(full_queryset)
+            total_amount = TransactionAggregationService.calculate_total_amount(
+                self.request.user,
+                filters,
+                full_queryset
+            )
 
         category_count = self.get_transaction_filter_query().values('category').distinct().count()
 

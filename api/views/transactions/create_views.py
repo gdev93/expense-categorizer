@@ -60,6 +60,12 @@ class TransactionCreateView(LoginRequiredMixin, View):
             manual_insert=True
         )
 
+        new_transaction.refresh_from_db()
+        date = new_transaction.transaction_date
+        if date:
+            from api.services import RollupService
+            RollupService.update_user_rollup(user, [(date.year, date.month)])
+
         apply_to_all = request.POST.get('apply_to_all') in ['on', 'true']
         if apply_to_all and merchant:
             count = Transaction.objects.filter(

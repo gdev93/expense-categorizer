@@ -7,11 +7,9 @@ from typing import Iterable
 from django.contrib.auth.models import User
 from django.core.files.uploadedfile import UploadedFile
 from django.db import transaction
-from django.db.models import Q
-from django.db.models.expressions import RawSQL
 
 from agent.agent import ExpenseCategorizerAgent, AgentTransactionUpload, TransactionCategorization, GeminiResponse
-from api.models import Transaction, Category, Merchant, UploadFile, normalize_string
+from api.models import Transaction, Category, Merchant, UploadFile
 from api.privacy_utils import generate_blind_index
 from costs.services import CostService
 from processors.batching_helper import BatchingHelper
@@ -224,7 +222,7 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
         to_update = all_transactions_categorized + all_transactions_to_upload + all_transactions_as_income
         Transaction.objects.bulk_update(to_update, [
             'status', 'merchant', 'category', 'transaction_date',
-            'encrypted_description', 'encrypted_amount', 'description_hash',
+            'description', 'amount', 'description_hash',
             'transaction_type', 'operation_type', 'embedding'
         ])
 
@@ -293,11 +291,9 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
         for tx_data in batch:
             tx_id = tx_data.transaction_id
             try:
-                failure = tx_data.failure
                 # Extract and parse transaction data
                 transaction_date = parse_raw_date(tx_data.date)
                 amount = normalize_amount(tx_data.amount)
-                original_amount = tx_data.original_amount
                 description = tx_data.description
                 merchant_name = tx_data.merchant
                 category_name = tx_data.category
@@ -346,8 +342,8 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
         if transactions_to_update:
             Transaction.objects.bulk_update(transactions_to_update, [
                 'category', 'merchant',
-                'transaction_date', 'encrypted_amount', 'status', 'modified_by_user',
-                'encrypted_description', 'description_hash', 'categorized_by_agent', 'embedding'
+                'transaction_date', 'amount', 'status', 'modified_by_user',
+                'description', 'description_hash', 'categorized_by_agent', 'embedding'
             ])
 
 
@@ -422,12 +418,12 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
 
             Transaction.objects.bulk_update(
                 chunk,
-                ['transaction_date', 'encrypted_amount', 'encrypted_description', 'description_hash',
+                ['transaction_date', 'amount', 'description', 'description_hash',
                  'category', 'status', 'merchant', 'embedding']
             )
 
         Transaction.objects.filter(user=self.user, upload_file=upload_file, status__in=['pending', 'uncategorized'],
-                                   encrypted_amount__isnull=True).update(status='uncategorized',
+                                   amount__isnull=True).update(status='uncategorized',
                                                                         transaction_type='income')
 
 def persist_uploaded_file(file_data: list[dict[str, str]], user: User, file: UploadedFile, upload_file: UploadFile = None) -> UploadFile:

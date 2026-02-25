@@ -3,12 +3,10 @@ import hashlib
 import re
 
 from django.contrib.auth.models import User
-from django.contrib.postgres.indexes import GinIndex
 from django.db import models
-from django.db.models import QuerySet
-from django.db.models.expressions import RawSQL
 from pgvector.django import VectorField, HnswIndex
-from api.privacy_utils import encrypt_value, decrypt_value, generate_blind_index
+
+from api.fields import EncryptedDecimalField, EncryptedCharField
 
 
 class DefaultCategory(models.Model):
@@ -55,7 +53,7 @@ class Category(models.Model):
 
 class Merchant(models.Model):
     """Merchants/vendors where transactions occur"""
-    encrypted_name = models.TextField(blank=True, null=True)
+    name = EncryptedCharField(db_column='name', blank=True, null=True)
     name_hash = models.CharField(max_length=64, db_index=True, blank=True, null=True)
     address = models.TextField(blank=True)
     user = models.ForeignKey(
@@ -73,34 +71,16 @@ class Merchant(models.Model):
             models.Index(fields=['user', 'name_hash']),
         ]
 
-    @property
-    def name(self):
-        if not hasattr(self, '_decrypted_name'):
-            from api.privacy_utils import decrypt_value
-            self._decrypted_name = decrypt_value(self.encrypted_name) or ""
-        return self._decrypted_name
-
-    @name.setter
-    def name(self, value):
-        from api.privacy_utils import encrypt_value, generate_blind_index
-        self._decrypted_name = value
-        if value:
-            self.encrypted_name = encrypt_value(value)
-            self.name_hash = generate_blind_index(value)
-        else:
-            self.encrypted_name = None
-            self.name_hash = None
-
     def __str__(self):
         return self.name
 
     def save(self, *args, **kwargs):
-        # Privacy by Design logic is now handled in the name setter if used,
-        # but we also ensure fields are set here if 'name' was set as an attribute
-        if hasattr(self, '_decrypted_name') and self._decrypted_name:
-            from api.privacy_utils import encrypt_value, generate_blind_index
-            self.encrypted_name = encrypt_value(self._decrypted_name)
-            self.name_hash = generate_blind_index(self._decrypted_name)
+        # Update name_hash from the decrypted name
+        if self.name:
+            from api.privacy_utils import generate_blind_index
+            self.name_hash = generate_blind_index(self.name)
+        else:
+            self.name_hash = None
         super().save(*args, **kwargs)
 
 
@@ -327,8 +307,8 @@ class Transaction(models.Model):
     operation_type = models.CharField(max_length=255, blank=True, null=True)
     # Core transaction data
     transaction_date = models.DateField(null=True, blank=True)
-    encrypted_amount = models.TextField(blank=True, null=True)
-    encrypted_description = models.TextField(blank=True, null=True)
+    amount = EncryptedDecimalField(db_column='amount', blank=True, null=True)
+    description = EncryptedCharField(db_column='description', blank=True, null=True)
     description_hash = models.CharField(max_length=64, db_index=True, blank=True, null=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     manual_insert = models.BooleanField(default=False)
@@ -340,56 +320,12 @@ class Transaction(models.Model):
     categorized_by_agent = models.BooleanField(default=False)
     embedding = VectorField(dimensions=384, null=True, blank=True)
 
-    @property
-    def amount(self):
-        if not hasattr(self, '_decrypted_amount'):
-            from api.privacy_utils import decrypt_value
-            from decimal import Decimal
-            val = decrypt_value(self.encrypted_amount)
-            try:
-                self._decrypted_amount = Decimal(val) if val else None
-            except Exception:
-                self._decrypted_amount = None
-        return self._decrypted_amount
-
-    @amount.setter
-    def amount(self, value):
-        from api.privacy_utils import encrypt_value
-        self._decrypted_amount = value
-        if value is not None:
-            self.encrypted_amount = encrypt_value(str(value))
-        else:
-            self.encrypted_amount = None
-
-    @property
-    def description(self):
-        if not hasattr(self, '_decrypted_description'):
-            from api.privacy_utils import decrypt_value
-            self._decrypted_description = decrypt_value(self.encrypted_description) or ""
-        return self._decrypted_description
-
-    @description.setter
-    def description(self, value):
-        from api.privacy_utils import encrypt_value, generate_blind_index
-        self._decrypted_description = value
-        if value:
-            self.encrypted_description = encrypt_value(value)
-            self.description_hash = generate_blind_index(value)
-        else:
-            self.encrypted_description = None
-            self.description_hash = None
-
     def save(self, *args, **kwargs):
-        # Privacy by Design: Encrypted fields are updated via properties setters
-        # but we ensure they are consistent if attributes were set directly
-        from api.privacy_utils import encrypt_value, generate_blind_index
-        
-        if hasattr(self, '_decrypted_description') and self._decrypted_description:
-            self.encrypted_description = encrypt_value(self._decrypted_description)
-            self.description_hash = generate_blind_index(self._decrypted_description)
-
-        if hasattr(self, '_decrypted_amount') and self._decrypted_amount is not None:
-            self.encrypted_amount = encrypt_value(str(self._decrypted_amount))
+        if self.description:
+            from api.privacy_utils import generate_blind_index
+            self.description_hash = generate_blind_index(self.description)
+        else:
+            self.description_hash = None
 
         super().save(*args, **kwargs)
     class Meta:
@@ -475,128 +411,23 @@ class Profile(models.Model):
     def __str__(self):
         return f"{self.user.username}'s profile"
 
-class UserFinancialSummary(models.Model):
-    """
-    Database view that provides a financial summary for each user.
-    Shows total spending, monthly average, and top spending category.
-    """
-    user = models.OneToOneField(
-        User,
-        on_delete=models.DO_NOTHING,
-        related_name='financial_summary',
-        primary_key=True
-    )
-    total_spending = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        help_text="Total amount spent across all categorized expenses"
-    )
-    monthly_average_spending = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        help_text="Average spending per active month"
-    )
-    top_category_id = models.IntegerField(
-        null=True,
-        blank=True,
-        help_text="ID of the category with highest spending"
-    )
-    top_category_name = models.CharField(
-        max_length=100,
-        null=True,
-        blank=True,
-        help_text="Name of the top spending category"
-    )
-    top_category_spending = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        help_text="Top category total expenses amount"
-    )
-    top_category_percentage = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        help_text="Percentage of total spending for top category"
-    )
-    class Meta:
-        managed = False  # This is a database view, not a regular table
-        db_table = 'user_financial_summary'
-        verbose_name = "User Financial Summary"
-        verbose_name_plural = "User Financial Summaries"
 
-    def __str__(self):
-        return f"Financial Summary - {self.user.username}"
-
-
-class MonthlySummary(models.Model):
-    # This field links to the primary table's user, assuming a Foreign Key relationship
-    # If the view doesn't enforce a FK, use IntegerField or CharField as appropriate.
-    user_id = models.IntegerField(primary_key=True)
-
-    # The aggregated amount
-    total_amount = models.DecimalField(max_digits=10, decimal_places=2)
-
-    # The month number (1-12)
-    month = models.SmallIntegerField()
-
-    year = models.SmallIntegerField()
-
-    # The type of transaction (e.g., 'income', 'expense')
-    transaction_type = models.CharField(max_length=50)
+class YearlyMonthlyUserRollup(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='yearly_rollups')
+    by_year = models.IntegerField()
+    total_amount_expense_by_year = EncryptedDecimalField(blank=True, null=True)
+    total_amount_income_by_year = EncryptedDecimalField(blank=True, null=True)
+    total_amount_expense_by_month = EncryptedDecimalField(blank=True, null=True)
+    total_amount_income_by_month = EncryptedDecimalField(blank=True, null=True)
+    month_number = models.IntegerField(blank=True, null=True)
 
     class Meta:
-        # 1. IMPORTANT: Set managed = False to tell Django NOT to create/manage this
-        #    'table' (which is actually your view) in the database.
-        managed = False
-
-        # 2. Specify the exact name of your database view.
-        db_table = 'monthly_financial_summary'
-
-        # 3. Define a unique combination of fields that makes a row distinct.
-        #    This is essential because Django expects a primary key.
-        #    The combination of user_id, month, and transaction_type is unique in your view.
-        unique_together = ('user_id', 'month', 'transaction_type')
-
-        # 4. (Optional) Define a verbose name for the Admin interface.
-        verbose_name = 'Monthly Financial Summary'
+        unique_together = ('user', 'by_year', 'month_number')
+        verbose_name = "Yearly Monthly User Rollup"
+        verbose_name_plural = "Yearly Monthly User Rollups"
 
     def __str__(self):
-        return f"{self.user_id} - {self.transaction_type} ({self.month}): {self.total_amount}"
-
-
-class CategoryMonthlySummary(models.Model):
-    pk = models.CompositePrimaryKey("user_id", "category_id", "year", "month")
-    # Foreign key field from the api_transaction table
-    user_id = models.IntegerField()
-
-    # Fields from the api_category table
-    category_id = models.IntegerField()
-    category_name = models.CharField(max_length=100)
-
-    # The aggregated amount (COALESCE(SUM(t.amount), 0))
-    total_amount = models.DecimalField(max_digits=10, decimal_places=2)
-
-    # The time period fields
-    year = models.SmallIntegerField()
-    month = models.SmallIntegerField()
-
-    class Meta:
-        # 1. IMPORTANT: This tells Django not to manage the table/view schema.
-        #    The view must be created manually in the database.
-        managed = False
-
-        # 2. Set the exact name of the database view this model maps to.
-        #    (Assuming you named the view 'zero_filled_monthly_summary')
-        db_table = 'category_monthly_summary'
-
-        # 3. Define the combination of fields that makes each row unique in the view.
-        #    Django requires a primary key or a unique constraint.
-        unique_together = ('user_id', 'category_id', 'year', 'month')
-
-        # 4. (Optional) Define a verbose name for clarity.
-        verbose_name = 'Zero-Filled Monthly Summary'
-
-    def __str__(self):
-        return f"User {self.user_id} - {self.category_name} ({self.year}-{self.month}): {self.total_amount}"
+        return f"{self.user.username} - {self.by_year} - {self.month_number}"
 
 
 def normalize_string(input_data:str)->str:

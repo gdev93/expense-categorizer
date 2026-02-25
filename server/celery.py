@@ -18,3 +18,13 @@ app.autodiscover_tasks()
 @app.task(bind=True, ignore_result=True)
 def debug_task(self):
     print(f'Request: {self.request!r}')
+
+
+from celery.schedules import crontab
+
+app.conf.beat_schedule = {
+    'populate-rollups-daily': {
+        'task': 'api.tasks.populate_rollups',
+        'schedule': crontab(hour=int(os.getenv("ROLLUP_SCHEDULE_HOUR","2")), minute=0)
+    },
+}

@@ -40,7 +40,13 @@ class TransactionDetailUpdateView(LoginRequiredMixin, UpdateView):
 
     def delete(self, request, *args, **kwargs):
         """Handle transaction deletion"""
-        self.get_object().delete()
+        obj = self.get_object()
+        date = obj.transaction_date
+        obj.delete()
+        if date:
+            from api.services import RollupService
+            RollupService.update_user_rollup(request.user, [(date.year, date.month)])
+
         messages.success(request, "Spesa eliminata con successo.")
 
         # Check if filters were stored before deletion
@@ -94,7 +100,20 @@ class TransactionDetailUpdateView(LoginRequiredMixin, UpdateView):
         form.instance.category = new_category
         form.instance.modified_by_user = True
         form.instance.status = 'categorized'
+        
+        old_date = self.object.transaction_date
         self.object = form.save()
+        new_date = self.object.transaction_date
+
+        from api.services import RollupService
+        updates = []
+        if old_date:
+            updates.append((old_date.year, old_date.month))
+        if new_date:
+            updates.append((new_date.year, new_date.month))
+        
+        if updates:
+            RollupService.update_user_rollup(self.request.user, updates)
 
         # Update Merchant EMA if merchant and embedding are available
         if self.object.merchant and self.object.embedding and self.object.upload_file and self.object.upload_file.file_structure_metadata:

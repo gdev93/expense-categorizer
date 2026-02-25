@@ -69,8 +69,7 @@ def test_merchant_view_pagination(client):
     assert response.context['is_paginated'] is True
     
     # Ensure uncat merchants are NOT in the main list
-    from api.privacy_utils import decrypt_value
-    main_list_names = [decrypt_value(m['merchant__encrypted_name']) for m in merchant_summary]
+    main_list_names = [m['merchant__name'] for m in merchant_summary]
     assert "Uncat Merchant 1" not in main_list_names
     assert "Uncat Merchant 2" not in main_list_names
 

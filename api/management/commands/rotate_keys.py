@@ -64,17 +64,26 @@ class Command(BaseCommand):
         """Rotates Merchant names and blind indexes."""
         self.stdout.write('Processing Merchants...')
         
+        # We need to fetch the raw encrypted values from the DB
+        # because accessing the model attribute will trigger automatic decryption
+        # with the NEW key (set in handle()), which will fail.
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT id, encrypted_name FROM api_merchant")
+            merchant_data = {row[0]: row[1] for row in cursor.fetchall()}
+
         merchants = Merchant.objects.all().iterator()
         processed = 0
         
         for merchant in merchants:
-            if merchant.encrypted_name:
+            raw_encrypted_name = merchant_data.get(merchant.id)
+            if raw_encrypted_name:
                 # Decrypt with old key
-                decrypted_name = old_fernet.decrypt(merchant.encrypted_name.encode()).decode()
+                decrypted_name = old_fernet.decrypt(raw_encrypted_name.encode()).decode()
                 
-                # Re-encrypt and re-hash using setters (uses new SECRET_KEY)
+                # Re-encrypt and re-hash using setters (uses new SECRET_KEY via EncryptedCharField)
                 merchant.name = decrypted_name
-                merchant.save(update_fields=['encrypted_name', 'name_hash', 'updated_at'])
+                merchant.save(update_fields=['name', 'name_hash', 'updated_at'])
             
             processed += 1
             if processed % 50 == 0:
@@ -85,24 +94,31 @@ class Command(BaseCommand):
     def rotate_transactions(self, old_fernet):
         """Rotates Transaction descriptions, amounts and blind indexes."""
         self.stdout.write('\nProcessing Transactions...')
+
+        # Fetch raw encrypted values
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT id, encrypted_description, encrypted_amount FROM api_transaction")
+            transaction_data = {row[0]: (row[1], row[2]) for row in cursor.fetchall()}
         
         transactions = Transaction.objects.all().iterator()
         processed = 0
         
         for tx in transactions:
             update_fields = ['updated_at']
+            raw_desc, raw_amount = transaction_data.get(tx.id, (None, None))
             
             # Handle encrypted description and its hash
-            if tx.encrypted_description:
-                decrypted_desc = old_fernet.decrypt(tx.encrypted_description.encode()).decode()
+            if raw_desc:
+                decrypted_desc = old_fernet.decrypt(raw_desc.encode()).decode()
                 tx.description = decrypted_desc
-                update_fields.extend(['encrypted_description', 'description_hash'])
+                update_fields.extend(['description', 'description_hash'])
             
             # Handle encrypted amount
-            if tx.encrypted_amount:
-                decrypted_amount = old_fernet.decrypt(tx.encrypted_amount.encode()).decode()
+            if raw_amount:
+                decrypted_amount = old_fernet.decrypt(raw_amount.encode()).decode()
                 tx.amount = decrypted_amount
-                update_fields.append('encrypted_amount')
+                update_fields.append('amount')
             
             if len(update_fields) > 1:
                 tx.save(update_fields=update_fields)

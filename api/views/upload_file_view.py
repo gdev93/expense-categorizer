@@ -99,8 +99,16 @@ class UploadFileDelete(DeleteView):
         return self.model.objects.filter(user=self.request.user)
 
     def post(self, request, *args, **kwargs):
+        upload_file = self.get_object()
+        years_months = list(Transaction.objects.filter(upload_file=upload_file).values_list('transaction_date__year', 'transaction_date__month').distinct())
+
         messages.success(request, "Caricamento eliminato correttamente.")
         response = super().post(request, *args, **kwargs)
+
+        if years_months:
+            from api.services import RollupService
+            RollupService.update_user_rollup(request.user, years_months)
+
         # Delete merchants that have no transactions and no rules
         Merchant.objects.filter(user=request.user).exclude(
             transactions__isnull=False

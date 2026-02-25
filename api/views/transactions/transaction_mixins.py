@@ -25,6 +25,10 @@ class TransactionFilterState:
     manual_insert: bool = False
     paginate_by: int = 25
 
+    @property
+    def is_default_filter(self):
+        return not self.category_ids and not self.search and not self.status and not self.upload_file_id and not self.manual_insert
+
     @classmethod
     def from_request(cls, request: HttpRequest, year: int, months: List[int],
                      upload_file_id: Optional[str] = None) -> 'TransactionFilterState':
