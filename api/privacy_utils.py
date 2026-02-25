@@ -41,3 +41,12 @@ def decrypt_value(encrypted_value: str | None) -> str | None:
         return f.decrypt(encrypted_value.encode()).decode()
     except Exception:
         return None
+
+
+def _generate_trigrams(text: str) -> list[str]:
+    text = f" {text.strip().lower()} "
+    return [text[i:i + 3] for i in range(len(text) - 2)]
+
+
+def generate_encrypted_trigrams(text: str) -> list[str]:
+    return [generate_blind_index(trigram) for trigram in _generate_trigrams(text)]

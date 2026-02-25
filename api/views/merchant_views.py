@@ -3,6 +3,7 @@ import os
 from django.views.generic import ListView
 
 from api.models import Merchant
+from api.privacy_utils import encrypt_value, generate_blind_index, generate_encrypted_trigrams
 
 
 class MerchantSearchView(ListView):
@@ -15,7 +16,11 @@ class MerchantSearchView(ListView):
         search_term = self.request.GET.get('name') or self.request.GET.get('merchant_name')
         if not search_term or len(search_term) < 2:
             return Merchant.objects.none()
-        return super().get_queryset().filter(
-            user=self.request.user,
-            name__icontains=search_term
-        ).distinct('name').order_by('name')[:self.max_distinct_results]
+        hashed_user_input = generate_blind_index(search_term)
+        merchants_from_db = Merchant.objects.filter(name_hash=hashed_user_input, user=self.request.user)
+        exact_match = merchants_from_db.first()
+        if exact_match:
+            return exact_match
+        hashed_user_input = generate_encrypted_trigrams(search_term)
+        merchants_from_db = Merchant.objects.filter(fuzzy_search_trigrams__overlap=hashed_user_input, user=self.request.user)
+        return merchants_from_db.distinct('name').order_by('name')[:self.max_distinct_results]

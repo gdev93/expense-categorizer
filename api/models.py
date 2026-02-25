@@ -5,11 +5,14 @@ import re
 from typing import Any, Iterable
 
 from django.contrib.auth.models import User
+from django.contrib.postgres.fields import ArrayField
+from django.contrib.postgres.indexes import GinIndex
 from django.db import models
 from django.db.models import QuerySet
 from pgvector.django import VectorField, HnswIndex
 
 from api.fields import EncryptedDecimalField, EncryptedCharField
+from api.privacy_utils import generate_encrypted_trigrams
 
 
 class DefaultCategory(models.Model):
@@ -66,11 +69,13 @@ class Merchant(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    fuzzy_search_trigrams = ArrayField(models.CharField(blank=True, null=True), blank=True, null=True)
 
     class Meta:
         ordering = ['id']
         indexes = [
             models.Index(fields=['user', 'name_hash']),
+            GinIndex(fields=['fuzzy_search_trigrams'], name='idx_merchant_fuzzy_search_trigrams')
         ]
 
     def __str__(self) -> str:
@@ -83,6 +88,8 @@ class Merchant(models.Model):
             self.name_hash = generate_blind_index(self.name)
         else:
             self.name_hash = None
+        encrypted_trigrams = generate_encrypted_trigrams(self.name)
+        self.fuzzy_search_trigrams = encrypted_trigrams
         super().save(*args, **kwargs)
 
 
@@ -430,8 +437,3 @@ class YearlyMonthlyUserRollup(models.Model):
 
     def __str__(self) -> str:
         return f"{self.user.username} - {self.by_year} - {self.month_number}"
-
-
-def generate_trigrams(text: str) -> list[str]:
-    text = f" {text.strip().lower()} "
-    return [text[i:i+3] for i in range(len(text)-2)]
