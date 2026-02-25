@@ -2,7 +2,7 @@ import pytest
 from django.contrib.auth.models import User
 from django.urls import reverse
 
-from api.models import Profile, Category, UploadFile
+from api.models import Profile, Category, UploadFile, OnboardingStep
 
 
 @pytest.mark.django_db
@@ -10,6 +10,14 @@ class TestOnboarding:
     def setup_method(self):
         self.user = User.objects.create_user(username='testuser', password='password123')
         self.profile = Profile.objects.create(user=self.user, onboarding_step=5) # Completed
+        # Create OnboardingStep objects for the view to work correctly
+        for i in range(1, 6):
+            OnboardingStep.objects.create(
+                step_number=i,
+                title=f"Step {i}",
+                description=f"Description for step {i}",
+                mock_type="generic"
+            )
 
     def test_onboarding_update_step_advance(self, client):
         client.login(username='testuser', password='password123')
@@ -38,7 +46,7 @@ class TestOnboarding:
         client.login(username='testuser', password='password123')
         
         url = reverse('update_onboarding_step')
-        response = client.post(url, {'step': '6'})
+        response = client.post(url, {'step': '7'})
         
         assert response.status_code == 400
         self.profile.refresh_from_db()

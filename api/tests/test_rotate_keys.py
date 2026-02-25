@@ -35,7 +35,7 @@ class TestRotateKeysCommand:
             cursor.execute("SELECT name FROM api_merchant WHERE id = %s", [self.merchant.id])
             self.old_merchant_encrypted = cursor.fetchone()[0]
             
-            cursor.execute("SELECT encrypted_description, encrypted_amount FROM api_transaction WHERE id = %s", [self.transaction.id])
+            cursor.execute("SELECT description, amount FROM api_transaction WHERE id = %s", [self.transaction.id])
             row = cursor.fetchone()
             self.old_tx_desc_encrypted = row[0]
             self.old_tx_amount_encrypted = row[1]
@@ -68,7 +68,7 @@ class TestRotateKeysCommand:
             cursor.execute("SELECT name FROM api_merchant WHERE id = %s", [self.merchant.id])
             new_merchant_encrypted = cursor.fetchone()[0]
             
-            cursor.execute("SELECT encrypted_description, encrypted_amount FROM api_transaction WHERE id = %s", [self.transaction.id])
+            cursor.execute("SELECT description, amount FROM api_transaction WHERE id = %s", [self.transaction.id])
             row = cursor.fetchone()
             new_tx_desc_encrypted = row[0]
             new_tx_amount_encrypted = row[1]

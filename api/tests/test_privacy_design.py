@@ -77,8 +77,8 @@ def test_transaction_filter_by_merchant_hash():
     assert qs.count() == 1
     assert qs.first().merchant == merchant
     
-    # 2. Search by something else
-    view.get_transaction_filters = lambda: TransactionFilterState(year=2026, months=[2], search="Target")
+    # 2. Search by something else (should NOT match as blind index is exact and no fuzzy overlap)
+    view.get_transaction_filters = lambda: TransactionFilterState(year=2026, months=[2], search="NonMatching")
     qs = view.get_transaction_filter_query()
     assert qs.count() == 0
     

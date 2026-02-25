@@ -11,6 +11,7 @@ if "DOCKER_HOST" not in os.environ:
         socket_path = f"unix:///Users/{user}/.docker/run/docker.sock"
         if os.path.exists(socket_path.replace("unix://", "")):
             os.environ["DOCKER_HOST"] = socket_path
+            os.environ["RYUK_RECONNECTION_TIMEOUT"]="30s"
 
 
 @pytest.fixture(scope='session', autouse=True)

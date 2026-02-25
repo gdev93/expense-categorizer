@@ -2,13 +2,17 @@ import pytest
 from django.core import mail
 from django.contrib.auth.models import User
 from allauth.account.signals import user_signed_up
+from allauth.account.models import EmailAddress
 from django.conf import settings
 
 @pytest.mark.django_db
-def test_backoffice_notification_on_signup(rf):
+def test_backoffice_notification_on_signup(rf, settings):
     """
     Tests that a backoffice notification email is sent when a user signs up.
     """
+    # Ensure backoffice email is set in settings
+    settings.BACKOFFICE_EMAIL = 'backoffice@example.com'
+    
     # Clear outbox
     mail.outbox = []
     
@@ -21,6 +25,9 @@ def test_backoffice_notification_on_signup(rf):
         email='testbackoffice@example.com', 
         password='password123'
     )
+    
+    # Create verified email address for the user (required by the signal handler)
+    EmailAddress.objects.create(user=user, email=user.email, verified=True, primary=True)
     
     # Trigger the signal
     user_signed_up.send(sender=User, request=request, user=user)
