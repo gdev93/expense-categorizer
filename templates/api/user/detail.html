@@ -1,0 +1,98 @@
+
+{% extends "main/index.html" %}
+{% load static %}
+
+{% block title %}Il mio profilo - Pecuniam{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/summary.css' %}">
+    <link rel="stylesheet" href="{% static 'css/list.css' %}">
+    <link rel="stylesheet" href="{% static 'css/filters.css' %}">
+    <link rel="stylesheet" href="{% static 'css/user_profile.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container mt-2">
+    {% include "api/user/components/user-header.html" with title="Profilo" icon="account_circle"%}
+
+    <!-- User Information Section -->
+    <div class="breakdown-section">
+        <h2 class="mb-3">Informazioni Account</h2>
+        <div class="filter-grid">
+            <div class="filter-group">
+                <div class="card-selector-static">
+                    <div class="card-content">
+                        <div class="card-info">
+                            <div class="card-icon-box">
+                                <span class="material-icons">person</span>
+                            </div>
+                            <div class="card-text">
+                                <b>Username</b>
+                                <span class="user-info-value">{{ username }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="filter-group">
+                <div class="card-selector-static">
+                    <div class="card-content">
+                        <div class="card-info">
+                            <div class="card-icon-box">
+                                <span class="material-icons">email</span>
+                            </div>
+                            <div class="card-text">
+                                <b>Email</b>
+                                <span class="user-info-value">{{ email }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="filter-group">
+                <div class="card-selector-static">
+                    <div class="card-content">
+                        <div class="card-info">
+                            <div class="card-icon-box">
+                                <span class="material-icons">calendar_today</span>
+                            </div>
+                            <div class="card-text">
+                                <b>Membro dal</b>
+                                <span class="user-info-value">{{ date_joined }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="filter-group">
+                <div class="card-selector-static">
+                    <div class="card-content">
+                        <div class="card-info">
+                            <div class="card-icon-box">
+                                <span class="material-icons">star</span>
+                            </div>
+                            <div class="card-text">
+                                <b>Abbonamento</b>
+                                <span class="user-info-value subscription-type">{%  if subscription_type == 'free_trial' %}Gratuito{% else %}{{ subscription_type }}{% endif %}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Danger Zone Section -->
+    <div class="breakdown-section danger-zone-section">
+        <h2 class="danger-zone-title">Eliminazione account</h2>
+        <p>La cancellazione dei dati è un'azione irreversibile. Una volta confermata, non sarà possibile recuperare le transazioni o le configurazioni associate al tuo account.</p>
+        
+        <div class="actions-footer">
+            <a href="{% url 'user_delete' %}" class="btn-danger-custom">
+                <span class="material-icons">delete_forever</span>
+                Cancella tutti i dati e l'account
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

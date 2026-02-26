@@ -1,5 +1,6 @@
 import os
 from celery import Celery
+from celery.schedules import crontab
 
 # Set the default Django settings module for the 'celery' program.
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'server.settings')
@@ -19,12 +20,9 @@ app.autodiscover_tasks()
 def debug_task(self):
     print(f'Request: {self.request!r}')
 
-
-from celery.schedules import crontab
-
 app.conf.beat_schedule = {
     'populate-rollups-daily': {
         'task': 'api.tasks.populate_rollups',
-        'schedule': crontab(hour=int(os.getenv("ROLLUP_SCHEDULE_HOUR","2")), minute=0)
+        'schedule': crontab(hour=int(os.getenv("ROLLUP_SCHEDULE_HOUR","2")), minute=0) if os.getenv("ENV","local") == "prod" else crontab(minute='*/1')
     },
 }

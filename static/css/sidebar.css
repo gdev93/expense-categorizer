@@ -52,11 +52,20 @@
 }
 
 /* User Info Section */
+.sidebar-user-info-link {
+    text-decoration: none;
+    display: block;
+}
 .sidebar-user-info {
     flex-shrink: 0;
     padding: 10px 15px;
     border-bottom: 1px solid #e9ecef;
     margin-bottom: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+.sidebar-user-info:hover {
+    background-color: var(--background-color);
 }
 
 .user-profile {

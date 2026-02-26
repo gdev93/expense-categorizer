@@ -40,21 +40,23 @@
     </header>
 
     <aside class="sidebar" id="sidebar">
-        <div class="sidebar-user-info">
-            <div class="user-profile">
-                {% if user_avatar_url %}
-                    <img src="{{ user_avatar_url }}" alt="{{ user.username }}" class="user-avatar">
-                {% else %}
-                    <div class="user-avatar-placeholder">
-                        <span class="material-icons">person</span>
+        <a href="{% url 'user_profile' %}" class="sidebar-user-info-link">
+            <div class="sidebar-user-info">
+                <div class="user-profile">
+                    {% if user_avatar_url %}
+                        <img src="{{ user_avatar_url }}" alt="{{ user.username }}" class="user-avatar">
+                    {% else %}
+                        <div class="user-avatar-placeholder">
+                            <span class="material-icons">person</span>
+                        </div>
+                    {% endif %}
+                    <div class="user-details">
+                        <div class="user-name">{{ user.username }}</div>
+                        <div class="user-email">{{ user.email }}</div>
                     </div>
-                {% endif %}
-                <div class="user-details">
-                    <div class="user-name">{{ user.username }}</div>
-                    <div class="user-email">{{ user.email }}</div>
                 </div>
             </div>
-        </div>
+        </a>
         <nav class="sidebar-nav">
             {% block sidebar_content %}
             <ul class="nav-list">
@@ -75,6 +77,12 @@
                     <a href="{% url 'transactions_upload' %}" class="nav-link" data-page="/transactions/upload/">
                         <span class="nav-icon material-icons">upload_file</span>
                         <span class="nav-text">Caricamento dati</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{% url 'user_profile' %}" class="nav-link">
+                        <span class="nav-icon material-icons">account_circle</span>
+                        <span class="nav-text">Il mio profilo</span>
                     </a>
                 </li>
                 <li class="nav-item">

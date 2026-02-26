@@ -1,0 +1,39 @@
+{% extends "main/index.html" %}
+{% load static %}
+
+{% block title %}Conferma Cancellazione Dati - Pecuniam{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/summary.css' %}">
+    <link rel="stylesheet" href="{% static 'css/user_profile.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container mt-2 user-delete-page">
+    {% include "api/user/components/user-header.html" with title="Conferma Cancellazione Dati" icon="warning" subtitle="Stai per eliminare definitivamente tutti i tuoi dati" %}
+
+    <div class="breakdown-section delete-confirm-container danger-zone-section">
+        <div class="empty-state">
+            <span class="material-icons delete-warning-icon">report_problem</span>
+        </div>
+        
+        <div class="delete-warning-alert badge-red">
+            <strong>Attenzione: Questa azione è irreversibile.</strong><br>
+            Tutte le tue transazioni, categorie personalizzate, regole di categorizzazione e l'account stesso (<strong>{{ user_email }}</strong>) verranno eliminati permanentemente dal nostro sistema.
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+            <div class="actions-footer" style="flex-direction: column; gap: 1rem;">
+                <button type="submit" class="btn-danger-custom btn-full-width">
+                    <span class="material-icons">delete_forever</span>
+                    Sì, elimina definitivamente tutti i miei dati
+                </button>
+                <a href="{% url 'user_profile' %}" class="btn-cancel-custom">
+                    No, annulla e torna al profilo
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

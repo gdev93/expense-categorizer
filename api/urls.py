@@ -28,6 +28,7 @@ from api.views.transactions.update_views import EditTransactionCategory, Transac
 from api.views.upload_file_view import UploadFileView, UploadFileDelete, UploadProgressView, \
     UploadFileCheckView
 from api.views.onboarding_views import OnboardingStepView
+from api.views.user_views import UserDeleteView, UserDetailView
 from api.views.error_views import trigger_403, trigger_500, trigger_502, trigger_503
 
 urlpatterns = [
@@ -38,6 +39,8 @@ urlpatterns = [
     path('test-502/', trigger_502, name='test_502'),
     path('test-503/', trigger_503, name='test_503'),
     path("accounts/", include('allauth.urls')),
+    path("accounts/profile/", UserDetailView.as_view(), name='user_profile'),
+    path("accounts/delete/", UserDeleteView.as_view(), name='user_delete'),
     path('transactions/upload/', UploadFileView.as_view(), name='transactions_upload'),
     path('transactions/upload/progress/', UploadProgressView.as_view(), name='transactions_progress'),
     path('transactions/upload/check', UploadFileCheckView.as_view(), name='transactions_upload_check'),

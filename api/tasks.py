@@ -120,25 +120,30 @@ def process_upload(self, user_id: int, upload_file_id: int):
     retry_backoff_max=120,
     max_retries=2,
     acks_late=True,
+    name='api.tasks.delete_user_data'
+)
+def delete_user_data(self, user_id: int):
+    logger.info(f"Deleting user data for user {user_id}")
+    user = User.objects.get(id=user_id)
+    user.delete()
+    logger.info(
+        f"User data for user {user_id} deleted successfully"
+    )
+
+@shared_task(
+    bind=True,
+    autoretry_for=(Exception,),
+    retry_backoff=True,
+    retry_backoff_max=120,
+    max_retries=2,
+    acks_late=True,
     name='api.tasks.populate_rollups'
 )
-def populate_rollups(self, user_id: int = None, year: int = None):
-    """
-    Celery task to populate YearlyMonthlyUserRollup for users.
-
-    Args:
-        user_id: Optional user ID to update only that user
-        year: Optional year to update only that year
-    """
-    logger.info(f"Starting rollup population task - user_id={user_id}, year={year}")
+def populate_rollups(self):
+    logger.info("Starting rollup population task")
 
     # Filter users
     users = User.objects.all()
-    if user_id:
-        users = users.filter(id=user_id)
-        if not users.exists():
-            logger.error(f'User with ID {user_id} not found')
-            return
 
     total_users = users.count()
     logger.info(f'Processing {total_users} user(s)...')
@@ -152,8 +157,7 @@ def populate_rollups(self, user_id: int = None, year: int = None):
             'transaction_date__month'
         ).distinct()
 
-        if year:
-            years_months = [(y, m) for y, m in years_months if y == year]
+        years_months = [(y, m) for y, m in years_months]
 
         if not years_months:
             logger.warning(f'  No transactions found for {user.username}')

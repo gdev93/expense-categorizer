@@ -41,6 +41,33 @@ services:
       timeout: 5s
       retries: 5
 
+  celery-beat:
+    build: .
+    container_name: expense_categorizer_celery_beat_dev
+    # Use a specific schedule file to avoid lock issues
+    command: celery -A server beat -l info
+    env_file:
+      - .env
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_PASSWORD=expenses
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+    volumes:
+      - celerybeat_schedule:/app
+
   celery-worker:
     build: .
     container_name: expenses_celery_worker_dev
@@ -55,6 +82,7 @@ services:
     environment:
       - DB_HOST=postgres
       - DB_PORT=5432
+      - DB_PASSWORD=expenses
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
       - DJANGO_SETTINGS_MODULE=server.settings
@@ -98,3 +126,4 @@ volumes:
   expense_categorizer_dev_data:
   redis_data:
   fastembed_models:
+  celerybeat_schedule:
