@@ -61,3 +61,38 @@ class TestUserDeleteView:
         # Verify user logged out (session check)
         # In Django testing, we need to refresh the session from the client
         assert '_auth_user_id' not in client.session
+
+@pytest.mark.django_db
+class TestUserDataExportView:
+    def setup_method(self):
+        self.user = User.objects.create_user(username="testexportuser", email="test@example.com", password="password")
+        self.url = reverse('user_export')
+
+    def test_export_authenticated(self, client):
+        client.login(username=self.user.username, password="password")
+
+        # Create some data
+        cat = Category.objects.create(user=self.user, name="Travel")
+        upload = UploadFile.objects.create(user=self.user, file_name="tx.csv")
+        from datetime import date
+        Transaction.objects.create(
+            user=self.user, amount=150.0, description="Ticket",
+            transaction_date=date(2023, 1, 1), category=cat, upload_file=upload,
+            transaction_type='expense'
+        )
+
+        response = client.get(self.url)
+        assert response.status_code == 200
+        assert response['Content-Type'] == 'text/csv'
+        assert 'attachment' in response['Content-Disposition']
+        assert f"pecuniam_export_{self.user.username}" in response['Content-Disposition']
+        assert ".csv" in response['Content-Disposition']
+
+        # Join streaming content to verify it
+        content = b"".join(response.streaming_content).decode()
+        assert "Data,Importo,Categoria,Descrizione Bancaria,Tipo di Transazione,File Sorgente" in content
+        assert "2023-01-01,150.0,Travel,Ticket,expense,tx.csv" in content
+
+    def test_export_anonymous_redirects(self, client):
+        response = client.get(self.url)
+        assert response.status_code == 302

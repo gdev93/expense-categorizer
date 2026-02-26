@@ -1,15 +1,19 @@
 from dataclasses import dataclass, asdict, field
+import json
+from datetime import datetime
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth import logout
 from django.contrib import messages
 from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
 from django.views import View
-from django.http import HttpRequest, HttpResponse
+from django.http import HttpRequest, HttpResponse, StreamingHttpResponse
 from django.db.models import Count
 from typing import List
+from asgiref.sync import sync_to_async
 from api.tasks import delete_user_data
 from api.models import Transaction, Category, Rule, UploadFile
+from api.views.transactions.export_views import generate_csv_sync
 
 @dataclass
 class UserDeleteContextData:
@@ -48,6 +52,27 @@ class UserDetailView(LoginRequiredMixin, View):
             subscription_type=subscription_type
         )
         return render(request, self.template_name, context.to_context())
+
+class UserDataExportView(LoginRequiredMixin, View):
+    """View to export all user data in CSV format"""
+
+    def get(self, request: HttpRequest) -> HttpResponse:
+        user = request.user
+
+        # Collect transactions for all time
+        queryset = Transaction.objects.filter(user=user).select_related("category", "upload_file", "merchant").order_by("-transaction_date")
+
+        # Exporter Layer: Use the sync generator to stream the response
+        response = StreamingHttpResponse(
+            generate_csv_sync(queryset.iterator()),
+            content_type='text/csv'
+        )
+
+        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        filename = f"pecuniam_export_{user.username}_{timestamp}.csv"
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+
+        return response
 
 class UserDeleteView(LoginRequiredMixin, View):
     """View to handle user data deletion request"""

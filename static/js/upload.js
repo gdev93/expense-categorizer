@@ -137,16 +137,29 @@ document.addEventListener('DOMContentLoaded', () => {
         window.currentEventSource = eventSource;
         eventSource.onmessage = (event) => {
             const data = JSON.parse(event.data);
-            let percentage = data.percentage ? data.percentage.replace('%', '') : '0';
-            percentage = parseInt(percentage, 10);
-            processingProgressBar.style.width = `${percentage}%`;
-            processingProgressBar.textContent = `${percentage}% Elaborazione...`;
-            processingProgressBar.setAttribute('aria-valuenow', percentage);
+            let percentageValue = 0;
+            let hasPercentage = false;
+
+            if (data.status === 'finished') {
+                percentageValue = 100;
+                hasPercentage = true;
+            } else if (data.percentage) {
+                percentageValue = parseInt(data.percentage.replace('%', ''), 10);
+                hasPercentage = true;
+            }
+
+            if (hasPercentage) {
+                processingProgressBar.style.width = `${percentageValue}%`;
+                processingProgressBar.textContent = `${percentageValue}% Elaborazione...`;
+                processingProgressBar.setAttribute('aria-valuenow', percentageValue);
+            }
+
             uploadInProgress = true;
             submitUpload.disabled = true;
             submitUpload.classList.add('btn-disabled');
             processingProgressBarContainer.classList.remove('hidden');
-            if (percentage === 100 || data.status === 'finished') {
+
+            if (percentageValue === 100 || data.status === 'finished') {
                 console.log("Processing complete!");
                 eventSource.close();
                 processingComplete = true;

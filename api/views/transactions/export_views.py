@@ -26,7 +26,7 @@ class TransactionExportView(LoginRequiredMixin, TransactionFilterMixin, View):
 
         # Exporter Layer: Use the async generator to stream the response
         response = StreamingHttpResponse(
-            generate_transaction_csv_async(iterator),
+            generate_csv(iterator),
             content_type='text/csv'
         )
         
@@ -39,7 +39,7 @@ class TransactionExportView(LoginRequiredMixin, TransactionFilterMixin, View):
         return response
 
 
-async def generate_transaction_csv_async(transactions_iterator):
+async def generate_csv(transactions_iterator):
     """
     An async generator that yields CSV rows for the given transactions iterator.
 
@@ -56,15 +56,46 @@ async def generate_transaction_csv_async(transactions_iterator):
     output.seek(0)
 
     async for tx in transactions_iterator:
-        row = [
-            tx.transaction_date.isoformat() if tx.transaction_date else '',
-            tx.amount,
-            tx.category.name if tx.category else '',
-            tx.description,
-            tx.transaction_type,
-            tx.upload_file.file_name if tx.upload_file else 'Inserimento manuale'
-        ]
+        row = get_transaction_csv_row(tx)
         writer.writerow(row)
         yield output.getvalue()
         output.truncate(0)
         output.seek(0)
+
+
+def generate_csv_sync(transactions_iterator):
+    """
+    A sync generator that yields CSV rows for the given transactions iterator.
+
+    Args:
+        transactions_iterator: An iterable of Transaction model instances.
+    """
+    output = io.StringIO()
+    writer = csv.writer(output)
+
+    headers = ['Data', 'Importo', 'Categoria', 'Descrizione Bancaria', 'Tipo di Transazione', 'File Sorgente']
+    writer.writerow(headers)
+    yield output.getvalue()
+    output.truncate(0)
+    output.seek(0)
+
+    for tx in transactions_iterator:
+        row = get_transaction_csv_row(tx)
+        writer.writerow(row)
+        yield output.getvalue()
+        output.truncate(0)
+        output.seek(0)
+
+
+def get_transaction_csv_row(tx):
+    """
+    Returns a list of values for a CSV row for a given Transaction instance.
+    """
+    return [
+        tx.transaction_date.isoformat() if tx.transaction_date else '',
+        tx.amount,
+        tx.category.name if tx.category else '',
+        tx.description,
+        tx.transaction_type,
+        tx.upload_file.file_name if tx.upload_file else 'Inserimento manuale'
+    ]

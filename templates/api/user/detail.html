@@ -82,6 +82,19 @@
         </div>
     </div>
 
+    <!-- Data Export Section -->
+    <div class="breakdown-section">
+        <h2 class="mb-3">Portabilità dei dati</h2>
+        <p>Scarica un archivio CSV contenente tutte le tue transazioni. Questo file è utile per backup o per analizzare i tuoi dati in Excel.</p>
+
+        <div class="actions-footer">
+            <a href="{% url 'user_export' %}" class="btn-export-custom btn-full-width">
+                <span class="material-icons">download</span>
+                Esporta tutti i dati (.csv)
+            </a>
+        </div>
+    </div>
+
     <!-- Danger Zone Section -->
     <div class="breakdown-section danger-zone-section">
         <h2 class="danger-zone-title">Eliminazione account</h2>
