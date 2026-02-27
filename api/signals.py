@@ -1,3 +1,4 @@
+import os
 from typing import Any
 from django.conf import settings
 from django.db.models.signals import pre_save
@@ -10,6 +11,7 @@ from django.contrib.auth.models import User
 
 from .models import UploadFile, FileStructureMetadata
 
+is_secure = os.getenv('ENV','local') == 'prod'
 
 @receiver(user_signed_up)
 def send_welcome_email_on_signup(request: Any, user: User, **kwargs: Any) -> None:
@@ -37,7 +39,7 @@ def send_backoffice_notification(request: Any, user: User, **kwargs: Any) -> Non
     if not settings.BACKOFFICE_EMAIL:
         return
 
-    protocol = 'https' if request.is_secure() else 'http'
+    protocol = 'https' if is_secure else 'http'
     site_url = f"{protocol}://{settings.SITE_NAME}"
 
     context = {
@@ -62,7 +64,7 @@ def send_welcome_email_to_user(user: User, request: Any) -> None:
     if not hasattr(user, 'profile') or user.profile.welcome_email_sent:
         return
 
-    protocol = 'https' if request.is_secure() else 'http'
+    protocol = 'https' if is_secure else 'http'
     site_url = f"{protocol}://{settings.SITE_NAME}"
 
     context = {
