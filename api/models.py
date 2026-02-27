@@ -330,10 +330,10 @@ class Transaction(models.Model):
     embedding = VectorField(dimensions=384, null=True, blank=True)
 
     def save(self, *args, **kwargs: Any) -> None:
-        if self.description:
+        if self.description and not self.description_hash:
             from api.privacy_utils import generate_blind_index
             self.description_hash = generate_blind_index(self.description)
-        else:
+        elif not self.description:
             self.description_hash = None
 
         super().save(*args, **kwargs)

@@ -323,12 +323,11 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
                 transaction_from_agent.amount = abs(
                     amount) if not transaction_from_agent.amount else transaction_from_agent.amount
                 transaction_from_agent.status = 'categorized'
-                transaction_from_agent.modified_by_user = False
                 transaction_from_agent.description = tx_data.description if not transaction_from_agent.description else transaction_from_agent.description
                 transaction_from_agent.categorized_by_agent = True
-                transaction_from_agent.reasoning = tx_data.reasoning
                 if transaction_from_agent.embedding is None:
                     transaction_from_agent.embedding = generate_embedding(transaction_from_agent.description)
+                transaction_from_agent.description_hash = generate_blind_index(transaction_from_agent.description)
                 
                 # Update Merchant EMA
                 update_merchant_ema(merchant, upload_file.file_structure_metadata, transaction_from_agent.embedding)

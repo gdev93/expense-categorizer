@@ -1,4 +1,5 @@
 from api.models import Transaction, Category, Merchant
+from api.privacy_utils import generate_blind_index
 from processors.data_prechecks import RawTransactionParseResult
 
 class TransactionUpdater:
@@ -8,6 +9,7 @@ class TransactionUpdater:
         tx.transaction_date = parse_result.date
         tx.description = parse_result.description
         tx.operation_type = parse_result.operation_type
+        tx.description_hash = generate_blind_index(tx.description_hash)
         return tx
 
     @staticmethod
