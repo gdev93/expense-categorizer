@@ -1,5 +1,8 @@
+import logging
 import os
+import socket
 
+import docker
 import pytest
 from django.conf import settings as django_settings
 from testcontainers.core.wait_strategies import LogMessageWaitStrategy
@@ -11,8 +14,6 @@ if "DOCKER_HOST" not in os.environ:
         socket_path = f"unix:///Users/{user}/.docker/run/docker.sock"
         if os.path.exists(socket_path.replace("unix://", "")):
             os.environ["DOCKER_HOST"] = socket_path
-            os.environ["RYUK_RECONNECTION_TIMEOUT"]="30s"
-
 
 @pytest.fixture(scope='session', autouse=True)
 def configure_test_settings():
@@ -23,10 +24,24 @@ def configure_test_settings():
     }
     django_settings.SECRET_KEY = "notasecret"
 
+def is_port_open(host, port, timeout=2):
+    """
+    Check if a specific TCP port is open on a host.
+    Returns True if open, False otherwise.
+    """
+    # Create a TCP socket
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.settimeout(timeout)
+        # Attempt to connect to the host and port
+        result = s.connect_ex((host, port))
+        # connect_ex returns 0 if the connection was successful
+        return result == 0
+
 @pytest.fixture(scope="session", autouse=True)
 def postgres_container(request):
     if os.environ.get("USE_TESTCONTAINERS", "true").lower() == "false":
         yield None
+        return
 
     # Check if any collected test needs the database
     # This avoids starting the container for standalone tests that don't use Django DB
@@ -34,6 +49,11 @@ def postgres_container(request):
     
     if not needs_db:
         yield None
+        return
+    if not is_port_open("localhost", 8080):
+        logging.info("No ryuk instance found")
+        yield None
+        return
 
     with PostgresContainer("pgvector/pgvector:pg15") as postgres:
         postgres.start()

@@ -8,6 +8,8 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.conf import settings
 from api.models import Merchant, Transaction
+from api.privacy_utils import generate_blind_index
+
 
 class Command(BaseCommand):
     help = 'Rotates cryptographic keys for Merchant and Transaction models.'
@@ -104,26 +106,28 @@ class Command(BaseCommand):
         
         transactions = Transaction.objects.all().iterator()
         processed = 0
-        
+
         for tx in transactions:
             update_fields = ['updated_at']
             raw_desc, raw_amount = transaction_data.get(tx.id, (None, None))
-            
+
             # Handle encrypted description and its hash
             if raw_desc:
                 decrypted_desc = old_fernet.decrypt(raw_desc.encode()).decode()
                 tx.description = decrypted_desc
+                tx.description_hash = generate_blind_index(tx.description)
+
                 update_fields.extend(['description', 'description_hash'])
-            
+
             # Handle encrypted amount
             if raw_amount:
                 decrypted_amount = old_fernet.decrypt(raw_amount.encode()).decode()
                 tx.amount = decrypted_amount
                 update_fields.append('amount')
-            
+
             if len(update_fields) > 1:
                 tx.save(update_fields=update_fields)
-            
+
             processed += 1
             if processed % 100 == 0:
                 self.stdout.write(f'  ... {processed} transactions processed')
