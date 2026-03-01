@@ -9,7 +9,7 @@ class TransactionUpdater:
         tx.transaction_date = parse_result.date
         tx.description = parse_result.description
         tx.operation_type = parse_result.operation_type
-        tx.description_hash = generate_blind_index(tx.description_hash)
+        tx.description_hash = generate_blind_index(tx.description)
         return tx
 
     @staticmethod
