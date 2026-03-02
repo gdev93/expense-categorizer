@@ -630,9 +630,18 @@ class ForecastService:
                             category=category,
                             month=target_date
                         ).first()
-                        if monthly_budget:
+                        if not monthly_budget:
+                            MonthlyBudget.objects.create(
+                                user=user,
+                                category=category,
+                                month=target_date,
+                                planned_amount=compute_forecast(forecast_inputs),
+                                is_automated=True,
+                                user_amount=None
+                            )
+                        else:
                             monthly_budget.planned_amount = compute_forecast(forecast_inputs)
-                            monthly_budget.is_automated = monthly_budget.user_amount is not None
+                            monthly_budget.is_automated = monthly_budget.user_amount is None
                             monthly_budget.save()
 
 

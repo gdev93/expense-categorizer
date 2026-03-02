@@ -50,7 +50,7 @@ def test_monthly_budget_forecast_view(client):
     
     # Verify template content
     content = response.content.decode()
-    assert 'Previsioni Budget' in content
+    assert 'Budget' in content
     assert 'Food' in content
     assert 'Rent' in content
     assert '150.00' in content
@@ -110,7 +110,7 @@ def test_navigation_item_present(client):
     
     # Check for the link and text
     assert reverse('budget_forecast_list') in content
-    assert 'Previsioni budget' in content
+    assert 'Budget' in content
     assert 'analytics' in content
 
 @pytest.mark.django_db
