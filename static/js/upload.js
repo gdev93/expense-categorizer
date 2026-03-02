@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', () => {
+(function() {
     const dropZone = document.getElementById('dropZone');
     const fileInput = document.getElementById('fileInput');
     const browseFiles = document.getElementById('browseFiles');
@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const ALLOWED_TYPES = ['.csv', '.xlsx', '.xls'];
     let processingComplete = false;
     let uploadInProgress = false;
+
     function formatBytes(bytes, decimals = 2) {
         if (bytes === 0) return '0 Bytes';
         const k = 1024;
@@ -20,6 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const i = Math.floor(Math.log(bytes) / Math.log(k));
         return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
     }
+
     async function checkUploadAvailability() {
         try {
             const response = await fetch(FILE_UPLOAD_CHECK, {
@@ -83,6 +85,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateFileList() {
+        if (!fileListPreview || !submitUpload) return;
         fileListPreview.innerHTML = '';
         if (fileToUpload) {
             fileListPreview.classList.remove('hidden');
@@ -105,6 +108,7 @@ document.addEventListener('DOMContentLoaded', () => {
             submitUpload.disabled = false;
         }
     }
+
     async function addFile(file) {
         const fileNameLower = file.name.toLowerCase();
         const isValidType = ALLOWED_TYPES.some(type => fileNameLower.endsWith(type));
@@ -129,6 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
         fileToUpload = file;
         updateFileList();
     }
+
     function startSSE() {
         if (window.currentEventSource) {
             window.currentEventSource.close();
@@ -148,16 +153,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 hasPercentage = true;
             }
 
-            if (hasPercentage) {
+            if (hasPercentage && processingProgressBar) {
                 processingProgressBar.style.width = `${percentageValue}%`;
                 processingProgressBar.textContent = `${percentageValue}% Elaborazione...`;
                 processingProgressBar.setAttribute('aria-valuenow', percentageValue);
             }
 
             uploadInProgress = true;
-            submitUpload.disabled = true;
-            submitUpload.classList.add('btn-disabled');
-            processingProgressBarContainer.classList.remove('hidden');
+            if (submitUpload) {
+                submitUpload.disabled = true;
+                submitUpload.classList.add('btn-disabled');
+            }
+            if (processingProgressBarContainer) {
+                processingProgressBarContainer.classList.remove('hidden');
+            }
 
             if (percentageValue === 100 || data.status === 'finished') {
                 console.log("Processing complete!");
@@ -165,9 +174,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 processingComplete = true;
                 uploadInProgress = false;
                 setTimeout(() => {
-                    processingProgressBarContainer.classList.add('hidden');
-                    submitUpload.disabled = false;
-                    submitUpload.classList.remove('btn-disabled');
+                    if (processingProgressBarContainer) processingProgressBarContainer.classList.add('hidden');
+                    if (submitUpload) {
+                        submitUpload.disabled = false;
+                        submitUpload.classList.remove('btn-disabled');
+                    }
                     if (window.location.href.includes(FILE_UPLOADS_PAGE)) {
                         window.location.reload();
                     } else {
@@ -181,93 +192,118 @@ document.addEventListener('DOMContentLoaded', () => {
             eventSource.close();
             processingComplete = true;
             uploadInProgress = false;
-            submitUpload.disabled = false;
-            submitUpload.classList.remove('btn-disabled');
-            processingProgressBarContainer.classList.add('hidden');
+            if (submitUpload) {
+                submitUpload.disabled = false;
+                submitUpload.classList.remove('btn-disabled');
+            }
+            if (processingProgressBarContainer) processingProgressBarContainer.classList.add('hidden');
         };
     }
+
     async function handlePageRefresh() {
-        processingProgressBarContainer.classList.add('hidden');
+        if (processingProgressBarContainer) processingProgressBarContainer.classList.add('hidden');
         const uploadCheck = await checkUploadAvailability();
         if (!uploadCheck.canUpload && uploadCheck.data) {
-            submitUpload.disabled = true;
-            submitUpload.classList.add('btn-disabled');
-            processingProgressBarContainer.classList.remove('hidden');
+            if (submitUpload) {
+                submitUpload.disabled = true;
+                submitUpload.classList.add('btn-disabled');
+            }
+            if (processingProgressBarContainer) processingProgressBarContainer.classList.remove('hidden');
             uploadInProgress = true;
             startSSE();
         } else {
             uploadInProgress = false;
-            submitUpload.disabled = false;
-            submitUpload.classList.remove('btn-disabled');
+            if (submitUpload) {
+                submitUpload.disabled = false;
+                submitUpload.classList.remove('btn-disabled');
+            }
         }
     }
-    browseFiles.addEventListener('click', (e) => {
-        e.preventDefault();
-        fileInput.click();
-    });
-    fileInput.addEventListener('change', async (e) => {
-        if (e.target.files.length > 0) {
-            await addFile(e.target.files[0]);
-        }
-        e.target.value = '';
-    });
-    fileListPreview.addEventListener('click', (e) => {
-        if (e.target.classList.contains('file-item-remove')) {
-            fileToUpload = null;
-            updateFileList();
-        }
-    });
-    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-        dropZone.addEventListener(eventName, preventDefaults, false);
-        document.body.addEventListener(eventName, preventDefaults, false);
-    });
+
+    // Initialize listeners if elements are present
+    if (browseFiles && fileInput) {
+        browseFiles.addEventListener('click', (e) => {
+            e.preventDefault();
+            fileInput.click();
+        });
+    }
+
+    if (fileInput) {
+        fileInput.addEventListener('change', async (e) => {
+            if (e.target.files.length > 0) {
+                await addFile(e.target.files[0]);
+            }
+            e.target.value = '';
+        });
+    }
+
+    if (fileListPreview) {
+        fileListPreview.addEventListener('click', (e) => {
+            if (e.target.classList.contains('file-item-remove')) {
+                fileToUpload = null;
+                updateFileList();
+            }
+        });
+    }
+
     function preventDefaults(e) {
         e.preventDefault();
         e.stopPropagation();
     }
-    ['dragenter', 'dragover'].forEach(eventName => {
-        dropZone.addEventListener(eventName, () => dropZone.classList.add('drag-over'), false);
-    });
-    ['dragleave', 'drop'].forEach(eventName => {
-        dropZone.addEventListener(eventName, () => dropZone.classList.remove('drag-over'), false);
-    });
-    dropZone.addEventListener('drop', async (e) => {
-        const dt = e.dataTransfer;
-        if (dt.files.length > 0) {
-            await addFile(dt.files[0]);
-        }
-    }, false);
-    uploadForm.addEventListener('submit', async function (e) {
-        e.preventDefault();
-        if (!fileToUpload) return;
-        const uploadCheck = await checkUploadAvailability();
-        if (!uploadCheck.canUpload) {
-            showAlert('Non è possibile caricare un nuovo file mentre è in corso l\'elaborazione di un altro upload.', 'warning');
-            updateFileList();
-            return;
-        }
 
-        const data = uploadCheck.data;
-        await performUpload();
-    });
-    updateFileList();
-    handlePageRefresh();
-    
-    // Handle default category modal
-    const defaultCategoryModal = document.getElementById('defaultCategoryModal');
+    if (dropZone) {
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, preventDefaults, false);
+        });
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => dropZone.classList.add('drag-over'), false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => dropZone.classList.remove('drag-over'), false);
+        });
+
+        dropZone.addEventListener('drop', async (e) => {
+            const dt = e.dataTransfer;
+            if (dt.files.length > 0) {
+                await addFile(dt.files[0]);
+            }
+        }, false);
+    }
+
+    if (uploadForm) {
+        uploadForm.addEventListener('submit', async function (e) {
+            e.preventDefault();
+            if (!fileToUpload) return;
+            const uploadCheck = await checkUploadAvailability();
+            if (!uploadCheck.canUpload) {
+                showAlert('Non è possibile caricare un nuovo file mentre è in corso l\'elaborazione di un altro upload.', 'warning');
+                updateFileList();
+                return;
+            }
+            await performUpload();
+        });
+    }
+
     const showDefaultCategories = document.getElementById('showDefaultCategories');
-    const defaultCategoryModalText = document.getElementById('defaultCategoryModalText');
-
-    if (showDefaultCategories && defaultCategoryModal) {
+    if (showDefaultCategories) {
         showDefaultCategories.addEventListener('click', (e) => {
             e.preventDefault();
+            const defaultCategoryModalText = document.getElementById('defaultCategoryModalText');
+            const defaultCategoryModal = document.getElementById('defaultCategoryModal');
             if (defaultCategoryModalText) {
                 defaultCategoryModalText.style.display = 'none';
             }
-            defaultCategoryModal.style.display = 'flex';
+            if (defaultCategoryModal) {
+                defaultCategoryModal.style.display = 'flex';
+            }
         });
     }
-});
+
+    updateFileList();
+    handlePageRefresh();
+})();
 
 window.closeDefaultCategoryModal = function() {
     const modal = document.getElementById('defaultCategoryModal');
@@ -276,9 +312,13 @@ window.closeDefaultCategoryModal = function() {
     }
 };
 
-window.addEventListener('click', function(event) {
-    const modal = document.getElementById('defaultCategoryModal');
-    if (event.target === modal) {
-        closeDefaultCategoryModal();
-    }
-});
+// Global listener for backdrop clicks (on modal)
+if (!window.uploadBackdropListenerSet) {
+    window.addEventListener('click', function(event) {
+        const modal = document.getElementById('defaultCategoryModal');
+        if (event.target === modal) {
+            closeDefaultCategoryModal();
+        }
+    });
+    window.uploadBackdropListenerSet = true;
+}

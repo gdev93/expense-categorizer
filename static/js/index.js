@@ -1,8 +1,9 @@
 document.addEventListener('DOMContentLoaded', function() {
-    const menuToggle = document.getElementById('menuToggle');
-    const sidebar = document.getElementById('sidebar');
-    const overlay = document.getElementById('overlay');
     function toggleMenu() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('overlay');
+        if (!sidebar || !overlay) return;
+        
         const isClosed = !sidebar.classList.contains('active');
         if (isClosed) {
             sidebar.classList.add('active');
@@ -14,26 +15,51 @@ document.addEventListener('DOMContentLoaded', function() {
             document.body.style.overflow = '';
         }
     }
-    if (menuToggle) {
-        menuToggle.addEventListener('click', toggleMenu);
-    }
-    if (overlay) {
-        overlay.addEventListener('click', toggleMenu);
-    }
-    document.addEventListener('keydown', function(event) {
-        if (event.key === "Escape" && sidebar.classList.contains('active')) {
+
+    // Event delegation for general clicks
+    document.addEventListener('click', function(e) {
+        // 1. Menu Toggle
+        if (e.target.closest('#menuToggle')) {
             toggleMenu();
+            return;
         }
-    });
-    const logoutBtn = document.getElementById('logoutBtn');
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', function() {
+
+        // 2. Overlay (close menu)
+        if (e.target.closest('#overlay')) {
+            toggleMenu();
+            return;
+        }
+
+        // 3. Logout Button
+        if (e.target.closest('#logoutBtn')) {
             const logoutForm = document.getElementById('logout-form');
             if (logoutForm) {
                 logoutForm.submit();
             }
-        });
-    }
+            return;
+        }
+    });
+
+    document.addEventListener('keydown', function(event) {
+        if (event.key === "Escape") {
+            const sidebar = document.getElementById('sidebar');
+            if (sidebar && sidebar.classList.contains('active')) {
+                toggleMenu();
+            }
+        }
+    });
+
+    // Generic scroll handler for sticky headers
+    document.addEventListener('scroll', function() {
+        const header = document.getElementById('stickyHeader');
+        if (header) {
+            if (window.scrollY > 10) {
+                header.classList.add('is-scrolled');
+            } else {
+                header.classList.remove('is-scrolled');
+            }
+        }
+    }, { passive: true });
 });
 function setActiveNavItem() {
     const currentPath = window.location.pathname;

@@ -21,6 +21,7 @@ def available_years_context(request: HttpRequest):
         Transaction.objects.filter(
             user=request.user,
             status="categorized",
+            transaction_type="expense",
             transaction_date__isnull=False,
         )
         .values_list("transaction_date__year", flat=True)

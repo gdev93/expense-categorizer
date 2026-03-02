@@ -5,7 +5,14 @@
 
 {% block content %}
     <div class="container mt-2">
-        <form method="get" id="main-filter-form" hx-get="{% url 'budget_forecast_list' %}" hx-target="#main-content" hx-swap="innerHTML swap:50ms settle:200ms" hx-push-url="true"></form>
+        <form method="get" id="main-filter-form" 
+              hx-get="{% url 'budget_forecast_list' %}" 
+              hx-target="#main-content" 
+              hx-swap="innerHTML swap:50ms settle:200ms" 
+              hx-trigger="change, change from:[name='year']"
+              hx-include="[form='main-filter-form']"
+              hx-indicator=".htmx-progress"
+              hx-push-url="true"></form>
         <div class="sticky-header-bar" id="stickyHeader">
             <div class="header-main-content">
                 <div class="header">
@@ -139,5 +146,4 @@
             {% endif %}
         </div>
     </div>
-    <script src="{% static 'js/budget.js' %}"></script>
 {% endblock %}

@@ -112,7 +112,7 @@ def compute_forecast(
         history: List[ForecastInput],
         seasonal_threshold: float = ForecastConfig.SEASONAL_THRESHOLD,
         cv_stable_threshold: float = ForecastConfig.CV_STABLE_THRESHOLD,
-        er_period: int = ForecastConfig.ER_PERIOD_BASE
+        er_period: int = ForecastConfig.KAMA_ER_PERIOD
 ) -> float:
     """
     Orchestrates the forecasting workflow without exposing sensitive financial data in logs.
@@ -136,12 +136,11 @@ def compute_forecast(
         return seasonal_val
 
     # 3. KAMA Engine
-    current_er_period = max(1, min(er_period, len(amounts) - 1))
-    current_kama = calculate_ama_from_history(history, er_period=current_er_period)
-    logger.info(f"Adaptive Engine: Base KAMA calculated using ER period {current_er_period}.")
+    current_kama = calculate_ama_from_history(history, er_period=er_period)
+    logger.info(f"Adaptive Engine: Base KAMA calculated using ER period {er_period}.")
 
     # 4. Momentum Correction
-    final_forecast = apply_momentum_correction(current_kama, history, current_er_period)
+    final_forecast = apply_momentum_correction(current_kama, history, er_period)
     logger.info("FINAL STRATEGY: IRREGULAR (KAMA + Momentum correction applied).")
 
     return final_forecast

@@ -14,7 +14,7 @@ function selectQuickCategory(item, categoryId) {
     container.classList.remove('is-open');
     if (form) form.submit();
 }
-document.addEventListener('DOMContentLoaded', function() {
+(function() {
     const dateInput = document.getElementById('id_transaction_date');
     if (dateInput && !dateInput.value) {
         dateInput.valueAsDate = new Date();
@@ -26,4 +26,4 @@ document.addEventListener('DOMContentLoaded', function() {
             merchantIdInput.value = '';
         });
     }
-});
+})();

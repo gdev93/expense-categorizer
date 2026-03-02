@@ -65,75 +65,88 @@
                 </form>
 
                 <script>
-                    // Handle initial state
-                    document.addEventListener('DOMContentLoaded', function() {
+                    (function() {
+                        // Handle initial state
                         const selectedRadio = document.querySelector('input[name="replacement_category"]:checked');
                         if (selectedRadio) {
                             const card = selectedRadio.closest('.category-card');
                             // Reset all and set current
                             document.querySelectorAll('.category-card').forEach(c => c.classList.remove('selected'));
-                            card.classList.add('selected');
+                            if (card) card.classList.add('selected');
                             
                             const newCatInput = document.getElementById('new_category_name');
-                            if (selectedRadio.value === '') {
-                                newCatInput.disabled = false;
-                            } else {
-                                newCatInput.disabled = true;
+                            if (newCatInput) {
+                                if (selectedRadio.value === '') {
+                                    newCatInput.disabled = false;
+                                } else {
+                                    newCatInput.disabled = true;
+                                }
                             }
                         }
-                    });
 
-                    // Handle card clicks
-                    document.querySelectorAll('.category-card').forEach(card => {
-                        card.addEventListener('click', function(e) {
-                            // Don't trigger if clicking the text input itself
-                            if (e.target.tagName === 'INPUT' && e.target.type === 'text') return;
-                            
-                            const radio = this.querySelector('input[type="radio"]');
-                            radio.checked = true;
-                            
-                            // Update UI classes
-                            document.querySelectorAll('.category-card').forEach(c => c.classList.remove('selected'));
-                            this.classList.add('selected');
-                            
-                            const newCatInput = document.getElementById('new_category_name');
-                            if (this.id === 'new-card') {
-                                newCatInput.disabled = false;
-                                newCatInput.focus();
-                            } else {
-                                newCatInput.disabled = true;
-                            }
+                        // Handle card clicks
+                        document.querySelectorAll('.category-card').forEach(card => {
+                            card.addEventListener('click', function(e) {
+                                // Don't trigger if clicking the text input itself
+                                if (e.target.tagName === 'INPUT' && e.target.type === 'text') return;
+                                
+                                const radio = this.querySelector('input[type="radio"]');
+                                if (radio) radio.checked = true;
+                                
+                                // Update UI classes
+                                document.querySelectorAll('.category-card').forEach(c => c.classList.remove('selected'));
+                                this.classList.add('selected');
+                                
+                                const newCatInput = document.getElementById('new_category_name');
+                                if (newCatInput) {
+                                    if (this.id === 'new-card') {
+                                        newCatInput.disabled = false;
+                                        newCatInput.focus();
+                                    } else {
+                                        newCatInput.disabled = true;
+                                    }
+                                }
+                            });
                         });
-                    });
 
-                    // Search filtering
-                    document.getElementById('category-search').addEventListener('input', function(e) {
-                        const term = e.target.value.toLowerCase();
-                        document.querySelectorAll('.existing-card').forEach(card => {
-                            const name = card.querySelector('.category-name-label').textContent.toLowerCase();
-                            if (name.includes(term)) {
-                                card.style.display = 'flex';
-                            } else {
-                                card.style.display = 'none';
-                            }
-                        });
-                    });
-
-                    // Form validation
-                    document.getElementById('delete-category-form').addEventListener('submit', function(e) {
-                        const selectedRadio = document.querySelector('input[name="replacement_category"]:checked');
-                        const newCatNameField = document.getElementById('new_category_name');
-                        const newCatName = newCatNameField.value.trim();
-                        
-                        if (selectedRadio && selectedRadio.value === '' && !newCatName) {
-                            e.preventDefault();
-                            showAlert('Per favore, inserisci un nome per la nuova categoria.');
-                            newCatNameField.focus();
-                        } else if (!selectedRadio) {
-                            e.preventDefault();
-                            showAlert('Per favore, seleziona una categoria esistente o creane una nuova.');
+                        // Search filtering
+                        const searchInput = document.getElementById('category-search');
+                        if (searchInput) {
+                            searchInput.addEventListener('input', function(e) {
+                                const term = e.target.value.toLowerCase();
+                                document.querySelectorAll('.existing-card').forEach(card => {
+                                    const nameLabel = card.querySelector('.category-name-label');
+                                    if (nameLabel) {
+                                        const name = nameLabel.textContent.toLowerCase();
+                                        if (name.includes(term)) {
+                                            card.style.display = 'flex';
+                                        } else {
+                                            card.style.display = 'none';
+                                        }
+                                    }
+                                });
+                            });
                         }
-                    });
+
+                        // Form validation
+                        const deleteForm = document.getElementById('delete-category-form');
+                        if (deleteForm) {
+                            deleteForm.addEventListener('submit', function(e) {
+                                const selectedRadio = document.querySelector('input[name="replacement_category"]:checked');
+                                const newCatNameField = document.getElementById('new_category_name');
+                                const newCatName = newCatNameField ? newCatNameField.value.trim() : '';
+                                
+                                if (selectedRadio && selectedRadio.value === '' && !newCatName) {
+                                    e.preventDefault();
+                                    showAlert('Per favore, inserisci un nome per la nuova categoria.');
+                                    if (newCatNameField) newCatNameField.focus();
+                                } else if (!selectedRadio) {
+                                    e.preventDefault();
+                                    showAlert('Per favore, seleziona una categoria esistente o creane una nuova.');
+                                }
+                            });
+                        }
+                    })();
                 </script>
             </div>
         </div>

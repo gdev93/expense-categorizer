@@ -187,20 +187,15 @@ class BudgetService:
         # Normalize to a list of months
         months_to_check = [months] if isinstance(months, int) else months
 
-        today = timezone.now().date()
-        next_month_date = (today.replace(day=28) + datetime.timedelta(days=4)).replace(day=1)
-
-        # Only compute for years relevant to current or near-future activity
-        if year == today.year or year == next_month_date.year:
-            missing_months = [
-                m for m in months_to_check
-                if not MonthlyBudget.objects.filter(
-                    user=user,
-                    month=datetime.date(year, m, 1)
-                ).exists()
-            ]
-            if missing_months:
-                ForecastService.compute_forecast(user=user, months=missing_months, years=[year])
+        missing_months = [
+            m for m in months_to_check
+            if not MonthlyBudget.objects.filter(
+                user=user,
+                month=datetime.date(year, m, 1)
+            ).exists()
+        ]
+        if missing_months:
+            ForecastService.compute_forecast(user=user, months=missing_months, years=[year])
 
     @staticmethod
     def enrich_budgets_with_spent_data(user: User, budgets: Iterable[MonthlyBudget]) -> None:
@@ -576,8 +571,9 @@ class ForecastService:
             else:
                 months_to_iterate = months.copy()
             for month in months_to_iterate:
-                target_dates.append(
-                    (datetime.date(year, month, 1), datetime.datetime.now() - datetime.timedelta(days=ForecastConfig.get_history_days())))
+                target_date = datetime.date(year, month, 1)
+                period_start = target_date - datetime.timedelta(days=ForecastConfig.get_history_days())
+                target_dates.append((target_date, period_start))
         for user in user_iterator:
             logger.info(f"Processing user: {user.username} for target dates {target_dates}")
             categories_to_process = Category.objects.filter(user=user)

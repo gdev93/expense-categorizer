@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', function() {
+(function() {
     const TARGET_ELEMENT_ID = 'scroll-target';
     const TRIGGER_SELECTOR = '.pagination a, .trigger-scroll';
     const STORAGE_KEY = 'scroll_pending_flag';
@@ -23,4 +23,4 @@ document.addEventListener('DOMContentLoaded', function() {
             sessionStorage.setItem(STORAGE_KEY, 'true');
         });
     });
-});
+})();

@@ -1,15 +1,15 @@
 import itertools
 import logging
 import os
+import re
 from concurrent.futures import ThreadPoolExecutor
 from typing import Iterable, Any
 
 from django.contrib.auth.models import User
 from django.core.files.uploadedfile import UploadedFile
 from django.db import transaction
-
 from agent.agent import ExpenseCategorizerAgent, AgentTransactionUpload, TransactionCategorization, GeminiResponse
-from api.models import Transaction, Category, Merchant, UploadFile
+from api.models import Transaction, Category, Merchant, UploadFile, MerchantEMA
 from api.privacy_utils import generate_blind_index
 from costs.services import CostService
 from processors.batching_helper import BatchingHelper
@@ -187,18 +187,7 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
                 tx.embedding = embedding_dict.get(res.description.strip())
                 if tx.embedding:
                     # find_rag_context is inherited from SimilarityMatcherRAG
-                    useful_context = self.find_rag_context(tx.embedding, self.user)
-                    tx.rag_context = useful_context
-                    final_ref = None
-                    earliest_index = float('inf')
-                    for ctx_ema in useful_context:
-                        merchant_name = ctx_ema.merchant.name.lower()
-                        description_to_check = res.description.lower()
-                        pos = description_to_check.find(merchant_name)
-                        # Merchant candidates have precedence if they show in the first part of the description
-                        if pos != -1 and pos < earliest_index:
-                            earliest_index = pos
-                            final_ref = ctx_ema
+                    final_ref = self._is_rag_context_valid(tx, res.description)
                     if final_ref:
                         final_ref_most_frequent = merchant_with_category.get(final_ref.merchant)
                         if not final_ref_most_frequent:
@@ -233,6 +222,24 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
             f"Batch processed: {len(all_transactions_categorized)} auto-categorized, {len(all_transactions_to_upload)} sent to agent.")
         return all_transactions_to_upload
 
+    def _is_rag_context_valid(self,  tx:Transaction, target_description_to_check:str) -> MerchantEMA:
+        useful_context = self.find_rag_context(tx.embedding, self.user)
+        tx.rag_context = useful_context
+        final_ref = None
+        earliest_index = float('inf')
+        for ctx_ema in useful_context:
+            merchant_name = ctx_ema.merchant.name.lower()
+            description_to_check = target_description_to_check.lower()
+            merchant_name_in_description_pattern = rf"\b{re.escape(merchant_name)}\b"
+            match = re.search(merchant_name_in_description_pattern, description_to_check)
+            if not match:
+                continue
+            pos = match.start()
+            # Merchant candidates have precedence if they show in the first part of the description
+            if pos != -1 and pos < earliest_index:
+                earliest_index = pos
+                final_ref = ctx_ema
+        return final_ref
     def _process_with_agent(self, batch: list[Transaction], upload_file: UploadFile) -> tuple[
         list[TransactionCategorization], GeminiResponse | None]:
         agent_upload_transaction = []
@@ -387,19 +394,7 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
 
                     if any(tx.embedding):
                         # find_rag_context is inherited from SimilarityMatcherRAG
-                        useful_context = self.find_rag_context(tx.embedding, self.user)
-                        tx.rag_context = useful_context
-                        final_ref = None
-                        earliest_index = float('inf')
-                        for ctx_tx in useful_context:
-                            merchant_name = ctx_tx.merchant.name.lower()
-                            description_to_check = parse_result.description.lower()
-                            pos = description_to_check.find(merchant_name)
-                            # Merchant candidates have precedence if they show in the first part of the description
-                            if pos != -1 and pos < earliest_index:
-                                earliest_index = pos
-                                final_ref = ctx_tx
-
+                        final_ref = self._is_rag_context_valid(tx, tx.description)
                         if final_ref:
                             ref_tx = self.similarity_matcher.find_most_frequent_transaction_for_merchant(final_ref.merchant)
                             if ref_tx:
