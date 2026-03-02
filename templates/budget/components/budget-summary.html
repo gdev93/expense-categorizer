@@ -1,5 +1,7 @@
 <div class="sticky-header-bar" id="stickyHeader" {% if hx_oob %}hx-swap-oob="true"{% endif %}>
     <div class="header-main-content">
-        {% include "components/header-budget.html" with title="Budget per" icon="analytics" %}
+        {% with month_name=next_month|date:"F Y"|capfirst %}
+            {% include "components/header-budget.html" with title="Budget per "|add:month_name icon="analytics" %}
+        {% endwith %}
     </div>
 </div>
