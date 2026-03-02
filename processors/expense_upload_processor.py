@@ -222,23 +222,71 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
             f"Batch processed: {len(all_transactions_categorized)} auto-categorized, {len(all_transactions_to_upload)} sent to agent.")
         return all_transactions_to_upload
 
-    def _is_rag_context_valid(self,  tx:Transaction, target_description_to_check:str) -> MerchantEMA:
+    def _is_rag_context_valid(self, tx: Transaction, target_description_to_check: str) -> MerchantEMA | None:
+        """
+        Validates RAG context by combining semantic vector distance with string matching.
+
+        This improves on simple regex by:
+        1. Using a composite score: (Vector Distance) + (String Position / 1000).
+        2. Preventing false positives from very short merchant names (e.g., "A", "IT").
+        3. Allowing high-confidence semantic matches even if a direct string match fails.
+        """
+        # find_rag_context returns MerchantEMA objects annotated with 'distance'
         useful_context = self.find_rag_context(tx.embedding, self.user)
         tx.rag_context = useful_context
+
+        if not useful_context:
+            return None
+
+        description_to_check = target_description_to_check.lower()
         final_ref = None
-        earliest_index = float('inf')
+
+        # We look for the lowest score (0.0 is perfect)
+        best_composite_score = float('inf')
+
         for ctx_ema in useful_context:
             merchant_name = ctx_ema.merchant.name.lower()
-            description_to_check = target_description_to_check.lower()
-            merchant_name_in_description_pattern = rf"\b{re.escape(merchant_name)}\b"
-            match = re.search(merchant_name_in_description_pattern, description_to_check)
-            if not match:
-                continue
-            pos = match.start()
-            # Merchant candidates have precedence if they show in the first part of the description
-            if pos != -1 and pos < earliest_index:
-                earliest_index = pos
-                final_ref = ctx_ema
+
+            # The distance (0.0 to 1.0) calculated by pgvector
+            # If for any reason distance is missing, we use 1.0 as a neutral/bad value.
+            vector_distance = getattr(ctx_ema, 'distance', 1.0)
+
+            # Guard against false positives: 1 or 2 letter merchant names
+            # often cause noise in generic bank descriptions.
+            is_valid_for_regex = len(merchant_name) > 2
+
+            match_position = -1
+            if is_valid_for_regex:
+                # Use word boundaries to ensure we don't match parts of words
+                merchant_name_pattern = rf"\b{re.escape(merchant_name)}\b"
+                match = re.search(merchant_name_pattern, description_to_check)
+                if match:
+                    match_position = match.start()
+
+            # --- Scoring Logic ---
+
+            # Case 1: Exact String Match Found
+            if match_position != -1:
+                # Divide position by 1000 to turn it into a tiny decimal (e.g., 0.005).
+                # This ensures semantic distance is the primary driver,
+                # but earlier matches win if distances are nearly identical.
+                score = vector_distance + (match_position / 1000.0)
+
+                if score < best_composite_score:
+                    best_composite_score = score
+                    final_ref = ctx_ema
+
+            # Case 2: No exact match, but the Embedding is extremely similar (Acronyms/Typos)
+            # Threshold 0.15 represents very high semantic confidence.
+            elif vector_distance < 0.15:
+                # We add a slight penalty (0.2) because there is no supporting string match,
+                # but it can still be the winner if no other merchant matches the text.
+                score = vector_distance + 0.2
+
+                if score < best_composite_score:
+                    best_composite_score = score
+                    final_ref = ctx_ema
+
         return final_ref
     def _process_with_agent(self, batch: list[Transaction], upload_file: UploadFile) -> tuple[
         list[TransactionCategorization], GeminiResponse | None]:
