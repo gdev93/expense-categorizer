@@ -1,0 +1,20 @@
+{% block extra_css %}{% endblock %}
+
+<title>{% block title %}Contabilità familiare{% endblock %}</title>
+
+<h1 class="app-title" id="app-title" hx-swap-oob="true">
+    {% block app_title %}{% endblock %}
+</h1>
+
+<div class="app-bar-actions" id="app-bar-actions" hx-swap-oob="true">
+    {% block app_bar_actions %}
+    {% endblock %}
+</div>
+
+{% include 'components/onboarding.html' %}
+{% include 'components/messages.html' %}
+
+{% block content %}
+{% endblock %}
+
+{% block extra_js %}{% endblock %}

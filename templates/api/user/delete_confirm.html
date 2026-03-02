@@ -1,11 +1,10 @@
-{% extends "main/index.html" %}
+{% extends base_template|default:"main/index.html" %}
 {% load static %}
 
 {% block title %}Conferma Cancellazione Dati - Pecuniam{% endblock %}
 
 {% block extra_css %}
-    <link rel="stylesheet" href="{% static 'css/summary.css' %}">
-    <link rel="stylesheet" href="{% static 'css/user_profile.css' %}">
+    <link rel="stylesheet" href="{% static 'css/user-profile.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -23,14 +22,21 @@
             </div>
         </div>
 
-        <form method="post">
+        <form hx-post="{% url 'user_delete' %}"
+              hx-target="body"
+              hx-indicator=".htmx-progress">
             {% csrf_token %}
             <div class="actions-footer delete-actions">
                 <button type="submit" class="btn-danger-custom btn-full-width">
                     <span class="material-icons">delete_forever</span>
                     Sì, elimina definitivamente tutti i miei dati
                 </button>
-                <a href="{% url 'user_profile' %}" class="btn-cancel-custom">
+                <a href="{% url 'user_profile' %}" class="btn-cancel-custom"
+                   hx-get="{% url 'user_profile' %}"
+                   hx-target="#main-content"
+                   hx-push-url="true"
+                   hx-indicator=".htmx-progress"
+                   hx-swap="innerHTML swap:50ms settle:200ms">
                     No, annulla e torna al profilo
                 </a>
             </div>

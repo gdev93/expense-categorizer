@@ -1,0 +1,143 @@
+import datetime
+from dataclasses import dataclass, asdict
+from typing import Any
+
+from django.http import JsonResponse, HttpResponse
+from django.shortcuts import redirect
+from django.template.loader import render_to_string
+from django.utils import timezone
+from django.views import View
+from django.views.generic import ListView
+
+from django.contrib.auth.mixins import LoginRequiredMixin
+from api.models import MonthlyBudget
+from api.services import BudgetService, ForecastService
+from api.utils import get_next_month_date
+
+
+@dataclass
+class BudgetForecastContext:
+    """Context data for monthly budget forecast view"""
+    forecasts: list[MonthlyBudget]
+    next_month: datetime.date
+    total_planned: float
+    total_spent: float
+    spent_percentage: float
+
+    def to_context(self) -> dict[str, Any]:
+        return asdict(self)
+
+
+
+@dataclass
+class BudgetSummaryContext:
+    """Context data for budget summary component"""
+    total_planned: float
+    total_spent: float
+    spent_percentage: float
+    next_month: datetime.date
+
+    def to_context(self) -> dict[str, Any]:
+        return asdict(self)
+
+
+@dataclass
+class BudgetUpdateContext:
+    """Context data for monthly budget update view"""
+    budget: MonthlyBudget
+
+    def to_context(self) -> dict[str, Any]:
+        return asdict(self)
+
+
+class BudgetForecastView(ListView):
+    """View to display monthly budget forecasts"""
+    model = MonthlyBudget
+    template_name = 'budget/forecast.html'
+    context_object_name = 'forecasts'
+
+    def __init__(self, **kwargs: Any):
+        super().__init__(kwargs)
+        self._budget_data = None
+
+    def get_budget_data(self):
+        """Fetch data from service, caching it for the duration of the request."""
+        if not hasattr(self, '_budget_data'):
+            target_date = get_next_month_date()
+            self._budget_data = BudgetService.get_monthly_budgets_for_user(
+                self.request.user, target_date.year, target_date.month
+            )
+        return self._budget_data
+
+    def get_queryset(self) -> Any:
+        # Just return the forecasts from the service data
+        return self.get_budget_data().forecasts
+
+    def get_context_data(self, **kwargs) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        budget_data = self.get_budget_data()
+        next_month_date = get_next_month_date()
+
+        # Calculate percentage with safe division
+        planned = budget_data.total_planned
+        spent = budget_data.total_spent
+        spent_percentage = (spent / planned * 100) if planned > 0 else 0
+
+        budget_context = BudgetForecastContext(
+            forecasts=list(context['forecasts']),
+            next_month=next_month_date,
+            total_planned=planned,
+            total_spent=spent,
+            spent_percentage=spent_percentage
+        )
+
+        context.update(budget_context.to_context())
+        return context
+
+
+class BudgetUpdateView(View):
+    """View to update monthly budget amount"""
+
+    def post(self, request, pk, *args, **kwargs):
+        try:
+            amount_str = request.POST.get('amount')
+            if amount_str is None:
+                return JsonResponse({'status': 'error', 'message': 'Missing amount'}, status=400)
+                
+            amount = float(amount_str.replace(',', '.'))
+            budget = BudgetService.update_monthly_budget(request.user, pk, amount)
+            
+            if request.headers.get('HX-Request'):
+                result = BudgetService.get_monthly_budgets_for_user(
+                    request.user, budget.month.year, budget.month.month
+                )
+                
+                # Render the list
+                list_html = render_to_string('budget/components/forecast_list.html', {
+                    'forecasts': result.forecasts
+                }, request=request)
+
+                # Render the summary partial which has hx-swap-oob="true"
+                spent_percentage = (result.total_spent / result.total_planned * 100) if result.total_planned > 0 else 0
+                summary_context = BudgetSummaryContext(
+                    total_planned=result.total_planned,
+                    total_spent=result.total_spent,
+                    spent_percentage=spent_percentage,
+                    next_month=budget.month
+                )
+                summary_html = render_to_string('budget/components/budget-summary.html', 
+                    summary_context.to_context(), 
+                    request=request)
+
+                # Render the main card
+                main_card_html = render_to_string('budget/components/budget-main-card.html', {
+                    'total_planned': result.total_planned,
+                    'total_spent': result.total_spent,
+                    'spent_percentage': spent_percentage
+                }, request=request)
+
+                return HttpResponse(list_html + summary_html + main_card_html)
+            
+            return redirect('budget_forecast')
+        except (MonthlyBudget.DoesNotExist, ValueError):
+            return JsonResponse({'status': 'error', 'message': 'Invalid budget or amount'}, status=400)

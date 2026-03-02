@@ -1,4 +1,4 @@
-<div class="sticky-header-bar" id="stickyHeader" hx-swap-oob="true">
+<div class="sticky-header-bar" id="stickyHeader" {% if hx_oob %}hx-swap-oob="true"{% endif %}>
     <div class="header-main-content">
         {% include "components/header-categories.html" with title="Categorie" icon="category" %}
     </div>

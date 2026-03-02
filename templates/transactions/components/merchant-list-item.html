@@ -4,7 +4,7 @@
     <div class="data-list-item merchant-clickable"
          hx-get="{% url 'transactions_by_merchant' %}?{% query_transform merchant_id=m_id page=None %}"
          hx-target="#details-{{ m_id }} .expansion-content"
-         hx-indicator="#details-{{ m_id }} .htmx-indicator"
+         hx-indicator=".htmx-progress"
          hx-trigger="load-transactions"
          onclick="
             const panel = document.getElementById('details-{{ m_id }}');
@@ -62,9 +62,6 @@
 
     <div class="merchant-details-expansion" id="details-{{ m_id }}">
         <div class="expansion-content">
-            <div class="htmx-indicator merchant-item-expansion-indicator">
-                <p class="text-muted"><span class="material-icons spin-animation merchant-item-sync-icon">sync</span>Caricamento transazioni...</p>
-            </div>
         </div>
     </div>
 </div>

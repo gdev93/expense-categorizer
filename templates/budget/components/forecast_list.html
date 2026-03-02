@@ -1,0 +1,43 @@
+{% if forecasts %}
+    <div class="data-list" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+        {% for forecast in forecasts %}
+            <div class="data-list-item">
+                <div class="list-item-info">
+                    <span class="category-name">{{ forecast.category.name }}</span>
+                    <p class="category-description">Previsione per {{ forecast.month|date:"F Y" }}</p>
+                    {% if forecast.spent_percentage is not None %}
+                        <div class="spent-info">
+                            <span class="spent-label">Speso:</span>
+                            <span class="spent-value">€{{ forecast.spent_amount|stringformat:".2f" }}</span>
+                            <span class="spent-percent {% if forecast.spent_percentage > 100 %}over-budget{% endif %}">
+                                ({{ forecast.spent_percentage|floatformat:1 }}%)
+                            </span>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="list-item-stats">
+                    <div class="budget-input-wrapper">
+                        <span class="currency-symbol">€</span>
+                        <input type="number" 
+                               step="0.01"
+                               class="budget-amount-input" 
+                               name="amount"
+                               value="{{ forecast.final_amount|stringformat:".2f" }}"
+                               hx-post="{% url 'budget_update' forecast.id %}"
+                               hx-trigger="change"
+                               hx-target="#budget-list-container"
+                               hx-swap="innerHTML">
+                    </div>
+                    {% if forecast.is_automated %}
+                        <span class="badge-count bg-success">Previsione AI</span>
+                    {% else %}
+                        <span class="badge-count">Budget Manuale</span>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    {% include "components/empty-state.html" with icon="analytics" title="Nessuna previsione" description="Nessuna previsione trovata per il mese prossimo." %}
+{% endif %}

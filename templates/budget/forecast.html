@@ -1,0 +1,17 @@
+{% extends base_template|default:"main/index.html" %}
+{% load static %}
+
+{% block title %}Previsioni Budget Mensili{% endblock %}
+
+{% block content %}
+    <div class="container mt-2">
+        {% include 'budget/components/budget-summary.html' %}
+
+        {% include 'budget/components/budget-main-card.html' %}
+
+        <div class="budget-list-section" id="budget-list-container">
+            {% include 'budget/components/forecast_list.html' %}
+        </div>
+    </div>
+    <script src="{% static 'js/budget.js' %}"></script>
+{% endblock %}

@@ -1,5 +1,5 @@
 {% if messages %}
-<div class="messages-container" id="messages-container" hx-swap-oob="true">
+<div class="messages-container" id="messages-container" {% if hx_oob %}hx-swap-oob="true"{% endif %}>
     {% for message in messages %}
     <div class="alert alert-{{ message.tags }}" role="alert">
         {{ message|safe }}
@@ -8,7 +8,7 @@
     {% endfor %}
 </div>
 {% else %}
-<div class="messages-container" id="messages-container" hx-swap-oob="true"></div>
+<div class="messages-container" id="messages-container" {% if hx_oob %}hx-swap-oob="true"{% endif %}></div>
 {% endif %}
 
 <script>

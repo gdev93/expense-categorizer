@@ -39,6 +39,19 @@
     min-width: 0;
 }
 
+.category-name {
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--nav-text-color);
+}
+
+.category-description {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--secondary-color);
+    line-height: 1.4;
+}
+
 .list-item-stats {
     display: flex;
     align-items: center;
@@ -85,5 +98,9 @@
         align-items: flex-end;
         gap: 4px;
         min-width: auto;
+    }
+
+    .category-description {
+        display: none;
     }
 }

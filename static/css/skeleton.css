@@ -1,10 +1,14 @@
 .skeleton-loader {
     display: none;
 }
-.htmx-request .skeleton-loader {
+.htmx-request .skeleton-loader,
+.htmx-swapping .skeleton-loader,
+.htmx-settling .skeleton-loader {
     display: block;
 }
-.htmx-request .hide-on-loading {
+.htmx-request .hide-on-loading,
+.htmx-swapping .hide-on-loading,
+.htmx-settling .hide-on-loading {
     display: none;
 }
 

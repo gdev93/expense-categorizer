@@ -1,4 +1,4 @@
-{% extends "main/index.html" %}
+{% extends base_template|default:"main/index.html" %}
 
 {% load static %}
 {% load time_filters %}
@@ -6,10 +6,7 @@
 {% block title %}Caricamento dati{% endblock %}
 {% block extra_css %}
     <link rel="stylesheet" href="{% static 'css/upload.css' %}">
-    <link rel="stylesheet" href="{% static 'css/list.css' %}">
-    <link rel="stylesheet" href="{% static 'css/pagination.css' %}">
     <link rel="stylesheet" href="{% static 'css/progress-bar.css' %}">
-    <link rel="stylesheet" href="{% static 'css/filters.css' %}">
     <link rel="stylesheet" href="{% static 'css/transactions-upload.css' %}">
     <link rel="stylesheet" href="{% static 'css/upload-list-results.css' %}">
 {% endblock %}
@@ -87,8 +84,8 @@
         <form method="get" class="filters" id="upload-filter-form"
               hx-get="{% url 'transactions_upload' %}"
               hx-target="#upload-results"
-              hx-swap="outerHTML settle:500ms"
-              hx-indicator="#upload-results"
+              hx-swap="outerHTML swap:50ms settle:500ms"
+              hx-indicator="#upload-results, .htmx-progress"
               hx-trigger="change, input delay:500ms from:#search, submit">
 
             <div class="filter-main-row">
@@ -114,8 +111,8 @@
                     <button
                        hx-get="{% url 'transactions_upload' %}"
                        hx-target="#upload-results"
-                       hx-swap="outerHTML settle:500ms"
-                       hx-indicator="#upload-results"
+                       hx-swap="outerHTML swap:50ms settle:500ms"
+                       hx-indicator="#upload-results, .htmx-progress"
                        hx-on::before-request="clearFilters('upload-filter-form');"
                        hx-disinherit="*"
                        hx-sync="closest form:replace"
@@ -230,11 +227,11 @@
 
 {% block extra_js %}
     <script>
-        const CSRF_TOKEN = "{{ csrf_token }}"
-        const FILE_UPLOADS_PAGE = "{% url 'transactions_upload' %}"
-        const FILE_UPLOAD_PROGRESS = "{% url 'transactions_progress' %}"
-        const FILE_UPLOAD_CHECK = "{% url 'transactions_upload_check' %}"
-        const EXPORT_DOWNLOAD_ENDPOINT = "{% url 'transaction_export' %}"
+        var CSRF_TOKEN = "{{ csrf_token }}"
+        var FILE_UPLOADS_PAGE = "{% url 'transactions_upload' %}"
+        var FILE_UPLOAD_PROGRESS = "{% url 'transactions_progress' %}"
+        var FILE_UPLOAD_CHECK = "{% url 'transactions_upload_check' %}"
+        var EXPORT_DOWNLOAD_ENDPOINT = "{% url 'transaction_export' %}"
     </script>
     <script src="{% static 'js/upload.js' %}"></script>
     <script src="{% static 'js/export.js' %}"></script>

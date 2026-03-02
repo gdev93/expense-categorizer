@@ -20,6 +20,7 @@ from django.views import View
 from django.views.generic import FormView, ListView, DeleteView
 
 from api.models import UploadFile, Transaction, Merchant, Category, DefaultCategory
+from api.services import RollupService
 from api.tasks import process_upload
 from processors.csv_structure_detector import CsvStructureDetector
 from processors.expense_upload_processor import persist_uploaded_file
@@ -106,8 +107,7 @@ class UploadFileDelete(DeleteView):
         response = super().post(request, *args, **kwargs)
 
         if years_months:
-            from api.services import RollupService
-            RollupService.update_user_rollup(request.user, years_months)
+            RollupService.update_all_rollups(request.user, years_months)
 
         # Delete merchants that have no transactions and no rules
         Merchant.objects.filter(user=request.user).exclude(
@@ -203,7 +203,7 @@ class UploadFileView(ListView, FormView):
         return self.request.GET.get('paginate_by', 25)
 
     def get_template_names(self):
-        if self.request.headers.get('HX-Request'):
+        if self.request.headers.get('HX-Request') and self.request.headers.get('HX-Target') != 'main-content':
             return ['transactions/components/upload_list_htmx.html']
         return [self.template_name]
 

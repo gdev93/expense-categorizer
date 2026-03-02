@@ -124,12 +124,13 @@ h3 { font-size: 18px; }
     width: 0%;
     height: 3px;
     background-color: var(--primary-color);
-    z-index: 9999;
+    z-index: 11000;
     transition: width 300ms ease-out, opacity 300ms ease-out;
     opacity: 0;
 }
 
-.htmx-request .htmx-progress {
+.htmx-request .htmx-progress,
+.htmx-progress.htmx-request {
     width: 90%;
     opacity: 1;
 }
@@ -441,6 +442,9 @@ input:focus,
 .p-4 { padding: 25px !important; }
 .p-5 { padding: 40px !important; }
 .hidden { display: none !important; }
+.text-start { text-align: left !important; }
+.text-end { text-align: right !important; }
+.text-center { text-align: center !important; }
 
 .mobile-only {
     display: none !important;

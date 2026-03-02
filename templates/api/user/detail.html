@@ -1,14 +1,11 @@
 
-{% extends "main/index.html" %}
+{% extends base_template|default:"main/index.html" %}
 {% load static %}
 
 {% block title %}Il mio profilo - Pecuniam{% endblock %}
 
 {% block extra_css %}
-    <link rel="stylesheet" href="{% static 'css/summary.css' %}">
-    <link rel="stylesheet" href="{% static 'css/list.css' %}">
-    <link rel="stylesheet" href="{% static 'css/filters.css' %}">
-    <link rel="stylesheet" href="{% static 'css/user_profile.css' %}">
+    <link rel="stylesheet" href="{% static 'css/user-profile.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -101,7 +98,12 @@
         <p>La cancellazione dei dati è un'azione irreversibile. Una volta confermata, non sarà possibile recuperare le transazioni o le configurazioni associate al tuo account.</p>
         
         <div class="actions-footer">
-            <a href="{% url 'user_delete' %}" class="btn-danger-custom">
+            <a href="{% url 'user_delete' %}" class="btn-danger-custom"
+               hx-get="{% url 'user_delete' %}"
+               hx-target="#main-content"
+               hx-push-url="true"
+               hx-indicator=".htmx-progress"
+               hx-swap="innerHTML swap:50ms settle:200ms">
                 <span class="material-icons">delete_forever</span>
                 Cancella tutti i dati e l'account
             </a>

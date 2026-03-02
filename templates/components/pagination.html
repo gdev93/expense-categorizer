@@ -5,14 +5,14 @@
         <a href="?{% query_transform page=1 %}"
            hx-get="?{% query_transform page=1 %}"
            hx-target="{{ hx_target }}"
-           hx-swap="outerHTML settle:500ms"
-           hx-indicator="{{ hx_target }}"
+           hx-swap="outerHTML swap:50ms settle:500ms"
+           hx-indicator="{{ hx_target }}, .htmx-progress"
            class="pagination-link">« Prima</a>
         <a href="?{% query_transform page=page_obj.previous_page_number %}"
            hx-get="?{% query_transform page=page_obj.previous_page_number %}"
            hx-target="{{ hx_target }}"
-           hx-swap="outerHTML settle:500ms"
-           hx-indicator="{{ hx_target }}"
+           hx-swap="outerHTML swap:50ms settle:500ms"
+           hx-indicator="{{ hx_target }}, .htmx-progress"
            class="pagination-link">‹ Precedente</a>
     {% else %}
         <span class="disabled">« Prima</span>
@@ -27,14 +27,14 @@
         <a href="?{% query_transform page=page_obj.next_page_number %}"
            hx-get="?{% query_transform page=page_obj.next_page_number %}"
            hx-target="{{ hx_target }}"
-           hx-swap="outerHTML settle:500ms"
-           hx-indicator="{{ hx_target }}"
+           hx-swap="outerHTML swap:50ms settle:500ms"
+           hx-indicator="{{ hx_target }}, .htmx-progress"
            class="pagination-link">Successiva ›</a>
         <a href="?{% query_transform page=page_obj.paginator.num_pages %}"
            hx-get="?{% query_transform page=page_obj.paginator.num_pages %}"
            hx-target="{{ hx_target }}"
-           hx-swap="outerHTML settle:500ms"
-           hx-indicator="{{ hx_target }}"
+           hx-swap="outerHTML swap:50ms settle:500ms"
+           hx-indicator="{{ hx_target }}, .htmx-progress"
            class="pagination-link">Ultima »</a>
     {% else %}
         <span class="disabled">Successiva ›</span>

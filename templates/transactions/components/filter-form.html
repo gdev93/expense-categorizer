@@ -1,8 +1,8 @@
 <form method="get" class="filters" id="main-filter-form"
       hx-get="{% url 'transaction_list' %}"
       hx-target="#transaction-results"
-      hx-swap="outerHTML settle:500ms"
-      hx-indicator="#transaction-results"
+      hx-swap="outerHTML swap:50ms settle:200ms"
+      hx-indicator="#transaction-results, .htmx-progress"
       hx-trigger="change, input delay:500ms from:#search, input delay:500ms from:#amount, submit, change from:[name='year'], change from:[name='view_type']"
       hx-include="[form='main-filter-form']">
 
@@ -31,8 +31,8 @@
             <button
                hx-get="{{ request.path }}?reset=1"
                hx-target="#transaction-results"
-               hx-swap="outerHTML settle:500ms"
-               hx-indicator="#transaction-results"
+               hx-swap="outerHTML swap:50ms settle:200ms"
+               hx-indicator="#transaction-results, .htmx-progress"
                hx-on::before-request="clearFilters('main-filter-form');"
                hx-disinherit="*"
                hx-sync="closest form:replace"

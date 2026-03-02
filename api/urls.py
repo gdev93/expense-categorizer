@@ -30,10 +30,10 @@ from api.views.upload_file_view import UploadFileView, UploadFileDelete, UploadP
 from api.views.onboarding_views import OnboardingStepView
 from api.views.user_views import UserDeleteView, UserDetailView, UserDataExportView
 from api.views.error_views import trigger_403, trigger_500, trigger_502, trigger_503
+from api.views.budget_views import BudgetForecastView, BudgetUpdateView
+from api.views.budget_list_view import BudgetForecastListView, BudgetForecastDetailView
 
 urlpatterns = [
-    path('onboarding/step/', OnboardingStepView.as_view(), name='onboarding_step'),
-    path('onboarding/update-step/', OnboardingStepView.as_view(), name='update_onboarding_step'),
     path('test-403/', trigger_403, name='test_403'),
     path('test-500/', trigger_500, name='test_500'),
     path('test-502/', trigger_502, name='test_502'),
@@ -63,5 +63,11 @@ urlpatterns = [
     path('merchants/search',MerchantSearchView.as_view(),name='merchant_search'),
     path('categories/from-merchant/', CategoryFromMerchant.as_view(), name='category_from_merchant'),
     path('categories/search', CategorySearchView.as_view(), name='category_search'),
+    path('budget/list/', BudgetForecastListView.as_view(), name='budget_forecast_list'),
+    path('budget/forecast/', BudgetForecastView.as_view(), name='budget_forecast'),
+    path('budget/forecast/<int:year>/<int:month>/', BudgetForecastDetailView.as_view(), name='budget_forecast_detail'),
+    path('budget/forecast/<int:pk>/update/', BudgetUpdateView.as_view(), name='budget_update'),
+    path('onboarding/step/', OnboardingStepView.as_view(), name='onboarding_step'),
+    path('onboarding/update-step/', OnboardingStepView.as_view(), name='update_onboarding_step'),
     path("", RedirectView.as_view(url="transactions/"), name="entry_point"),
 ]

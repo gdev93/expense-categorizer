@@ -1,6 +1,6 @@
 {%  include 'categories/components/categories-summary.html' %}
 {%  include 'categories/components/category_list_results.html' %}
-<div class="custom-multiselect" id="months-multiselect" hx-swap-oob="true"
+<div class="custom-multiselect" id="months-multiselect" {% if hx_oob %}hx-swap-oob="true"{% endif %}
      data-placeholder="Tutti i Mesi"
      data-plural-text="mesi selezionati">
     <div class="multiselect-trigger card-multiselect-trigger" onclick="toggleMultiselect('months-multiselect', event)">

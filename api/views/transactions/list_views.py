@@ -66,7 +66,7 @@ class TransactionListView(LoginRequiredMixin, ListView, TransactionFilterMixin):
         return filters.paginate_by
 
     def get_template_names(self):
-        if self.request.headers.get('HX-Request'):
+        if self.request.headers.get('HX-Request') and self.request.headers.get('HX-Target') != 'main-content':
             return ['transactions/components/transaction_list_htmx.html']
         return [self.template_name]
 

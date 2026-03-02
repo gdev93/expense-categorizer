@@ -159,7 +159,7 @@ class CategoryListView(LoginRequiredMixin, CategoryEnrichedMixin, ListView):
     context_object_name = 'categories'
 
     def get_template_names(self):
-        if self.request.headers.get('HX-Request'):
+        if self.request.headers.get('HX-Request') and self.request.headers.get('HX-Target') != 'main-content':
             return ['categories/categories_htmx.html']
         return [self.template_name]
 
@@ -304,7 +304,7 @@ class CategoryDetailView(DetailView, CategoryEnrichedMixin, TransactionFilterMix
     template_name = 'categories/category-detail.html'
 
     def get_template_names(self):
-        if self.request.headers.get('HX-Request'):
+        if self.request.headers.get('HX-Request') and self.request.headers.get('HX-Target') != 'main-content':
             return ['categories/category-details-htmx.html']
         return [self.template_name]
 

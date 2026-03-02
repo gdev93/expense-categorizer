@@ -1,0 +1,25 @@
+{% extends "components/header.html" %}
+
+{% block header_extra_title %}
+    <div class="header-total-pill header-budget-total-pill" id="budget-total-pill">
+        <span class="label">Totale Pianificato</span>
+        <span class="value">€ {{ total_planned|floatformat:2|default:"0,00" }}</span>
+    </div>
+{% endblock %}
+
+{% block header_content %}
+    <div class="header-budget-content">
+        <form hx-post="{{ recalculate_url|default:request.path }}" 
+              hx-target="#budget-list-container"
+              hx-indicator=".htmx-progress"
+              style="display: flex; align-items: center;">
+            {% csrf_token %}
+            <input type="hidden" name="month" value="{{ next_month.month }}">
+            <input type="hidden" name="year" value="{{ next_month.year }}">
+            <button type="submit" class="btn btn-primary">
+                <span class="material-icons align-middle">refresh</span> 
+                <span class="desktop-only">Ricalcola</span>
+            </button>
+        </form>
+    </div>
+{% endblock %}

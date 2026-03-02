@@ -8,7 +8,7 @@ from celery import shared_task
 from django.contrib.auth.models import User
 
 from api.models import Transaction, UploadFile, Rule, Category, DefaultCategory, Merchant
-from api.services import RollupService
+from api.services import RollupService, ForecastService
 from processors.data_prechecks import parse_raw_transaction
 from processors.expense_upload_processor import ExpenseUploadProcessor
 from processors.transaction_updater import TransactionUpdater
@@ -110,7 +110,7 @@ def process_upload(self, user_id: int, upload_file_id: int):
     upload_file.save()
 
     years_months = Transaction.objects.filter(upload_file=upload_file, user=user).values_list('transaction_date__year', 'transaction_date__month').distinct()
-    RollupService.update_user_rollup(user, years_months)
+    RollupService.update_all_rollups(user, years_months)
 
 
 @shared_task(
@@ -143,7 +143,7 @@ def populate_rollups(self):
     logger.info("Starting rollup population task")
 
     # Filter users
-    users = User.objects.all()
+    users = User.objects.filter(profile__needs_rollup_recomputation=True)
 
     total_users = users.count()
     logger.info(f'Processing {total_users} user(s)...')
@@ -170,7 +170,7 @@ def populate_rollups(self):
         logger.info(f'  Updating {len(years_months)} year-month combinations...')
 
         try:
-            RollupService.update_user_rollup(user, list(years_months))
+            RollupService.update_all_rollups(user, list(years_months))
             logger.info(f'  ✓ Successfully updated rollups for {user.username}')
         except Exception as e:
             logger.error(f'  ✗ Error updating rollups for {user.username}: {str(e)}')
@@ -178,3 +178,66 @@ def populate_rollups(self):
                 raise e
 
     logger.info('Rollup population completed!')
+
+
+@shared_task(
+    bind=True,
+    autoretry_for=(Exception,),
+    retry_backoff=True,
+    retry_backoff_max=120,
+    max_retries=2,
+    acks_late=True,
+    name='api.tasks.populate_category_rollups'
+)
+def populate_category_rollups(self):
+    logger.info("Starting category rollup population task")
+
+    users = User.objects.filter(profile__needs_rollup_recomputation=True)
+    total_users = users.count()
+    logger.info(f'Processing {total_users} user(s) for category rollups...')
+
+    for user_idx, user in enumerate(users, 1):
+        logger.info(f'[{user_idx}/{total_users}] Processing category rollups for user: {user.username}')
+
+        years_months = Transaction.objects.filter(user=user).values_list(
+            'transaction_date__year',
+            'transaction_date__month'
+        ).distinct()
+
+        years_months = [(y, m) for y, m in years_months if y is not None]
+
+        if not years_months:
+            continue
+
+        try:
+            RollupService.update_category_rollup(user, years_months)
+            from api.models import Profile
+            Profile.objects.filter(user=user).update(needs_rollup_recomputation=False)
+            logger.info(f'  ✓ Successfully updated category rollups for {user.username}')
+        except Exception as e:
+            logger.error(f'  ✗ Error updating category rollups for {user.username}: {str(e)}')
+            if self.request.retries >= self.max_retries:
+                raise e
+
+    logger.info('Category rollup population completed!')
+
+
+@shared_task(
+    bind=True,
+    autoretry_for=(Exception,),
+    retry_backoff=True,
+    retry_backoff_max=120,
+    max_retries=2,
+    acks_late=True,
+    name='api.tasks.generate_monthly_forecasts'
+)
+def generate_monthly_forecasts(self) -> str:
+    """
+    Main task to analyze trends and pre-populate next month's budget.
+    Iterates through users and categories in batches.
+    """
+    logger.info("Starting forecast generation task...")
+
+    ForecastService.compute_forecast(months=[], years=[])
+
+    return f"Forecasts completed successfully."

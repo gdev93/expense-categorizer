@@ -1,4 +1,4 @@
-{% extends "main/index.html" %}
+{% extends base_template|default:"main/index.html" %}
 {% load static %}
 
 {% block title %}Modifica Spesa{% endblock %}
@@ -19,7 +19,10 @@
                 <button type="submit" form="transaction-form" class="btn btn-primary desktop-only">
                     <span class="material-icons transaction-detail-save-icon">save</span> Salva
                 </button>
-                <form method="post" action="{% url 'transaction_detail' transaction.id %}" onsubmit="return confirm('Sei sicuro di voler eliminare questa transazione? Questa azione non è reversibile.')">
+                <form hx-post="{% url 'transaction_detail' transaction.id %}" 
+                      hx-target="#main-content"
+                      hx-indicator=".htmx-progress"
+                      hx-confirm="Sei sicuro di voler eliminare questa transazione? Questa azione non è reversibile.">
                     {% csrf_token %}
                     <button type="submit" name="delete" class="btn btn-icon btn-subtle-danger btn-expand-desktop" title="Elimina">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

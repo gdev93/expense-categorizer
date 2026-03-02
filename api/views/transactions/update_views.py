@@ -45,7 +45,7 @@ class TransactionDetailUpdateView(LoginRequiredMixin, UpdateView):
         obj.delete()
         if date:
             from api.services import RollupService
-            RollupService.update_user_rollup(request.user, [(date.year, date.month)])
+            RollupService.update_all_rollups(request.user, [(date.year, date.month)])
 
         messages.success(request, "Spesa eliminata con successo.")
 
@@ -113,7 +113,7 @@ class TransactionDetailUpdateView(LoginRequiredMixin, UpdateView):
             updates.append((new_date.year, new_date.month))
         
         if updates:
-            RollupService.update_user_rollup(self.request.user, updates)
+            RollupService.update_all_rollups(self.request.user, updates)
 
         # Update Merchant EMA if merchant and embedding are available
         if self.object.merchant and self.object.embedding and self.object.upload_file and self.object.upload_file.file_structure_metadata:

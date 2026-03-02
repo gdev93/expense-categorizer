@@ -59,7 +59,7 @@ class Command(BaseCommand):
 
             try:
                 with db_transaction.atomic():
-                    RollupService.update_user_rollup(user, list(years_months))
+                    RollupService.update_all_rollups(user, list(years_months))
 
                 self.stdout.write(self.style.SUCCESS(f'  ✓ Successfully updated rollups for {user.username}'))
             except Exception as e:

@@ -38,13 +38,38 @@ document.addEventListener('DOMContentLoaded', function() {
 function setActiveNavItem() {
     const currentPath = window.location.pathname;
     const navLinks = document.querySelectorAll('.nav-link');
+    
+    let bestMatch = null;
+    let maxMatchLength = -1;
+
+    const normalize = path => path.endsWith('/') ? path : path + '/';
+    const normCurrent = normalize(currentPath);
+
     navLinks.forEach(link => {
         link.classList.remove('active');
         const linkPath = link.getAttribute('data-page') || link.getAttribute('href');
-        if (currentPath === linkPath) {
-            link.classList.add('active');
+        
+        if (!linkPath || linkPath === '#' || linkPath.startsWith('http')) return;
+        
+        const normLink = normalize(linkPath);
+        
+        // Exact match
+        if (normCurrent === normLink) {
+            bestMatch = link;
+            maxMatchLength = 10000;
+        } 
+        // Prefix match (for subpaths), exclude root to avoid catch-all
+        else if (normLink !== '/' && normCurrent.startsWith(normLink)) {
+            if (normLink.length > maxMatchLength) {
+                bestMatch = link;
+                maxMatchLength = normLink.length;
+            }
         }
     });
+
+    if (bestMatch) {
+        bestMatch.classList.add('active');
+    }
 }
 document.querySelectorAll('.nav-link').forEach(link => {
     link.addEventListener('click', function (e) {
@@ -230,6 +255,10 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body.addEventListener('htmx:afterSwap', () => {
         updateFilterButtonsState();
         initAllMultiselects();
+        setActiveNavItem();
+    });
+    document.body.addEventListener('htmx:historyRestore', () => {
+        setActiveNavItem();
     });
 });
 function showAlert(message, type = 'danger') {

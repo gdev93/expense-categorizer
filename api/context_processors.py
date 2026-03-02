@@ -118,3 +118,22 @@ def user_avatar(request):
     return {
         'user_avatar_url': avatar_url
     }
+
+def base_template_context(request):
+    """Determine base template for htmx navigation"""
+    is_htmx = 'HX-Request' in request.headers
+    hx_target = request.headers.get('HX-Target')
+    
+    # Use hx_oob for elements that should swap OOB only during partial updates
+    # (i.e. NOT when replacing the entire main content area)
+    hx_oob = is_htmx and hx_target != 'main-content'
+
+    if is_htmx and not 'HX-History-Restore-Request' in request.headers:
+        return {
+            'base_template': 'main/base_partial.html',
+            'hx_oob': hx_oob
+        }
+    return {
+        'base_template': 'main/index.html',
+        'hx_oob': False
+    }

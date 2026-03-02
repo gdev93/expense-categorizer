@@ -12,12 +12,22 @@
 {% block header_content %}
     <div class="header-back-content">
         {% if edit_url %}
-        <a href="{{ edit_url }}" class="btn btn-primary">
+        <a href="{{ edit_url }}" class="btn btn-primary"
+           hx-get="{{ edit_url }}"
+           hx-target="#main-content"
+           hx-push-url="true"
+           hx-indicator=".htmx-progress"
+           hx-swap="innerHTML swap:50ms settle:200ms">
             Modifica
         </a>
         {% endif %}
         {% if not hide_delete %}
-        <a href="{% url 'category_delete' pk=category_summary.pk %}" class="btn btn-icon btn-subtle-danger btn-expand-desktop" title="Elimina">
+        <a href="{% url 'category_delete' pk=category_summary.pk %}" class="btn btn-icon btn-subtle-danger btn-expand-desktop" title="Elimina"
+           hx-get="{% url 'category_delete' pk=category_summary.pk %}"
+           hx-target="#main-content"
+           hx-push-url="true"
+           hx-indicator=".htmx-progress"
+           hx-swap="innerHTML swap:50ms settle:200ms">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M3 6h18"></path>
                 <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>

@@ -1,15 +1,9 @@
-{% extends "main/index.html" %}
+{% extends base_template|default:"main/index.html" %}
 {% load static %}
 
 {% block title %}Gestione Categorie{% endblock %}
 
 {% block extra_css %}
-    <link rel="stylesheet" href="{% static 'css/layout.css' %}">
-    <link rel="stylesheet" href="{% static 'css/list.css' %}">
-    <link rel="stylesheet" href="{% static 'css/main.css' %}">
-    <link rel="stylesheet" href="{% static 'css/categories.css' %}">
-    <link rel="stylesheet" href="{% static 'css/filters.css' %}">
-    <link rel="stylesheet" href="{% static 'css/year-select-compact.css' %}">
     <link rel="stylesheet" href="{% static 'css/category-list-results.css' %}">
     <link rel="stylesheet" href="{% static 'css/header-categories.css' %}">
 {% endblock %}
@@ -22,8 +16,8 @@
     <form method="get" class="filters"
           hx-get="{% url 'category_list' %}"
           hx-target="#category-results"
-          hx-swap="outerHTML settle:500ms"
-          hx-indicator="#category-results"
+          hx-swap="outerHTML swap:50ms settle:200ms"
+          hx-indicator="#category-results, .htmx-progress"
           hx-trigger="change, input delay:500ms from:#search, submit, change from:[name='year']"
           hx-include="[form='main-filter-form']"
           id="main-filter-form">
@@ -51,8 +45,8 @@
                 <button
                    hx-get="{% url 'category_list' %}?reset=1"
                    hx-target="#category-results"
-                   hx-swap="outerHTML settle:500ms"
-                   hx-indicator="#category-results"
+                   hx-swap="outerHTML swap:50ms settle:200ms"
+                   hx-indicator="#category-results, .htmx-progress"
                    hx-on::before-request="clearFilters('main-filter-form');"
                    hx-disinherit="*"
                    hx-sync="closest form:replace"

@@ -1,13 +1,7 @@
-{% extends "main/index.html" %}
+{% extends base_template|default:"main/index.html" %}
 {% load static %}
 
 {% block extra_css %}
-    <link rel="stylesheet" href="{% static 'css/categories.css' %}">
-    <link rel="stylesheet" href="{% static 'css/summary-card.css' %}">
-    <link rel="stylesheet" href="{% static 'css/list.css' %}">
-    <link rel="stylesheet" href="{% static 'css/pagination.css' %}">
-    <link rel="stylesheet" href="{% static 'css/transactions.css' %}">
-    <link rel="stylesheet" href="{% static 'css/filters.css' %}">
     <link rel="stylesheet" href="{% static 'css/transaction-item.css' %}">
     <link rel="stylesheet" href="{% static 'css/category-detail-results.css' %}">
     <link rel="stylesheet" href="{% static 'css/header-with-back-to-category-button.css' %}">
@@ -31,8 +25,8 @@
                 <form method="get" class="filters mb-4"
                       hx-get="{% url 'category_detail' category.id %}"
                       hx-target="#category-detail-results"
-                      hx-swap="outerHTML settle:500ms"
-                      hx-indicator="#category-detail-results"
+                      hx-swap="outerHTML swap:50ms settle:500ms"
+                      hx-indicator="#category-detail-results, .htmx-progress"
                       hx-trigger="change, input delay:500ms from:#search, submit"
                       hx-push-url="false"
                       id="transaction-filter-form">
@@ -60,8 +54,8 @@
                             <button
                                hx-get="{% url 'category_detail' category.id %}?reset=1"
                                hx-target="#category-detail-results"
-                               hx-swap="outerHTML settle:500ms"
-                               hx-indicator="#category-detail-results"
+                               hx-swap="outerHTML swap:50ms settle:500ms"
+                               hx-indicator="#category-detail-results, .htmx-progress"
                                hx-on::before-request="clearFilters('transaction-filter-form');"
                                hx-disinherit="*"
                                hx-sync="closest form:replace"

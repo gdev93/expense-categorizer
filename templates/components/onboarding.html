@@ -5,9 +5,9 @@
             <div id="onboarding-modal-body" 
                  hx-get="{% url 'onboarding_step' %}" 
                  hx-trigger="load"
-                 hx-swap="innerHTML transition:true">
+                 hx-swap="innerHTML transition:true"
+                 hx-indicator=".htmx-progress">
                 <div class="onboarding-loading">
-                    <div class="spinner"></div>
                     <p>Caricamento...</p>
                 </div>
             </div>

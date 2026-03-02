@@ -1,5 +1,10 @@
 {% load l10n %}
-<form method="post" action="{% if is_update %}{% url 'transaction_detail' transaction.id %}{% else %}{% url 'transaction_create' %}{% endif %}" class="transaction-form-content" id="transaction-form">
+<form method="post" 
+      hx-post="{% if is_update %}{% url 'transaction_detail' transaction.id %}{% else %}{% url 'transaction_create' %}{% endif %}" 
+      hx-target="#main-content"
+      hx-indicator=".htmx-progress"
+      hx-push-url="true"
+      class="transaction-form-content" id="transaction-form">
     {% csrf_token %}
 
     <div class="form-grid">

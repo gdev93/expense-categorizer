@@ -1,5 +1,5 @@
 {% include "transactions/components/upload_list_results.html" %}
-<div class="custom-multiselect" id="status-multiselect" hx-swap-oob="true"
+<div class="custom-multiselect" id="status-multiselect" {% if hx_oob %}hx-swap-oob="true"{% endif %}
      data-placeholder="Tutti gli stati"
      data-plural-text="stati selezionati">
     <div class="multiselect-trigger card-multiselect-trigger" onclick="toggleMultiselect('status-multiselect', event)">

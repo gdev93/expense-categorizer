@@ -3,7 +3,11 @@
 {% else %}
     {% for t in transactions %}
         <div class="mini-transaction-row" 
-             onclick="window.location.href='{% url 'transaction_detail' pk=t.id %}'">
+             hx-get="{% url 'transaction_detail' pk=t.id %}"
+             hx-target="#main-content"
+             hx-push-url="true"
+             hx-indicator=".htmx-progress"
+             hx-swap="innerHTML swap:50ms settle:200ms">
             <div class="mini-main-info">
                 <span class="mini-date">
                     <span class="material-icons merchant-transactions-date-icon">calendar_today</span>

@@ -25,4 +25,8 @@ app.conf.beat_schedule = {
         'task': 'api.tasks.populate_rollups',
         'schedule': crontab(hour=int(os.getenv("ROLLUP_SCHEDULE_HOUR","2")), minute=0) if os.getenv("ENV","local") == "prod" else crontab(minute='*/1')
     },
+    'monthly-budget-forecasts': {
+        'task': 'api.tasks.generate_monthly_forecasts',
+        'schedule': crontab(day_of_month=int(os.getenv("BUDGET_SCHEDULE_DAY","25")), hour=int(os.getenv("BUDGET_SCHEDULE_HOUR","2")), minute=0)  if os.getenv("ENV","local") == "prod" else crontab(minute='*/1')
+    }
 }

@@ -9,6 +9,7 @@ from django.contrib.postgres.fields import ArrayField
 from django.contrib.postgres.indexes import GinIndex
 from django.db import models
 from django.db.models import QuerySet
+from django.utils import timezone
 from pgvector.django import VectorField, HnswIndex
 
 from api.fields import EncryptedDecimalField, EncryptedCharField
@@ -417,6 +418,7 @@ class Profile(models.Model):
     subscription_type = models.CharField(max_length=50, default='free_trial')
     onboarding_step = models.IntegerField(default=1, help_text="1: Categories, 2: Upload, 3: Filters, 4: Personalize, 5: Completed")
     welcome_email_sent = models.BooleanField(default=False)
+    needs_rollup_recomputation = models.BooleanField(default=True)
     def __str__(self) -> str:
         return f"{self.user.username}'s profile"
 
@@ -429,6 +431,8 @@ class YearlyMonthlyUserRollup(models.Model):
     total_amount_expense_by_month = EncryptedDecimalField(blank=True, null=True)
     total_amount_income_by_month = EncryptedDecimalField(blank=True, null=True)
     month_number = models.IntegerField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         unique_together = ('user', 'by_year', 'month_number')
@@ -437,3 +441,51 @@ class YearlyMonthlyUserRollup(models.Model):
 
     def __str__(self) -> str:
         return f"{self.user.username} - {self.by_year} - {self.month_number}"
+
+
+class MonthlyBudget(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    category = models.ForeignKey('Category', on_delete=models.CASCADE)
+
+    # The month this budget refers to (e.g., 2026-03-01)
+    month = models.DateField()
+
+    # The actual budget goal
+    # formula: trend.suggested_unit_amount * trend.estimated_monthly_frequency
+    planned_amount = EncryptedDecimalField(default=0)
+
+    user_amount = EncryptedDecimalField(default=None, null=True, blank=True)
+
+    # Track if the user manually changed the AI suggestion
+    is_automated = models.BooleanField(default=True)
+
+    # To store historical snapshots if needed (optional)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    @property
+    def final_amount(self)->float:
+        if self.is_automated:
+            return float(self.planned_amount or 0.0)
+        return float(self.user_amount if self.user_amount is not None else self.planned_amount)
+
+
+    class Meta:
+        unique_together = ('user', 'category', 'month')
+
+
+class CategoryRollup(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='category_rollups')
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='rollups')
+    year = models.IntegerField()
+    month_number = models.IntegerField(blank=True, null=True)
+    total_spent = EncryptedDecimalField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('user', 'category', 'year', 'month_number')
+        verbose_name = "Category Rollup"
+        verbose_name_plural = "Category Rollups"
+
+    def __str__(self) -> str:
+        return f"{self.user.username} - {self.category.name} - {self.year}/{self.month_number or 'YEAR'}"

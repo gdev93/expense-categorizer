@@ -45,7 +45,7 @@ services:
     build: .
     container_name: expense_categorizer_celery_beat_dev
     # Use a specific schedule file to avoid lock issues
-    command: celery -A server beat -l info
+    command: celery -A server beat -l info --schedule /app/beat-schedule/celerybeat-schedule
     env_file:
       - .env
     environment:
@@ -66,7 +66,7 @@ services:
         reservations:
           memory: 128M
     volumes:
-      - celerybeat_schedule:/app
+      - celerybeat_schedule:/app/beat-schedule
 
   celery-worker:
     build: .

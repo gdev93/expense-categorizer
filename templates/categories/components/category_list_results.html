@@ -1,4 +1,4 @@
-<div class="category-layout-stacked" id="category-results" hx-indicator="this">
+<div class="category-layout-stacked" id="category-results" hx-indicator="this, .htmx-progress">
     <div class="skeleton-loader">
         <div class="data-list">
             {% for i in "12345" %}
@@ -19,7 +19,12 @@
         {% if categories %}
         <div class="data-list">
             {% for category in categories %}
-                <div class="data-list-item" onclick="window.location.href='{% url 'category_detail' category.id %}'">
+                <div class="data-list-item" 
+                     hx-get="{% url 'category_detail' category.id %}" 
+                     hx-target="#main-content" 
+                     hx-push-url="true" 
+                     hx-indicator=".htmx-progress"
+                     hx-swap="innerHTML swap:50ms settle:200ms">
                     <div class="list-item-info">
                         <span class="category-name">{{ category.name }}</span>
                         {% if category.description %}

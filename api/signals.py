@@ -1,7 +1,7 @@
 import os
 from typing import Any
 from django.conf import settings
-from django.db.models.signals import pre_save
+from django.db.models.signals import pre_save, post_save, post_delete
 from django.dispatch import receiver
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
@@ -9,7 +9,7 @@ from allauth.account.signals import user_signed_up, email_confirmed
 from allauth.account.models import EmailAddress
 from django.contrib.auth.models import User
 
-from .models import UploadFile, FileStructureMetadata
+from .models import UploadFile, FileStructureMetadata, Transaction, Profile
 
 is_secure = os.getenv('ENV','local') == 'prod'
 
@@ -118,3 +118,15 @@ def create_file_structure_metadata(sender: Any, instance: UploadFile, **kwargs: 
         )
         instance.file_structure_metadata = fsm
         # Do NOT call instance.save() here as it is a pre_save signal
+
+
+@receiver([post_save, post_delete], sender=Transaction)
+def mark_rollup_dirty_on_transaction_change(sender: Any, instance: Transaction, **kwargs: Any) -> None:
+    """Mark the user's profile as needing rollup recomputation when a transaction changes."""
+    Profile.objects.filter(user=instance.user, needs_rollup_recomputation=False).update(needs_rollup_recomputation=True)
+
+
+@receiver(post_delete, sender=UploadFile)
+def mark_rollup_dirty_on_upload_delete(sender: Any, instance: UploadFile, **kwargs: Any) -> None:
+    """Mark the user's profile as needing rollup recomputation when an upload is deleted."""
+    Profile.objects.filter(user=instance.user, needs_rollup_recomputation=False).update(needs_rollup_recomputation=True)

@@ -1,0 +1,24 @@
+<div class="next-month-card next-month-highlight mt-4 mb-4" id="budget-main-card" {% if hx_oob %}hx-swap-oob="true"{% endif %}>
+    <div class="card-body">
+        <div class="card-columns">
+            <div class="card-column">
+                <div class="card-stat text-start">
+                    <span class="label">Budget Totale</span>
+                    <span class="value">€ {{ total_planned|floatformat:2 }}</span>
+                </div>
+                <div class="card-stat text-start mt-3">
+                    <span class="label">Totale Speso</span>
+                    <span class="value">€ {{ total_spent|floatformat:2 }}</span>
+                </div>
+            </div>
+            <div class="stats-column">
+                <div class="percentage-display">
+                    <div class="spent-percentage-large {% if spent_percentage > 100 %}over-budget{% endif %}">
+                        {{ spent_percentage|floatformat:0 }}%
+                        <span class="label">Speso</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

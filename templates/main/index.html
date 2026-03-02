@@ -13,13 +13,25 @@
     <link rel="stylesheet" href="{% static 'css/appbar.css' %}">
     <link rel="stylesheet" href="{% static 'css/sidebar.css' %}">
     <link rel="stylesheet" href="{% static 'css/onboarding.css' %}">
-    <link rel="stylesheet" href="{% static 'css/onboarding_step.css' %}">
-    <link rel="stylesheet" href="{% static 'css/onboarding_template.css' %}">
+    <link rel="stylesheet" href="{% static 'css/onboarding-step.css' %}">
+    <link rel="stylesheet" href="{% static 'css/onboarding-template.css' %}">
     <link rel="stylesheet" href="{% static 'css/material-icons.css' %}">
     <link rel="stylesheet" href="{% static 'css/htmx-loading.css' %}">
     <link rel="stylesheet" href="{% static 'css/skeleton.css' %}">
     <link rel="stylesheet" href="{% static 'css/index.css' %}">
     <link rel="stylesheet" href="{% static 'css/header.css' %}">
+    <link rel="stylesheet" href="{% static 'css/layout.css' %}">
+    <link rel="stylesheet" href="{% static 'css/list.css' %}">
+    <link rel="stylesheet" href="{% static 'css/filters.css' %}">
+    <link rel="stylesheet" href="{% static 'css/pagination.css' %}">
+    <link rel="stylesheet" href="{% static 'css/summary.css' %}">
+    <link rel="stylesheet" href="{% static 'css/summary-card.css' %}">
+    <link rel="stylesheet" href="{% static 'css/year-select-compact.css' %}">
+    <link rel="stylesheet" href="{% static 'css/budget.css' %}">
+    <link rel="stylesheet" href="{% static 'css/user-profile.css' %}">
+    <link rel="stylesheet" href="{% static 'css/categories.css' %}">
+    <link rel="stylesheet" href="{% static 'css/transactions.css' %}">
+    <link rel="stylesheet" href="{% static 'css/upload.css' %}">
     <script src="{% static 'js/htmx/htmx.min.js' %}"></script>
     {% block extra_css %}{% endblock %}
 </head>
@@ -32,15 +44,15 @@
         <a href="/" class="app-logo">
             <span>P</span>ecuniam
         </a>
-        <h1 class="app-title">{% block app_title %}{% endblock %}</h1>
-        <div class="app-bar-actions">
+        <h1 class="app-title" id="app-title">{% block app_title %}{% endblock %}</h1>
+        <div class="app-bar-actions" id="app-bar-actions">
             {% block app_bar_actions %}
             {% endblock %}
         </div>
     </header>
 
     <aside class="sidebar" id="sidebar">
-        <a href="{% url 'user_profile' %}" class="sidebar-user-info-link">
+        <a href="{% url 'user_profile' %}" class="sidebar-user-info-link" hx-boost="true" hx-target="#main-content" hx-swap="innerHTML swap:50ms settle:200ms" hx-push-url="true" hx-indicator=".htmx-progress">
             <div class="sidebar-user-info">
                 <div class="user-profile">
                     {% if user_avatar_url %}
@@ -59,10 +71,10 @@
         </a>
         <nav class="sidebar-nav">
             {% block sidebar_content %}
-            <ul class="nav-list">
+            <ul class="nav-list" hx-boost="true" hx-target="#main-content" hx-swap="innerHTML swap:50ms settle:200ms" hx-push-url="true" hx-indicator=".htmx-progress">
 
                 <li class="nav-item">
-                    <a href="{% url 'transaction_list' %}" class="nav-link active" data-page="/transactions/">
+                    <a href="{% url 'transaction_list' %}" class="nav-link" data-page="/transactions/">
                         <span class="nav-icon material-icons">receipt_long</span>
                         <span class="nav-text">Spese</span>
                     </a>
@@ -71,6 +83,12 @@
                     <a href="{% url 'category_list' %}" class="nav-link">
                         <span class="nav-icon material-icons">category</span>
                         <span class="nav-text">Categorie di spesa</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{% url 'budget_forecast_list' %}" class="nav-link" data-page="/budget/list/">
+                        <span class="nav-icon material-icons">analytics</span>
+                        <span class="nav-text">Previsioni budget</span>
                     </a>
                 </li>
                 <li class="nav-item">
@@ -92,7 +110,7 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="#" class="nav-link" id="replay-onboarding">
+                    <a href="#" class="nav-link" id="replay-onboarding" hx-boost="false">
                         <span class="nav-icon material-icons">help_outline</span>
                         <span class="nav-text">Ripeti Tutorial</span>
                     </a>
@@ -112,7 +130,7 @@
         </div>
     </aside>
 
-    <main class="main-content">
+    <main class="main-content" id="main-content">
         {% include 'components/onboarding.html' %}
         {% include 'components/messages.html' %}
         {% block content %}

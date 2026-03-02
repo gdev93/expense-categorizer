@@ -1,13 +1,7 @@
-{% extends "main/index.html" %}
+{% extends base_template|default:"main/index.html" %}
 {% load static %}
 
 {% block title %}Crea Nuova Categoria{% endblock %}
-
-{% block extra_css %}
-    <link rel="stylesheet" href="{% static 'css/layout.css' %}">
-    <link rel="stylesheet" href="{% static 'css/main.css' %}">
-    <link rel="stylesheet" href="{% static 'css/categories.css' %}">
-{% endblock %}
 
 {% block content %}
 <div class="container mt-2">

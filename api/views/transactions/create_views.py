@@ -64,7 +64,7 @@ class TransactionCreateView(LoginRequiredMixin, View):
         date = new_transaction.transaction_date
         if date:
             from api.services import RollupService
-            RollupService.update_user_rollup(user, [(date.year, date.month)])
+            RollupService.update_all_rollups(user, [(date.year, date.month)])
 
         apply_to_all = request.POST.get('apply_to_all') in ['on', 'true']
         if apply_to_all and merchant:

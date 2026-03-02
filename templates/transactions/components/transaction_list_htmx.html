@@ -1,7 +1,7 @@
 {% include "transactions/components/transaction_list_summary.html" %}
 {% include "transactions/components/transaction_list_results.html" %}
 {% include "components/messages.html" %}
-<div class="custom-multiselect" id="months-multiselect" hx-swap-oob="true"
+<div class="custom-multiselect" id="months-multiselect" {% if hx_oob %}hx-swap-oob="true"{% endif %}
      data-placeholder="Tutti i Mesi"
      data-plural-text="mesi selezionati">
     <div class="multiselect-trigger card-multiselect-trigger" onclick="toggleMultiselect('months-multiselect', event)">

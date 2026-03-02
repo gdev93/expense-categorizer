@@ -1,15 +1,22 @@
-from collections import Counter
+import datetime
+import logging
+from collections import Counter, defaultdict
+from dataclasses import dataclass
 from decimal import Decimal
 from functools import wraps
-from typing import Iterable, Dict, Tuple, Any
+from typing import Iterable, Dict, Tuple, Any, List
 
 from django.contrib.auth.models import User
 from django.db import transaction
 from django.db.models import QuerySet
+from django.utils import timezone
 
-from api.models import Transaction, Merchant
+from api.models import Transaction, Merchant, YearlyMonthlyUserRollup, MonthlyBudget, Category, CategoryRollup, Profile
 from api.privacy_utils import generate_blind_index, generate_encrypted_trigrams
+from api.config import ForecastConfig
+from processors.stats import ForecastInput, compute_forecast
 
+logger = logging.getLogger(__name__)
 
 def optimize_total_amount(func):
     """
@@ -20,30 +27,49 @@ def optimize_total_amount(func):
 
     @wraps(func)
     def wrapper(user: User, filters: Any, queryset: Any, *args: Any, **kwargs: Any) -> Any:
-        # Check if filters are at their default values using the dataclass property
-        if getattr(filters, 'is_default_filter', False):
-            from api.models import YearlyMonthlyUserRollup
+        # 1. Early exit if requirements are not met
+        is_default = getattr(filters, 'is_default_filter', False)
+        year = getattr(filters, 'year', None)
 
-            year = getattr(filters, 'year', None)
+        if not (is_default and year):
+            return func(user, filters, queryset, *args, **kwargs)
 
-            # Wrap in a transaction to safely use select_for_update if needed,
-            # though for simple reads, a standard filter is usually enough.
-            with transaction.atomic():
-                if year:
-                    rollup_query = YearlyMonthlyUserRollup.objects.filter(
-                        user=user,
-                        by_year=year
-                    )
-                    months = getattr(filters, 'months', None)
-                    if any(months):
-                        rollup_query = rollup_query.filter(month_number__in=months)
-                        return sum([rollup.total_amount_expense_by_month for rollup in rollup_query])
-                    else:
-                        rollup_yearly = rollup_query.filter(month_number__isnull=True).first()
-                        return rollup_yearly.total_amount_expense_by_year if rollup_yearly else func(user, filters, queryset, *args, **kwargs)
-                else:
-                    return func(user, filters, queryset, *args, **kwargs)
+        months: List[int] = getattr(filters, 'months', [])
+        category_ids: List[int] = getattr(filters, 'category_ids', [])
 
+        # 2. Logic for CategoryRollup
+        if category_ids:
+            query = CategoryRollup.objects.filter(
+                user=user,
+                year=year,
+                category_id__in=category_ids
+            )
+            if months:
+                query = query.filter(month_number__in=months)
+
+            # Calculate sum in memory (decryption happens on access)
+            return sum(item.total_spent for item in query)
+
+        # 3. Logic for Yearly/Monthly Rollup
+        if months:
+            monthly_query = YearlyMonthlyUserRollup.objects.filter(
+                user=user,
+                by_year=year,
+                month_number__in=months
+            )
+            return sum(item.total_amount_expense_by_month for item in monthly_query)
+
+        # 4. Yearly total (single record)
+        rollup_yearly = YearlyMonthlyUserRollup.objects.filter(
+            user=user,
+            by_year=year,
+            month_number__isnull=True
+        ).first()
+
+        if rollup_yearly:
+            return rollup_yearly.total_amount_expense_by_year
+
+        # Fallback to original function
         return func(user, filters, queryset, *args, **kwargs)
 
     return wrapper
@@ -111,6 +137,205 @@ class TransactionAggregationService:
         return grouped_data
 
 
+@dataclass
+class MonthlyBudgetsResult:
+    """Result of fetching and enriching monthly budgets."""
+    forecasts: list[MonthlyBudget]
+    total_planned: float
+    total_spent: float
+
+@dataclass
+class TopCategory:
+    """A simple representation of a category and its planned amount for summaries."""
+    name: str
+    amount: float
+
+@dataclass
+class BudgetMonthSummary:
+    """A summary of a month's budget and spending."""
+    month: datetime.date
+    total_planned: float
+    total_spent: float
+    top_categories: list[TopCategory]
+    forecast_available: bool
+    spent_percentage: float | None = None
+
+@dataclass
+class BudgetListResult:
+    """Result of preparing the monthly budget summary list."""
+    months: list[BudgetMonthSummary]
+    year: int
+
+class BudgetService:
+    """Service to handle budget business logic and data preparation for views."""
+
+    @staticmethod
+    def _get_max_month_for_year(year: int) -> int:
+        """Determine the maximum month to consider for a given year based on current date."""
+        today = timezone.now().date()
+        next_month_date = (today.replace(day=28) + datetime.timedelta(days=4)).replace(day=1)
+        
+        if year < next_month_date.year:
+            return 12
+        elif year == next_month_date.year:
+            return next_month_date.month
+        return 0
+
+    @staticmethod
+    def _ensure_forecasts_computed(user: User, year: int, months: int | list[int]) -> None:
+        """Compute missing forecasts for a user for specific month(s) in a given year."""
+        # Normalize to a list of months
+        months_to_check = [months] if isinstance(months, int) else months
+
+        today = timezone.now().date()
+        next_month_date = (today.replace(day=28) + datetime.timedelta(days=4)).replace(day=1)
+
+        # Only compute for years relevant to current or near-future activity
+        if year == today.year or year == next_month_date.year:
+            missing_months = [
+                m for m in months_to_check
+                if not MonthlyBudget.objects.filter(
+                    user=user,
+                    month=datetime.date(year, m, 1)
+                ).exists()
+            ]
+            if missing_months:
+                ForecastService.compute_forecast(user=user, months=missing_months, years=[year])
+
+    @staticmethod
+    def enrich_budgets_with_spent_data(user: User, budgets: Iterable[MonthlyBudget]) -> None:
+        """Enrich a list of MonthlyBudget objects with spent amount and percentage using CategoryRollup."""
+        # 1. Group budgets by month to minimize queries
+        budgets_by_month = defaultdict(list)
+        for b in budgets:
+            budgets_by_month[b.month].append(b)
+
+        for month, month_budgets in budgets_by_month.items():
+            category_ids = [b.category_id for b in month_budgets]
+
+            # 2. Fetch rollup records for this month and these categories
+            rollups = CategoryRollup.objects.filter(
+                user=user,
+                year=month.year,
+                month_number=month.month,
+                category_id__in=category_ids
+            )
+
+            spent_sums = {r.category_id: r.total_spent for r in rollups}
+
+            # 3. Attach to budgets
+            for b in month_budgets:
+                spent = spent_sums.get(b.category_id, Decimal('0.00'))
+                b.spent_amount = float(spent) if spent is not None else 0.0
+                planned = b.final_amount
+                if planned > 0:
+                    b.spent_percentage = (b.spent_amount / planned) * 100
+                else:
+                    b.spent_percentage = 0.0
+
+    @staticmethod
+    def get_monthly_budgets_for_user(user: User, year: int, month: int) -> MonthlyBudgetsResult:
+        """Fetch, compute (if missing), and enrich monthly budgets with spent data."""
+        # Optimization: only compute the forecast for the requested month
+        BudgetService._ensure_forecasts_computed(user, year, month)
+
+        target_date = datetime.date(year, month, 1)
+        forecasts = MonthlyBudget.objects.filter(
+            user=user,
+            month=target_date
+        ).select_related('category').order_by('category__name')
+
+        forecasts_list = list(forecasts)
+        BudgetService.enrich_budgets_with_spent_data(user, forecasts_list)
+        total_planned = sum(f.final_amount for f in forecasts_list)
+        total_spent = sum(f.spent_amount for f in forecasts_list)
+
+        return MonthlyBudgetsResult(
+            forecasts=forecasts_list, 
+            total_planned=total_planned,
+            total_spent=total_spent
+        )
+
+    @staticmethod
+    def get_budget_list_for_user(user: User, year: int | None = None) -> BudgetListResult:
+        """Prepare the list of monthly budget summaries for a given year."""
+        today = timezone.now().date()
+        current_month_date = today.replace(day=1)
+
+        if year is None:
+            last_b = MonthlyBudget.objects.filter(user=user).order_by('-month').first()
+            year = last_b.month.year if last_b else today.year
+
+        max_month = BudgetService._get_max_month_for_year(year)
+        # For the list view, we still want to ensure all relevant months are computed
+        BudgetService._ensure_forecasts_computed(user, year, list(range(1, max_month + 1)))
+
+        # Re-fetch all budgets for the year after computation
+        all_budgets = MonthlyBudget.objects.filter(
+            user=user,
+            month__year=year
+        ).select_related('category').order_by('-month', 'category__name')
+
+        # Fetch spent amounts from rollups
+        spent_rollups = CategoryRollup.objects.filter(
+            user=user,
+            year=year,
+            month_number__isnull=False
+        )
+        spent_dict = defaultdict(float)
+        for r in spent_rollups:
+            spent_dict[r.month_number] += float(r.total_spent or 0.0)
+
+        months_dict: Dict[datetime.date, BudgetMonthSummary] = {}
+        for m in range(1, max_month + 1):
+            target_date = datetime.date(year, m, 1)
+            is_future = target_date > current_month_date
+            forecast_available = True
+            if is_future:
+                forecast_available = (target_date - today).days <= ForecastConfig.FORECAST_THRESHOLD_DAYS
+
+            months_dict[target_date] = BudgetMonthSummary(
+                month=target_date,
+                total_planned=0.0,
+                total_spent=spent_dict.get(m, 0.0),
+                top_categories=[],
+                forecast_available=forecast_available
+            )
+
+        for budget in all_budgets:
+            month_key = budget.month
+            if month_key in months_dict:
+                months_dict[month_key].total_planned += budget.final_amount
+                months_dict[month_key].top_categories.append(TopCategory(
+                    name=budget.category.name,
+                    amount=budget.final_amount
+                ))
+
+        for month_data in months_dict.values():
+            month_data.top_categories = sorted(
+                month_data.top_categories,
+                key=lambda x: x.amount,
+                reverse=True
+            )[:4]
+
+            if month_data.total_planned > 0:
+                month_data.spent_percentage = (month_data.total_spent / month_data.total_planned) * 100
+            else:
+                month_data.spent_percentage = None
+
+        sorted_months = sorted(months_dict.values(), key=lambda x: x.month, reverse=True)
+        return BudgetListResult(months=sorted_months, year=year)
+
+    @staticmethod
+    def update_monthly_budget(user: User, budget_id: int, amount: float) -> MonthlyBudget:
+        """Update a specific monthly budget and return it."""
+        budget = MonthlyBudget.objects.get(pk=budget_id, user=user)
+        budget.user_amount = amount
+        budget.is_automated = False
+        budget.save()
+        return budget
+
+
 class RollupService:
     """Service to handle rollup table updates."""
 
@@ -120,7 +345,6 @@ class RollupService:
         Update the YearlyMonthlyUserRollup for a given user and a list of (year, month) tuples.
         Also updates the yearly totals for those years.
         """
-        from api.models import Transaction, YearlyMonthlyUserRollup
 
         # We need to update monthly records and the yearly summary record (where month_number is None)
         years_to_update = set()
@@ -142,7 +366,6 @@ class RollupService:
 
             total_expense = Decimal('0.00')
             total_income = Decimal('0.00')
-
             for tx in transactions:
                 amount = tx.amount
                 if amount:
@@ -193,9 +416,93 @@ class RollupService:
             )
 
     @staticmethod
-    def update_user_yearly_rollup(user: User, years: Iterable[int]) -> None:
-        """Legacy method to update only yearly rollups."""
-        RollupService.update_user_rollup(user, [(year, None) for year in years])
+    def update_category_rollup(user: User, years_months: Iterable[Tuple[int, int | None]]) -> None:
+        """
+        Update the CategoryRollup for a given user and a list of (year, month) tuples.
+        Also updates the yearly totals for those years.
+        """
+        years_to_update = set()
+        month_combinations = set()
+
+        for year, month in years_months:
+            if year:
+                years_to_update.add(year)
+                if month:
+                    month_combinations.add((year, month))
+
+        # 1. Update Monthly Records for Categories
+        for year, month in month_combinations:
+            transactions = Transaction.objects.filter(
+                user=user,
+                transaction_date__year=year,
+                transaction_date__month=month,
+                transaction_type='expense'
+            )
+            
+            category_sums = defaultdict(Decimal)
+            for tx in transactions:
+                if tx.category_id:
+                    val = tx.amount
+                    if val:
+                        category_sums[tx.category_id] += val
+            
+            # Categories that now have 0 spent but had a rollup record for this month
+            existing_rollups = CategoryRollup.objects.filter(user=user, year=year, month_number=month)
+            existing_cat_ids = set(existing_rollups.values_list('category_id', flat=True))
+            
+            all_involved_cat_ids = existing_cat_ids | set(category_sums.keys())
+            
+            for category_id in all_involved_cat_ids:
+                total_spent = category_sums.get(category_id, Decimal('0.00'))
+                CategoryRollup.objects.update_or_create(
+                    user=user,
+                    category_id=category_id,
+                    year=year,
+                    month_number=month,
+                    defaults={'total_spent': total_spent}
+                )
+
+        # 2. Update Yearly Summary Records for Categories (month_number=None)
+        for year in years_to_update:
+            transactions = Transaction.objects.filter(
+                user=user,
+                transaction_date__year=year,
+                transaction_type='expense'
+            )
+            
+            category_sums = defaultdict(Decimal)
+            for tx in transactions:
+                if tx.category_id:
+                    val = tx.amount
+                    if val:
+                        category_sums[tx.category_id] += val
+            
+            # Categories that now have 0 spent but had a rollup record for this year
+            existing_rollups = CategoryRollup.objects.filter(user=user, year=year, month_number=None)
+            existing_cat_ids = set(existing_rollups.values_list('category_id', flat=True))
+            
+            all_involved_cat_ids = existing_cat_ids | set(category_sums.keys())
+            
+            for category_id in all_involved_cat_ids:
+                total_spent = category_sums.get(category_id, Decimal('0.00'))
+                CategoryRollup.objects.update_or_create(
+                    user=user,
+                    category_id=category_id,
+                    year=year,
+                    month_number=None,
+                    defaults={'total_spent': total_spent}
+                )
+
+    @staticmethod
+    def update_all_rollups(user: User, years_months: Iterable[Tuple[int, int | None]]) -> None:
+        """Updates both rollup tables and clears the dirty flag for the user."""
+        RollupService.update_user_rollup(user, years_months)
+        RollupService.update_category_rollup(user, years_months)
+
+        if hasattr(user, 'profile'):
+            profile = user.profile
+            profile.needs_rollup_recomputation = False
+            profile.save()
 
 
 class MerchantService:
@@ -218,3 +525,98 @@ class MerchantService:
                 (merchant, sum(source_counter[tg] for tg in merchant.fuzzy_search_trigrams) + additional_weight))
         best_results = sorted(results, key=lambda x: x[1], reverse=True)[:max_results]
         return [best_merchant for best_merchant, _ in best_results]
+
+
+class ForecastService:
+    """Service to handle statistical analysis and forecasting."""
+    @staticmethod
+    def compute_forecast(months: list[int], years: list[int], user: User | None = None):
+        """
+        Compute forecasts for the specified months and years and user.
+        :param months: if months and years are empty, then next month is used
+        :param years: if months and years are empty, then next month is used
+        :param user: target user, if None, then all users are considered
+        :return:
+        """
+        # 2. Batch users to save memory
+        if not user:
+            logger.info("No user provided. Computing forecasts for all users.")
+        else:
+            logger.info(f"Computing forecasts for user: {user.username}")
+        user_iterator = User.objects.all().iterator(chunk_size=50) if not user else User.objects.filter(
+            id=user.id).iterator()
+        target_dates = []
+        today = timezone.now().date()
+        if not len(years):
+            first_transaction = Transaction.objects.filter(user=user).order_by('transaction_date').first()
+            if not first_transaction or not first_transaction.transaction_date:
+                logger.info("No transactions found for user. Skipping forecast generation.")
+                return
+            start_date = first_transaction.transaction_date
+            years_to_iterate = list(range(start_date.year, today.year + 1))
+        else:
+            years_to_iterate = years.copy()
+        for year in years_to_iterate:
+            first_day_of_year = datetime.date(year, 1, 1)
+            if not len(months) and year == today.year:
+                months_to_iterate = list(range(first_day_of_year.month, today.month + 1))
+            elif not len(months):
+                months_to_iterate = list(range(first_day_of_year.month, 13))
+            else:
+                months_to_iterate = months.copy()
+            for month in months_to_iterate:
+                target_dates.append(
+                    (datetime.date(year, month, 1), datetime.datetime.now() - datetime.timedelta(days=ForecastConfig.get_history_days())))
+        for user in user_iterator:
+            logger.info(f"Processing user: {user.username} for target dates {target_dates}")
+            categories = Category.objects.filter(user=user)
+            for category in categories:
+                for target_date, period_start in target_dates:
+                    # 1. Setup timing (Target: Next month, first day)
+                    # Find first day of next month
+                    if target_date > today and (target_date - today).days > ForecastConfig.FORECAST_THRESHOLD_DAYS:
+                        logger.info(f"Skipping forecast for {target_date} as it is more than {ForecastConfig.FORECAST_THRESHOLD_DAYS} days away.")
+                        continue
+                    logger.info(
+                        f"Generating forecasts for {target_date} for user: {user.username} and category: {category.name}. Considering transactions from {period_start}")
+                    transactions = Transaction.objects.filter(
+                        user=user,
+                        category=category,
+                        transaction_date__gte=period_start,
+                        transaction_date__lte=target_date
+                    )
+                    grouped_data = {}
+                    for tx in transactions:
+                        key = (tx.transaction_date.year, tx.transaction_date.month)
+                        if key not in grouped_data:
+                            grouped_data[key] = 0
+                        grouped_data[key] += tx.amount
+
+                    forecast_inputs = [
+                        ForecastInput(date=datetime.date(year, month, 1), amount=float(amount))
+                        for (year, month), amount in grouped_data.items()
+                    ]
+                    logger.info(f"Generating forecast for {category.name}")
+                    
+                    # Check if a manual budget already exists
+                    existing_budget = MonthlyBudget.objects.filter(
+                        user=user,
+                        category=category,
+                        month=target_date
+                    ).first()
+                    
+                    if existing_budget and not existing_budget.is_automated:
+                        logger.info(f"Skipping manual budget for {category.name} in {target_date}")
+                        continue
+
+                    MonthlyBudget.objects.update_or_create(
+                        user=user,
+                        category=category,
+                        month=target_date,
+                        defaults={
+                            'planned_amount': compute_forecast(forecast_inputs),
+                            'is_automated': True
+                        }
+                    )
+
+            logger.info(f"User: {user.username} completed")

@@ -27,7 +27,7 @@
                   hx-target=".auth-content" 
                   hx-select=".auth-content" 
                   hx-swap="outerHTML"
-                  hx-indicator="#loading-indicator">
+                  hx-indicator=".htmx-progress">
                 {% csrf_token %}
 
                 {% if redirect_field_value %}
@@ -73,10 +73,6 @@
                     </div>
                 </div>
 
-                <div id="loading-indicator" class="htmx-indicator auth-loading">
-                    <div class="spinner"></div>
-                    <span>Attendere prego...</span>
-                </div>
 
                 <button type="submit" class="btn btn-primary btn-auth">Crea account</button>
 

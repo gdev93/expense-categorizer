@@ -82,6 +82,7 @@ TEMPLATES = [
                 'api.context_processors.user_uploads',
                 'api.context_processors.onboarding_status',
                 'api.context_processors.user_avatar',
+                'api.context_processors.base_template_context',
             ],
         },
     },

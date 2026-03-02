@@ -1,0 +1,143 @@
+{% extends base_template|default:"main/index.html" %}
+{% load static %}
+
+{% block title %}Budget Mensili{% endblock %}
+
+{% block content %}
+    <div class="container mt-2">
+        <form method="get" id="main-filter-form" hx-get="{% url 'budget_forecast_list' %}" hx-target="#main-content" hx-swap="innerHTML swap:50ms settle:200ms" hx-push-url="true"></form>
+        <div class="sticky-header-bar" id="stickyHeader">
+            <div class="header-main-content">
+                <div class="header">
+                    <div class="header-title-container">
+                        <h1><span class="material-icons header-icon">calendar_month</span>Piano di Budget</h1>
+                    </div>
+                    <div class="header-actions">
+                        {% include "components/year-select-compact.html" %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="budget-list-section">
+            {% if current_month_budget %}
+                <div class="section-title">
+                    <span class="material-icons">today</span>
+                    Mese Corrente
+                </div>
+                <div class="next-month-card" 
+                     hx-get="{% url 'budget_forecast_detail' year=current_month_budget.month.year month=current_month_budget.month.month %}"
+                     hx-target="#main-content"
+                     hx-push-url="true"
+                     hx-indicator=".htmx-progress"
+                     hx-swap="innerHTML swap:50ms settle:200ms">
+                    <div class="card-header">
+                        <span class="month-name">{{ current_month_budget.month|date:"F Y" }}</span>
+                        <div class="card-stat">
+                            <span class="label">Totale Pianificato</span>
+                            <span class="value">€ {{ current_month_budget.total_planned|floatformat:2|default:"0,00" }}</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="card-columns">
+                            <div class="card-column">
+                                <div class="card-subtitle">
+                                    Maggiori voci di spesa
+                                </div>
+                                <div class="top-categories-list">
+                                    {% for cat in current_month_budget.top_categories %}
+                                        {% if cat.amount > 0 %}
+                                            <div class="top-category-item">
+                                                <span class="cat-name">{{ cat.name }}</span>
+                                                <span class="cat-amount">€ {{ cat.amount|floatformat:2 }}</span>
+                                            </div>
+                                        {% endif %}
+                                    {% empty %}
+                                        <span class="text-muted small">Nessuna spesa prevista</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+                            <div class="card-column stats-column">
+                                <div class="card-subtitle">Andamento spesa</div>
+                                <div class="percentage-display">
+                                    {% if current_month_budget.spent_percentage is not None %}
+                                        <div class="spent-percentage-large {% if current_month_budget.spent_percentage > 100 %}over-budget{% endif %}">
+                                            {{ current_month_budget.spent_percentage|floatformat:0 }}%
+                                            <span class="label">speso</span>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <span>Visualizza Dettagli</span>
+                        <span class="material-icons">chevron_right</span>
+                    </div>
+                </div>
+            {% endif %}
+
+            {% if next_month_budget %}
+                <div class="section-title">
+                    <span class="material-icons">event</span>
+                    Prossimo Mese
+                </div>
+                <div class="data-list next-month-list-section">
+                    <div class="data-list-item next-month-highlight {% if not next_month_budget.forecast_available %}forecast-unavailable{% endif %}" 
+                         hx-get="{% url 'budget_forecast_detail' year=next_month_budget.month.year month=next_month_budget.month.month %}"
+                         hx-target="#main-content"
+                         hx-push-url="true"
+                         hx-indicator=".htmx-progress"
+                         hx-swap="innerHTML swap:50ms settle:200ms">
+                        <div class="list-item-info">
+                            <span class="category-name">{{ next_month_budget.month|date:"F Y" }}</span>
+                            {% if not next_month_budget.forecast_available %}
+                                <p class="forecast-message">
+                                    <span class="material-icons">info_outline</span>
+                                    Previsione non ancora disponibile, ma puoi pianificare manualmente.
+                                </p>
+                            {% endif %}
+                        </div>
+
+                        <div class="list-item-stats">
+                            <span class="list-amount">€ {{ next_month_budget.total_planned|floatformat:2|default:"0,00" }}</span>
+                            <span class="material-icons">chevron_right</span>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+
+            {% if other_months %}
+                <div class="section-title">
+                    <span class="material-icons">history</span>
+                    Altri Mesi del {{ year }}
+                </div>
+                <div class="data-list">
+                    {% for item in other_months %}
+                        <div class="data-list-item" 
+                             hx-get="{% url 'budget_forecast_detail' year=item.month.year month=item.month.month %}"
+                             hx-target="#main-content"
+                             hx-push-url="true"
+                             hx-indicator=".htmx-progress"
+                             hx-swap="innerHTML swap:50ms settle:200ms">
+                            <div class="list-item-info">
+                                <span class="category-name">{{ item.month|date:"F Y" }}</span>
+                            </div>
+
+                            <div class="list-item-stats">
+                                <span class="list-amount">€ {{ item.total_planned|floatformat:2|default:"0,00" }}</span>
+                                <span class="material-icons">chevron_right</span>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            {% if not next_month_budget and not other_months %}
+                {% include "components/empty-state.html" with icon="analytics" title="Nessun budget" description="Nessun piano di budget trovato. Prova a calcolarli nella vista di dettaglio." %}
+            {% endif %}
+        </div>
+    </div>
+    <script src="{% static 'js/budget.js' %}"></script>
+{% endblock %}

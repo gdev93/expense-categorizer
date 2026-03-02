@@ -7,12 +7,12 @@ from api.privacy_utils import encrypt_value, decrypt_value
 class EncryptedDecimalField(models.TextField):
     description = "A field that encrypts and decrypts Decimal values"
 
-    def from_db_value(self, value: str | None, expression: Any, connection: Any) -> Decimal:
+    def from_db_value(self, value: str | None, expression: Any, connection: Any) -> Decimal | None:
         if value is None:
-            return Decimal('0.00')
+            return None
         decrypted = decrypt_value(value)
         try:
-            return Decimal(decrypted) if decrypted else Decimal('0.00')
+            return Decimal(decrypted) if decrypted is not None else None
         except Exception:
             return Decimal('0.00')
 
