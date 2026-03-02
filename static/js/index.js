@@ -1,20 +1,21 @@
-document.addEventListener('DOMContentLoaded', function() {
-    function toggleMenu() {
-        const sidebar = document.getElementById('sidebar');
-        const overlay = document.getElementById('overlay');
-        if (!sidebar || !overlay) return;
-        
-        const isClosed = !sidebar.classList.contains('active');
-        if (isClosed) {
-            sidebar.classList.add('active');
-            overlay.classList.add('active');
-            document.body.style.overflow = 'hidden';
-        } else {
-            sidebar.classList.remove('active');
-            overlay.classList.remove('active');
-            document.body.style.overflow = '';
-        }
+function toggleMenu() {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('overlay');
+    if (!sidebar || !overlay) return;
+    
+    const isClosed = !sidebar.classList.contains('active');
+    if (isClosed) {
+        sidebar.classList.add('active');
+        overlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    } else {
+        sidebar.classList.remove('active');
+        overlay.classList.remove('active');
+        document.body.style.overflow = '';
     }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
 
     // Event delegation for general clicks
     document.addEventListener('click', function(e) {
@@ -102,8 +103,10 @@ document.querySelectorAll('.nav-link').forEach(link => {
         document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
         this.classList.add('active');
         if (window.innerWidth < 768) {
-            sidebar.classList.remove('active');
-            overlay.classList.remove('active');
+            const sidebar = document.getElementById('sidebar');
+            if (sidebar && sidebar.classList.contains('active')) {
+                toggleMenu();
+            }
         }
         const href = this.getAttribute('href');
         sessionStorage.setItem('activeNavItem', href);
