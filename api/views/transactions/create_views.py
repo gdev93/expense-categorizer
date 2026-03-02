@@ -9,7 +9,7 @@ from api.models import Transaction, Category, Merchant
 from api.privacy_utils import generate_blind_index
 
 
-class TransactionCreateView(LoginRequiredMixin, View):
+class TransactionCreateView(View):
 
     def get(self, request, *args, **kwargs):
         categories = Category.objects.filter(user=request.user)

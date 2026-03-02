@@ -56,7 +56,7 @@ def test_monthly_budget_forecast_view(client):
     assert '150.00' in content
     assert '1200.00' in content
     assert '1350,00' in content
-    assert 'Previsione AI' in content
+    assert 'Previsione' in content
     assert 'Budget Manuale' in content
 
 @pytest.mark.django_db
@@ -126,34 +126,24 @@ def test_monthly_budget_forecast_view_no_data(client):
     assert 'Nessuna previsione trovata per il mese prossimo.' in response.content.decode()
 
 @pytest.mark.django_db
-def test_monthly_budget_forecast_view_login_required(client):
-    url = reverse('budget_forecast')
-    response = client.get(url)
-    
-    # Should redirect to login
-    assert response.status_code == 302
-    assert 'accounts/login' in response.url
-
-@pytest.mark.django_db
 def test_monthly_budget_forecast_view_post(client):
-    user = User.objects.create_user(username='testuser', password='password')
-    client.login(username='testuser', password='password')
+    user = User.objects.create_user(username='testuser_post', password='password')
+    client.login(username='testuser_post', password='password')
     
     today = timezone.now().date()
     next_month_date = (today.replace(day=28) + datetime.timedelta(days=4)).replace(day=1)
     
     from unittest.mock import patch
     with patch('api.services.ForecastService.compute_forecast') as mock_compute:
-        response = client.post(reverse('budget_forecast'), {
+        url = reverse('budget_forecast_detail', kwargs={'year': next_month_date.year, 'month': next_month_date.month})
+        response = client.post(url, {
             'month': str(next_month_date.month),
             'year': str(next_month_date.year)
         })
         
-        # Current implementation will probably return 200 with string content (the URL string)
-        # We want it to be 302 after fix.
         assert response.status_code == 302
-        assert response.url == reverse('budget_forecast')
-        mock_compute.assert_any_call(user=user, months=[next_month_date.month], years=[next_month_date.year])
+        assert response.url == url
+        mock_compute.assert_any_call(user=user, months=[next_month_date.month], years=[next_month_date.year], categories=None)
 
 @pytest.mark.django_db
 def test_monthly_budget_forecast_view_htmx_post(client):
@@ -181,9 +171,11 @@ def test_monthly_budget_forecast_view_htmx_post(client):
             
         mock_compute.side_effect = update_budget
         
-        response = client.post(reverse('budget_forecast'), {
+        url = reverse('budget_forecast_detail', kwargs={'year': next_month_date.year, 'month': next_month_date.month})
+        response = client.post(url, {
             'month': str(next_month_date.month),
-            'year': str(next_month_date.year)
+            'year': str(next_month_date.year),
+            'category_id': str(cat.id)
         }, HTTP_HX_REQUEST='true')
 
         assert response.status_code == 200
@@ -198,8 +190,17 @@ def test_monthly_budget_forecast_view_htmx_post(client):
         assert 'Totale Pianificato' in content
         assert '75,00' in content
 
-        # Check that it was called at least once with the expected arguments
-        mock_compute.assert_any_call(user=user, months=[next_month_date.month], years=[next_month_date.year])
+        # Check that it was called with the expected category_id
+        mock_compute.assert_any_call(user=user, months=[next_month_date.month], years=[next_month_date.year], categories=[str(cat.id)])
+
+@pytest.mark.django_db
+def test_monthly_budget_forecast_view_login_required(client):
+    url = reverse('budget_forecast')
+    response = client.get(url)
+    
+    # Should redirect to login
+    assert response.status_code == 302
+    assert 'accounts/login' in response.url
 
 @pytest.mark.django_db
 def test_budget_spent_percentage_display(client):

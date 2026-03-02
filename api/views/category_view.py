@@ -27,7 +27,7 @@ from processors.similarity_matcher import SimilarityMatcher
 logger = logging.getLogger(__name__)
 
 
-class CategorySearchView(LoginRequiredMixin, ListView):
+class CategorySearchView(ListView):
     model = Category
     template_name = 'transactions/components/category_search_results.html'
     context_object_name = 'categories'
@@ -153,7 +153,7 @@ class CategoryEnrichedMixin(MonthYearFilterMixin):
 
         return categories_list
 # 1. VISUALIZATION VIEW (The List)
-class CategoryListView(LoginRequiredMixin, CategoryEnrichedMixin, ListView):
+class CategoryListView(CategoryEnrichedMixin, ListView):
     model = Category
     template_name = 'categories/categories.html'
     context_object_name = 'categories'
@@ -210,7 +210,7 @@ class CategoryListView(LoginRequiredMixin, CategoryEnrichedMixin, ListView):
         return context
 
 
-class CategoryExportView(LoginRequiredMixin, CategoryEnrichedMixin, View):
+class CategoryExportView(CategoryEnrichedMixin, View):
     def get(self, request, *args, **kwargs):
         filters = self.get_category_filters()
         selected_year = filters['year']
@@ -414,7 +414,7 @@ class CategoryDeleteView(DeleteView):
         messages.success(self.request, f"Category '{category_to_delete.name}' deleted. All transactions have been moved to '{replacement_category.name}'.")
         return super().form_valid(form)
 
-class CategoryFromMerchant(LoginRequiredMixin, View, SimilarityMatcher):
+class CategoryFromMerchant(View, SimilarityMatcher):
 
     def get(self, request:HttpRequest, *args, **kwargs):
         merchant_id = request.GET.get('merchant_id')

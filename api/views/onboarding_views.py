@@ -4,7 +4,7 @@ from django.shortcuts import render
 from django.views import View
 from api.models import Profile, OnboardingStep
 
-class OnboardingStepView(LoginRequiredMixin, View):
+class OnboardingStepView(View):
     def get(self, request, *args, **kwargs):
         step = request.GET.get('step')
         if not step:

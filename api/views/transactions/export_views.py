@@ -9,7 +9,7 @@ from django.views import View
 
 from api.views.transactions.transaction_mixins import TransactionFilterMixin
 
-class TransactionExportView(LoginRequiredMixin, TransactionFilterMixin, View):
+class TransactionExportView(TransactionFilterMixin, View):
 
     async def post(self, request, *args, **kwargs):
         # Update session filters if POST data is provided

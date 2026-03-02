@@ -56,13 +56,9 @@ class BudgetForecastView(ListView):
     template_name = 'budget/forecast.html'
     context_object_name = 'forecasts'
 
-    def __init__(self, **kwargs: Any):
-        super().__init__(kwargs)
-        self._budget_data = None
-
     def get_budget_data(self):
         """Fetch data from service, caching it for the duration of the request."""
-        if not hasattr(self, '_budget_data'):
+        if not hasattr(self, '_budget_data') or self._budget_data is None:
             target_date = get_next_month_date()
             self._budget_data = BudgetService.get_monthly_budgets_for_user(
                 self.request.user, target_date.year, target_date.month
@@ -138,6 +134,6 @@ class BudgetUpdateView(View):
 
                 return HttpResponse(list_html + summary_html + main_card_html)
             
-            return redirect('budget_forecast')
+            return redirect('budget_forecast_detail', year=budget.month.year, month=budget.month.month)
         except (MonthlyBudget.DoesNotExist, ValueError):
             return JsonResponse({'status': 'error', 'message': 'Invalid budget or amount'}, status=400)

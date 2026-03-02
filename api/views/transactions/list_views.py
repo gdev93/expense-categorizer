@@ -51,7 +51,7 @@ class TransactionListContextData:
         return asdict(self)
 
 
-class TransactionListView(LoginRequiredMixin, ListView, TransactionFilterMixin):
+class TransactionListView(ListView, TransactionFilterMixin):
     """Display list of transactions with filtering and pagination"""
     model = Transaction
     template_name = 'transactions/transaction_list.html'

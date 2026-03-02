@@ -530,12 +530,13 @@ class MerchantService:
 class ForecastService:
     """Service to handle statistical analysis and forecasting."""
     @staticmethod
-    def compute_forecast(months: list[int], years: list[int], user: User | None = None):
+    def compute_forecast(months: list[int], years: list[int], user: User | None = None, categories: list[int] | None = None):
         """
         Compute forecasts for the specified months and years and user.
         :param months: if months and years are empty, then next month is used
         :param years: if months and years are empty, then next month is used
         :param user: target user, if None, then all users are considered
+        :param categories: optional list of category ids to filter by
         :return:
         """
         # 2. Batch users to save memory
@@ -569,8 +570,10 @@ class ForecastService:
                     (datetime.date(year, month, 1), datetime.datetime.now() - datetime.timedelta(days=ForecastConfig.get_history_days())))
         for user in user_iterator:
             logger.info(f"Processing user: {user.username} for target dates {target_dates}")
-            categories = Category.objects.filter(user=user)
-            for category in categories:
+            categories_to_process = Category.objects.filter(user=user)
+            if categories:
+                categories_to_process = categories_to_process.filter(id__in=categories)
+            for category in categories_to_process:
                 for target_date, period_start in target_dates:
                     # 1. Setup timing (Target: Next month, first day)
                     # Find first day of next month

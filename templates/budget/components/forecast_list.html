@@ -17,6 +17,17 @@
                 </div>
 
                 <div class="list-item-stats">
+                    <div class="list-item-actions mr-2">
+                        <button type="button" 
+                                class="btn btn-icon btn-subtle" 
+                                hx-post="{% url 'budget_forecast_detail' year=forecast.month.year month=forecast.month.month %}"
+                                hx-vals='{"category_id": "{{ forecast.category.id }}"}'
+                                hx-target="#budget-list-container"
+                                hx-indicator=".htmx-progress"
+                                title="Ricalcola questa categoria">
+                            <span class="material-icons">refresh</span>
+                        </button>
+                    </div>
                     <div class="budget-input-wrapper">
                         <span class="currency-symbol">€</span>
                         <input type="number" 
@@ -30,7 +41,7 @@
                                hx-swap="innerHTML">
                     </div>
                     {% if forecast.is_automated %}
-                        <span class="badge-count bg-success">Previsione AI</span>
+                        <span class="badge-count bg-success">Previsione</span>
                     {% else %}
                         <span class="badge-count">Budget Manuale</span>
                     {% endif %}

@@ -4,7 +4,7 @@ from .models import ApiUsageLog, CostConfiguration
 from .services import CostService
 from django.db.models import Sum
 
-class CostSummaryView(LoginRequiredMixin, ListView):
+class CostSummaryView(ListView):
     model = ApiUsageLog
     template_name = 'costs/summary.html'
     context_object_name = 'logs'

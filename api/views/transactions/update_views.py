@@ -17,7 +17,7 @@ from processors.similarity_matcher import update_merchant_ema
 
 pre_check_confidence_threshold = os.environ.get('PRE_CHECK_CONFIDENCE_THRESHOLD', 0.8)
 
-class TransactionDetailUpdateView(LoginRequiredMixin, UpdateView):
+class TransactionDetailUpdateView(UpdateView):
     """
     A view to display and handle updates for a single Transaction instance.
     The view will re-render the detail template upon successful update,

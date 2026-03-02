@@ -38,7 +38,7 @@ class BudgetSummaryContext:
     def to_context(self) -> dict[str, Any]:
         return asdict(self)
 
-class BudgetForecastListView(LoginRequiredMixin, ListView):
+class BudgetForecastListView(ListView):
     """View to list months with budget forecasts"""
     model = MonthlyBudget
     template_name = 'budget/forecast_list.html'
@@ -82,14 +82,16 @@ class BudgetForecastListView(LoginRequiredMixin, ListView):
         self.selected_year = result.year
         return result.months
 
-class BudgetForecastDetailView(LoginRequiredMixin, ListView):
+class BudgetForecastDetailView(ListView):
     """View to display detailed budget forecasts for a specific month"""
     model = MonthlyBudget
     template_name = 'budget/forecast_detail.html'
     context_object_name = 'forecasts'
 
     def post(self, request, year, month, *args, **kwargs):
-        ForecastService.compute_forecast(user=self.request.user, months=[month], years=[year])
+        category_id = request.POST.get('category_id')
+        categories = [category_id] if category_id else None
+        ForecastService.compute_forecast(user=self.request.user, months=[month], years=[year], categories=categories)
         
         if request.headers.get('HX-Request'):
             result = BudgetService.get_monthly_budgets_for_user(

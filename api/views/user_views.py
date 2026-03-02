@@ -34,7 +34,7 @@ class UserDetailContextData:
     def to_context(self) -> dict:
         return asdict(self)
 
-class UserDetailView(LoginRequiredMixin, View):
+class UserDetailView(View):
     """View to show user profile and data summary"""
     template_name = 'api/user/detail.html'
 
@@ -53,7 +53,7 @@ class UserDetailView(LoginRequiredMixin, View):
         )
         return render(request, self.template_name, context.to_context())
 
-class UserDataExportView(LoginRequiredMixin, View):
+class UserDataExportView(View):
     """View to export all user data in CSV format"""
 
     def get(self, request: HttpRequest) -> HttpResponse:
@@ -74,7 +74,7 @@ class UserDataExportView(LoginRequiredMixin, View):
 
         return response
 
-class UserDeleteView(LoginRequiredMixin, View):
+class UserDeleteView(View):
     """View to handle user data deletion request"""
     template_name = 'api/user/delete_confirm.html'
     success_url = reverse_lazy('entry_point')

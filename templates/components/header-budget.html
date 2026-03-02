@@ -9,17 +9,5 @@
 
 {% block header_content %}
     <div class="header-budget-content">
-        <form hx-post="{{ recalculate_url|default:request.path }}" 
-              hx-target="#budget-list-container"
-              hx-indicator=".htmx-progress"
-              style="display: flex; align-items: center;">
-            {% csrf_token %}
-            <input type="hidden" name="month" value="{{ next_month.month }}">
-            <input type="hidden" name="year" value="{{ next_month.year }}">
-            <button type="submit" class="btn btn-primary">
-                <span class="material-icons align-middle">refresh</span> 
-                <span class="desktop-only">Ricalcola</span>
-            </button>
-        </form>
     </div>
 {% endblock %}

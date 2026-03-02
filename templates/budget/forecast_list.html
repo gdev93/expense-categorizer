@@ -10,7 +10,7 @@
             <div class="header-main-content">
                 <div class="header">
                     <div class="header-title-container">
-                        <h1><span class="material-icons header-icon">calendar_month</span>Piano di Budget</h1>
+                        <h1><span class="material-icons header-icon">calendar_month</span>I tuoi Budget</h1>
                     </div>
                     <div class="header-actions">
                         {% include "components/year-select-compact.html" %}
@@ -135,7 +135,7 @@
             {% endif %}
 
             {% if not next_month_budget and not other_months %}
-                {% include "components/empty-state.html" with icon="analytics" title="Nessun budget" description="Nessun piano di budget trovato. Prova a calcolarli nella vista di dettaglio." %}
+                {% include "components/empty-state.html" with icon="analytics" title="Nessun budget" description="Nessun budget trovato. Prova a calcolarli nella vista di dettaglio." %}
             {% endif %}
         </div>
     </div>
