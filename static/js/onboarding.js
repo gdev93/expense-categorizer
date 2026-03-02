@@ -13,6 +13,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         return cookieValue;
     }
+
     function updateOnboardingStep(step) {
         fetch('/onboarding/update-step/', {
             method: 'POST',
@@ -33,26 +34,58 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+
+    // Event delegation for all onboarding clicks
     document.addEventListener('click', function(e) {
-        const target = e.target.closest('#onboarding-skip-btn, #onboarding-finish-btn');
-        if (target) {
+        // 1. Skip or Finish onboarding
+        const onboardingTarget = e.target.closest('#onboarding-skip-btn, #onboarding-finish-btn');
+        if (onboardingTarget) {
             updateOnboardingStep(5);
+            return;
+        }
+
+        // 2. Show Replay Modal (Sidebar link)
+        if (e.target.closest('#replay-onboarding')) {
+            e.preventDefault();
+            const modal = document.getElementById('replay-modal');
+            if (modal) modal.style.display = 'flex';
+            return;
+        }
+
+        // 3. Confirm Replay button
+        if (e.target.closest('#replay-confirm')) {
+            updateOnboardingStep(1);
+            return;
+        }
+
+        // 4. Cancel Replay button or click on backdrop
+        const replayModal = document.getElementById('replay-modal');
+        if (replayModal) {
+            if (e.target.closest('#replay-cancel') || e.target === replayModal) {
+                replayModal.style.display = 'none';
+                return;
+            }
         }
     });
+
     let touchstartX = 0;
     let touchendX = 0;
+
     function handleGesture() {
         const threshold = 50;
         const currentStepEl = document.querySelector('.onboarding-step-content');
         if (!currentStepEl) return;
-        const step = parseInt(currentStepEl.id.split('-').pop());
+        
+        const stepMatch = currentStepEl.id.match(/onboarding-step-(\d+)/);
+        if (!stepMatch) return;
+        const step = parseInt(stepMatch[1]);
+
         if (touchendX < touchstartX - threshold) {
             const nextArrow = document.querySelector('.arrow-right');
             if (nextArrow) {
                 nextArrow.click();
             } else if (step === 4) {
-                const finishBtn = document.getElementById('onboarding-finish-btn');
-                if (finishBtn) finishBtn.click();
+                updateOnboardingStep(5);
             }
         }
         if (touchendX > touchstartX + threshold) {
@@ -60,40 +93,17 @@ document.addEventListener('DOMContentLoaded', function() {
             if (prevArrow) prevArrow.click();
         }
     }
+
     document.addEventListener('touchstart', function(e) {
         if (e.target.closest('#onboarding-modal')) {
             touchstartX = e.changedTouches[0].screenX;
         }
     }, {passive: true});
+
     document.addEventListener('touchend', function(e) {
         if (e.target.closest('#onboarding-modal')) {
             touchendX = e.changedTouches[0].screenX;
             handleGesture();
         }
     }, {passive: true});
-    const replayBtn = document.getElementById('replay-onboarding');
-    const replayModal = document.getElementById('replay-modal');
-    const replayConfirmBtn = document.getElementById('replay-confirm');
-    const replayCancelBtn = document.getElementById('replay-cancel');
-    if (replayBtn && replayModal) {
-        replayBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            replayModal.style.display = 'flex';
-        });
-        if (replayConfirmBtn) {
-            replayConfirmBtn.addEventListener('click', function() {
-                updateOnboardingStep(1);
-            });
-        }
-        if (replayCancelBtn) {
-            replayCancelBtn.addEventListener('click', function() {
-                replayModal.style.display = 'none';
-            });
-        }
-        replayModal.addEventListener('click', function(e) {
-            if (e.target === replayModal) {
-                replayModal.style.display = 'none';
-            }
-        });
-    }
 });

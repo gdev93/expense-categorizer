@@ -121,4 +121,7 @@ def test_all_months_auto_computed_in_list(client):
         assert MonthlyBudget.objects.filter(user=user, month=target_date).exists(), f"Budget for month {m} was not computed"
     
     april_date = datetime.date(2026, 4, 1)
-    assert not MonthlyBudget.objects.filter(user=user, month=april_date).exists(), "Budget for April should have been skipped (threshold)"
+    # Budget for April should now be initialized with 0 even if AI forecast was skipped
+    april_budget = MonthlyBudget.objects.filter(user=user, month=april_date).first()
+    assert april_budget is not None, "Budget for April was not initialized"
+    assert float(april_budget.planned_amount) == 0.0, "Budget for April should have 0 planned amount (threshold)"

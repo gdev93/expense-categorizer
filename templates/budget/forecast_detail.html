@@ -5,6 +5,19 @@
 
 {% block content %}
     <div class="container mt-2">
+        {% if not forecast_available %}
+            <div class="alert alert-info mb-4">
+                <div class="d-flex gap-2">
+                    <span class="material-icons">info</span>
+                    <div>
+                        <strong>Pianificazione manuale attiva.</strong><br>
+                        Le previsioni basate sull'IA non sono ancora disponibili per questo mese perché è troppo lontano nel futuro.
+                        Tuttavia, puoi pianificare i tuoi budget manualmente inserendo gli importi desiderati.
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
         {% include 'budget/components/budget-summary.html' %}
 
         {% include 'budget/components/budget-main-card.html' %}

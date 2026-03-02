@@ -324,3 +324,64 @@ def test_budget_spent_percentage_over_budget(client):
     assert '1100.00' in content
     assert '110,0%' in content or '110.0%' in content
     assert 'over-budget' in content
+
+@pytest.mark.django_db
+def test_far_future_budget_initializes_categories(client):
+    # 1. Setup user and categories
+    user = User.objects.create_user(username='futureuser', password='password')
+    client.login(username='futureuser', password='password')
+    
+    Category.objects.create(name='Groceries', user=user)
+    Category.objects.create(name='Entertainment', user=user)
+    
+    # 2. Pick a date more than 15 days away
+    today = timezone.now().date()
+    target_date = (today.replace(day=28) + datetime.timedelta(days=10)).replace(day=1)
+    
+    # Ensure no budgets exist yet
+    assert not MonthlyBudget.objects.filter(user=user, month=target_date).exists()
+    
+    # 3. Access the detail view
+    url = reverse('budget_forecast_detail', kwargs={'year': target_date.year, 'month': target_date.month})
+    response = client.get(url)
+    
+    # 4. Verify response
+    assert response.status_code == 200
+    assert response.context['forecast_available'] is False
+    
+    # Check if budgets were created with 0
+    budgets = MonthlyBudget.objects.filter(user=user, month=target_date)
+    assert budgets.count() == 2
+    for b in budgets:
+        assert float(b.planned_amount) == 0.0
+        assert b.is_automated is True
+        
+    # 5. Verify informative message in HTML
+    content = response.content.decode()
+    assert 'Pianificazione manuale attiva' in content
+    assert 'Groceries' in content
+    assert 'Entertainment' in content
+    assert '0.00' in content
+
+@pytest.mark.django_db
+def test_far_future_budget_view_message(client):
+    # Verify the main budget entry point also shows the message if it defaults to a far-future month
+    user = User.objects.create_user(username='futureuser2', password='password')
+    client.login(username='futureuser2', password='password')
+    Category.objects.create(name='Food', user=user)
+    
+    # budget_forecast view defaults to next month.
+    url = reverse('budget_forecast')
+    response = client.get(url)
+    
+    assert response.status_code == 200
+    # If next month is > 15 days away, forecast_available should be False
+    today = timezone.now().date()
+    next_month = (today.replace(day=28) + datetime.timedelta(days=4)).replace(day=1)
+    is_far = (next_month - today).days > 15
+    
+    if is_far:
+        assert response.context['forecast_available'] is False
+        assert 'Pianificazione manuale attiva' in response.content.decode()
+    else:
+        assert response.context['forecast_available'] is True

@@ -142,6 +142,7 @@ class MonthlyBudgetsResult:
     forecasts: list[MonthlyBudget]
     total_planned: float
     total_spent: float
+    forecast_available: bool = True
 
 @dataclass
 class TopCategory:
@@ -239,6 +240,13 @@ class BudgetService:
         BudgetService._ensure_forecasts_computed(user, year, month)
 
         target_date = datetime.date(year, month, 1)
+        today = timezone.now().date()
+        current_month_date = today.replace(day=1)
+        is_future = target_date > current_month_date
+        forecast_available = True
+        if is_future:
+            forecast_available = (target_date - today).days <= ForecastConfig.FORECAST_THRESHOLD_DAYS
+
         forecasts = MonthlyBudget.objects.filter(
             user=user,
             month=target_date
@@ -252,7 +260,8 @@ class BudgetService:
         return MonthlyBudgetsResult(
             forecasts=forecasts_list, 
             total_planned=total_planned,
-            total_spent=total_spent
+            total_spent=total_spent,
+            forecast_available=forecast_available
         )
 
     @staticmethod
@@ -580,7 +589,17 @@ class ForecastService:
                     # Find first day of next month
                     if not force_reset and target_date > today and (
                             target_date - today).days > ForecastConfig.FORECAST_THRESHOLD_DAYS:
-                        logger.info(f"Skipping forecast for {target_date} as it is more than {ForecastConfig.FORECAST_THRESHOLD_DAYS} days away.")
+                        logger.info(f"Skipping AI forecast for {target_date} as it is more than {ForecastConfig.FORECAST_THRESHOLD_DAYS} days away. Initializing with 0 if missing.")
+                        # Ensure record exists even if skipped for AI, to allow manual planning
+                        if not MonthlyBudget.objects.filter(user=user, category=category, month=target_date).exists():
+                             MonthlyBudget.objects.create(
+                                user=user,
+                                category=category,
+                                month=target_date,
+                                planned_amount=0,
+                                is_automated=True,
+                                user_amount=None
+                             )
                         continue
                     logger.info(
                         f"Generating forecasts for {target_date} for user: {user.username} and category: {category.name}. Considering transactions from {period_start}")

@@ -23,6 +23,7 @@ class BudgetForecastDetailContext:
     total_planned: float
     total_spent: float
     spent_percentage: float
+    forecast_available: bool = True
 
     def to_context(self) -> dict[str, Any]:
         return asdict(self)
@@ -147,7 +148,8 @@ class BudgetForecastDetailView(ListView):
             target_month=target_date,
             total_planned=self.result.total_planned,
             total_spent=self.result.total_spent,
-            spent_percentage=spent_percentage
+            spent_percentage=spent_percentage,
+            forecast_available=self.result.forecast_available
         )
         
         context.update(detail_context.to_context())
