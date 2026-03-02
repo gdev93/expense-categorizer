@@ -7,13 +7,12 @@ from functools import wraps
 from typing import Iterable, Dict, Tuple, Any, List
 
 from django.contrib.auth.models import User
-from django.db import transaction
 from django.db.models import QuerySet
 from django.utils import timezone
 
-from api.models import Transaction, Merchant, YearlyMonthlyUserRollup, MonthlyBudget, Category, CategoryRollup, Profile
-from api.privacy_utils import generate_blind_index, generate_encrypted_trigrams
 from api.config import ForecastConfig
+from api.models import Transaction, Merchant, YearlyMonthlyUserRollup, MonthlyBudget, Category, CategoryRollup
+from api.privacy_utils import generate_blind_index, generate_encrypted_trigrams
 from processors.stats import ForecastInput, compute_forecast
 
 logger = logging.getLogger(__name__)
@@ -530,13 +529,15 @@ class MerchantService:
 class ForecastService:
     """Service to handle statistical analysis and forecasting."""
     @staticmethod
-    def compute_forecast(months: list[int], years: list[int], user: User | None = None, categories: list[int] | None = None):
+    def compute_forecast(months: list[int], years: list[int], user: User | None = None,
+                         categories: list[int] | None = None, force_reset: bool = False):
         """
         Compute forecasts for the specified months and years and user.
         :param months: if months and years are empty, then next month is used
         :param years: if months and years are empty, then next month is used
         :param user: target user, if None, then all users are considered
         :param categories: optional list of category ids to filter by
+        :param force_reset: if True, overwrites manual budgets and resets user_amount
         :return:
         """
         # 2. Batch users to save memory
@@ -577,7 +578,8 @@ class ForecastService:
                 for target_date, period_start in target_dates:
                     # 1. Setup timing (Target: Next month, first day)
                     # Find first day of next month
-                    if target_date > today and (target_date - today).days > ForecastConfig.FORECAST_THRESHOLD_DAYS:
+                    if not force_reset and target_date > today and (
+                            target_date - today).days > ForecastConfig.FORECAST_THRESHOLD_DAYS:
                         logger.info(f"Skipping forecast for {target_date} as it is more than {ForecastConfig.FORECAST_THRESHOLD_DAYS} days away.")
                         continue
                     logger.info(
@@ -607,19 +609,31 @@ class ForecastService:
                         category=category,
                         month=target_date
                     ).first()
-                    
-                    if existing_budget and not existing_budget.is_automated:
+
+                    if not force_reset and existing_budget and not existing_budget.is_automated:
                         logger.info(f"Skipping manual budget for {category.name} in {target_date}")
                         continue
+                    if force_reset:
+                        MonthlyBudget.objects.update_or_create(
+                            user=user,
+                            category=category,
+                            month=target_date,
+                            defaults={
+                                'planned_amount': compute_forecast(forecast_inputs),
+                                'is_automated': True,
+                                'user_amount': None
+                            }
+                        )
+                    else:
+                        monthly_budget = MonthlyBudget.objects.filter(
+                            user=user,
+                            category=category,
+                            month=target_date
+                        ).first()
+                        if monthly_budget:
+                            monthly_budget.planned_amount = compute_forecast(forecast_inputs)
+                            monthly_budget.is_automated = monthly_budget.user_amount is not None
+                            monthly_budget.save()
 
-                    MonthlyBudget.objects.update_or_create(
-                        user=user,
-                        category=category,
-                        month=target_date,
-                        defaults={
-                            'planned_amount': compute_forecast(forecast_inputs),
-                            'is_automated': True
-                        }
-                    )
 
             logger.info(f"User: {user.username} completed")

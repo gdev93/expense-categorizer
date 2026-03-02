@@ -91,7 +91,7 @@ class BudgetForecastDetailView(ListView):
     def post(self, request, year, month, *args, **kwargs):
         category_id = request.POST.get('category_id')
         categories = [category_id] if category_id else None
-        ForecastService.compute_forecast(user=self.request.user, months=[month], years=[year], categories=categories)
+        ForecastService.compute_forecast(user=self.request.user, months=[month], years=[year], categories=categories, force_reset=True)
         
         if request.headers.get('HX-Request'):
             result = BudgetService.get_monthly_budgets_for_user(

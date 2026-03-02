@@ -143,7 +143,7 @@ def test_monthly_budget_forecast_view_post(client):
         
         assert response.status_code == 302
         assert response.url == url
-        mock_compute.assert_any_call(user=user, months=[next_month_date.month], years=[next_month_date.year], categories=None)
+        mock_compute.assert_any_call(user=user, months=[next_month_date.month], years=[next_month_date.year], categories=None, force_reset=True)
 
 @pytest.mark.django_db
 def test_monthly_budget_forecast_view_htmx_post(client):
@@ -191,7 +191,42 @@ def test_monthly_budget_forecast_view_htmx_post(client):
         assert '75,00' in content
 
         # Check that it was called with the expected category_id
-        mock_compute.assert_any_call(user=user, months=[next_month_date.month], years=[next_month_date.year], categories=[str(cat.id)])
+        mock_compute.assert_any_call(user=user, months=[next_month_date.month], years=[next_month_date.year], categories=[str(cat.id)], force_reset=True)
+
+@pytest.mark.django_db
+def test_monthly_budget_forecast_reload_resets_manual_amount(client):
+    user = User.objects.create_user(username='resetuser', password='password')
+    client.login(username='resetuser', password='password')
+    
+    cat = Category.objects.create(name='Coffee', user=user)
+    today = timezone.now().date()
+    next_month_date = (today.replace(day=28) + datetime.timedelta(days=4)).replace(day=1)
+    
+    # Pre-create a manual budget
+    budget = MonthlyBudget.objects.create(
+        user=user,
+        category=cat,
+        month=next_month_date,
+        planned_amount=50.00,
+        user_amount=100.00,
+        is_automated=False
+    )
+    
+    url = reverse('budget_forecast_detail', kwargs={'year': next_month_date.year, 'month': next_month_date.month})
+    
+    # This should trigger compute_forecast which should reset the budget because it's a reload action
+    response = client.post(url, {
+        'month': str(next_month_date.month),
+        'year': str(next_month_date.year),
+        'category_id': str(cat.id)
+    }, HTTP_HX_REQUEST='true')
+    
+    assert response.status_code == 200
+    
+    budget.refresh_from_db()
+    # It should be reset to automated and user_amount should be None
+    assert budget.is_automated is True
+    assert budget.user_amount is None
 
 @pytest.mark.django_db
 def test_monthly_budget_forecast_view_login_required(client):
