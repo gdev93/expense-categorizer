@@ -22,13 +22,13 @@
                 <h1><span class="material-icons transaction-list-header-icon">{% if view_type == 'merchant' %}store{% else %}receipt_long{% endif %}</span> {% if view_type == 'merchant' %}Spese per Esercente{% else %}Lista Spese{% endif %}</h1>
                 <div class="header-extra">
                     <div class="mobile-only">
-                        {% include "components/year-select.html" with id_suffix="_mobile_toggle" show_year=False %}
+                        {% include "components/year-select.html" with id_suffix="_mobile_toggle" show_year=False show_toggle=False %}
                     </div>
                 </div>
             </div>
             <div class="header-actions">
                 <div class="desktop-only">
-                    {% include "components/year-select.html" with id_suffix="_desktop" %}
+                    {% include "components/year-select.html" with id_suffix="_desktop" show_toggle=False %}
                 </div>
                 <div class="mobile-only">
                     {% include "components/year-select.html" with id_suffix="_mobile" show_toggle=False %}

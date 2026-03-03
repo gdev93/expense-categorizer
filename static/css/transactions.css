@@ -756,10 +756,25 @@ details.expander-card[open] .expander-icon {
     align-items: center;
 }
 
+.header-with-action-title {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+@media (max-width: 576px) {
+    .header-with-action-title {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+}
+
 /* FAB button for mobile */
 .btn-fab {
     display: flex;
-    text-align: center;
+    align-items: center;
+    justify-content: center;
     width: 30px;
     height: 30px;
     border-radius: 50%;

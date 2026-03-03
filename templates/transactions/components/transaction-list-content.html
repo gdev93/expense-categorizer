@@ -31,27 +31,39 @@
 {% endif %}
 
 <!-- Transaction List -->
-{% if transactions %}
-    <div class="header-with-action mb-3">
+<div class="header-with-action mb-2">
+    <div class="header-with-action-title">
         <h2 class="mb-0"> Spese Categorizzate</h2>
-        <button class="btn btn-primary desktop-only" 
-                hx-get="{% url 'transaction_create' %}"
-                hx-target="#main-content"
-                hx-push-url="true"
-                hx-indicator=".htmx-progress"
-                hx-swap="innerHTML swap:50ms settle:200ms">
-            <span class="material-icons transaction-list-add-icon">add_circle</span> Aggiungi Spesa
-        </button>
-        <button class="btn-fab mobile-only" 
-                hx-get="{% url 'transaction_create' %}"
-                hx-target="#main-content"
-                hx-push-url="true"
-                hx-indicator=".htmx-progress"
-                hx-swap="innerHTML swap:50ms settle:200ms">
-            <span class="material-icons">add</span>
-        </button>
     </div>
+    <button class="btn btn-primary desktop-only"
+            hx-get="{% url 'transaction_create' %}"
+            hx-target="#main-content"
+            hx-push-url="true"
+            hx-indicator=".htmx-progress"
+            hx-swap="innerHTML swap:50ms settle:200ms">
+        <span class="material-icons transaction-list-add-icon">add_circle</span> Aggiungi Spesa
+    </button>
+    <button class="btn-fab mobile-only"
+            hx-get="{% url 'transaction_create' %}"
+            hx-target="#main-content"
+            hx-push-url="true"
+            hx-indicator=".htmx-progress"
+            hx-swap="innerHTML swap:50ms settle:200ms">
+        <span class="material-icons">add</span>
+    </button>
+</div>
 
+<div class="view-toggle mb-3" data-view-type="{{ view_type }}">
+    <input type="radio" name="view_type" id="view_list_content" value="list" {% if view_type != 'merchant' %}checked{% endif %} form="main-filter-form"
+           onchange="this.parentElement.setAttribute('data-view-type', this.value)">
+    <label for="view_list_content">Lista</label>
+
+    <input type="radio" name="view_type" id="view_merchant_content" value="merchant" {% if view_type == 'merchant' %}checked{% endif %} form="main-filter-form"
+           onchange="this.parentElement.setAttribute('data-view-type', this.value)">
+    <label for="view_merchant_content">Esercente</label>
+</div>
+
+{% if transactions %}
     <div class="data-list" id="scroll-target">
         {% for transaction in transactions %}
             {% include "transactions/components/transaction_item.html" with transaction=transaction %}
