@@ -91,7 +91,7 @@
                     Prossimo Mese
                 </div>
                 <div class="data-list next-month-list-section">
-                    <div class="data-list-item next-month-highlight {% if not next_month_budget.forecast_available %}forecast-unavailable{% endif %}" 
+                    <div class="data-list-item next-month-highlight budget-month-item {% if not next_month_budget.forecast_available %}forecast-unavailable{% endif %}" 
                          hx-get="{% url 'budget_forecast_detail' year=next_month_budget.month.year month=next_month_budget.month.month %}"
                          hx-target="#main-content"
                          hx-push-url="true"
@@ -122,7 +122,7 @@
                 </div>
                 <div class="data-list">
                     {% for item in other_months %}
-                        <div class="data-list-item" 
+                        <div class="data-list-item budget-month-item" 
                              hx-get="{% url 'budget_forecast_detail' year=item.month.year month=item.month.month %}"
                              hx-target="#main-content"
                              hx-push-url="true"

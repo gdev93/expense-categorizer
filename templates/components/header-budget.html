@@ -3,10 +3,6 @@
 {% block header_extra_classes %}header-stacked-mobile{% endblock %}
 
 {% block header_extra_title %}
-    <div class="header-total-pill header-budget-total-pill" id="budget-total-pill">
-        <span class="label">Totale Pianificato</span>
-        <span class="value">€ {{ total_planned|floatformat:2|default:"0,00" }}</span>
-    </div>
 {% endblock %}
 
 {% block header_content %}
@@ -22,7 +18,7 @@
                     data-confirm-proceed="Copia ora"
                     hx-confirm="Sei sicuro di voler copiare il budget dal mese scorso? Tutti i cambiamenti manuali correnti verranno sovrascritti.">
                 <span class="material-icons" style="font-size: 1.1rem;">content_copy</span>
-                Copia da mese scorso
+                Copia
             </button>
             <button class="btn btn-primary btn-sm d-flex align-items-center gap-1"
                     hx-post="{% url 'budget_reset' year=next_month.year month=next_month.month %}"

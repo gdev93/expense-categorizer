@@ -385,3 +385,68 @@
 .spent-percent.over-budget {
     color: var(--expense-color);
 }
+
+/* Budget list item specific styles */
+.budget-list-item {
+    position: relative;
+    padding-top: 38px !important;
+}
+
+.budget-list-item .list-item-stats {
+    align-items: center;
+}
+
+.budget-list-item .category-name {
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-right: 12px;
+}
+
+.budget-type-badge {
+    position: absolute;
+    top: 10px;
+    right: 24px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 2px 10px;
+    border-radius: 20px;
+    background-color: #f8f9fa;
+    color: var(--secondary-color);
+    border: 1px solid #e9ecef;
+}
+
+.budget-type-badge.bg-success {
+    background-color: #e6fffa !important;
+    color: #2c7a7b !important;
+    border-color: #b2f5ea !important;
+}
+
+@media (max-width: 767px) {
+    .budget-list-item {
+        padding-top: 32px !important;
+        padding-left: 18px !important;
+        padding-right: 18px !important;
+    }
+    .budget-type-badge {
+        top: 8px;
+        right: 18px;
+        font-size: 0.6rem;
+    }
+    .budget-list-item .list-item-stats,
+    .budget-month-item .list-item-stats {
+        margin-left: auto;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: flex-end !important;
+        gap: 10px !important;
+        flex-shrink: 0;
+    }
+    .budget-list-item .list-item-info {
+        flex: 1;
+    }
+}

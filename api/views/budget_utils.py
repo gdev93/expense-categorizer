@@ -57,12 +57,12 @@ def render_budget_htmx_response(request: HttpRequest, year: int, month: int, inc
         next_month=datetime.date(year, month, 1)
     )
     summary_html = render_to_string('budget/components/budget-summary.html',
-                                    summary_context.to_context(),
+                                    {**summary_context.to_context(), 'hx_oob': True},
                                     request=request)
 
     # Render the main card
     main_card_html = render_to_string('budget/components/budget-main-card.html',
-                                      summary_context.to_context(),
+                                      {**summary_context.to_context(), 'hx_oob': True},
                                       request=request)
 
     response_html = list_html + summary_html + main_card_html
