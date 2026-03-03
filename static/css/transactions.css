@@ -762,17 +762,9 @@ details.expander-card[open] .expander-icon {
     gap: 15px;
 }
 
-@media (max-width: 576px) {
-    .header-with-action-title {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 8px;
-    }
-}
-
 /* FAB button for mobile */
 .btn-fab {
-    display: flex;
+    display: flex !important;
     align-items: center;
     justify-content: center;
     width: 30px;
