@@ -1,4 +1,4 @@
-<div class="header">
+<div class="header {% block header_extra_classes %}{% endblock %}">
     <div class="header-title-container">
         <h1>{% if icon %}<span class="material-icons header-icon">{{ icon }}</span>{% endif %}{{ title }}</h1>
         <div class="header-extra">

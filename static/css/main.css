@@ -183,7 +183,6 @@ h3 { font-size: 18px; }
     font-size: 14px;
     line-height: 1;
     border-radius: 4px;
-    font-weight: 500;
 }
 
 .btn-danger-custom {
@@ -491,33 +490,38 @@ input:focus,
         display: inline-block !important;
     }
 
-    .header {
+    .header-stacked-mobile {
         display: grid;
         grid-template-columns: 1fr auto;
         gap: 10px;
         align-items: center;
     }
 
-    .header-title-container {
+    .header-stacked-mobile .header-title-container {
         display: contents;
     }
 
-    .header h1 {
+    .header-stacked-mobile h1 {
         grid-column: 1;
         grid-row: 1;
         margin: 0;
+        line-height: 1.2;
     }
 
-    .header-actions {
+    .header-stacked-mobile .header-actions {
+        grid-column: 1 / span 2;
+        grid-row: 2;
+        justify-self: start;
+        gap: 8px;
+        width: 100%;
+        display: flex;
+        flex-wrap: wrap;
+    }
+
+    .header-stacked-mobile .header-extra {
         grid-column: 2;
         grid-row: 1;
         justify-self: end;
-        gap: 8px;
-    }
-
-    .header-extra {
-        grid-column: 1 / span 2;
-        grid-row: 2;
     }
 
     .flex-column-mobile {
@@ -665,6 +669,17 @@ input:focus,
     border-radius: 12px;
     box-shadow: 0 10px 25px rgba(0,0,0,0.2);
     animation: modalFadeIn 0.3s ease-out;
+    position: relative;
+}
+
+.app-modal-content .close-btn {
+    top: 15px;
+    right: 15px;
+    transform: none;
+}
+
+.app-modal-content .close-btn:hover {
+    transform: scale(1.1);
 }
 
 @media (min-width: 768px) {
@@ -751,6 +766,14 @@ input:focus,
 @media (max-width: 767px) {
     .messages-container .alert {
         max-width: none;
+    }
+    .alert .close-btn {
+        top: 8px;
+        right: 8px;
+        transform: none;
+    }
+    .alert .close-btn:hover {
+        transform: scale(1.1);
     }
 }
 

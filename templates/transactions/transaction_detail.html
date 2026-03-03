@@ -22,6 +22,10 @@
                 <form hx-post="{% url 'transaction_detail' transaction.id %}" 
                       hx-target="#main-content"
                       hx-indicator=".htmx-progress"
+                      data-confirm-title="Elimina Transazione"
+                      data-confirm-icon="delete"
+                      data-confirm-proceed="Elimina ora"
+                      data-confirm-type="danger"
                       hx-confirm="Sei sicuro di voler eliminare questa transazione? Questa azione non è reversibile.">
                     {% csrf_token %}
                     <button type="submit" name="delete" class="btn btn-icon btn-subtle-danger btn-expand-desktop" title="Elimina">

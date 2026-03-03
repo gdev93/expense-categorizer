@@ -1,8 +1,8 @@
 import datetime
 from dataclasses import dataclass, asdict
-from pyexpat.errors import messages
 from typing import Any
 
+from django.contrib import messages
 from django.http import JsonResponse, HttpResponse
 from django.shortcuts import redirect
 from django.template.loader import render_to_string
@@ -142,7 +142,10 @@ class BudgetCopyView(View):
     """View to copy a budget from the previous month"""
 
     def post(self, request, year: int, month: int, *args: Any, **kwargs: Any) -> HttpResponse:
-        BudgetService.copy_budget_from_previous_month(request.user, year, month)
+        copied = BudgetService.copy_budget_from_previous_month(request.user, year, month)
+
+        if not copied:
+            messages.info(request, "Nessun budget trovato per il mese scorso. È stata applicata la previsione automatica.")
 
         if request.headers.get('HX-Request'):
             result = BudgetService.get_monthly_budgets_for_user(
@@ -171,7 +174,13 @@ class BudgetCopyView(View):
                                               summary_context.to_context(),
                                               request=request)
 
-            return HttpResponse(list_html + summary_html + main_card_html)
+            # Render the messages partial which has hx-swap-oob="true"
+            messages_html = render_to_string('components/messages.html', {
+                'messages': messages.get_messages(request),
+                'hx_oob': True
+            }, request=request)
+
+            return HttpResponse(list_html + summary_html + main_card_html + messages_html)
 
         return redirect('budget_forecast_detail', year=year, month=month)
 

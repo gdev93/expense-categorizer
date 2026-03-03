@@ -61,6 +61,78 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     }, { passive: true });
+
+    // Global HTMX Confirmation Modal handler
+    document.body.addEventListener('htmx:confirm', function(evt) {
+        const confirmation = evt.target.getAttribute('hx-confirm');
+        if (confirmation) {
+            evt.preventDefault();
+            
+            const modal = document.getElementById('confirmation-modal');
+            const titleEl = document.getElementById('confirm-title');
+            const bodyEl = document.getElementById('confirm-body');
+            const iconEl = document.getElementById('confirm-icon');
+            const proceedBtn = document.getElementById('confirm-proceed-btn');
+            const cancelBtn = document.getElementById('confirm-cancel-btn');
+            const closeBtn = document.getElementById('confirm-close-btn');
+            
+            if (!modal) return;
+
+            // Personalize based on data attributes
+            const title = evt.target.getAttribute('data-confirm-title') || 'Conferma';
+            const icon = evt.target.getAttribute('data-confirm-icon') || 'help_outline';
+            const proceedText = evt.target.getAttribute('data-confirm-proceed') || 'Conferma';
+            const cancelText = evt.target.getAttribute('data-confirm-cancel') || 'Annulla';
+            const confirmType = evt.target.getAttribute('data-confirm-type');
+            
+            titleEl.textContent = title;
+            bodyEl.textContent = confirmation;
+            iconEl.textContent = icon;
+            proceedBtn.textContent = proceedText;
+            cancelBtn.textContent = cancelText;
+            
+            // Set button style based on type
+            if (confirmType === 'danger' || evt.target.classList.contains('btn-danger') || evt.target.classList.contains('btn-danger-custom')) {
+                proceedBtn.className = 'btn btn-danger';
+            } else {
+                proceedBtn.className = 'btn btn-primary';
+            }
+            
+            modal.style.display = 'flex';
+            
+            const onConfirm = () => {
+                modal.style.display = 'none';
+                cleanup();
+                evt.detail.issueRequest();
+            };
+            
+            const onCancel = () => {
+                modal.style.display = 'none';
+                cleanup();
+            };
+            
+            const onBackdrop = (e) => {
+                if (e.target === modal) {
+                    onCancel();
+                }
+            };
+            
+            const cleanup = () => {
+                proceedBtn.removeEventListener('click', onConfirm);
+                cancelBtn.removeEventListener('click', onCancel);
+                if (closeBtn) closeBtn.removeEventListener('click', onCancel);
+                modal.removeEventListener('click', onBackdrop);
+            };
+            
+            // Avoid duplicate listeners
+            cleanup();
+            
+            proceedBtn.addEventListener('click', onConfirm);
+            cancelBtn.addEventListener('click', onCancel);
+            if (closeBtn) closeBtn.addEventListener('click', onCancel);
+            modal.addEventListener('click', onBackdrop);
+        }
+    });
 });
 function setActiveNavItem() {
     const currentPath = window.location.pathname;

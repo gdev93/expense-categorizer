@@ -1,5 +1,7 @@
 {% extends "components/header.html" %}
 
+{% block header_extra_classes %}header-stacked-mobile{% endblock %}
+
 {% block header_extra_title %}
     <div class="header-total-pill header-budget-total-pill" id="budget-total-pill">
         <span class="label">Totale Pianificato</span>
@@ -14,6 +16,9 @@
                     hx-post="{% url 'budget_copy' year=next_month.year month=next_month.month %}"
                     hx-target="#budget-list-container"
                     hx-indicator=".htmx-progress"
+                    data-confirm-title="Copia Budget"
+                    data-confirm-icon="content_copy"
+                    data-confirm-proceed="Copia ora"
                     hx-confirm="Sei sicuro di voler copiare il budget dal mese scorso? Tutti i cambiamenti manuali correnti verranno sovrascritti.">
                 <span class="material-icons" style="font-size: 1.1rem;">content_copy</span>
                 Copia da mese scorso
@@ -22,6 +27,10 @@
                     hx-post="{% url 'budget_reset' year=next_month.year month=next_month.month %}"
                     hx-target="#budget-list-container"
                     hx-indicator=".htmx-progress"
+                    data-confirm-title="Ricalcola Budget"
+                    data-confirm-icon="refresh"
+                    data-confirm-proceed="Ricalcola ora"
+                    data-confirm-type="danger"
                     hx-confirm="Sei sicuro di voler ricalcolare il budget? Tutti i cambiamenti manuali verranno persi.">
                 <span class="material-icons" style="font-size: 1.1rem;">refresh</span>
                 Ricalcola

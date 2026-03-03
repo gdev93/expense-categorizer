@@ -318,7 +318,22 @@
     margin-bottom: 30px;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 767px) {
+    .header-stacked-mobile .header-budget-content {
+        justify-content: flex-start;
+        margin-left: 0;
+        width: 100%;
+    }
+    .header-budget-total-pill {
+        padding: 4px 12px;
+        border-radius: 12px;
+    }
+    .header-budget-total-pill .label {
+        font-size: 0.6rem;
+    }
+    .header-budget-total-pill .value {
+        font-size: 0.9rem;
+    }
     .budget-amount-input {
         width: 90px;
         font-size: 0.9rem;

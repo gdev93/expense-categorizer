@@ -348,7 +348,7 @@ class BudgetService:
         ).update(is_automated=True, user_amount=None)
 
     @staticmethod
-    def copy_budget_from_previous_month(user: User, year: int, month: int) -> None:
+    def copy_budget_from_previous_month(user: User, year: int, month: int) -> bool:
         """Copy budget settings (user_amount, is_automated) from the previous month to the current one."""
         target_month = month - 1 if month > 1 else 12
         target_year = year if month > 1 else year - 1
@@ -364,6 +364,12 @@ class BudgetService:
             user=user,
             month=previous_monthly_budget_date
         )
+
+        if not all_previous_category_budgets.exists():
+            # If no previous budget available, reset current to forecast
+            BudgetService.reset_monthly_budgets(user, year, month)
+            return False
+
         all_current_category_budgets = MonthlyBudget.objects.filter(
             user=user,
             month=current_monthly_budget_date
@@ -380,6 +386,8 @@ class BudgetService:
             curr_budget.user_amount = prev_budget.user_amount
             curr_budget.is_automated = prev_budget.is_automated
             curr_budget.save()
+
+        return True
 
 
 class RollupService:

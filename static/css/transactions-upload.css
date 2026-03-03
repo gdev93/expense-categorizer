@@ -56,19 +56,6 @@
     justify-content: center;
 }
 
-.default-category-modal .app-modal-content {
-    position: relative;
-}
-
-.default-category-modal .close-btn {
-    top: 15px;
-    right: 15px;
-    transform: none;
-}
-
-.default-category-modal .close-btn:hover {
-    transform: scale(1.1);
-}
 
 /* Desktop specific width and height */
 @media (min-width: 768px) {
