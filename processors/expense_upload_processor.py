@@ -3,11 +3,12 @@ import logging
 import os
 import re
 from concurrent.futures import ThreadPoolExecutor
-from typing import Iterable, Any
+from typing import Iterable
 
 from django.contrib.auth.models import User
 from django.core.files.uploadedfile import UploadedFile
 from django.db import transaction
+
 from agent.agent import ExpenseCategorizerAgent, AgentTransactionUpload, TransactionCategorization, GeminiResponse
 from api.models import Transaction, Category, Merchant, UploadFile, MerchantEMA
 from api.privacy_utils import generate_blind_index
@@ -39,6 +40,16 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
     pre_check_iterator_fetch_size = int(os.environ.get('PRE_CHECK_ITERATOR_FETCH_SIZE', '50'))
     gemini_max_retries = int(os.environ.get('GEMINI_MAX_RETRIES', '5'))
     gemini_base_delay = int(os.environ.get('GEMINI_BASE_DELAY', '2'))
+
+    # RAG specific weights and thresholds
+    rag_length_bonus_multiplier = float(os.environ.get('RAG_LENGTH_BONUS_MULTIPLIER', '0.015'))
+    rag_max_length_bonus = float(os.environ.get('RAG_MAX_LENGTH_BONUS', '0.12'))
+    rag_position_penalty_divisor = float(os.environ.get('RAG_POSITION_PENALTY_DIVISOR', '1000.0'))
+    rag_short_name_threshold = int(os.environ.get('RAG_SHORT_NAME_THRESHOLD', '4'))
+    rag_short_name_position_threshold = int(os.environ.get('RAG_SHORT_NAME_POSITION_THRESHOLD', '10'))
+    rag_missing_name_distance_threshold = float(os.environ.get('RAG_MISSING_NAME_DISTANCE_THRESHOLD', '0.03'))
+    rag_missing_string_penalty = float(os.environ.get('RAG_MISSING_STRING_PENALTY', '0.3'))
+    rag_max_distance = float(os.environ.get('RAG_MAX_DISTANCE', '1.0'))
 
     def __init__(self, user: User, user_rules: list[str] = None, available_categories: list[Category] | None = None, batch_helper:BatchingHelper | None = None) -> None:
         self.user = user
@@ -224,14 +235,10 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
 
     def _is_rag_context_valid(self, tx: Transaction, target_description_to_check: str) -> MerchantEMA | None:
         """
-        Validates RAG context by combining semantic vector distance with string matching.
-
-        This improves on simple regex by:
-        1. Using a composite score: (Vector Distance) + (String Position / 1000).
-        2. Preventing false positives from very short merchant names (e.g., "A", "IT").
-        3. Allowing high-confidence semantic matches even if a direct string match fails.
+        Validates RAG context using dynamic weights. 
+        Prioritizes string matches and penalizes low-information matches.
         """
-        # find_rag_context returns MerchantEMA objects annotated with 'distance'
+        # Fetches top 5 candidates
         useful_context = self.find_rag_context(tx.embedding, self.user)
         tx.rag_context = useful_context
 
@@ -240,54 +247,51 @@ class ExpenseUploadProcessor(SimilarityMatcherRAG):
 
         description_to_check = target_description_to_check.lower()
         final_ref = None
-
-        # We look for the lowest score (0.0 is perfect)
         best_composite_score = float('inf')
 
         for ctx_ema in useful_context:
             merchant_name = ctx_ema.merchant.name.lower()
+            # Distance from pgvector: 0.0 is perfect, 1.0 is unrelated
+            vector_distance = getattr(ctx_ema, 'distance', self.rag_max_distance)
 
-            # The distance (0.0 to 1.0) calculated by pgvector
-            # If for any reason distance is missing, we use 1.0 as a neutral/bad value.
-            vector_distance = getattr(ctx_ema, 'distance', 1.0)
+            # 1. Regex Match Check
+            merchant_name_pattern = rf"\b{re.escape(merchant_name)}\b"
+            match = re.search(merchant_name_pattern, description_to_check)
 
-            # Guard against false positives: 1 or 2 letter merchant names
-            # often cause noise in generic bank descriptions.
-            is_valid_for_regex = len(merchant_name) > 2
+            if match:
+                match_position = match.start()
+                name_len = len(merchant_name)
 
-            match_position = -1
-            if is_valid_for_regex:
-                # Use word boundaries to ensure we don't match parts of words
-                merchant_name_pattern = rf"\b{re.escape(merchant_name)}\b"
-                match = re.search(merchant_name_pattern, description_to_check)
-                if match:
-                    match_position = match.start()
+                # DYNAMIC WEIGHTS:
+                # - Longer names (e.g., DECATHLON) get a 'trust bonus'.
+                # - Shorter names get a smaller bonus and higher scrutiny.
+                length_bonus = min(name_len * self.rag_length_bonus_multiplier, self.rag_max_length_bonus)
 
-            # --- Scoring Logic ---
+                # Position penalty (earlier in string is better)
+                position_penalty = match_position / self.rag_position_penalty_divisor
 
-            # Case 1: Exact String Match Found
-            if match_position != -1:
-                # Divide position by 1000 to turn it into a tiny decimal (e.g., 0.005).
-                # This ensures semantic distance is the primary driver,
-                # but earlier matches win if distances are nearly identical.
-                score = vector_distance + (match_position / 1000.0)
+                score = vector_distance + position_penalty - length_bonus
 
                 if score < best_composite_score:
                     best_composite_score = score
                     final_ref = ctx_ema
 
-            # Case 2: No exact match, but the Embedding is extremely similar (Acronyms/Typos)
-            # Threshold 0.15 represents very high semantic confidence.
-            elif vector_distance < 0.15:
-                # We add a slight penalty (0.2) because there is no supporting string match,
-                # but it can still be the winner if no other merchant matches the text.
-                score = vector_distance + 0.2
-
-                if score < best_composite_score:
-                    best_composite_score = score
-                    final_ref = ctx_ema
+            else:
+                # 2. NO REGEX MATCH
+                # Since the name isn't in the text, we only accept if the AI is 
+                # effectively 100% certain (Distance < threshold). 
+                if vector_distance < self.rag_missing_name_distance_threshold:
+                    # Apply a 'Missing String' penalty
+                    score = vector_distance + self.rag_missing_string_penalty
+                    if score < best_composite_score:
+                        best_composite_score = score
+                        final_ref = ctx_ema
+                else:
+                    # This Forces the transaction to go to the Agent.
+                    continue
 
         return final_ref
+
     def _process_with_agent(self, batch: list[Transaction], upload_file: UploadFile) -> tuple[
         list[TransactionCategorization], GeminiResponse | None]:
         agent_upload_transaction = []

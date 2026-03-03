@@ -9,11 +9,14 @@ from processors.embeddings import EmbeddingEngine
 
 logger = logging.getLogger(__name__)
 
+EMA_OLD_WEIGHT = float(os.getenv('EMA_OLD_WEIGHT', '0.9'))
+EMA_NEW_WEIGHT = float(os.getenv('EMA_NEW_WEIGHT', '0.1'))
+
 
 def update_merchant_ema(merchant: Merchant, file_structure_metadata: FileStructureMetadata, embedding: list[float]) -> None:
     """
     Updates the Exponential Moving Average (EMA) of the merchant's digital footprint.
-    Uses 0.9 as the old weight and 0.1 for the new weight.
+    Uses configurable weights for old and new vectors.
     """
     if not any(embedding) or not merchant or not file_structure_metadata:
         return
@@ -28,8 +31,8 @@ def update_merchant_ema(merchant: Merchant, file_structure_metadata: FileStructu
     if not created:
         old_ema = np.array(ema_obj.digital_footprint)
         new_vec = np.array(embedding)
-        # EMA Formula: 0.9 * old + 0.1 * new
-        updated_ema = 0.9 * old_ema + 0.1 * new_vec
+        # EMA Formula: OLD_WEIGHT * old + NEW_WEIGHT * new
+        updated_ema = EMA_OLD_WEIGHT * old_ema + EMA_NEW_WEIGHT * new_vec
         ema_obj.digital_footprint = updated_ema.tolist()
         ema_obj.save()
 
@@ -53,7 +56,8 @@ class SimilarityMatcherRAG:
     utilizzando FastEmbed e pgvector.
     """
 
-    rag_context_threshold = os.getenv('RAG_CONTEXT_THRESHOLD', 0.45)
+    rag_context_threshold = float(os.getenv('RAG_CONTEXT_THRESHOLD', '0.30'))
+    rag_context_limit = int(os.getenv('RAG_CONTEXT_LIMIT', '5'))
 
     def find_rag_context(self, embedding: list[float] | None, user:User) -> list[
         MerchantEMA]:
@@ -68,8 +72,8 @@ class SimilarityMatcherRAG:
         ).order_by('distance')
 
 
-        # Recuperiamo le top 5 per il contesto
-        context_results = list(merchant_emas[:5])
+        # Recuperiamo le top N per il contesto
+        context_results = list(merchant_emas[:self.rag_context_limit])
 
         if not context_results:
             return []

@@ -764,7 +764,7 @@ details.expander-card[open] .expander-icon {
 
 /* FAB button for mobile */
 .btn-fab {
-    display: flex !important;
+    display: flex;
     align-items: center;
     justify-content: center;
     width: 30px;
