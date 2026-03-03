@@ -2,11 +2,13 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import BadRequest
 from django.db import transaction
+from django.db.models import Min
 from django.shortcuts import redirect, render, get_object_or_404
 from django.views import View
 
 from api.models import Transaction, Category, Merchant
 from api.privacy_utils import generate_blind_index
+from api.services import DataRefreshService
 
 
 class TransactionCreateView(View):
@@ -61,27 +63,35 @@ class TransactionCreateView(View):
         )
 
         new_transaction.refresh_from_db()
-        date = new_transaction.transaction_date
-        if date:
-            from api.services import RollupService
-            RollupService.update_all_rollups(user, [(date.year, date.month)])
+        start_date = new_transaction.transaction_date
 
         apply_to_all = request.POST.get('apply_to_all') in ['on', 'true']
         if apply_to_all and merchant:
-            count = Transaction.objects.filter(
+            affected_transactions = Transaction.objects.filter(
                 user=user,
                 merchant=merchant
-            ).update(
+            )
+            # Find the earliest transaction date among all that will be updated
+            aggregation = affected_transactions.aggregate(Min('transaction_date'))
+            min_date = aggregation['transaction_date__min']
+            if min_date and (not start_date or min_date < start_date):
+                start_date = min_date
+
+            count = affected_transactions.update(
                 category=category,
                 status='categorized',
                 modified_by_user=True
             )
-            
+
             if count > 1:
-                messages.success(request, f"Spesa aggiunta e altre {count - 1} transazioni di '{merchant.name}' sono state aggiornate.")
+                messages.success(request,
+                                 f"Spesa aggiunta e altre {count - 1} transazioni di '{merchant.name}' sono state aggiornate.")
             else:
                 messages.success(request, "Spesa aggiunta con successo.")
         else:
             messages.success(request, "Spesa aggiunta con successo.")
+
+        if start_date:
+            DataRefreshService.trigger_recomputation(user, start_date)
 
         return redirect('transaction_detail', pk=new_transaction.pk)

@@ -3,7 +3,7 @@ import os
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Q, Min
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
@@ -13,6 +13,7 @@ from django.views.generic import UpdateView
 from api.models import Transaction, Category, Merchant
 from api.forms import TransactionForm
 from api.privacy_utils import generate_blind_index
+from api.services import DataRefreshService
 from processors.similarity_matcher import update_merchant_ema
 
 pre_check_confidence_threshold = os.environ.get('PRE_CHECK_CONFIDENCE_THRESHOLD', 0.8)
@@ -44,8 +45,7 @@ class TransactionDetailUpdateView(UpdateView):
         date = obj.transaction_date
         obj.delete()
         if date:
-            from api.services import RollupService
-            RollupService.update_all_rollups(request.user, [(date.year, date.month)])
+            DataRefreshService.trigger_recomputation(request.user, date)
 
         messages.success(request, "Spesa eliminata con successo.")
 
@@ -102,18 +102,17 @@ class TransactionDetailUpdateView(UpdateView):
         form.instance.status = 'categorized'
         
         old_date = self.object.transaction_date
+        old_amount = self.object.amount
         self.object = form.save()
         new_date = self.object.transaction_date
 
-        from api.services import RollupService
-        updates = []
-        if old_date:
-            updates.append((old_date.year, old_date.month))
-        if new_date:
-            updates.append((new_date.year, new_date.month))
-        
-        if updates:
-            RollupService.update_all_rollups(self.request.user, updates)
+        start_date = None
+        if old_date and new_date:
+            start_date = min(old_date, new_date)
+        elif old_date:
+            start_date = old_date
+        elif new_date:
+            start_date = new_date
 
         # Update Merchant EMA if merchant and embedding are available
         if self.object.merchant and self.object.embedding and self.object.upload_file and self.object.upload_file.file_structure_metadata:
@@ -126,21 +125,32 @@ class TransactionDetailUpdateView(UpdateView):
         # Apply to all transactions of the same merchant if requested
         apply_to_all = self.request.POST.get('apply_to_all') in ['on', 'true']
         if apply_to_all and self.object.merchant:
-            count = Transaction.objects.filter(
+            affected_transactions = Transaction.objects.filter(
                 user=self.request.user,
                 merchant=self.object.merchant
-            ).update(
+            )
+            # Find the earliest transaction date among all that will be updated
+            aggregation = affected_transactions.aggregate(Min('transaction_date'))
+            min_date = aggregation['transaction_date__min']
+            if min_date and (not start_date or min_date < start_date):
+                start_date = min_date
+
+            count = affected_transactions.update(
                 category=new_category,
                 status='categorized',
                 modified_by_user=True
             )
-            
+
             if count > 1:
-                messages.success(self.request, f"Questa spesa e altre {count - 1} transazioni di '{self.object.merchant.name}' sono state aggiornate.")
+                messages.success(self.request,
+                                 f"Questa spesa e altre {count - 1} transazioni di '{self.object.merchant.name}' sono state aggiornate.")
             else:
                 messages.success(self.request, "Spesa aggiornata con successo.")
         else:
             messages.success(self.request, "Spesa aggiornata con successo.")
+
+        if start_date and old_amount != self.object.amount:
+            DataRefreshService.trigger_recomputation(self.request.user, start_date)
 
 
         # Advance onboarding if at step 4
@@ -187,6 +197,9 @@ class EditTransactionCategory(View):
         expense.modified_by_user = True
         expense.status = 'categorized'
         expense.save()  # ⬅️ MUST CALL .save() to write the change to the database
+
+        if expense.transaction_date:
+            DataRefreshService.trigger_recomputation(request.user, expense.transaction_date)
 
         # Advance onboarding if at step 4
         profile = getattr(request.user, 'profile', None)

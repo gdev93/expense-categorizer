@@ -14,6 +14,7 @@
         {% if next_month %}
             <button class="btn btn-primary btn-sm d-flex align-items-center gap-1"
                     hx-post="{% url 'budget_copy' year=next_month.year month=next_month.month %}"
+                    hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
                     hx-target="#budget-list-container"
                     hx-indicator=".htmx-progress"
                     data-confirm-title="Copia Budget"
@@ -25,6 +26,7 @@
             </button>
             <button class="btn btn-primary btn-sm d-flex align-items-center gap-1"
                     hx-post="{% url 'budget_reset' year=next_month.year month=next_month.month %}"
+                    hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
                     hx-target="#budget-list-container"
                     hx-indicator=".htmx-progress"
                     data-confirm-title="Ricalcola Budget"

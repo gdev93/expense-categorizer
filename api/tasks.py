@@ -6,9 +6,10 @@ import time
 
 from celery import shared_task
 from django.contrib.auth.models import User
+from django.db.models import Min
 
 from api.models import Transaction, UploadFile, Rule, Category, DefaultCategory, Merchant
-from api.services import RollupService, ForecastService
+from api.services import RollupService, ForecastService, DataRefreshService
 from processors.data_prechecks import parse_raw_transaction
 from processors.expense_upload_processor import ExpenseUploadProcessor
 from processors.transaction_updater import TransactionUpdater
@@ -109,8 +110,10 @@ def process_upload(self, user_id: int, upload_file_id: int):
 
     upload_file.save()
 
-    years_months = Transaction.objects.filter(upload_file=upload_file, user=user).values_list('transaction_date__year', 'transaction_date__month').distinct()
-    RollupService.update_all_rollups(user, years_months)
+    aggregation = Transaction.objects.filter(upload_file=upload_file, user=user).aggregate(Min('transaction_date'))
+    start_date = aggregation['transaction_date__min']
+    if start_date:
+        DataRefreshService.trigger_recomputation(user, start_date)
 
 
 @shared_task(
@@ -170,7 +173,7 @@ def populate_rollups(self):
         logger.info(f'  Updating {len(years_months)} year-month combinations...')
 
         try:
-            RollupService.update_all_rollups(user, list(years_months))
+            DataRefreshService.trigger_recomputation(user)
             logger.info(f'  ✓ Successfully updated rollups for {user.username}')
         except Exception as e:
             logger.error(f'  ✗ Error updating rollups for {user.username}: {str(e)}')
@@ -210,7 +213,7 @@ def populate_category_rollups(self):
             continue
 
         try:
-            RollupService.update_category_rollup(user, years_months)
+            DataRefreshService.trigger_recomputation(user)
             from api.models import Profile
             Profile.objects.filter(user=user).update(needs_rollup_recomputation=False)
             logger.info(f'  ✓ Successfully updated category rollups for {user.username}')
@@ -238,6 +241,6 @@ def generate_monthly_forecasts(self) -> str:
     """
     logger.info("Starting forecast generation task...")
 
-    ForecastService.compute_forecast(months=[], years=[])
+    ForecastService.compute_forecast()
 
     return f"Forecasts completed successfully."

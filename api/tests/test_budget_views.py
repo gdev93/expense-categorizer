@@ -143,7 +143,7 @@ def test_monthly_budget_forecast_view_post(client):
         
         assert response.status_code == 302
         assert response.url == url
-        mock_compute.assert_any_call(user=user, months=[next_month_date.month], years=[next_month_date.year], categories=None, force_reset=True)
+        mock_compute.assert_any_call(user=user, years_months={(next_month_date.year, next_month_date.month)}, categories=None, force_reset=True)
 
 @pytest.mark.django_db
 def test_monthly_budget_forecast_view_htmx_post(client):
@@ -191,7 +191,7 @@ def test_monthly_budget_forecast_view_htmx_post(client):
         assert '75,00' in content
 
         # Check that it was called with the expected category_id
-        mock_compute.assert_any_call(user=user, months=[next_month_date.month], years=[next_month_date.year], categories=[str(cat.id)], force_reset=True)
+        mock_compute.assert_any_call(user=user, years_months={(next_month_date.year, next_month_date.month)}, categories={cat.id}, force_reset=True)
 
 @pytest.mark.django_db
 def test_monthly_budget_forecast_reload_resets_manual_amount(client):

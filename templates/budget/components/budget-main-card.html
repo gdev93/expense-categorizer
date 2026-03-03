@@ -1,7 +1,7 @@
 <div class="next-month-card next-month-highlight mt-4 mb-4" id="budget-main-card" {% if hx_oob %}hx-swap-oob="true"{% endif %}>
     <div class="card-body">
         <div class="card-columns">
-            <div class="card-column">
+            <div class="card-column card-totals-column">
                 <div class="card-stat text-start">
                     <span class="label">Budget Totale</span>
                     <span class="value">€ {{ total_planned|floatformat:2 }}</span>

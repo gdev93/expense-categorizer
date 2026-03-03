@@ -9,13 +9,13 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.postgres.aggregates import StringAgg
 from django.core.exceptions import BadRequest
 from django.db import transaction
-from django.db.models import Q, Count, Max, Value, IntegerField
+from django.db.models import Q, Count, Max, Value, IntegerField, Min
 from django.db.models import QuerySet
 from django.shortcuts import get_object_or_404, redirect
 from django.views.generic import ListView
 
 from api.models import Transaction, Category, UploadFile, Merchant
-from api.services import TransactionAggregationService
+from api.services import TransactionAggregationService, DataRefreshService
 from api.views.rule_view import create_rule
 from api.views.transactions.transaction_mixins import TransactionFilterMixin
 
@@ -91,7 +91,13 @@ class TransactionListView(ListView, TransactionFilterMixin):
         if upload_file_id:
             transactions_to_update = transactions_to_update.filter(upload_file_id=upload_file_id)
 
+        aggregation = transactions_to_update.aggregate(Min('transaction_date'))
+        start_date = aggregation['transaction_date__min']
+
         transactions_to_update.update(category=new_category, status='categorized', modified_by_user=True)
+
+        if start_date:
+            DataRefreshService.trigger_recomputation(self.request.user, start_date)
 
         create_rule(merchant, new_category, self.request.user)
 

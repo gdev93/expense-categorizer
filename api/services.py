@@ -6,6 +6,7 @@ from decimal import Decimal
 from functools import wraps
 from typing import Iterable, Dict, Tuple, Any, List
 
+from dateutil.relativedelta import relativedelta
 from django.contrib.auth.models import User
 from django.db.models import QuerySet
 from django.utils import timezone
@@ -195,7 +196,8 @@ class BudgetService:
             ).exists()
         ]
         if missing_months:
-            ForecastService.compute_forecast(user=user, months=missing_months, years=[year])
+            years_months = set([(year, m) for m in missing_months])
+            ForecastService.compute_forecast(user=user, years_months=years_months)
 
     @staticmethod
     def enrich_budgets_with_spent_data(user: User, budgets: Iterable[MonthlyBudget]) -> None:
@@ -341,11 +343,7 @@ class BudgetService:
     @staticmethod
     def reset_monthly_budgets(user: User, year: int, month: int) -> None:
         """Reset all monthly budgets for a user and month to their automated values."""
-        target_date = datetime.date(year, month, 1)
-        MonthlyBudget.objects.filter(
-            user=user,
-            month=target_date
-        ).update(is_automated=True, user_amount=None)
+        ForecastService.compute_forecast(user=user, years_months={(year, month)}, force_reset=True)
 
     @staticmethod
     def copy_budget_from_previous_month(user: User, year: int, month: int) -> bool:
@@ -383,7 +381,8 @@ class BudgetService:
                     category=prev_budget.category,
                     month=current_monthly_budget_date
                 )
-            curr_budget.user_amount = prev_budget.user_amount
+            curr_budget.user_amount = prev_budget.final_amount
+            curr_budget.planned_amount = prev_budget.planned_amount
             curr_budget.is_automated = prev_budget.is_automated
             curr_budget.save()
 
@@ -584,12 +583,11 @@ class MerchantService:
 class ForecastService:
     """Service to handle statistical analysis and forecasting."""
     @staticmethod
-    def compute_forecast(months: list[int], years: list[int], user: User | None = None,
-                         categories: list[int] | None = None, force_reset: bool = False):
+    def compute_forecast(years_months: set[tuple[int, int]] | None = None, user: User | None = None,
+                         categories: set[int] | set[int] | None = None, force_reset: bool = False):
         """
         Compute forecasts for the specified months and years and user.
-        :param months: if months and years are empty, then next month is used
-        :param years: if months and years are empty, then next month is used
+        :param years_months: list of (year, month) tuples to compute forecasts for
         :param user: target user, if None, then all users are considered
         :param categories: optional list of category ids to filter by
         :param force_reset: if True, overwrites manual budgets and resets user_amount
@@ -604,27 +602,31 @@ class ForecastService:
             id=user.id).iterator()
         target_dates = []
         today = timezone.now().date()
-        if not len(years):
+
+        if years_months is None:
+            years_months = []
+
             first_transaction = Transaction.objects.filter(user=user).order_by('transaction_date').first()
             if not first_transaction or not first_transaction.transaction_date:
                 logger.info("No transactions found for user. Skipping forecast generation.")
                 return
             start_date = first_transaction.transaction_date
             years_to_iterate = list(range(start_date.year, today.year + 1))
-        else:
-            years_to_iterate = years.copy()
-        for year in years_to_iterate:
-            first_day_of_year = datetime.date(year, 1, 1)
-            if not len(months) and year == today.year:
-                months_to_iterate = list(range(first_day_of_year.month, today.month + 1))
-            elif not len(months):
-                months_to_iterate = list(range(first_day_of_year.month, 13))
-            else:
-                months_to_iterate = months.copy()
-            for month in months_to_iterate:
-                target_date = datetime.date(year, month, 1)
-                period_start = target_date - datetime.timedelta(days=ForecastConfig.get_history_days())
-                target_dates.append((target_date, period_start))
+
+            for year in years_to_iterate:
+                first_day_of_year = datetime.date(year, 1, 1)
+                if year == today.year:
+                    months_to_iterate = list(range(first_day_of_year.month, today.month + 1))
+                else:
+                    months_to_iterate = list(range(first_day_of_year.month, 13))
+                for month in months_to_iterate:
+                    years_months.append((year, month))
+
+        for year, month in years_months:
+            target_date = datetime.date(year, month, 1)
+            period_start = target_date - datetime.timedelta(days=ForecastConfig.get_history_days())
+            target_dates.append((target_date, period_start))
+
         for user in user_iterator:
             logger.info(f"Processing user: {user.username} for target dates {target_dates}")
             categories_to_process = Category.objects.filter(user=user)
@@ -664,8 +666,8 @@ class ForecastService:
                         grouped_data[key] += tx.amount
 
                     forecast_inputs = [
-                        ForecastInput(date=datetime.date(year, month, 1), amount=float(amount))
-                        for (year, month), amount in grouped_data.items()
+                        ForecastInput(date=datetime.date(y, m, 1), amount=float(amount))
+                        for (y, m), amount in grouped_data.items()
                     ]
                     logger.info(f"Generating forecast for {category.name}")
                     
@@ -712,3 +714,39 @@ class ForecastService:
 
 
             logger.info(f"User: {user.username} completed")
+
+
+class DataRefreshService:
+    """Service to handle refreshing calculations like rollups and forecasts together."""
+
+    @staticmethod
+    def trigger_recomputation(user: User, start_date: datetime.date | None = None,
+                              categories: set[int] | None = None, force_reset: bool = False) -> None:
+        """
+        Triggers a full recomputation of rollups and forecasts for a user.
+        If start_date is provided, recomputes from that date up to the current month.
+        Otherwise, recomputes for all history.
+        """
+        today = timezone.now().date()
+        end_date = today.replace(day=1)
+
+        if start_date:
+            # Normalize to the first day of the month
+            current_step = start_date.replace(day=1)
+            final_years_months = {(current_step.year, current_step.month)}
+            # Fill the gap from start_date month up to current month if start_date is in the past
+            while current_step < end_date:
+                current_step += relativedelta(months=1)
+                final_years_months.add((current_step.year, current_step.month))
+        else:
+            # Get all years/months with transactions for this user
+            years_months = Transaction.objects.filter(user=user).values_list(
+                'transaction_date__year',
+                'transaction_date__month'
+            ).distinct()
+            final_years_months = set((y, m) for y, m in years_months if y is not None)
+
+        if final_years_months:
+            RollupService.update_all_rollups(user, final_years_months)
+            ForecastService.compute_forecast(user=user, years_months=final_years_months,
+                                             categories=categories, force_reset=force_reset)

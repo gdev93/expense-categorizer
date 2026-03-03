@@ -8,11 +8,12 @@ from datetime import timedelta
 from math import ceil
 from typing import List, Dict
 
+from dateutil.relativedelta import relativedelta
 from django import forms
 from django.contrib import messages
 from django.core.validators import FileExtensionValidator
 from django.db import transaction
-from django.db.models import Sum, Count, Exists, OuterRef, Q, QuerySet
+from django.db.models import Sum, Count, Exists, OuterRef, Q, QuerySet, Min
 from django.http import JsonResponse, StreamingHttpResponse
 from django.urls import reverse_lazy
 from django.utils import timezone
@@ -20,7 +21,7 @@ from django.views import View
 from django.views.generic import FormView, ListView, DeleteView
 
 from api.models import UploadFile, Transaction, Merchant, Category, DefaultCategory
-from api.services import RollupService
+from api.services import RollupService, ForecastService, DataRefreshService
 from api.tasks import process_upload
 from processors.csv_structure_detector import CsvStructureDetector
 from processors.expense_upload_processor import persist_uploaded_file
@@ -99,22 +100,28 @@ class UploadFileDelete(DeleteView):
     def get_queryset(self):
         return self.model.objects.filter(user=self.request.user)
 
+    @transaction.atomic
     def post(self, request, *args, **kwargs):
         upload_file = self.get_object()
-        years_months = list(Transaction.objects.filter(upload_file=upload_file).values_list('transaction_date__year', 'transaction_date__month').distinct())
+        # Efficiently get the earliest transaction date before deletion
+        # result will be something like {'transaction_date__min': datetime.date(2025, 11, 15)}
+        aggregation = Transaction.objects.filter(upload_file=upload_file).aggregate(Min('transaction_date'))
+        start_date = aggregation['transaction_date__min']
 
+        Transaction.objects.filter(upload_file=upload_file).delete()
         messages.success(request, "Caricamento eliminato correttamente.")
         response = super().post(request, *args, **kwargs)
 
-        if years_months:
-            RollupService.update_all_rollups(request.user, years_months)
-
-        # Delete merchants that have no transactions and no rules
+        # Cleanup logic for merchants
         Merchant.objects.filter(user=request.user).exclude(
             transactions__isnull=False
         ).exclude(
             rule__isnull=False
         ).delete()
+
+        if start_date:
+            DataRefreshService.trigger_recomputation(request.user, start_date)
+
         return response
 
 

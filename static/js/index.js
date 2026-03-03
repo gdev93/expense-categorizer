@@ -64,6 +64,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Global HTMX Confirmation Modal handler
     document.body.addEventListener('htmx:confirm', function(evt) {
+        // Skip if this request has already been confirmed by our custom modal
+        if (evt.detail.confirmed || evt.target.getAttribute('data-confirmed') === 'true') {
+            evt.target.removeAttribute('data-confirmed');
+            return;
+        }
+
         const confirmation = evt.target.getAttribute('hx-confirm');
         if (confirmation) {
             evt.preventDefault();
@@ -103,7 +109,10 @@ document.addEventListener('DOMContentLoaded', function() {
             const onConfirm = () => {
                 modal.style.display = 'none';
                 cleanup();
-                evt.detail.issueRequest();
+                // Mark as confirmed so that when issueRequest() re-triggers the event, we skip the modal
+                evt.detail.confirmed = true;
+                evt.target.setAttribute('data-confirmed', 'true');
+                evt.detail.issueRequest(true);
             };
             
             const onCancel = () => {

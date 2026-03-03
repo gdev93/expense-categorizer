@@ -346,6 +346,15 @@
         flex-direction: column;
         gap: 20px;
     }
+    .card-totals-column {
+        display: flex;
+        justify-content: center;
+        gap: 32px;
+    }
+    .card-totals-column .card-stat {
+        margin-top: 0 !important;
+        text-align: left;
+    }
     .stats-column {
         border-left: none;
         border-top: 1px solid #f0f0f0;

@@ -10,7 +10,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.messages.views import SuccessMessageMixin
 from django.core.paginator import Paginator
-from django.db.models import Count, Sum, DecimalField, Q, QuerySet
+from django.db.models import Count, Sum, DecimalField, Q, QuerySet, Min
 from django.db.models.functions import Coalesce, ExtractMonth, ExtractYear
 from django.http import HttpResponse, HttpRequest
 from django.urls import reverse, reverse_lazy
@@ -19,7 +19,7 @@ from django.views.generic import ListView, CreateView, UpdateView, DeleteView, D
 
 from api.constants import ITALIAN_MONTHS
 from api.models import Category, Transaction, Rule, Merchant
-from api.services import TransactionAggregationService
+from api.services import TransactionAggregationService, DataRefreshService
 from api.views.mixins import MonthYearFilterMixin
 from api.views.transactions.transaction_mixins import TransactionFilterMixin
 from processors.similarity_matcher import SimilarityMatcher
@@ -408,10 +408,18 @@ class CategoryDeleteView(DeleteView):
             return self.render_to_response(self.get_context_data(form=form))
 
         # Reassign transactions
-        Transaction.objects.filter(category=category_to_delete).update(category=replacement_category)
+        affected_transactions = Transaction.objects.filter(category=category_to_delete)
+        aggregation = affected_transactions.aggregate(Min('transaction_date'))
+        start_date = aggregation['transaction_date__min']
+
+        affected_transactions.update(category=replacement_category)
         Rule.objects.filter(category=category_to_delete).update(category=replacement_category)
 
-        messages.success(self.request, f"Category '{category_to_delete.name}' deleted. All transactions have been moved to '{replacement_category.name}'.")
+        if start_date:
+            DataRefreshService.trigger_recomputation(self.request.user, start_date)
+
+        messages.success(self.request,
+                         f"Category '{category_to_delete.name}' deleted. All transactions have been moved to '{replacement_category.name}'.")
         return super().form_valid(form)
 
 class CategoryFromMerchant(View, SimilarityMatcher):
