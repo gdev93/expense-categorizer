@@ -187,7 +187,7 @@ def test_monthly_budget_forecast_view_htmx_post(client):
 
         # Verify OOB summary content
         assert 'hx-swap-oob="true"' in content
-        assert 'Totale Pianificato' in content
+        assert 'Budget Totale' in content
         assert '75,00' in content
 
         # Check that it was called with the expected category_id

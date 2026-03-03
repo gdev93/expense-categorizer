@@ -41,7 +41,7 @@
                     <div class="card-header">
                         <span class="month-name">{{ current_month_budget.month|date:"F Y" }}</span>
                         <div class="card-stat">
-                            <span class="label">Totale Pianificato</span>
+                            <span class="label">Budget Totale</span>
                             <span class="value">€ {{ current_month_budget.total_planned|floatformat:2|default:"0,00" }}</span>
                         </div>
                     </div>

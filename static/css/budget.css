@@ -403,6 +403,9 @@
     overflow: hidden;
     text-overflow: ellipsis;
     margin-right: 12px;
+    display: flex;
+    align-items: center;
+    min-height: 38px;
 }
 
 .budget-type-badge {
