@@ -284,7 +284,7 @@ def test_budget_spent_percentage_display(client):
     assert 'Speso:' in content
     assert '55.50' in content
     assert '55,5%' in content or '55.5%' in content
-    assert 'spent-info' in content
+    assert 'budget-spent-badge' in content
 
 @pytest.mark.django_db
 def test_budget_spent_percentage_over_budget(client):

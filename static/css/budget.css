@@ -408,6 +408,16 @@
     min-height: 38px;
 }
 
+.budget-spent-badge {
+    position: absolute;
+    top: 10px;
+    left: 24px;
+    font-size: 0.8rem;
+    color: var(--secondary-color);
+    display: flex;
+    gap: 4px;
+}
+
 .budget-type-badge {
     position: absolute;
     top: 10px;
@@ -439,6 +449,11 @@
         top: 8px;
         right: 18px;
         font-size: 0.6rem;
+    }
+    .budget-spent-badge {
+        top: 8px;
+        left: 18px;
+        font-size: 0.75rem;
     }
     .budget-list-item .list-item-stats,
     .budget-month-item .list-item-stats {

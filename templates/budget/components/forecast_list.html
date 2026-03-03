@@ -2,6 +2,15 @@
     <div class="data-list" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
         {% for forecast in forecasts %}
             <div class="data-list-item budget-list-item">
+                {% if forecast.spent_percentage is not None %}
+                    <div class="budget-spent-badge">
+                        <span class="spent-label">Speso:</span>
+                        <span class="spent-value">€{{ forecast.spent_amount|stringformat:".2f" }}</span>
+                        <span class="spent-percent {% if forecast.spent_percentage > 100 %}over-budget{% endif %}">
+                            ({{ forecast.spent_percentage|floatformat:1 }}%)
+                        </span>
+                    </div>
+                {% endif %}
                 {% if forecast.is_automated %}
                     <span class="budget-type-badge bg-success">Previsione</span>
                 {% else %}
@@ -36,16 +45,6 @@
                             </div>
                         </div>
                     </div>
-                    <p class="category-description">Previsione per {{ forecast.month|date:"F Y" }}</p>
-                    {% if forecast.spent_percentage is not None %}
-                        <div class="spent-info">
-                            <span class="spent-label">Speso:</span>
-                            <span class="spent-value">€{{ forecast.spent_amount|stringformat:".2f" }}</span>
-                            <span class="spent-percent {% if forecast.spent_percentage > 100 %}over-budget{% endif %}">
-                                ({{ forecast.spent_percentage|floatformat:1 }}%)
-                            </span>
-                        </div>
-                    {% endif %}
                 </div>
             </div>
         {% endfor %}
