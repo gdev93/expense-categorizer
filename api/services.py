@@ -663,7 +663,7 @@ class ForecastService:
                         key = (tx.transaction_date.year, tx.transaction_date.month)
                         if key not in grouped_data:
                             grouped_data[key] = 0
-                        grouped_data[key] += tx.amount
+                        grouped_data[key] += tx.amount or 0
 
                     forecast_inputs = [
                         ForecastInput(date=datetime.date(y, m, 1), amount=float(amount))
