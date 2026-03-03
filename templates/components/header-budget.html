@@ -9,5 +9,23 @@
 
 {% block header_content %}
     <div class="header-budget-content">
+        {% if next_month %}
+            <button class="btn btn-primary btn-sm d-flex align-items-center gap-1"
+                    hx-post="{% url 'budget_copy' year=next_month.year month=next_month.month %}"
+                    hx-target="#budget-list-container"
+                    hx-indicator=".htmx-progress"
+                    hx-confirm="Sei sicuro di voler copiare il budget dal mese scorso? Tutti i cambiamenti manuali correnti verranno sovrascritti.">
+                <span class="material-icons" style="font-size: 1.1rem;">content_copy</span>
+                Copia da mese scorso
+            </button>
+            <button class="btn btn-primary btn-sm d-flex align-items-center gap-1"
+                    hx-post="{% url 'budget_reset' year=next_month.year month=next_month.month %}"
+                    hx-target="#budget-list-container"
+                    hx-indicator=".htmx-progress"
+                    hx-confirm="Sei sicuro di voler ricalcolare il budget? Tutti i cambiamenti manuali verranno persi.">
+                <span class="material-icons" style="font-size: 1.1rem;">refresh</span>
+                Ricalcola
+            </button>
+        {% endif %}
     </div>
 {% endblock %}

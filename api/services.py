@@ -338,6 +338,49 @@ class BudgetService:
         budget.save()
         return budget
 
+    @staticmethod
+    def reset_monthly_budgets(user: User, year: int, month: int) -> None:
+        """Reset all monthly budgets for a user and month to their automated values."""
+        target_date = datetime.date(year, month, 1)
+        MonthlyBudget.objects.filter(
+            user=user,
+            month=target_date
+        ).update(is_automated=True, user_amount=None)
+
+    @staticmethod
+    def copy_budget_from_previous_month(user: User, year: int, month: int) -> None:
+        """Copy budget settings (user_amount, is_automated) from the previous month to the current one."""
+        target_month = month - 1 if month > 1 else 12
+        target_year = year if month > 1 else year - 1
+
+        # Optimization: only compute the forecast for the requested month
+        BudgetService._ensure_forecasts_computed(user, year, month)
+        BudgetService._ensure_forecasts_computed(user, target_year, target_month)
+
+        current_monthly_budget_date = datetime.date(year, month, 1)
+        previous_monthly_budget_date = datetime.date(target_year, target_month, 1)
+
+        all_previous_category_budgets = MonthlyBudget.objects.filter(
+            user=user,
+            month=previous_monthly_budget_date
+        )
+        all_current_category_budgets = MonthlyBudget.objects.filter(
+            user=user,
+            month=current_monthly_budget_date
+        )
+
+        for prev_budget in all_previous_category_budgets:
+            curr_budget = all_current_category_budgets.filter(category=prev_budget.category).first()
+            if not curr_budget:
+                curr_budget = MonthlyBudget.objects.create(
+                    user=user,
+                    category=prev_budget.category,
+                    month=current_monthly_budget_date
+                )
+            curr_budget.user_amount = prev_budget.user_amount
+            curr_budget.is_automated = prev_budget.is_automated
+            curr_budget.save()
+
 
 class RollupService:
     """Service to handle rollup table updates."""

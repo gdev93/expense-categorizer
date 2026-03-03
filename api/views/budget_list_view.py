@@ -117,11 +117,9 @@ class BudgetForecastDetailView(ListView):
                 request=request)
             
             # Context for main card (OOB)
-            main_card_html = render_to_string('budget/components/budget-main-card.html', {
-                'total_planned': result.total_planned,
-                'total_spent': result.total_spent,
-                'spent_percentage': spent_percentage
-            }, request=request)
+            main_card_html = render_to_string('budget/components/budget-main-card.html', 
+                summary_context.to_context(), 
+                request=request)
             
             return HttpResponse(list_html + summary_html + main_card_html)
             

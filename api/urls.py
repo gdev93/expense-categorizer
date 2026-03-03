@@ -30,7 +30,7 @@ from api.views.upload_file_view import UploadFileView, UploadFileDelete, UploadP
 from api.views.onboarding_views import OnboardingStepView
 from api.views.user_views import UserDeleteView, UserDetailView, UserDataExportView
 from api.views.error_views import trigger_403, trigger_500, trigger_502, trigger_503
-from api.views.budget_views import BudgetForecastView, BudgetUpdateView
+from api.views.budget_views import BudgetForecastView, BudgetUpdateView, BudgetResetView, BudgetCopyView
 from api.views.budget_list_view import BudgetForecastListView, BudgetForecastDetailView
 
 urlpatterns = [
@@ -66,6 +66,8 @@ urlpatterns = [
     path('budget/list/', BudgetForecastListView.as_view(), name='budget_forecast_list'),
     path('budget/forecast/', BudgetForecastView.as_view(), name='budget_forecast'),
     path('budget/forecast/<int:year>/<int:month>/', BudgetForecastDetailView.as_view(), name='budget_forecast_detail'),
+    path('budget/forecast/<int:year>/<int:month>/reset/', BudgetResetView.as_view(), name='budget_reset'),
+    path('budget/forecast/<int:year>/<int:month>/copy/', BudgetCopyView.as_view(), name='budget_copy'),
     path('budget/forecast/<int:pk>/update/', BudgetUpdateView.as_view(), name='budget_update'),
     path('onboarding/step/', OnboardingStepView.as_view(), name='onboarding_step'),
     path('onboarding/update-step/', OnboardingStepView.as_view(), name='update_onboarding_step'),
