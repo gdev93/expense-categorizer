@@ -66,3 +66,43 @@ class TestTransactionListView:
         assert response.status_code == 200
         assert len(response.context['transactions']) == 1
         assert "Gas Station" in response.content.decode()
+
+    def test_transaction_list_htmx_merchant_view(self, client):
+        user = User.objects.create_user(username="testuser5", password="password")
+        client.login(username="testuser5", password="password")
+        create_test_data(user)
+        
+        url = reverse('transaction_list')
+        response = client.get(url, {'view_type': 'merchant'}, HTTP_HX_REQUEST='true', HTTP_HX_TARGET='transaction-results')
+        
+        assert response.status_code == 200
+        content = response.content.decode()
+        
+        # Check if title tag is present for tab update
+        assert "<title>Spese per Esercente</title>" in content
+        
+        # Check if the header title is present and has hx-swap-oob
+        assert 'id="transaction-list-header-title"' in content
+        assert 'hx-swap-oob="true"' in content
+        assert "Spese per Esercente" in content
+        assert "store" in content # Icon for merchant view
+
+    def test_transaction_list_htmx_list_view(self, client):
+        user = User.objects.create_user(username="testuser6", password="password")
+        client.login(username="testuser6", password="password")
+        create_test_data(user)
+        
+        url = reverse('transaction_list')
+        response = client.get(url, {'view_type': 'list'}, HTTP_HX_REQUEST='true', HTTP_HX_TARGET='transaction-results')
+        
+        assert response.status_code == 200
+        content = response.content.decode()
+        
+        # Check if title tag is present for tab update
+        assert "<title>Lista Spese</title>" in content
+        
+        # Check if the header title is present and has hx-swap-oob
+        assert 'id="transaction-list-header-title"' in content
+        assert 'hx-swap-oob="true"' in content
+        assert "Lista Spese" in content
+        assert "receipt_long" in content # Icon for list view

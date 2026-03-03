@@ -28,7 +28,8 @@ def available_years_context(request: HttpRequest):
         .distinct()
         .order_by("-transaction_date__year")
     )
-
+    if request.path.find('budget') != -1 and years:
+        years.append(datetime.now().year)
     return {
         'available_years': years or [datetime.now().year]
     }

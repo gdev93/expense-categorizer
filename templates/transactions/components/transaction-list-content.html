@@ -1,7 +1,7 @@
 <!-- Uncategorized Transactions Section -->
 {% if uncategorized_transaction %}
 <h2 class="mb-3">
-     Spese Non Categorizzate
+     Spese non Categorizzate
     <span class="badge transaction-list-uncategorized-badge">
         {{ uncategorized_transaction.count }}
     </span>
@@ -53,7 +53,13 @@
     </button>
 </div>
 
-<div class="view-toggle mb-3" data-view-type="{{ view_type }}">
+<div class="view-toggle mb-3" data-view-type="{{ view_type }}"
+     hx-get="{% url 'transaction_list' %}"
+     hx-target="#transaction-results"
+     hx-include="[form='main-filter-form']"
+     hx-indicator="#transaction-results, .htmx-progress"
+     hx-trigger="change"
+     hx-push-url="true">
     <input type="radio" name="view_type" id="view_list_content" value="list" {% if view_type != 'merchant' %}checked{% endif %} form="main-filter-form"
            onchange="this.parentElement.setAttribute('data-view-type', this.value)">
     <label for="view_list_content">Lista</label>

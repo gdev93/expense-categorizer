@@ -3,8 +3,9 @@
       hx-target="#transaction-results"
       hx-swap="outerHTML swap:50ms settle:200ms"
       hx-indicator="#transaction-results, .htmx-progress"
-      hx-trigger="change, input delay:500ms from:#search, input delay:500ms from:#amount, submit, change from:[name='year'], change from:[name='view_type']"
-      hx-include="[form='main-filter-form']">
+      hx-trigger="change, input delay:500ms from:#search, submit, change from:[name='year']"
+      hx-include="[form='main-filter-form']"
+      hx-push-url="true">
 
     <input type="hidden" name="transaction_type" value="expense">
 

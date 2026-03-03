@@ -1,7 +1,11 @@
 <div id="transaction-summary" {% if hx_oob %}hx-swap-oob="true"{% endif %}>
         <div class="summary">
             {% include "components/summary-card.html" with icon="payments" label="Importo Totale" value=total_amount|floatformat:2 currency="€" %}
-            {% include "components/summary-card.html" with icon="receipt_long" label="Totale Spese" value=total_count %}
+            {% if view_type == 'merchant' %}
+                {% include "components/summary-card.html" with icon="store" label="Totale Esercenti" value=total_count %}
+            {% else %}
+                {% include "components/summary-card.html" with icon="receipt_long" label="Totale Spese" value=total_count %}
+            {% endif %}
             <div class="desktop-only">
                 {% include "components/summary-card.html" with icon="category" label="Categorie" value=category_count %}
             </div>
