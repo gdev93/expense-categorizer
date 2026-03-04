@@ -14,20 +14,23 @@ class TestSessionFilters:
         self.merchant = Merchant.objects.create(user=self.user, name="Test Merchant")
         self.upload_file = UploadFile.objects.create(user=self.user, file_name="test.csv")
         
-        # 2025 transactions
+        self.current_year = date.today().year
+        self.last_year = self.current_year - 1
+
+        # Current year transactions
         Transaction.objects.create(
             user=self.user,
-            transaction_date=date(2025, 1, 1),
+            transaction_date=date(self.current_year, 1, 1),
             amount=Decimal("50.00"),
             category=self.category1,
             merchant=self.merchant,
             status="categorized",
             upload_file=self.upload_file
         )
-        # 2024 transactions
+        # Last year transactions
         Transaction.objects.create(
             user=self.user,
-            transaction_date=date(2024, 1, 1),
+            transaction_date=date(self.last_year, 1, 1),
             amount=Decimal("100.00"),
             category=self.category2,
             merchant=self.merchant,
@@ -39,17 +42,17 @@ class TestSessionFilters:
         client.login(username="testuser", password="password")
         url = reverse('category_list')
         
-        # 1. Request with year 2024
-        response = client.get(url, {'year': 2024})
+        # 1. Request with last year
+        response = client.get(url, {'year': self.last_year})
         assert response.status_code == 200
-        # Check that it filtered correctly (Category Bills has 2024 transaction)
+        # Check that it filtered correctly (Category Bills has last year transaction)
         categories = response.context['categories']
         bills_cat = next(c for c in categories if c.name == "Bills")
         food_cat = next(c for c in categories if c.name == "Food")
         assert bills_cat.transaction_amount == Decimal("100.00")
         assert food_cat.transaction_amount == Decimal("0.00")
         
-        # 2. Request WITHOUT year param - should still use 2024 from session
+        # 2. Request WITHOUT year param - should still use last year from session
         response = client.get(url)
         assert response.status_code == 200
         categories = response.context['categories']
@@ -57,12 +60,12 @@ class TestSessionFilters:
         food_cat = next(c for c in categories if c.name == "Food")
         assert bills_cat.transaction_amount == Decimal("100.00")
         assert food_cat.transaction_amount == Decimal("0.00")
-        assert response.context['year'] == 2024
+        assert response.context['year'] == self.last_year
 
-        # 3. Request with reset=1 - should go back to default (2025)
+        # 3. Request with reset=1 - should go back to default (current year)
         response = client.get(url, {'reset': 1})
         assert response.status_code == 200
-        assert response.context['year'] == 2025
+        assert response.context['year'] == self.current_year
         categories = response.context['categories']
         bills_cat = next(c for c in categories if c.name == "Bills")
         food_cat = next(c for c in categories if c.name == "Food")
@@ -73,13 +76,13 @@ class TestSessionFilters:
         client.login(username="testuser", password="password")
         
         # 1. Set year in Category List
-        client.get(reverse('category_list'), {'year': 2024})
+        client.get(reverse('category_list'), {'year': self.last_year})
         
-        # 2. Go to Transaction List - should also show 2024
+        # 2. Go to Transaction List - should also show last year
         response = client.get(reverse('transaction_list'))
         assert response.status_code == 200
-        assert response.context['year'] == 2024
-        # Should only show the 2024 transaction
+        assert response.context['year'] == self.last_year
+        # Should only show the last year transaction
         assert len(response.context['transactions']) == 1
         assert response.context['transactions'][0].amount == Decimal("100.00")
 
@@ -87,8 +90,8 @@ class TestSessionFilters:
         client.login(username="testuser", password="password")
         url = reverse('category_detail', args=[self.category1.id])
         
-        # 1. Start with 2024 in session
-        client.get(url, {'year': 2024})
+        # 1. Start with last year in session
+        client.get(url, {'year': self.last_year})
         
         # 2. Trigger reset via HTMX
         response = client.get(url, {'reset': '1'}, HTTP_HX_REQUEST='true', HTTP_HX_TARGET='category-detail-results')
@@ -99,14 +102,14 @@ class TestSessionFilters:
         # 3. Check if year select is swapped OOB
         assert 'id="year"' in content
         assert 'hx-swap-oob="true"' in content
-        assert 'value="2025" selected' in content
+        assert f'value="{self.current_year}" selected' in content
 
     def test_category_list_reset_updates_year_oob(self, client):
         client.login(username="testuser", password="password")
         url = reverse('category_list')
         
-        # 1. Start with 2024 in session
-        client.get(url, {'year': 2024})
+        # 1. Start with last year in session
+        client.get(url, {'year': self.last_year})
         
         # 2. Trigger reset via HTMX
         response = client.get(url, {'reset': '1'}, HTTP_HX_REQUEST='true', HTTP_HX_TARGET='category-results')
@@ -117,14 +120,14 @@ class TestSessionFilters:
         # 3. Check if header is swapped OOB (which contains the year select)
         assert 'id="stickyHeader"' in content
         assert 'hx-swap-oob="true"' in content
-        assert 'value="2025" selected' in content
+        assert f'value="{self.current_year}" selected' in content
 
     def test_transaction_list_reset_updates_year_oob(self, client):
         client.login(username="testuser", password="password")
         url = reverse('transaction_list')
         
-        # 1. Start with 2024 in session
-        client.get(url, {'year': 2024})
+        # 1. Start with last year in session
+        client.get(url, {'year': self.last_year})
         
         # 2. Trigger reset via HTMX
         response = client.get(url, {'reset': '1'}, HTTP_HX_REQUEST='true', HTTP_HX_TARGET='transaction-results')
@@ -135,4 +138,4 @@ class TestSessionFilters:
         # 3. Check if year select is swapped OOB
         assert 'id="year-select_desktop"' in content or 'id="year-select_mobile"' in content
         assert 'hx-swap-oob="true"' in content
-        assert 'value="2025" selected' in content
+        assert f'value="{self.current_year}" selected' in content

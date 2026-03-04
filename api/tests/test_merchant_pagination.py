@@ -11,6 +11,7 @@ def test_merchant_view_pagination(client):
     client.login(username="testuser_merchant", password="password")
     
     category = Category.objects.create(user=user, name="Category")
+    current_year = date.today().year
     
     # Create 30 different merchants to trigger pagination (default 25)
     # All these will be categorized
@@ -20,7 +21,7 @@ def test_merchant_view_pagination(client):
         merchants.append(m)
         Transaction.objects.create(
             user=user,
-            transaction_date=date(2025, 1, 1),
+            transaction_date=date(current_year, 1, 1),
             amount=Decimal("10.00"),
             description=f"Transaction {i}",
             merchant=m,
@@ -32,7 +33,7 @@ def test_merchant_view_pagination(client):
     uncat_merchant_1 = Merchant.objects.create(user=user, name="Uncat Merchant 1")
     Transaction.objects.create(
         user=user,
-        transaction_date=date(2025, 1, 1),
+        transaction_date=date(current_year, 1, 1),
         amount=Decimal("5.00"),
         description="Uncat 1",
         merchant=uncat_merchant_1,
@@ -42,7 +43,7 @@ def test_merchant_view_pagination(client):
     uncat_merchant_2 = Merchant.objects.create(user=user, name="Uncat Merchant 2")
     Transaction.objects.create(
         user=user,
-        transaction_date=date(2025, 1, 1),
+        transaction_date=date(current_year, 1, 1),
         amount=Decimal("7.00"),
         description="Uncat 2",
         merchant=uncat_merchant_2,

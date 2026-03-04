@@ -14,10 +14,13 @@ class TestCategoryDetailView:
         self.merchant_b = Merchant.objects.create(user=self.user, name="Restaurant")
         self.upload_file = UploadFile.objects.create(user=self.user, file_name="test.csv")
         
-        # Jan 2025 - Supermarket
+        self.current_year = date.today().year
+        self.last_year = self.current_year - 1
+
+        # Jan current year - Supermarket
         Transaction.objects.create(
             user=self.user,
-            transaction_date=date(2025, 1, 1),
+            transaction_date=date(self.current_year, 1, 1),
             amount=Decimal("50.00"),
             category=self.category,
             merchant=self.merchant_a,
@@ -26,10 +29,10 @@ class TestCategoryDetailView:
             upload_file=self.upload_file
         )
         
-        # Feb 2025 - Restaurant
+        # Feb current year - Restaurant
         Transaction.objects.create(
             user=self.user,
-            transaction_date=date(2025, 2, 1),
+            transaction_date=date(self.current_year, 2, 1),
             amount=Decimal("30.00"),
             category=self.category,
             merchant=self.merchant_b,
@@ -38,10 +41,10 @@ class TestCategoryDetailView:
             upload_file=self.upload_file
         )
 
-        # Jan 2024 - Supermarket (different year)
+        # Jan last year - Supermarket (different year)
         Transaction.objects.create(
             user=self.user,
-            transaction_date=date(2024, 1, 1),
+            transaction_date=date(self.last_year, 1, 1),
             amount=Decimal("20.00"),
             category=self.category,
             merchant=self.merchant_a,
@@ -56,36 +59,36 @@ class TestCategoryDetailView:
         
         response = client.get(url)
         assert response.status_code == 200
-        # Should show 2 transactions (Jan 2025 and Feb 2025) because it defaults to the latest year (2025)
+        # Should show 2 transactions (Jan and Feb of current year) because it defaults to current year
         assert len(response.context['transactions']) == 2
 
     def test_category_detail_search_filter(self, client):
         client.login(username="testuser", password="password")
         url = reverse('category_detail', args=[self.category.id])
         
-        # Search for "Supermarket" - defaults to 2025
+        # Search for "Supermarket" - defaults to current year
         response = client.get(url, {'search': 'Supermarket'})
         assert response.status_code == 200
-        # Should show 1 transaction (Jan 2025)
+        # Should show 1 transaction (Jan current year)
         assert len(response.context['transactions']) == 1
         
-        # Search for "Supermarket" in 2024
-        response = client.get(url, {'search': 'Supermarket', 'year': 2024})
+        # Search for "Supermarket" in last year
+        response = client.get(url, {'search': 'Supermarket', 'year': self.last_year})
         assert response.status_code == 200
-        # Should show 1 transaction (Jan 2024)
+        # Should show 1 transaction (Jan last year)
         assert len(response.context['transactions']) == 1
 
     def test_category_detail_year_filter(self, client):
         client.login(username="testuser", password="password")
         url = reverse('category_detail', args=[self.category.id])
         
-        # Filter for 2025
-        response = client.get(url, {'year': 2025})
+        # Filter for current year
+        response = client.get(url, {'year': self.current_year})
         assert response.status_code == 200
         assert len(response.context['transactions']) == 2
         
-        # Filter for 2024
-        response = client.get(url, {'year': 2024})
+        # Filter for last year
+        response = client.get(url, {'year': self.last_year})
         assert response.status_code == 200
         assert len(response.context['transactions']) == 1
 
@@ -93,10 +96,10 @@ class TestCategoryDetailView:
         client.login(username="testuser", password="password")
         url = reverse('category_detail', args=[self.category.id])
         
-        # Filter for Jan (defaults to 2025)
+        # Filter for Jan (defaults to current year)
         response = client.get(url, {'months': [1]})
         assert response.status_code == 200
-        # Should show 1 transaction (Jan 2025)
+        # Should show 1 transaction (Jan current year)
         assert len(response.context['transactions']) == 1
         
         # Filter for Feb
@@ -108,9 +111,9 @@ class TestCategoryDetailView:
         client.login(username="testuser", password="password")
         url = reverse('category_detail', args=[self.category.id])
         
-        # Filter for 2025, Jan, "Supermarket"
-        response = client.get(url, {'year': 2025, 'months': [1], 'search': 'Supermarket'})
+        # Filter for current year, Jan, "Supermarket"
+        response = client.get(url, {'year': self.current_year, 'months': [1], 'search': 'Supermarket'})
         assert response.status_code == 200
         assert len(response.context['transactions']) == 1
-        assert response.context['transactions'][0].transaction_date.year == 2025
+        assert response.context['transactions'][0].transaction_date.year == self.current_year
         assert response.context['transactions'][0].transaction_date.month == 1
