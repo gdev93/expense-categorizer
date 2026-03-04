@@ -9,7 +9,9 @@ from django.contrib.auth.models import User
 from django.db.models import Min
 
 from api.models import Transaction, UploadFile, Rule, Category, DefaultCategory, Merchant
-from api.services import RollupService, ForecastService, DataRefreshService
+from api.services.rollups.rollup_service import RollupService
+from api.services.forecasts.forecast_service import ForecastService
+from api.services.data_refresh.data_refresh_service import DataRefreshService
 from processors.data_prechecks import parse_raw_transaction
 from processors.expense_upload_processor import ExpenseUploadProcessor
 from processors.transaction_updater import TransactionUpdater

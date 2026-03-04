@@ -47,6 +47,7 @@ def _generate_trigrams(text: str) -> list[str]:
     text = f" {text.strip().lower()} "
     return [text[i:i + 3] for i in range(len(text) - 2)]
 
-
+# [' it', 'ita', 'tal', 'alm', 'lm ']
+# [' it', 'ita', 'tal', 'alm', 'lma', 'mar', 'ark', 'rk ']
 def generate_encrypted_trigrams(text: str) -> list[str]:
     return [generate_blind_index(trigram) for trigram in _generate_trigrams(text)]

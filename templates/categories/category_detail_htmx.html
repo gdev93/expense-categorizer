@@ -1,0 +1,55 @@
+{% include "categories/components/category_detail_results.html" %}
+
+<div id="category-header" hx-swap-oob="true">
+    {% url 'category_update' category.id as edit_url %}
+    {% include "components/header_with_back_to_category_button.html" with title=category_summary.name total=category_summary.transaction_amount edit_url=edit_url %}
+</div>
+
+<h2 class="section-title" id="category-transactions-count" hx-swap-oob="true">
+    Spese Associate
+    <span class="badge-count">{{ category_summary.transaction_count }}</span>
+</h2>
+<div class="filter-group" id="year-filter-group" hx-swap-oob="true">
+    <div class="card-selector-static">
+        <div class="card-content">
+            <div class="card-info">
+                <div class="card-icon-box">
+                    <span class="material-icons">calendar_today</span>
+                </div>
+                <div class="card-text">
+                    <b>Anno</b>
+                    <span>Filtra per anno</span>
+                </div>
+            </div>
+            <div class="card-action">
+                <select name="year" id="year" class="card-select">
+                    <option value="">Tutti gli anni</option>
+                    {% for available_year in available_years %}
+                        <option value="{{ available_year }}" {% if available_year == selected_year %}selected{% endif %}>
+                            {{ available_year }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="custom-multiselect" id="months-multiselect" {% if hx_oob %}hx-swap-oob="true"{% endif %}
+     data-placeholder="Tutti i Mesi"
+     data-plural-text="mesi selezionati">
+    <div class="multiselect-trigger card-multiselect-trigger" onclick="toggleMultiselect('months-multiselect', event)">
+        <span class="trigger-text">Tutti i Mesi</span>
+        <span class="material-icons">expand_more</span>
+    </div>
+    <div class="multiselect-menu">
+        {% for month in available_months %}
+            <label class="multiselect-item {% if month.month_number|stringformat:"s" in selected_months %}is-selected{% endif %}">
+                <input type="checkbox" name="months" value="{{ month.month_number }}"
+                       {% if month.month_number|stringformat:"s" in selected_months %}checked{% endif %}
+                       onchange="updateMultiselect('months-multiselect')">
+                <span class="material-icons">event</span>
+                {{ month.label_it }}
+            </label>
+        {% endfor %}
+    </div>
+</div>

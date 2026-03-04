@@ -4,21 +4,21 @@
 {% block title %}Gestione Categorie{% endblock %}
 
 {% block extra_css %}
-    <link rel="stylesheet" href="{% static 'css/category-list-results.css' %}">
-    <link rel="stylesheet" href="{% static 'css/header-categories.css' %}">
+    <link rel="stylesheet" href="{% static 'css/category_list_results.css' %}">
+    <link rel="stylesheet" href="{% static 'css/header_categories.css' %}">
 {% endblock %}
 
 {% block content %}
 <div class="container mt-2">
 
-    {%  include 'categories/components/categories-summary.html' %}
+    {%  include 'categories/components/categories_summary.html' %}
 
     <form method="get" class="filters"
           hx-get="{% url 'category_list' %}"
           hx-target="#category-results"
           hx-swap="outerHTML swap:50ms settle:200ms"
           hx-indicator="#category-results, .htmx-progress"
-          hx-trigger="change, input delay:500ms from:#search, submit, change from:[name='year']"
+          hx-trigger="change, input delay:500ms from:#search, submit"
           hx-include="[form='main-filter-form']"
           id="main-filter-form">
 
@@ -45,6 +45,7 @@
                 <button
                    hx-get="{% url 'category_list' %}?reset=1"
                    hx-target="#category-results"
+                   hx-push-url="{% url 'category_list' %}"
                    hx-swap="outerHTML swap:50ms settle:200ms"
                    hx-indicator="#category-results, .htmx-progress"
                    hx-on::before-request="clearFilters('main-filter-form');"
@@ -54,7 +55,7 @@
                     <span class="material-icons">clear</span>
                 </button>
 
-                {% include "components/download-button.html" with onclick="exportCategories()" title="Esporta" %}
+                {% include "components/download_button.html" with onclick="exportCategories()" title="Esporta" %}
             </div>
         </div>
 

@@ -2,13 +2,13 @@
 {% load static %}
 
 {% block extra_css %}
-    <link rel="stylesheet" href="{% static 'css/category-confirm-delete.css' %}">
+    <link rel="stylesheet" href="{% static 'css/category_confirm_delete.css' %}">
 {% endblock %}
 
 {% block content %}
     <div class="container mt-2">
 
-        {% include "components/header-with-back-to-category-button.html" with title="Elimina Categoria" category_summary=object hide_delete=True %}
+        {% include "components/header_with_back_to_category_button.html" with title="Elimina Categoria" category_summary=object hide_delete=True %}
 
         <div class="form-container-small mt-4">
             <div class="category-form-section">

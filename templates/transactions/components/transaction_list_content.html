@@ -1,0 +1,85 @@
+<!-- Uncategorized Transactions Section -->
+{% if uncategorized_transaction %}
+<h2 class="mb-3">
+     Spese non Categorizzate
+    <span class="badge transaction-list-uncategorized-badge">
+        {{ uncategorized_transaction.count }}
+    </span>
+</h2>
+<details class="expander-card transaction-list-expander">
+    <summary class="expander-header">
+        <span class="transaction-list-expander-summary-text">Apri</span>
+        <div class="expander-toggle-btn">
+            <span class="expander-icon">▼</span>
+        </div>
+    </summary>
+
+    <div class="expander-body">
+        <div class="data-list">
+            {% for transaction in uncategorized_transaction %}
+                {% include "transactions/components/transaction_item.html" with transaction=transaction show_description=True %}
+            {% empty %}
+                {% if transactions %}
+                    <div class="data-list-item transaction-list-empty-msg">
+                         Tutte le spese sono categorizzate!
+                    </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+</details>
+{% endif %}
+
+<!-- Transaction List -->
+<div class="header-with-action mb-2">
+    <div class="header-with-action-title">
+        <h2 class="m-0"> Spese Categorizzate</h2>
+    </div>
+    <button class="btn btn-primary desktop-only"
+            hx-get="{% url 'transaction_create' %}"
+            hx-target="#main-content"
+            hx-push-url="true"
+            hx-indicator=".htmx-progress"
+            hx-swap="innerHTML swap:50ms settle:200ms">
+        <span class="material-icons transaction-list-add-icon">add_circle</span> Aggiungi Spesa
+    </button>
+    <button class="btn-fab mobile-only"
+            hx-get="{% url 'transaction_create' %}"
+            hx-target="#main-content"
+            hx-push-url="true"
+            hx-indicator=".htmx-progress"
+            hx-swap="innerHTML swap:50ms settle:200ms">
+        <span class="material-icons">add</span>
+    </button>
+</div>
+
+<div class="view-toggle mb-3" data-view-type="{{ view_type }}"
+     hx-get="{% url 'transaction_list' %}"
+     hx-target="#transaction-results"
+     hx-include="[form='main-filter-form']"
+     hx-indicator="#transaction-results, .htmx-progress"
+     hx-trigger="change"
+     hx-push-url="{{ request.path }}">
+    <input type="radio" name="view_type" id="view_list_content" value="list" {% if view_type != 'merchant' %}checked{% endif %} form="main-filter-form"
+           onchange="this.parentElement.setAttribute('data-view-type', this.value)">
+    <label for="view_list_content">Lista</label>
+
+    <input type="radio" name="view_type" id="view_merchant_content" value="merchant" {% if view_type == 'merchant' %}checked{% endif %} form="main-filter-form"
+           onchange="this.parentElement.setAttribute('data-view-type', this.value)">
+    <label for="view_merchant_content">Esercente</label>
+</div>
+
+{% if transactions %}
+    <div class="data-list" id="scroll-target">
+        {% for transaction in transactions %}
+            {% include "transactions/components/transaction_item.html" with transaction=transaction %}
+        {% endfor %}
+    </div>
+
+    {% include "components/pagination.html" with hx_target="#transaction-results" %}
+
+{% elif not uncategorized_transaction %}
+    <!-- Empty State -->
+    {% url 'transactions_upload' as upload_url %}
+    {% include "components/empty_state.html" with icon="receipt_long" title="Nessuna Transazione Trovata" description="Carica un file Excel o CSV per iniziare a tracciare le tue spese." button_text="Carica File" button_url=upload_url %}
+{% endif %}

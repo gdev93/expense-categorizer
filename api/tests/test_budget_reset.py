@@ -3,9 +3,21 @@ import datetime
 from django.urls import reverse
 from django.contrib.auth.models import User
 from api.models import Category, MonthlyBudget
+from processors.stats import compute_forecast
+
+
+@pytest.fixture
+def forecast_value():
+    return 33.0
+@pytest.fixture
+def mock_forecast(mocker, forecast_value):
+    """
+    Fixture that patches the forecast function and returns the mock object.
+    """
+    return mocker.patch('api.services.forecasts.forecast_service.stats_compute_forecast', return_value=forecast_value)
 
 @pytest.mark.django_db
-def test_budget_reset_view(client):
+def test_budget_reset_view(client, forecast_value, mock_forecast):
     """Test that the budget reset view correctly resets manual inputs to automated values"""
     # Setup
     user = User.objects.create_user(username='resetuser', password='password')
@@ -36,17 +48,17 @@ def test_budget_reset_view(client):
     budget.refresh_from_db()
     assert budget.is_automated is True
     assert budget.user_amount is None
-    assert float(budget.final_amount) == 100.0
+    assert float(budget.final_amount) == forecast_value
+
 
     # 2. Reset it back to manual for HTMX test
-    budget.user_amount = 200.0
+    budget.user_amount = 200
     budget.is_automated = False
     budget.save()
 
     # Test HTMX POST
     response = client.post(url, HTTP_HX_REQUEST='true')
     assert response.status_code == 200
-    
     budget.refresh_from_db()
     assert budget.is_automated is True
     assert budget.user_amount is None
@@ -57,4 +69,4 @@ def test_budget_reset_view(client):
     # Check for budget list content
     assert 'Food' in content
     assert 'Previsione' in content
-    assert '100.00' in content
+    assert str(forecast_value) in content

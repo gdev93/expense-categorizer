@@ -4,12 +4,12 @@
 {% block title %}Conferma Cancellazione Dati - Pecuniam{% endblock %}
 
 {% block extra_css %}
-    <link rel="stylesheet" href="{% static 'css/user-profile.css' %}">
+    <link rel="stylesheet" href="{% static 'css/user_profile.css' %}">
 {% endblock %}
 
 {% block content %}
 <div class="container mt-2 user-delete-page">
-    {% include "api/user/components/user-header.html" with title="Cancellazione account" icon="report_problem"%}
+    {% include "api/user/components/user_header.html" with title="Cancellazione account" icon="report_problem"%}
 
     <div class="breakdown-section delete-confirm-container danger-zone-section">
         <div class="alert alert-warning mb-4">

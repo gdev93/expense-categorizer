@@ -21,7 +21,7 @@
                 {% include "transactions/components/transaction_item.html" with transaction=transaction hide_category=True show_description=True %}
             {% endfor %}
         {% else %}
-            {% include "components/empty-state.html" with icon="receipt_long" title="Nessuna transazione" description="Nessuna transazione registrata per questa categoria." %}
+            {% include "components/empty_state.html" with icon="receipt_long" title="Nessuna transazione" description="Nessuna transazione registrata per questa categoria." %}
         {% endif %}
     </div>
 

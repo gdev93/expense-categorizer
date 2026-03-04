@@ -5,12 +5,12 @@
 {% block title %}Il mio profilo - Pecuniam{% endblock %}
 
 {% block extra_css %}
-    <link rel="stylesheet" href="{% static 'css/user-profile.css' %}">
+    <link rel="stylesheet" href="{% static 'css/user_profile.css' %}">
 {% endblock %}
 
 {% block content %}
 <div class="container mt-2">
-    {% include "api/user/components/user-header.html" with title="Profilo" icon="account_circle"%}
+    {% include "api/user/components/user_header.html" with title="Profilo" icon="account_circle"%}
 
     <!-- User Information Section -->
     <div class="breakdown-section">

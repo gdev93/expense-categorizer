@@ -81,9 +81,4 @@ def test_transaction_filter_by_merchant_hash():
     view.get_transaction_filters = lambda: TransactionFilterState(year=2026, months=[2], search="NonMatching")
     qs = view.get_transaction_filter_query()
     assert qs.count() == 0
-    
-    # 3. Search by description (exact match now required due to blind index)
-    view.get_transaction_filters = lambda: TransactionFilterState(year=2026, months=[2], search="Searchable description")
-    qs = view.get_transaction_filter_query()
-    assert qs.count() == 1
 

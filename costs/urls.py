@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import CostSummaryView
+from .views.costs.cost_summary import CostSummaryView
 
 app_name = 'costs'
 

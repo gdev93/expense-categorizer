@@ -3,6 +3,8 @@
 {% include "transactions/components/transaction_list_summary.html" %}
 {% include "transactions/components/transaction_list_results.html" %}
 {% include "components/messages.html" %}
+{% include "components/year_select.html" with id_suffix="_desktop" show_toggle=False hx_oob=True %}
+{% include "components/year_select.html" with id_suffix="_mobile" show_toggle=False hx_oob=True %}
 <div class="custom-multiselect" id="months-multiselect" {% if hx_oob %}hx-swap-oob="true"{% endif %}
      data-placeholder="Tutti i Mesi"
      data-plural-text="mesi selezionati">

@@ -83,7 +83,7 @@ class TestTransactionApplyAll:
             'apply_to_all': 'true'
         })
         
-        assert response.status_code == 302 # It renders the template again on success
+        assert response.status_code == 200 # It renders the template again on success
         
         # Verify t3 is updated
         t3.refresh_from_db()

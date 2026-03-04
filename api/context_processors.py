@@ -28,10 +28,12 @@ def available_years_context(request: HttpRequest):
         .distinct()
         .order_by("-transaction_date__year")
     )
-    if request.path.find('budget') != -1 and years:
-        years.append(datetime.now().year)
+    current_year = datetime.now().year
+    if current_year not in years:
+        years.append(current_year)
+    years.sort(reverse=True)
     return {
-        'available_years': years or [datetime.now().year]
+        'available_years': years
     }
 
 
@@ -58,9 +60,7 @@ def available_months_context(request):
         selected_year = None
 
     if selected_year is None:
-        # Fallback to the most recent transaction year
-        last_t = Transaction.objects.filter(user=request.user, status='categorized').order_by('-transaction_date').first()
-        selected_year = last_t.transaction_date.year if last_t and last_t.transaction_date else datetime.now().year
+        selected_year = datetime.now().year
 
     # Gather distinct months for the selected year
     dates = (Transaction.objects.filter(

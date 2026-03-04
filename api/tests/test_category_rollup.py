@@ -3,7 +3,7 @@ from decimal import Decimal
 from django.utils import timezone
 import datetime
 from api.models import Transaction, Category, CategoryRollup
-from api.services import RollupService
+from api.services.rollups.rollup_service import RollupService
 from django.contrib.auth.models import User
 
 @pytest.mark.django_db

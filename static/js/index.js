@@ -336,9 +336,7 @@ function clearFilters(formId) {
     const form = document.getElementById(formId);
     if (!form) return;
     Array.from(form.elements).forEach(el => {
-        if (el.name === 'view_type' || el.name === 'year' || el.id === 'year' || el.name === 'paginate_by' || el.type === 'hidden') {
-            return;
-        }
+
         if (el.tagName === 'INPUT') {
             if (['text', 'search', 'number', 'date'].includes(el.type)) {
                 el.value = '';

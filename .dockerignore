@@ -19,3 +19,10 @@ demo
 documentation
 landing
 model_cache
+tmp/
+temp/
+*.tmp
+# App
+docker-compose.dev.yaml
+# AI outputs
+*output*

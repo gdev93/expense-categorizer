@@ -46,7 +46,7 @@ class TestUserDeleteView:
         # Check that the template is used
         assert any("api/user/delete_confirm.html" in t.name for t in response.templates)
 
-    @patch('api.views.user_views.delete_user_data.delay')
+    @patch('api.views.users.user_delete.delete_user_data.delay')
     def test_post_delete_confirm_triggers_task(self, mock_delete_task, client):
         client.login(username=self.user.username, password="password")
         response = client.post(self.url)

@@ -3,7 +3,7 @@ from django.urls import reverse
 from django.contrib.auth.models import User
 from api.models import Transaction, YearlyMonthlyUserRollup, Category, Merchant, UploadFile
 from decimal import Decimal
-from api.services import RollupService
+from api.services.rollups.rollup_service import RollupService
 
 @pytest.mark.django_db
 class TestYearlyRollup:
@@ -63,7 +63,7 @@ class TestYearlyRollup:
         }
         
         response = client.post(url, data)
-        assert response.status_code == 302
+        assert response.status_code == 200
         
         rollup = YearlyMonthlyUserRollup.objects.get(user=user, by_year=2025, month_number=None)
         assert rollup.total_amount_expense_by_year == Decimal('75.00')

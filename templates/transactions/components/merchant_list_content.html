@@ -1,0 +1,76 @@
+{% if uncategorized_merchants %}
+<h2 class="mb-3">
+     Spese non Categorizzate
+    <span class="badge merchant-list-uncategorized-badge">
+        {{ uncategorized_merchants|length }}
+    </span>
+</h2>
+<details class="expander-card merchant-list-expander">
+    <summary class="expander-header">
+        <span class="merchant-list-expander-summary-text">Apri</span>
+        <div class="expander-toggle-btn">
+            <span class="expander-icon">▼</span>
+        </div>
+    </summary>
+
+    <div class="expander-body">
+        <div class="data-list">
+            {% for item in uncategorized_merchants %}
+                {% include "transactions/components/merchant_list_item.html" with item=item %}
+            {% endfor %}
+        </div>
+    </div>
+</details>
+{% endif %}
+
+<!-- Merchant List -->
+<div class="header-with-action mb-2">
+    <div class="header-with-action-title">
+        <h2 class="m-0"> Spese Categorizzate</h2>
+    </div>
+    <button class="btn btn-primary desktop-only"
+            hx-get="{% url 'transaction_create' %}"
+            hx-target="#main-content"
+            hx-push-url="true"
+            hx-indicator=".htmx-progress"
+            hx-swap="innerHTML swap:50ms settle:200ms">
+        <span class="material-icons merchant-list-add-icon">add_circle</span> Aggiungi Spesa
+    </button>
+    <button class="btn-fab mobile-only"
+            hx-get="{% url 'transaction_create' %}"
+            hx-target="#main-content"
+            hx-push-url="true"
+            hx-indicator=".htmx-progress"
+            hx-swap="innerHTML swap:50ms settle:200ms">
+        <span class="material-icons">add</span>
+    </button>
+</div>
+
+<div class="view-toggle mb-3" data-view-type="{{ view_type }}"
+     hx-get="{% url 'transaction_list' %}"
+     hx-target="#transaction-results"
+     hx-include="[form='main-filter-form']"
+     hx-indicator="#transaction-results, .htmx-progress"
+     hx-trigger="change"
+     hx-push-url="{{ request.path }}">
+    <input type="radio" name="view_type" id="view_list_content" value="list" {% if view_type != 'merchant' %}checked{% endif %} form="main-filter-form"
+           onchange="this.parentElement.setAttribute('data-view-type', this.value)">
+    <label for="view_list_content">Lista</label>
+
+    <input type="radio" name="view_type" id="view_merchant_content" value="merchant" {% if view_type == 'merchant' %}checked{% endif %} form="main-filter-form"
+           onchange="this.parentElement.setAttribute('data-view-type', this.value)">
+    <label for="view_merchant_content">Esercente</label>
+</div>
+
+{% if merchant_summary %}
+    <div class="data-list" id="scroll-target">
+        {% for item in merchant_summary %}
+            {% include "transactions/components/merchant_list_item.html" with item=item %}
+        {% endfor %}
+    </div>
+
+    {% include "components/pagination.html" with page_obj=merchant_summary hx_target="#transaction-results" %}
+{% elif not uncategorized_merchants and not merchant_summary %}
+    <!-- Empty State for Merchant View -->
+    {% include "components/empty_state.html" with icon="store" title="Nessuna Transazione Trovata" description="Non ci sono transazioni che corrispondono ai filtri selezionati." %}
+{% endif %}

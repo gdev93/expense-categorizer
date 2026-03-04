@@ -86,7 +86,7 @@ class Command(BaseCommand):
                 
                 # Re-encrypt and re-hash using setters (uses new SECRET_KEY via EncryptedCharField)
                 merchant.name = decrypted_name
-                merchant.save(update_fields=['name', 'name_hash', 'updated_at'])
+                merchant.save(update_fields=['name', 'name_hash', 'updated_at', 'fuzzy_search_trigrams'])
             
             processed += 1
             if processed % 50 == 0:

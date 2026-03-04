@@ -134,7 +134,7 @@ def test_monthly_budget_forecast_view_post(client):
     next_month_date = (today.replace(day=28) + datetime.timedelta(days=4)).replace(day=1)
     
     from unittest.mock import patch
-    with patch('api.services.ForecastService.compute_forecast') as mock_compute:
+    with patch('api.services.forecasts.forecast_service.ForecastService.compute_forecast') as mock_compute:
         url = reverse('budget_forecast_detail', kwargs={'year': next_month_date.year, 'month': next_month_date.month})
         response = client.post(url, {
             'month': str(next_month_date.month),
@@ -164,7 +164,7 @@ def test_monthly_budget_forecast_view_htmx_post(client):
     )
     
     from unittest.mock import patch
-    with patch('api.services.ForecastService.compute_forecast') as mock_compute:
+    with patch('api.services.forecasts.forecast_service.ForecastService.compute_forecast') as mock_compute:
         # Mock compute_forecast to simulate budget update
         def update_budget(*args, **kwargs):
             MonthlyBudget.objects.filter(user=user, category=cat, month=next_month_date).update(planned_amount=75.00)
@@ -269,7 +269,7 @@ def test_budget_spent_percentage_display(client):
         transaction_type='expense',
         status='categorized'
     )
-    from api.services import RollupService
+    from api.services.rollups.rollup_service import RollupService
     RollupService.update_all_rollups(user, [(current_month_date.year, current_month_date.month)])
     
     # 6. Access the detail view
@@ -311,7 +311,7 @@ def test_budget_spent_percentage_over_budget(client):
         transaction_type='expense',
         status='categorized'
     )
-    from api.services import RollupService
+    from api.services.rollups.rollup_service import RollupService
     RollupService.update_all_rollups(user, [(current_month_date.year, current_month_date.month)])
     
     url = reverse('budget_forecast_detail', kwargs={'year': current_month_date.year, 'month': current_month_date.month})

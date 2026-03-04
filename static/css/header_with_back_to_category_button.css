@@ -1,0 +1,11 @@
+/* Styles for templates/components/header_with_back_to_category_button.html */
+
+.header-back-total-pill {
+    margin: 0;
+}
+
+.header-back-content {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}

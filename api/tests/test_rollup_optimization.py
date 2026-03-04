@@ -1,7 +1,7 @@
 import pytest
 from django.contrib.auth.models import User
 from api.models import Transaction, Category, Profile, UploadFile
-from api.services import RollupService
+from api.services.rollups.rollup_service import RollupService
 from api.tasks import populate_rollups
 from decimal import Decimal
 import datetime
@@ -97,7 +97,7 @@ def test_task_skips_clean_users():
     )
     
     from unittest.mock import patch
-    with patch('api.services.RollupService.update_all_rollups') as mock_update:
+    with patch('api.services.rollups.rollup_service.RollupService.update_all_rollups') as mock_update:
         populate_rollups()
         
         # Should only be called for user1

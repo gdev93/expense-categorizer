@@ -82,3 +82,57 @@ class TestSessionFilters:
         # Should only show the 2024 transaction
         assert len(response.context['transactions']) == 1
         assert response.context['transactions'][0].amount == Decimal("100.00")
+
+    def test_category_detail_reset_updates_year_oob(self, client):
+        client.login(username="testuser", password="password")
+        url = reverse('category_detail', args=[self.category1.id])
+        
+        # 1. Start with 2024 in session
+        client.get(url, {'year': 2024})
+        
+        # 2. Trigger reset via HTMX
+        response = client.get(url, {'reset': '1'}, HTTP_HX_REQUEST='true', HTTP_HX_TARGET='category-detail-results')
+        
+        assert response.status_code == 200
+        content = response.content.decode()
+        
+        # 3. Check if year select is swapped OOB
+        assert 'id="year"' in content
+        assert 'hx-swap-oob="true"' in content
+        assert 'value="2025" selected' in content
+
+    def test_category_list_reset_updates_year_oob(self, client):
+        client.login(username="testuser", password="password")
+        url = reverse('category_list')
+        
+        # 1. Start with 2024 in session
+        client.get(url, {'year': 2024})
+        
+        # 2. Trigger reset via HTMX
+        response = client.get(url, {'reset': '1'}, HTTP_HX_REQUEST='true', HTTP_HX_TARGET='category-results')
+        
+        assert response.status_code == 200
+        content = response.content.decode()
+        
+        # 3. Check if header is swapped OOB (which contains the year select)
+        assert 'id="stickyHeader"' in content
+        assert 'hx-swap-oob="true"' in content
+        assert 'value="2025" selected' in content
+
+    def test_transaction_list_reset_updates_year_oob(self, client):
+        client.login(username="testuser", password="password")
+        url = reverse('transaction_list')
+        
+        # 1. Start with 2024 in session
+        client.get(url, {'year': 2024})
+        
+        # 2. Trigger reset via HTMX
+        response = client.get(url, {'reset': '1'}, HTTP_HX_REQUEST='true', HTTP_HX_TARGET='transaction-results')
+        
+        assert response.status_code == 200
+        content = response.content.decode()
+        
+        # 3. Check if year select is swapped OOB
+        assert 'id="year-select_desktop"' in content or 'id="year-select_mobile"' in content
+        assert 'hx-swap-oob="true"' in content
+        assert 'value="2025" selected' in content

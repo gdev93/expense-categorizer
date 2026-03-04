@@ -8,7 +8,7 @@ from django.views import View
 
 from api.models import Transaction
 from api.privacy_utils import generate_blind_index
-from api.services import MerchantService
+from api.services.merchants.merchant_service import MerchantService
 from api.views.mixins import MonthYearFilterMixin
 
 
@@ -149,7 +149,6 @@ class TransactionFilterMixin(MonthYearFilterMixin, View):
 
         # 3. Filter by Search
         if filters.search:
-            search_hash = generate_blind_index(filters.search)
 
             # 1. Get the list of merchant objects (ordered by relevance)
             merchants = MerchantService.get_merchants_candidates(
@@ -170,8 +169,6 @@ class TransactionFilterMixin(MonthYearFilterMixin, View):
 
             # 4. Filter and Apply Order
             queryset = queryset.filter(
-                Q(merchant__name_hash=search_hash) |
-                Q(description_hash=search_hash) |
                 Q(merchant__in=merchants)
             )
 

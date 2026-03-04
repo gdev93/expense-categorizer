@@ -1,0 +1,13 @@
+<div class="filters filters-clean year-select-compact-container">
+    <select id="year-select{{ id_suffix }}"
+            name="year"
+            class="form-select year-select-compact-select"
+            form="main-filter-form"
+            hx-on:change="document.querySelectorAll('select[name=year]').forEach(s => s.value = this.value); htmx.trigger('#main-filter-form', 'change')">
+        {% for available_year in available_years %}
+            <option value="{{ available_year }}" {% if available_year == year %}selected{% endif %}>
+                {{ available_year }}
+            </option>
+        {% endfor %}
+    </select>
+</div>

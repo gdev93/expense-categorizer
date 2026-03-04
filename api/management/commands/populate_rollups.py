@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User
 from django.db import transaction as db_transaction
-from api.services import RollupService
+from api.services.rollups.rollup_service import RollupService
 from api.models import Transaction
 
 

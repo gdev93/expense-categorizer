@@ -4,15 +4,15 @@
 {% block title %}{% if view_type == 'merchant' %}Spese per Esercente{% else %}Lista Spese{% endif %}{% endblock %}
 
 {% block extra_css %}
-    <link rel="stylesheet" href="{% static 'css/merchant-details.css' %}">
-    <link rel="stylesheet" href="{% static 'css/transaction-list.css' %}">
-    <link rel="stylesheet" href="{% static 'css/transaction-item.css' %}">
-    <link rel="stylesheet" href="{% static 'css/transaction-income-list-results.css' %}">
-    <link rel="stylesheet" href="{% static 'css/transaction-list-results.css' %}">
-    <link rel="stylesheet" href="{% static 'css/transaction-list-content.css' %}">
-    <link rel="stylesheet" href="{% static 'css/merchant-list-content.css' %}">
-    <link rel="stylesheet" href="{% static 'css/merchant-list-item.css' %}">
-    <link rel="stylesheet" href="{% static 'css/merchant-transactions.css' %}">
+    <link rel="stylesheet" href="{% static 'css/merchant_details.css' %}">
+    <link rel="stylesheet" href="{% static 'css/transaction_list.css' %}">
+    <link rel="stylesheet" href="{% static 'css/transaction_item.css' %}">
+    <link rel="stylesheet" href="{% static 'css/transaction_income_list_results.css' %}">
+    <link rel="stylesheet" href="{% static 'css/transaction_list_results.css' %}">
+    <link rel="stylesheet" href="{% static 'css/transaction_list_content.css' %}">
+    <link rel="stylesheet" href="{% static 'css/merchant_list_content.css' %}">
+    <link rel="stylesheet" href="{% static 'css/merchant_list_item.css' %}">
+    <link rel="stylesheet" href="{% static 'css/merchant_transactions.css' %}">
 {% endblock %}
 {% block content %}
     <div class="container mt-2">
@@ -21,10 +21,10 @@
             {% include "transactions/components/transaction_list_header_title.html" %}
             <div class="header-actions">
                 <div class="desktop-only">
-                    {% include "components/year-select.html" with id_suffix="_desktop" show_toggle=False %}
+                    {% include "components/year_select.html" with id_suffix="_desktop" show_toggle=False %}
                 </div>
                 <div class="mobile-only">
-                    {% include "components/year-select.html" with id_suffix="_mobile" show_toggle=False %}
+                    {% include "components/year_select.html" with id_suffix="_mobile" show_toggle=False %}
                 </div>
             </div>
         </div>
@@ -34,7 +34,7 @@
         {% include "transactions/components/transaction_list_summary.html" %}
 
         <!-- Filters -->
-        {% include "transactions/components/filter-form.html" %}
+        {% include "transactions/components/filter_form.html" %}
 
         {% include "transactions/components/transaction_list_results.html" %}
     </div>

@@ -464,9 +464,10 @@ class MonthlyBudget(models.Model):
 
     @property
     def final_amount(self)->float:
+        planned_amount = self.planned_amount or 0.0
         if self.is_automated:
-            return float(self.planned_amount or 0.0)
-        return float(self.user_amount if self.user_amount is not None else self.planned_amount)
+            return float(planned_amount)
+        return float(self.user_amount if self.user_amount is not None else planned_amount)
 
 
     class Meta:

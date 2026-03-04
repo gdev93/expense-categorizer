@@ -13,7 +13,7 @@ class UploadErrorHandlingTest(TestCase):
         self.client.login(username='testuser', password='password')
         self.upload_url = reverse('transactions_upload')
 
-    @patch('api.views.upload_file_view.parse_uploaded_file')
+    @patch('api.views.uploads.upload_file.parse_uploaded_file')
     def test_parsing_error_returns_bad_request_or_json(self, mock_parse):
         # Mock parsing error
         mock_parse.side_effect = FileParserError('Test parsing error')
@@ -28,7 +28,7 @@ class UploadErrorHandlingTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Test parsing error')
 
-    @patch('api.views.upload_file_view.parse_uploaded_file')
+    @patch('api.views.uploads.upload_file.parse_uploaded_file')
     def test_parsing_error_json_response(self, mock_parse):
         # This test checks if we get a JSON response when X-Requested-With header is present
         mock_parse.side_effect = FileParserError('Test parsing error')
@@ -51,7 +51,7 @@ class UploadErrorHandlingTest(TestCase):
         self.assertIn('error', data)
         self.assertIn('Test parsing error', data['error'])
 
-    @patch('api.views.upload_file_view.parse_uploaded_file')
+    @patch('api.views.uploads.upload_file.parse_uploaded_file')
     def test_empty_file_error_json_response(self, mock_parse):
         # Mock empty file data
         mock_parse.return_value = []
@@ -71,8 +71,8 @@ class UploadErrorHandlingTest(TestCase):
         # Check for both English and Italian as I might translate it
         self.assertTrue('empty' in data['error'].lower() or 'vuoto' in data['error'].lower())
 
-    @patch('api.views.upload_file_view.CsvStructureDetector')
-    @patch('api.views.upload_file_view.parse_uploaded_file')
+    @patch('api.views.uploads.upload_file.CsvStructureDetector')
+    @patch('api.views.uploads.upload_file.parse_uploaded_file')
     def test_invalid_structure_error_json_response(self, mock_parse, mock_detector_class):
         # Mock successful parsing but failed structure detection
         mock_parse.return_value = [{'col1': 'val1', 'col2': 'val2'}]

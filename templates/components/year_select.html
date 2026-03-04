@@ -1,0 +1,35 @@
+<div class="filters filters-clean header-filters" id="year-filter-container{{ id_suffix }}" {% if hx_oob %}hx-swap-oob="true"{% endif %}>
+    {% if show_toggle != False and view_type %}
+    <div class="view-toggle" data-view-type="{{ view_type }}"
+         hx-get="{{ request.path }}"
+         hx-target="#transaction-results"
+         hx-include="[form='main-filter-form']"
+         hx-indicator="#transaction-results, .htmx-progress"
+         hx-trigger="change"
+         hx-push-url="{{ request.path }}">
+        <input type="radio" name="view_type" id="view_list{{ id_suffix }}" value="list" {% if view_type != 'merchant' %}checked{% endif %} form="main-filter-form"
+               onchange="this.parentElement.setAttribute('data-view-type', this.value)">
+        <label for="view_list{{ id_suffix }}">Lista</label>
+        
+        <input type="radio" name="view_type" id="view_merchant{{ id_suffix }}" value="merchant" {% if view_type == 'merchant' %}checked{% endif %} form="main-filter-form"
+               onchange="this.parentElement.setAttribute('data-view-type', this.value)">
+        <label for="view_merchant{{ id_suffix }}">Esercente</label>
+    </div>
+    {% endif %}
+
+    {% if show_year != False %}
+    <div class="filters filters-clean year-select-compact-select">
+        <select id="year-select{{ id_suffix }}"
+                name="year"
+                class="form-select"
+                form="main-filter-form"
+                hx-on:change="document.querySelectorAll('select[name=year]').forEach(s => s.value = this.value); htmx.trigger('#main-filter-form', 'change')">
+            {% for available_year in available_years %}
+                <option value="{{ available_year }}" {% if available_year == year %}selected{% endif %}>
+                    {{ available_year }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+    {% endif %}
+</div>

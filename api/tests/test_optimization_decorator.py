@@ -3,7 +3,7 @@ from decimal import Decimal
 from datetime import date
 from django.contrib.auth.models import User
 from api.models import Transaction, Category, YearlyMonthlyUserRollup
-from api.services import TransactionAggregationService
+from api.services.transactions.aggregation_service import TransactionAggregationService
 from api.views.transactions.transaction_mixins import TransactionFilterState
 
 @pytest.mark.django_db

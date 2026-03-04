@@ -89,7 +89,7 @@ def test_budget_copy_no_previous_month_view(client):
 
     # 4. No budgets for previous month 
     # We mock _ensure_forecasts_computed to do nothing, so no budgets are created
-    with patch('api.services.BudgetService._ensure_forecasts_computed') as mock_ensure:
+    with patch('api.services.budgets.budget_service.BudgetService._ensure_forecasts_computed') as mock_ensure:
         # We only want to mock it for the previous month call
         
         # 5. Create a manual budget for current month (which should be reset)

@@ -17,21 +17,36 @@ Including another URLconf
 from django.urls import path, include
 from django.views.generic import RedirectView
 
-from api.views.category_view import CategoryCreateView, CategoryListView, CategoryDetailView, CategoryDeleteView, \
-    CategoryUpdateView, CategoryExportView, CategorySearchView, CategoryFromMerchant
-from api.views.merchant_views import MerchantSearchView
-from api.views.transactions.create_views import TransactionCreateView
-from api.views.transactions.export_views import TransactionExportView
-from api.views.transactions.list_views import TransactionListView
-from api.views.transactions.query_views import TransactionByMerchant
-from api.views.transactions.update_views import EditTransactionCategory, TransactionDetailUpdateView
-from api.views.upload_file_view import UploadFileView, UploadFileDelete, UploadProgressView, \
-    UploadFileCheckView
-from api.views.onboarding_views import OnboardingStepView
-from api.views.user_views import UserDeleteView, UserDetailView, UserDataExportView
+from api.views.budgets.budget_copy import BudgetCopyView
+from api.views.budgets.budget_forecast import BudgetForecastView
+from api.views.budgets.budget_forecast_detail import BudgetForecastDetailView
+from api.views.budgets.budget_forecast_list import BudgetForecastListView
+from api.views.budgets.budget_reset import BudgetResetView
+from api.views.budgets.budget_update import BudgetUpdateView
+from api.views.categories.category_create import CategoryCreateView
+from api.views.categories.category_delete import CategoryDeleteView
+from api.views.categories.category_detail import CategoryDetailView
+from api.views.categories.category_export import CategoryExportView
+from api.views.categories.category_from_merchant import CategoryFromMerchant
+from api.views.categories.category_list import CategoryListView
+from api.views.categories.category_search import CategorySearchView
+from api.views.categories.category_update import CategoryUpdateView
 from api.views.error_views import trigger_403, trigger_500, trigger_502, trigger_503
-from api.views.budget_views import BudgetForecastView, BudgetUpdateView, BudgetResetView, BudgetCopyView
-from api.views.budget_list_view import BudgetForecastListView, BudgetForecastDetailView
+from api.views.merchants.merchant_search import MerchantSearchView
+from api.views.onboarding.onboarding_step import OnboardingStepView
+from api.views.transactions.edit_transaction_category import EditTransactionCategory
+from api.views.transactions.transaction_by_merchant import TransactionByMerchant
+from api.views.transactions.transaction_create import TransactionCreateView
+from api.views.transactions.transaction_detail_update import TransactionDetailUpdateView
+from api.views.transactions.transaction_export import TransactionExportView
+from api.views.transactions.transaction_list import TransactionListView
+from api.views.uploads.upload_file import UploadFileView
+from api.views.uploads.upload_file_check import UploadFileCheckView
+from api.views.uploads.upload_file_delete import UploadFileDelete
+from api.views.uploads.upload_progress import UploadProgressView
+from api.views.users.user_data_export import UserDataExportView
+from api.views.users.user_delete import UserDeleteView
+from api.views.users.user_detail import UserDetailView
 
 urlpatterns = [
     path('test-403/', trigger_403, name='test_403'),

@@ -69,11 +69,7 @@ class MonthYearFilterMixin(View):
         return selected_year, processed_months
 
     def _get_default_year(self):
-        last_t = Transaction.objects.filter(
-            user=self.request.user,
-            status='categorized'
-        ).order_by('-transaction_date').first()
-        return last_t.transaction_date.year if last_t and last_t.transaction_date else datetime.datetime.now().year
+        return datetime.datetime.now().year
 
     # These are now helpers if you need to manually clear or set cache elsewhere
     def _make_cache_key(self, query_string: str):

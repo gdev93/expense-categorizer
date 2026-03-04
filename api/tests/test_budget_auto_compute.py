@@ -4,7 +4,7 @@ from django.urls import reverse
 from django.utils import timezone
 from api.models import MonthlyBudget, Category, Transaction
 from django.contrib.auth.models import User
-from api.services import ForecastService
+from api.services.forecasts.forecast_service import ForecastService
 
 @pytest.mark.django_db
 def test_current_month_budget_auto_computed_in_list(client):

@@ -4,6 +4,7 @@ from datetime import date
 from decimal import Decimal
 
 def create_test_data(user):
+    current_year = date.today().year
     # Create some categories
     food = Category.objects.create(user=user, name="Food")
     transport = Category.objects.create(user=user, name="Transport")
@@ -21,7 +22,7 @@ def create_test_data(user):
     transactions = [
         Transaction(
             user=user,
-            transaction_date=date(2025, 1, 1),
+            transaction_date=date(current_year, 1, 1),
             amount=Decimal("50.00"),
             description="Weekly groceries",
             merchant=supermarket,
@@ -31,7 +32,7 @@ def create_test_data(user):
         ),
         Transaction(
             user=user,
-            transaction_date=date(2025, 1, 5),
+            transaction_date=date(current_year, 1, 5),
             amount=Decimal("40.00"),
             description="Gas refill",
             merchant=gas_station,
@@ -41,7 +42,7 @@ def create_test_data(user):
         ),
         Transaction(
             user=user,
-            transaction_date=date(2025, 1, 10),
+            transaction_date=date(current_year, 1, 10),
             amount=Decimal("100.00"),
             description="Monthly bill",
             merchant=electric_co,
@@ -51,7 +52,7 @@ def create_test_data(user):
         ),
         Transaction(
             user=user,
-            transaction_date=date(2025, 1, 15),
+            transaction_date=date(current_year, 1, 15),
             amount=Decimal("15.50"),
             description="Lunch",
             status="uncategorized",
