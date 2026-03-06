@@ -2,7 +2,7 @@ import pytest
 import datetime
 from django.urls import reverse
 from django.contrib.auth.models import User
-from api.models import Category, MonthlyBudget
+from api.models import Category, MonthlyBudget, Transaction
 from processors.stats import compute_forecast
 
 
@@ -14,7 +14,7 @@ def mock_forecast(mocker, forecast_value):
     """
     Fixture that patches the forecast function and returns the mock object.
     """
-    return mocker.patch('api.services.forecasts.forecast_service.stats_compute_forecast', return_value=forecast_value)
+    return mocker.patch('api.services.forecasts.forecast_service.forecast', return_value=forecast_value)
 
 @pytest.mark.django_db
 def test_budget_reset_view(client, forecast_value, mock_forecast):
@@ -24,6 +24,14 @@ def test_budget_reset_view(client, forecast_value, mock_forecast):
     client.login(username='resetuser', password='password')
 
     cat = Category.objects.create(name='Food', user=user)
+    # At least one transaction is needed for forecast logic to run
+    Transaction.objects.create(
+        user=user,
+        category=cat,
+        amount=10.0,
+        transaction_date=datetime.date(2026, 3, 1),
+        description='Initial test transaction'
+    )
     # Use a specific date to avoid issues with "next month" logic if it were dynamic
     year, month = 2026, 4
     month_date = datetime.date(year, month, 1)

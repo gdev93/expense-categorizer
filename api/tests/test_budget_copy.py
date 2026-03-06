@@ -2,7 +2,7 @@ import pytest
 from django.urls import reverse
 from django.utils import timezone
 import datetime
-from api.models import MonthlyBudget, Category
+from api.models import MonthlyBudget, Category, Transaction
 from django.contrib.auth.models import User
 from django.contrib.messages import get_messages
 from unittest.mock import patch
@@ -83,15 +83,24 @@ def test_budget_copy_no_previous_month_view(client):
     # 2. Setup categories
     cat1 = Category.objects.create(name='Food', user=user)
 
+    # Need at least one transaction for forecast generation if it is ever triggered
+    Transaction.objects.create(
+        user=user,
+        category=cat1,
+        amount=10.0,
+        transaction_date=datetime.date(2026, 3, 1),
+        description='Initial test transaction'
+    )
+
     # 3. Setup months
     today = timezone.now().date().replace(day=1)
     current_month_date = today
 
-    # 4. No budgets for previous month 
+    # 4. No budgets for previous month
     # We mock _ensure_forecasts_computed to do nothing, so no budgets are created
     with patch('api.services.budgets.budget_service.BudgetService._ensure_forecasts_computed') as mock_ensure:
         # We only want to mock it for the previous month call
-        
+
         # 5. Create a manual budget for current month (which should be reset)
         MonthlyBudget.objects.create(
             user=user,

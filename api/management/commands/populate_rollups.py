@@ -1,6 +1,8 @@
 from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User
 from django.db import transaction as db_transaction
+
+from api.services.data_refresh.data_refresh_service import DataRefreshService
 from api.services.rollups.rollup_service import RollupService
 from api.models import Transaction
 
@@ -59,7 +61,7 @@ class Command(BaseCommand):
 
             try:
                 with db_transaction.atomic():
-                    RollupService.update_all_rollups(user, list(years_months))
+                    DataRefreshService.trigger_recomputation(user)
 
                 self.stdout.write(self.style.SUCCESS(f'  ✓ Successfully updated rollups for {user.username}'))
             except Exception as e:

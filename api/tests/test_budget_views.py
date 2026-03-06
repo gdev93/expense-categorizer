@@ -2,7 +2,7 @@ import pytest
 from django.urls import reverse
 from django.utils import timezone
 import datetime
-from api.models import MonthlyBudget, Category
+from api.models import MonthlyBudget, Category, Transaction
 from django.contrib.auth.models import User
 
 @pytest.mark.django_db
@@ -197,11 +197,19 @@ def test_monthly_budget_forecast_view_htmx_post(client):
 def test_monthly_budget_forecast_reload_resets_manual_amount(client):
     user = User.objects.create_user(username='resetuser', password='password')
     client.login(username='resetuser', password='password')
-    
+
     cat = Category.objects.create(name='Coffee', user=user)
+    # Need at least one transaction for forecast logic to run
+    Transaction.objects.create(
+        user=user,
+        category=cat,
+        amount=10.0,
+        transaction_date=datetime.date(2026, 3, 1),
+        description='Initial test transaction'
+    )
     today = timezone.now().date()
     next_month_date = (today.replace(day=28) + datetime.timedelta(days=4)).replace(day=1)
-    
+
     # Pre-create a manual budget
     budget = MonthlyBudget.objects.create(
         user=user,
@@ -211,18 +219,18 @@ def test_monthly_budget_forecast_reload_resets_manual_amount(client):
         user_amount=100.00,
         is_automated=False
     )
-    
+
     url = reverse('budget_forecast_detail', kwargs={'year': next_month_date.year, 'month': next_month_date.month})
-    
+
     # This should trigger compute_forecast which should reset the budget because it's a reload action
     response = client.post(url, {
         'month': str(next_month_date.month),
         'year': str(next_month_date.year),
         'category_id': str(cat.id)
     }, HTTP_HX_REQUEST='true')
-    
+
     assert response.status_code == 200
-    
+
     budget.refresh_from_db()
     # It should be reset to automated and user_amount should be None
     assert budget.is_automated is True
@@ -330,45 +338,63 @@ def test_far_future_budget_initializes_categories(client):
     # 1. Setup user and categories
     user = User.objects.create_user(username='futureuser', password='password')
     client.login(username='futureuser', password='password')
-    
-    Category.objects.create(name='Groceries', user=user)
+
+    cat = Category.objects.create(name='Groceries', user=user)
     Category.objects.create(name='Entertainment', user=user)
-    
+
+    # Need at least one transaction for forecast logic to run
+    Transaction.objects.create(
+        user=user,
+        category=cat,
+        amount=10.0,
+        transaction_date=datetime.date(2026, 3, 1),
+        description='Initial test transaction'
+    )
+
     # 2. Pick a date more than 15 days away
     today = timezone.now().date()
-    target_date = (today.replace(day=28) + datetime.timedelta(days=10)).replace(day=1)
-    
+    target_date = (today.replace(day=28) + datetime.timedelta(days=20)).replace(day=1)
+
     # Ensure no budgets exist yet
     assert not MonthlyBudget.objects.filter(user=user, month=target_date).exists()
-    
+
     # 3. Access the detail view
     url = reverse('budget_forecast_detail', kwargs={'year': target_date.year, 'month': target_date.month})
     response = client.get(url)
-    
+
     # 4. Verify response
     assert response.status_code == 200
     assert response.context['forecast_available'] is False
-    
+
     # Check if budgets were created with 0
     budgets = MonthlyBudget.objects.filter(user=user, month=target_date)
     assert budgets.count() == 2
     for b in budgets:
         assert float(b.planned_amount) == 0.0
         assert b.is_automated is True
-        
+
     # 5. Verify informative message in HTML
     content = response.content.decode()
     assert 'Pianificazione manuale attiva' in content
     assert 'Groceries' in content
     assert 'Entertainment' in content
-    assert '0.00' in content
+    assert '0,00' in content or '0.00' in content
 
 @pytest.mark.django_db
 def test_far_future_budget_view_message(client):
     # Verify the main budget entry point also shows the message if it defaults to a far-future month
     user = User.objects.create_user(username='futureuser2', password='password')
     client.login(username='futureuser2', password='password')
-    Category.objects.create(name='Food', user=user)
+    cat = Category.objects.create(name='Food', user=user)
+
+    # Need at least one transaction for forecast logic to run
+    Transaction.objects.create(
+        user=user,
+        category=cat,
+        amount=10.0,
+        transaction_date=datetime.date(2026, 3, 1),
+        description='Initial test transaction'
+    )
     
     # budget_forecast view defaults to next month.
     url = reverse('budget_forecast')

@@ -5,6 +5,7 @@ from typing import List, Optional
 
 import numpy as np
 import pandas as pd
+
 from api.config import ForecastConfig
 
 # Improved logger formatting to exclude sensitive data
@@ -17,34 +18,37 @@ class ForecastInput:
     date: date
 
 
-
-def mix_with_gaps(ama_input: List[ForecastInput], window_months: int = 12) -> float:
+def mix_with_gaps(ama_input: List[ForecastInput], target_date: date, window_months: int = 12) -> float:
     """
-    Predicts budget based on historical patterns with a focus on
-    handling occasional vs regular spending.
+    Predicts budget based on historical patterns.
+    Fixed: handles target_date inclusion to correctly detect if the current month is active.
     """
     if not ama_input:
         return 0.0
 
     # 1. Setup time window
-    # We use 'now' to understand if we are currently in the last month of the series
-    current_time = pd.Timestamp.now().normalize()
-    start_date = (current_time - pd.DateOffset(months=window_months)).replace(day=1)
+    # Ensure target_date is a Timestamp and find the end of its month
+    current_time = pd.to_datetime(target_date)
+    target_month_end = current_time + pd.offsets.MonthEnd(0)
+    start_date = (target_month_end - pd.DateOffset(months=window_months)).replace(day=1)
 
     # 2. Data Preparation
     df = pd.DataFrame([{'date': x.date, 'amount': x.amount} for x in ama_input])
     df['date'] = pd.to_datetime(df['date'])
 
-    # Filter by window
-    df = df[(df['date'] >= start_date) & (df['date'] <= current_time)]
+    # Filter by window (up to the target month end)
+    df = df[(df['date'] >= start_date) & (df['date'] <= target_month_end)]
 
     if df.empty:
+        # Check if we still return 0 or if we need a baseline
         return 0.0
 
     # 3. Monthly Resampling with Fixed Range
-    # We create a range that includes the current month
-    full_range = pd.date_range(start=start_date, end=current_time, freq='ME')
+    # We force the range to end exactly at target_month_end
+    full_range = pd.date_range(start=start_date, end=target_month_end, freq='ME')
+
     df_indexed = df.set_index('date').sort_index()
+    # Sum by month and reindex to fill gaps with 0.0, including the target month
     monthly_series = df_indexed['amount'].resample('ME').sum().reindex(full_range, fill_value=0.0)
 
     s = pd.Series(monthly_series)
@@ -57,27 +61,29 @@ def mix_with_gaps(ama_input: List[ForecastInput], window_months: int = 12) -> fl
     gap_ratio = (s == 0).sum() / len(s)
     cv = active_spending.std() / active_spending.mean() if len(active_spending) > 1 else 0
 
-    # Check if there is activity in the current month
+    # Now s.index[-1] is definitely the month of target_date
     current_month_key = s.index[-1]
     is_active_this_month = s[current_month_key] > 0
 
     # 5. Decision Logic
 
-    # STRATEGY A: High Gaps (Occasional spending like Car Repairs)
+    # STRATEGY A: High Gaps (Occasional)
     if gap_ratio > 0.3:
         if is_active_this_month:
-            # If we see movement this month, trigger the 75th percentile budget
+            # Predict based on 75th percentile of past active months
             return float(active_spending.quantile(0.75))
         else:
-            # If the month is silent, assume no spending is needed
+            # Month is silent, budget is zero
             return 0.0
 
-    # STRATEGY B: Chaotic but Regular (e.g., Groceries)
+    # STRATEGY B: Chaotic but Regular (CV check)
     if cv > 0.4:
+        # Use median of last 4 active months
         return float(active_spending.tail(4).median())
 
     # STRATEGY C: Stable Recurring
     else:
+        # Exponential moving average
         return float(s.ewm(span=3).mean().iloc[-1])
 
 def is_stable_expense(amounts: np.ndarray, threshold: float) -> bool:
@@ -116,9 +122,11 @@ def get_seasonal_forecast(amounts: np.ndarray, threshold: float) -> Optional[flo
 
 def compute_forecast(
         history: List[ForecastInput],
+        target_date: date,
         seasonal_threshold: float = ForecastConfig.SEASONAL_THRESHOLD,
-        cv_stable_threshold: float = ForecastConfig.CV_STABLE_THRESHOLD,
-        er_period: int = ForecastConfig.KAMA_ER_PERIOD
+        cv_stable_threshold
+
+: float = ForecastConfig.CV_STABLE_THRESHOLD
 ) -> float:
     """
     Orchestrates the forecasting workflow without exposing sensitive financial data in logs.
@@ -141,6 +149,6 @@ def compute_forecast(
         logger.info("FINAL STRATEGY: SEASONAL (Recurring pattern detected).")
         return seasonal_val
 
-    final_forecast = mix_with_gaps(history)
+    final_forecast = mix_with_gaps(history,target_date)
     logger.info(f"FINAL STRATEGY: AGNOS (No pattern detected).")
     return final_forecast

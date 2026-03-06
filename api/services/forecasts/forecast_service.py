@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 
 from api.config import ForecastConfig
-from api.models import Transaction, MonthlyBudget, Category
+from api.models import Transaction, MonthlyBudget, Category, CategoryRollup
 from processors.stats import ForecastInput, compute_forecast as forecast
 
 logger = logging.getLogger(__name__)
@@ -13,7 +13,7 @@ class ForecastService:
     """Service to handle statistical analysis and forecasting."""
     @staticmethod
     def compute_forecast(years_months: set[tuple[int, int]] | None = None, user: User | None = None,
-                         categories: set[int] | set[int] | None = None, force_reset: bool = False):
+                         categories: set[int] | None = None, force_reset: bool = False) -> None:
         """
         Compute forecasts for the specified months and years and user.
         :param years_months: list of (year, month) tuples to compute forecasts for
@@ -59,11 +59,13 @@ class ForecastService:
 
         for user in user_iterator:
             logger.info(f"Processing user: {user.username} for target dates {target_dates}")
-            categories_to_process = Category.objects.filter(user=user)
+            base_categories = Category.objects.filter(user=user)
+            categories_to_process = base_categories
             if categories:
-                categories_to_process = categories_to_process.filter(id__in=categories)
-            for category in categories_to_process:
-                for target_date, period_start in target_dates:
+                categories_to_process = base_categories.filter(id__in=categories)
+
+            for target_date, period_start in target_dates:
+                for category in categories_to_process:
                     # 1. Setup timing (Target: Next month, first day)
                     # Find first day of next month
                     if not force_reset and target_date > today and (
@@ -94,7 +96,7 @@ class ForecastService:
                         for tx in transactions
                     ]
                     logger.info(f"Generating forecast for {category.name}")
-                    final_forecast = forecast(forecast_inputs)
+                    final_forecast = forecast(forecast_inputs, target_date)
                     # Check if a manual budget already exists
                     existing_budget = MonthlyBudget.objects.filter(
                         user=user,
@@ -105,7 +107,7 @@ class ForecastService:
                     if not force_reset and existing_budget and not existing_budget.is_automated:
                         logger.info(f"Skipping manual budget for {category.name} in {target_date}")
                         continue
-                    if force_reset:
+                    if force_reset and existing_budget:
                         existing_budget.planned_amount = final_forecast
                         existing_budget.is_automated = True
                         existing_budget.user_amount = None
@@ -130,6 +132,39 @@ class ForecastService:
                             monthly_budget.planned_amount = final_forecast
                             monthly_budget.is_automated = monthly_budget.user_amount is None
                             monthly_budget.save()
+
+                # Check if all budgets for this month are zero for ALL categories of the user
+                all_budgets = MonthlyBudget.objects.filter(user=user, month=target_date)
+                is_all_zero = True
+                for b in all_budgets:
+                    if b.final_amount > 0:
+                        is_all_zero = False
+                        break
+                
+                # If there are no budgets at all, we also treat it as "all zero"
+                if is_all_zero:
+                    # Calculate previous month
+                    prev_month = (target_date.replace(day=1) - datetime.timedelta(days=1)).replace(day=1)
+                    rollups = CategoryRollup.objects.filter(
+                        user=user,
+                        year=prev_month.year,
+                        month_number=prev_month.month
+                    )
+                    expenses = {r.category_id: float(r.total_spent or 0) for r in rollups}
+                    
+                    if any(amount > 0 for amount in expenses.values()):
+                        logger.info(f"All forecasts zero for {target_date}. Using expenses from {prev_month}")
+                        for cat_id, expense_amount in expenses.items():
+                            if expense_amount > 0:
+                                MonthlyBudget.objects.filter(
+                                    user=user,
+                                    category_id=cat_id,
+                                    month=target_date,
+                                    user_amount__isnull=True
+                                ).update(
+                                    planned_amount=expense_amount,
+                                    is_automated=True
+                                )
 
 
             logger.info(f"User: {user.username} completed")
