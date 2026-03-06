@@ -5,7 +5,7 @@ from django.utils import timezone
 
 from api.config import ForecastConfig
 from api.models import Transaction, MonthlyBudget, Category
-from processors.stats import ForecastInput, compute_forecast as stats_compute_forecast
+from processors.stats import ForecastInput, compute_forecast as forecast
 
 logger = logging.getLogger(__name__)
 
@@ -31,11 +31,9 @@ class ForecastService:
             id=user.id).iterator()
         target_dates = []
         today = timezone.now().date()
-
+        first_transaction = Transaction.objects.filter(user=user).order_by('transaction_date').first()
         if years_months is None:
             years_months_list = []
-
-            first_transaction = Transaction.objects.filter(user=user).order_by('transaction_date').first()
             if not first_transaction or not first_transaction.transaction_date:
                 logger.info("No transactions found for user. Skipping forecast generation.")
                 return
@@ -54,8 +52,7 @@ class ForecastService:
 
         for year, month in years_months:
             target_date = datetime.date(year, month, 1)
-            period_start = target_date - datetime.timedelta(days=ForecastConfig.get_history_days())
-            target_dates.append((target_date, period_start))
+            target_dates.append((target_date, first_transaction.transaction_date))
 
         for user in user_iterator:
             logger.info(f"Processing user: {user.username} for target dates {target_dates}")
@@ -88,19 +85,13 @@ class ForecastService:
                         transaction_date__gte=period_start,
                         transaction_date__lte=target_date
                     )
-                    grouped_data = {}
-                    for tx in transactions:
-                        key = (tx.transaction_date.year, tx.transaction_date.month)
-                        if key not in grouped_data:
-                            grouped_data[key] = 0
-                        grouped_data[key] += tx.amount or 0
 
                     forecast_inputs = [
-                        ForecastInput(date=datetime.date(y, m, 1), amount=float(amount))
-                        for (y, m), amount in grouped_data.items()
+                        ForecastInput(date=datetime.date(tx.transaction_date.year, tx.transaction_date.month, 1), amount=float(tx.amount))
+                        for tx in transactions
                     ]
                     logger.info(f"Generating forecast for {category.name}")
-                    
+                    final_forecast = forecast(forecast_inputs)
                     # Check if a manual budget already exists
                     existing_budget = MonthlyBudget.objects.filter(
                         user=user,
@@ -112,7 +103,7 @@ class ForecastService:
                         logger.info(f"Skipping manual budget for {category.name} in {target_date}")
                         continue
                     if force_reset:
-                        existing_budget.planned_amount = stats_compute_forecast(forecast_inputs)
+                        existing_budget.planned_amount = final_forecast
                         existing_budget.is_automated = True
                         existing_budget.user_amount = None
                         existing_budget.save()
@@ -128,12 +119,12 @@ class ForecastService:
                                 user=user,
                                 category=category,
                                 month=target_date,
-                                planned_amount=stats_compute_forecast(forecast_inputs),
+                                planned_amount=final_forecast,
                                 is_automated=True,
                                 user_amount=None
                             )
                         else:
-                            monthly_budget.planned_amount = stats_compute_forecast(forecast_inputs)
+                            monthly_budget.planned_amount = final_forecast
                             monthly_budget.is_automated = monthly_budget.user_amount is None
                             monthly_budget.save()
 

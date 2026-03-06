@@ -45,7 +45,7 @@ class CategoryListView(CategoryEnrichedMixin, ListView):
 
         if filters['search']:
             base_queryset = base_queryset.filter(name__icontains=filters['search'])
-        if filters['selected_category_ids']:
+        if any(filters['selected_category_ids'] or []):
             base_queryset = base_queryset.filter(id__in=filters['selected_category_ids'])
 
         return self.get_enriched_category_queryset(base_queryset)

@@ -1,9 +1,10 @@
 import logging
-from datetime import date
 from dataclasses import dataclass
+from datetime import date
 from typing import List, Optional
 
 import numpy as np
+import pandas as pd
 from api.config import ForecastConfig
 
 # Improved logger formatting to exclude sensitive data
@@ -16,44 +17,68 @@ class ForecastInput:
     date: date
 
 
-def calculate_ama_from_history(
-        ama_input: List[ForecastInput],
-        fast_n: int = ForecastConfig.KAMA_FAST_N,
-        slow_n: int = ForecastConfig.KAMA_SLOW_N,
-        er_period: int = ForecastConfig.KAMA_ER_PERIOD
-) -> float:
+
+def mix_with_gaps(ama_input: List[ForecastInput], window_months: int = 12) -> float:
     """
-    Calculates the Kaufman's Adaptive Moving Average (KAMA).
-    All internal calculations remain unchanged to preserve accuracy.
+    Predicts budget based on historical patterns with a focus on
+    handling occasional vs regular spending.
     """
     if not ama_input:
         return 0.0
-    if len(ama_input) == 1:
-        return round(ama_input[0].amount, 2)
 
-    # Sort to process chronologically: from oldest to newest
-    amounts: List[float] = [float(x.amount) for x in sorted(ama_input, key=lambda x: x.date)]
+    # 1. Setup time window
+    # We use 'now' to understand if we are currently in the last month of the series
+    current_time = pd.Timestamp.now().normalize()
+    start_date = (current_time - pd.DateOffset(months=window_months)).replace(day=1)
 
-    current_ama: float = amounts[0]
-    fast_sc: float = 2 / (fast_n + 1)
-    slow_sc: float = 2 / (slow_n + 1)
+    # 2. Data Preparation
+    df = pd.DataFrame([{'date': x.date, 'amount': x.amount} for x in ama_input])
+    df['date'] = pd.to_datetime(df['date'])
 
-    for i in range(1, len(amounts)):
-        if i >= er_period:
-            change: float = abs(amounts[i] - amounts[i - er_period])
-            volatility: float = sum(
-                abs(amounts[j] - amounts[j - 1])
-                for j in range(i - er_period + 1, i + 1)
-            )
-            er: float = change / volatility if volatility != 0 else 0
-            sc: float = (er * (fast_sc - slow_sc) + slow_sc) ** 2
-            current_ama = current_ama + sc * (amounts[i] - current_ama)
+    # Filter by window
+    df = df[(df['date'] >= start_date) & (df['date'] <= current_time)]
+
+    if df.empty:
+        return 0.0
+
+    # 3. Monthly Resampling with Fixed Range
+    # We create a range that includes the current month
+    full_range = pd.date_range(start=start_date, end=current_time, freq='ME')
+    df_indexed = df.set_index('date').sort_index()
+    monthly_series = df_indexed['amount'].resample('ME').sum().reindex(full_range, fill_value=0.0)
+
+    s = pd.Series(monthly_series)
+    active_spending = s[s > 0]
+
+    if active_spending.empty:
+        return 0.0
+
+    # 4. Feature Extraction
+    gap_ratio = (s == 0).sum() / len(s)
+    cv = active_spending.std() / active_spending.mean() if len(active_spending) > 1 else 0
+
+    # Check if there is activity in the current month
+    current_month_key = s.index[-1]
+    is_active_this_month = s[current_month_key] > 0
+
+    # 5. Decision Logic
+
+    # STRATEGY A: High Gaps (Occasional spending like Car Repairs)
+    if gap_ratio > 0.3:
+        if is_active_this_month:
+            # If we see movement this month, trigger the 75th percentile budget
+            return float(active_spending.quantile(0.75))
         else:
-            alpha_warmup: float = ForecastConfig.KAMA_WARMUP_ALPHA
-            current_ama = (amounts[i] * alpha_warmup) + (current_ama * (1 - alpha_warmup))
+            # If the month is silent, assume no spending is needed
+            return 0.0
 
-    return round(current_ama, 2)
+    # STRATEGY B: Chaotic but Regular (e.g., Groceries)
+    if cv > 0.4:
+        return float(active_spending.tail(4).median())
 
+    # STRATEGY C: Stable Recurring
+    else:
+        return float(s.ewm(span=3).mean().iloc[-1])
 
 def is_stable_expense(amounts: np.ndarray, threshold: float) -> bool:
     mean_val = np.mean(amounts)
@@ -74,7 +99,6 @@ def get_seasonal_forecast(amounts: np.ndarray, threshold: float) -> Optional[flo
         logger.info(f"Seasonality Check: Insufficient data points ({len(amounts)} units). Skipping.")
         return None
 
-    import pandas as pd
     series = pd.Series(amounts)
     correlation = series.autocorr(lag=ForecastConfig.SEASONALITY_LAG_MONTHS)
 
@@ -88,24 +112,6 @@ def get_seasonal_forecast(amounts: np.ndarray, threshold: float) -> Optional[flo
 
     logger.info(f"Seasonality Check: Correlation ({correlation:.4f}) below threshold. Not seasonal.")
     return None
-
-
-def apply_momentum_correction(current_kama: float, history: List[ForecastInput], er_period: int) -> float:
-    if len(history) < ForecastConfig.MOMENTUM_HISTORY_WINDOW:
-        logger.info("Momentum: Insufficient history for trend analysis.")
-        return current_kama
-
-    past_kama = calculate_ama_from_history(history[:-(ForecastConfig.MOMENTUM_HISTORY_WINDOW - 1)], er_period=er_period)
-
-    if past_kama <= 0:
-        return current_kama
-
-    momentum_factor = current_kama / past_kama
-    capped_factor = max(ForecastConfig.MOMENTUM_MIN_FACTOR, min(ForecastConfig.MOMENTUM_MAX_FACTOR, momentum_factor))
-
-    # Log the factor (relative change), which doesn't reveal the absolute amount
-    logger.info(f"Momentum: Trend Factor={momentum_factor:.4f} (Capped to={capped_factor:.4f}).")
-    return round(current_kama * capped_factor, 2)
 
 
 def compute_forecast(
@@ -135,12 +141,6 @@ def compute_forecast(
         logger.info("FINAL STRATEGY: SEASONAL (Recurring pattern detected).")
         return seasonal_val
 
-    # 3. KAMA Engine
-    current_kama = calculate_ama_from_history(history, er_period=er_period)
-    logger.info(f"Adaptive Engine: Base KAMA calculated using ER period {er_period}.")
-
-    # 4. Momentum Correction
-    final_forecast = apply_momentum_correction(current_kama, history, er_period)
-    logger.info("FINAL STRATEGY: IRREGULAR (KAMA + Momentum correction applied).")
-
+    final_forecast = mix_with_gaps(history)
+    logger.info(f"FINAL STRATEGY: AGNOS (No pattern detected).")
     return final_forecast

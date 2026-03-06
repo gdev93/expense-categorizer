@@ -2,7 +2,6 @@ import logging
 import os
 import socket
 
-import docker
 import pytest
 from django.conf import settings as django_settings
 from testcontainers.core.wait_strategies import LogMessageWaitStrategy
