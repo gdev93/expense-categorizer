@@ -32,6 +32,9 @@ class ForecastService:
         target_dates = []
         today = timezone.now().date()
         first_transaction = Transaction.objects.filter(user=user).order_by('transaction_date').first()
+        if not first_transaction:
+            logger.warning(f"No transactions found for user {user}. Skipping forecast generation.")
+            return
         if years_months is None:
             years_months_list = []
             if not first_transaction or not first_transaction.transaction_date:
