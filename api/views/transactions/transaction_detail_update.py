@@ -44,15 +44,8 @@ class TransactionDetailUpdateView(UpdateView):
 
         messages.success(request, "Spesa eliminata con successo.")
 
-        # Check if filters were stored before deletion
-        redirect_filters = request.POST.get('redirect_filters', '')
-
         # Build redirect URL with preserved filters
         redirect_url = reverse('transaction_list')
-
-        if redirect_filters:
-            # The filters already include the '?' or are empty
-            redirect_url = redirect_url + redirect_filters
 
         return redirect(redirect_url)
 
